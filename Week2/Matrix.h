@@ -1,7 +1,9 @@
 ﻿#pragma once
+#include "Vector.h"
+struct FMatrix {
 
-struct FMatrix { 
 	float M[4][4];
+	static const FMatrix Identity;
 
 
 	FMatrix Inverse(FMatrix) const; // 4 x 4 역행렬
@@ -17,7 +19,7 @@ struct FMatrix {
 		return R;
 	}
 
-	FMatrix operator* (const FMatrix& Other) const  // 4 x 4 행렬곱
+	inline FMatrix operator* (const FMatrix& Other) const  // 4 x 4 행렬곱
 	{
 		FMatrix result = {};
 
@@ -31,7 +33,7 @@ struct FMatrix {
 		return result;
 	}
 
-	FMatrix operator*(float Scalar) const  // M x 상수(Sclalar) ,Scaling 아님
+	inline FMatrix operator*(float Scalar) const  // M x 상수(Sclalar) ,Scaling 아님
 	{ 
 		FMatrix result;
 		for (int row = 0; row < 4; ++row) {
@@ -44,7 +46,7 @@ struct FMatrix {
 	}
 
 
-	FMatrix operator+ (const FMatrix& Other) const   // M + M , 행렬끼리의 합
+	inline FMatrix operator+ (const FMatrix& Other) const   // M + M , 행렬끼리의 합
 	{ 
 		FMatrix result = {};
 
@@ -58,7 +60,7 @@ struct FMatrix {
 
 
 
-	FMatrix operator- (const FMatrix& Other) const  // M - M , 행렬끼리의 차
+	inline FMatrix operator- (const FMatrix& Other) const  // M - M , 행렬끼리의 차
 	{ 
 		FMatrix result = {};
 
@@ -71,7 +73,7 @@ struct FMatrix {
 	}
 
 
-	FMatrix operator+(float f) const // M + f : 각원소 덧셈(f)
+	inline FMatrix operator+(float f) const // M + f : 각원소 덧셈(f)
 	{ 
 		FMatrix result = {};
 		for (int row = 0; row < 4; ++row) {
@@ -82,7 +84,7 @@ struct FMatrix {
 		return result;
 	}
 
-	FMatrix operator-(float f) const // M - f : 각원소 뺄셈(f)
+	inline FMatrix operator-(float f) const // M - f : 각원소 뺄셈(f)
 	{ 
 		FMatrix result={};
 		for (int row = 0; row < 4; ++row) {
@@ -95,7 +97,7 @@ struct FMatrix {
 
 
 
-	FMatrix Transpose() const // 전치행렬
+	static FMatrix Transpose()  // 전치행렬
 	{ 
 		FMatrix result = {};
 		for (int row = 0; row < 4; ++row) {
@@ -106,6 +108,45 @@ struct FMatrix {
 		return result;
 	};
 
+	static FMatrix Scale(float n) // scaling, 상수배
+	{
+		FMatrix result = Identity;
+		result[0][0] = n;
+		result[1][1] = n;
+		result[2][2] = n;
+
+		return result;
+	}
+
+	static FMatrix Scale(const FVector v) // scaling, xyz배율만큼
+	{
+		FMatrix result = Identity;
+		result[0][0] = v.x;
+		result[1][1] = v.y;
+		result[2][2] = v.z;
+
+		return result;
+	}
+
+	static FMatrix Translation(const float n) // translate
+	{
+		FMatrix result = Identity;
+		result[0][0] = n;
+		result[1][1] = n;
+		result[2][2] = n;
+
+		return result;
+	}
+	static FMatrix Translation(const FVector v) // translate
+	{
+		FMatrix result = Identity;
+		result[0][0] = v.x;
+		result[1][1] = v.y;
+		result[2][2] = v.z;
+
+		return result;
+	}
+	// end Struct Matrix
 };
 
 inline const FMatrix FMatrix::Identity = { {
