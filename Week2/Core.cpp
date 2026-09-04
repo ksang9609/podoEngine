@@ -53,6 +53,11 @@ bool FString::Contains(const FString& subStr) const
 	return mData.find(subStr.mData) != std::string::npos;
 }
 
+const char* FString::CStr() const
+{
+	return mData.c_str();
+}
+
 bool FString::EndsWith(std::string_view suffix) const
 {
 	if (suffix.size() > mData.size())

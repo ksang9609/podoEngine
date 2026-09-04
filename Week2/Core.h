@@ -53,6 +53,8 @@ public:
 	bool Contains(std::string_view subStr) const;
 	bool Contains(const FString& subStr) const;
 
+	const char* CStr() const;
+
 	bool EndsWith(std::string_view suffix) const;
 	bool EndsWith(const FString& suffix) const;
 

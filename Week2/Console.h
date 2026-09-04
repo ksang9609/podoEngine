@@ -1,10 +1,9 @@
 ﻿#pragma once
 
-// TODO: Remove stl later
 #include <vector>
-#include <string>
-
 #include <format>
+
+#include "Core.h"
 
 #define UE_LOG(fmt, ...) ConsoleWindow::GetInstance().AddLogPrintf(fmt, ##__VA_ARGS__)
 #define UE_LOG_F(fmt, ...) ConsoleWindow::GetInstance().AddLogFormat(fmt, ##__VA_ARGS__)
@@ -36,17 +35,17 @@ public:
 	void AddLogPrintf(std::string_view fmt, Args&&... args)
 	{
 		char buffer[64];
-		snprintf(buffer, sizeof(buffer), fmt.data(), std::forward<Args>(args)...);
+		snprintf(buffer, sizeof(buffer), fmt, std::forward<Args>(args)...);
 		addLog(buffer);
 	}
 
 	void Draw();
 
 private:
-	std::string mTitle;
+	FString mTitle;
 	int mMaxLines;
 
-	std::vector<std::string> mConsoleBuffer;
+	std::vector<FString> mConsoleBuffer;
 
 	void addLog(std::string_view message);
 };

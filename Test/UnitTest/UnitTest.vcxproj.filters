@@ -6,6 +6,10 @@
     <ClCompile Include="..\..\Week2\Object.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="TestObject.cpp" />
+    <ClCompile Include="..\..\Week2\Core.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

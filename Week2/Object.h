@@ -1,8 +1,5 @@
 ﻿#pragma once
 
-// TODO: Replace std::string with FString later
-#include <string>
-
 #include "Core.h"
 
 class UObject;
@@ -11,11 +8,11 @@ using ConstructorFunc = UObject * (*)();
 
 struct FClassInfo
 {
-	std::string Name;
+	FString Name;
 	FClassInfo* SuperClass;
 	ConstructorFunc Constructor;
 
-	FClassInfo(std::string name, FClassInfo* superClass, ConstructorFunc constructor)
+	FClassInfo(FString name, FClassInfo* superClass, ConstructorFunc constructor)
 		: Name(std::move(name)), SuperClass(superClass), Constructor(constructor) {
 	}
 
