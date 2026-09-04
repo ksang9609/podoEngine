@@ -1,0 +1,142 @@
+﻿
+#pragma once
+
+#include <cassert>
+#include <vector>
+
+#include "Core.h"
+
+template<typename T>
+class TArray
+{
+public:
+	TArray() = default;
+	~TArray() = default;
+
+	T& operator[](uint32 Index);
+	
+	// Todo: Delete, Memory leak if use pointer type
+	void Init(const T& element, uint32 count);
+
+	void SetNum(int32 NewNum, bool bAllowShrinking = true);
+
+	uint32 Add(const T& element);
+	uint32 Emplace(const T& element);
+	uint32 Insert(const T& data, uint32 index);
+	void Reserve(uint32 Number);
+
+	int32 Num() const;
+	int32 Max() const;
+	
+	bool IsEmpty() const;
+
+	void Reset(int32 newSize);
+	void RemoveAt(uint32 index, int32 count);
+
+	/*
+	int32 Find(const ElementType& Item) const;
+	template <typename Predicate>
+	int32 FindByPredicate(Predicate Pred) const;
+	bool Contains(const ElementType& Item) const;
+	T& Top();
+	const T& Top() const;
+
+	int32 RemoveSingle(const ElementType& Item);
+	int32 RemoveAll(const ElementType& Item); 
+	void RemoveAtSwap(int32 Index, int32 Count = 1, bool bAllowShrinking = true);
+	*/
+
+private:
+	std::vector<T> mDatas;
+};
+
+template<typename T>
+inline T& TArray<T>::operator[](uint32 index)
+{
+	assert(index < mDatas.size());
+
+	return mDatas[index];
+}
+
+// Todo: Need to fix code
+template<typename T>
+inline void TArray<T>::Init(const T& data, uint32 count)
+{
+	// Todo: Check memory leak
+	// Memory leak if use pointer type on data
+	mDatas.assign(count, data);
+}
+
+template<typename T>
+inline uint32 TArray<T>::Add(const T& data)
+{
+	mDatas.push_back(data);
+
+	return static_cast<uint32>(mDatas.size()) - 1;
+}
+
+template<typename T>
+inline uint32 TArray<T>::Emplace(const T& data)
+{
+	mDatas.emplace_back(data);
+
+	return mDatas.size() - 1;
+}
+
+template<typename T>
+inline uint32 TArray<T>::Insert(const T& data, uint32 index)
+{
+	mDatas.insert(mDatas.begin() + index, data);
+
+	return index;
+}
+
+template<typename T>
+inline int32 TArray<T>::Num() const
+{
+	return static_cast<uint32>(mDatas.size());
+}
+
+template<typename T>
+inline void TArray<T>::Reserve(uint32 capacity)
+{
+	mDatas.reserve(capacity);
+}
+
+template<typename T>
+inline int32 TArray<T>::Max() const
+{
+	return static_cast<uint32>(mDatas.capacity());
+}
+
+template<typename T>
+inline bool TArray<T>::IsEmpty() const
+{
+	return mDatas.empty();
+}
+
+template<typename T>
+inline void TArray<T>::Reset(int32 newSize)
+{
+	mDatas.clear();
+
+	// Does not reduce memory size
+	mDatas.reserve(newSize);
+}
+
+// Crashes if index out of bound
+template<typename T>
+inline void TArray<T>::RemoveAt(uint32 index, int32 count)
+{
+	assert(index < mDatas.size());
+
+	auto removeBeginIter = mDatas.begin() + index;
+	mDatas.erase(removeBeginIter, removeBeginIter + count);
+}
+
+
+
+
+
+
+
