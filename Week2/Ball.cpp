@@ -10,6 +10,10 @@ void UBall::Move(float deltaTime)
 bool UBall::Compact(const UPrimitive* Others) const
 {
 	const UBall* ball = static_cast<const UBall*>(Others);
+	
+	
+	
+	
 	FVector v = ball->Location - Location;
 
 	float Length = v.x * v.x + v.y * v.y + v.z * v.z;

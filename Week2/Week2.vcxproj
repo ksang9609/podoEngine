@@ -140,7 +140,6 @@
     <ClInclude Include="Ball.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="FrameTimer.h" />
-    <ClInclude Include="FVector.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
@@ -151,6 +150,7 @@
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="URenderer.h" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
