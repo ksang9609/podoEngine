@@ -1,0 +1,52 @@
+﻿#pragma once
+
+// TODO: Remove stl later
+#include <vector>
+#include <string>
+
+#include <format>
+
+#define UE_LOG(fmt, ...) ConsoleWindow::GetInstance().AddLogPrintf(fmt, ##__VA_ARGS__)
+#define UE_LOG_F(fmt, ...) ConsoleWindow::GetInstance().AddLogFormat(fmt, ##__VA_ARGS__)
+
+class ConsoleWindow
+{
+public:
+	ConsoleWindow();
+
+	// Singleton pattern
+	ConsoleWindow(const ConsoleWindow&) = delete;
+	ConsoleWindow& operator=(const ConsoleWindow&) = delete;
+	ConsoleWindow(ConsoleWindow&&) = delete;
+	ConsoleWindow& operator=(ConsoleWindow&&) = delete;
+
+	static ConsoleWindow& GetInstance();
+
+	void Init(std::string_view title, int maxLines);
+
+	template<typename... Args>
+	void AddLogFormat(std::string_view fmt, Args&&... args)
+	{
+		addLog(
+			std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...))
+		);
+	}
+
+	template<typename... Args>
+	void AddLogPrintf(std::string_view fmt, Args&&... args)
+	{
+		char buffer[64];
+		snprintf(buffer, sizeof(buffer), fmt.data(), std::forward<Args>(args)...);
+		addLog(buffer);
+	}
+
+	void Draw();
+
+private:
+	std::string mTitle;
+	int mMaxLines;
+
+	std::vector<std::string> mConsoleBuffer;
+
+	void addLog(std::string_view message);
+};

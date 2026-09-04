@@ -51,6 +51,9 @@
     <ClCompile Include="Ball.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Console.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="URenderer.h">
@@ -95,7 +98,7 @@
     <ClInclude Include="Core.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Colsole.h">
+    <ClInclude Include="Console.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
