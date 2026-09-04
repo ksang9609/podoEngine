@@ -18,4 +18,13 @@ struct FTransform
 	{
 		return  FMatrix::Scale(Scale) * FMatrix::Rotate(Rotation) * FMatrix::Translation(Location);
 	}
+
+	FMatrix InverseMatrix() const
+	{
+		return {
+			FMatrix::Translation(FVector(-Location.x, -Location.y, -Location.z))
+			* FMatrix::Rotate(Rotation).Transpose()
+			* FMatrix::Scale(FVector(1.0f / Scale.x, 1.0f / Scale.y, 1.0f / Scale.z))
+		};
+	}
 };

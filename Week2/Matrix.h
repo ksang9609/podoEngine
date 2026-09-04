@@ -10,9 +10,6 @@ struct FMatrix {
 	static const FMatrix Zero;
 	
 
-	FMatrix Inverse(FMatrix) const; // 4 x 4 역행렬
-	
-
 	static FMatrix makeIdentity() // 단위행렬 만드는 함수
 	{
 		FMatrix R = {};
@@ -164,6 +161,8 @@ struct FMatrix {
 
 		return result;
 	}
+
+
 	// end Struct Matrix
 };
 
