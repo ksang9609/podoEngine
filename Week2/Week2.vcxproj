@@ -138,6 +138,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ball.h" />
+    <ClInclude Include="Core.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="FVector.h" />
     <ClInclude Include="ImGui\imconfig.h" />
