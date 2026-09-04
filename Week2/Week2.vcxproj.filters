@@ -86,13 +86,22 @@
     <ClInclude Include="Ball.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FVector.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="FrameTimer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Matrix.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Rotator.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

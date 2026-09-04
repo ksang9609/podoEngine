@@ -4,7 +4,8 @@
 typedef struct FVector
 {
     float x, y, z;
-    FVector(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
+	FVector(float n) : x(n), y(n), z(n){}
+    FVector(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 
     const FVector operator-(const FVector& Others) const
     {

@@ -3,10 +3,12 @@
 struct FMatrix { 
 	float M[4][4];
 
+
 	FMatrix Inverse(FMatrix) const; // 4 x 4 역행렬
 		
 	
 	static const FMatrix Identity;
+	static const FMatrix Zero;
 
 	static FMatrix makeIdentity() // 단위행렬 만드는 함수
 	{
@@ -111,5 +113,12 @@ inline const FMatrix FMatrix::Identity = { {
 	{0, 1, 0, 0},
 	{0, 0, 1, 0},
 	{0, 0, 0, 1}
+} };
+
+inline const FMatrix FMatrix::Zero = { {
+	{0, 0, 0, 0},
+	{0, 0, 0, 0},
+	{0, 0, 0, 0},
+	{0, 0, 0, 0}
 } };
 

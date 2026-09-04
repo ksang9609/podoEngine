@@ -3,7 +3,6 @@
 #include "Sphere.h"
 #include "Ball.h"
 #include "FrameTimer.h"
-#include "BallSimulation.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_internal.h"
@@ -79,7 +78,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 
 	UFrameTimer FrameTimer(120);
-	UBall* ball = new UBall({ 0, 0, 0 }, { 0, 0, 0 }, 1.f);
+	UBall* ball = new UBall(FTransform(), FVector(0));
 
 	// Main Loop
 	bool bIsExit = false;
@@ -93,7 +92,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.Prepare();
 		renderer.PrepareShader();
 
-		renderer.UpdateConstant(ball->Location, ball->Radius);
+		//매 프레임 공의 좌표계 변환 행렬을 계산한다.
+
+		renderer.UpdateConstant(FMatrix());
 		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
 
 		//ImGui

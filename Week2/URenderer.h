@@ -2,7 +2,7 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
-#include "FVector.h"
+#include "Matrix.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
@@ -18,8 +18,7 @@ struct FVertexSimple
 
 struct FConstants
 {
-    FVector Offset;
-    float Radius;
+	FMatrix Matrix;
 };
 
 
@@ -133,7 +132,7 @@ public:
 
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth)
     {
-        UINT numVertices = sizeof(vertices) / sizeof(FVertexSimple);
+        UINT numVertices = ByteWidth / sizeof(FVertexSimple);
 
         float scaleMod = 0.1f;
 
@@ -298,7 +297,7 @@ public:
         }
     }
 
-    void UpdateConstant(FVector Offset, float Radius)
+    void UpdateConstant(FMatrix Matrix)
     {
         if (ConstantBuffer)
         {
@@ -307,8 +306,7 @@ public:
             DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
             FConstants* constants = (FConstants*)constantbufferMSR.pData;
             {
-                constants->Offset = Offset;
-                constants->Radius = Radius;
+				constants->Matrix = Matrix;
             }
             DeviceContext->Unmap(ConstantBuffer, 0);
         }

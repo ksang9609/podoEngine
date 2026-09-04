@@ -1,45 +1,34 @@
 ﻿#pragma once
-#include "FVector.h"
+#include "Vector.h"
+#include "Transform.h"
 
 class UPrimitive
 {
 public:
-	virtual ~UPrimitive() {}
+	UPrimitive(FTransform _Transform) : Transform(_Transform) {}
+	virtual ~UPrimitive(){}
 
 	virtual void Move(float deltaTime) = 0;
-	virtual bool Compact(const UPrimitive* others) const = 0;
-	inline static int TotalNumBalls = 0;
+
+	//후에 SceneComponent로 옮김
+	FTransform Transform;
 };
 
 class UBall : public UPrimitive
 {
 public:
-	UBall(FVector _Location, FVector _Velocity, float _Radius) : Location(_Location), Velocity(_Velocity)
+	UBall(FTransform _Transform, FVector _Velocity) : UPrimitive(_Transform), Velocity(_Velocity)
 	{
-		SetRadius(_Radius);
-		++TotalNumBalls;
+		//구형이므로 x로 반지름 판단
+		SetRadius(Transform.Scale.x);
 	}
 
 	virtual ~UBall()
 	{
-		--TotalNumBalls;
 	}
 
-	//복사도 카운터 증가
-	UBall(const UBall& o) noexcept : Location(o.Location), Velocity(o.Velocity), Radius(o.Radius), Mass(o.Mass)
-	{
-		++TotalNumBalls;
-	}
-
-	//이동은 증가 안함
-	UBall(UBall&& o) noexcept : UBall(o) {}
-
-	FVector Location;
 	FVector Velocity;
-	float Radius;
-	float Mass;
 
 	virtual void Move(float deltaTime) override;
-	virtual bool Compact(const UPrimitive* Others) const override;
 	void SetRadius(float newRadius);
 };
