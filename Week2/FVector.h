@@ -32,11 +32,9 @@ typedef struct FVector
     }
 
 	//외적
-	inline static float cross(const FVector& A, const FVector& B)
+	inline static FVector cross(const FVector& A, const FVector& B)
 	{
-		return	A.y * B.z - A.z * B.y
-			+	A.z * B.x - A.x * B.z
-			+	A.x * B.y - A.y * B.x;
+		return	FVector(A.y * B.z - A.z * B.y, A.z * B.x - A.x * B.z, A.x * B.y - A.y * B.x);
 	}
 
 	float Length() const { return std::sqrt(x * x + y * y + z * z); }
