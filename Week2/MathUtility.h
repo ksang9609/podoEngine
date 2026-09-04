@@ -10,7 +10,7 @@ namespace FMath
 	template<typename T>
 	void sincos(T& sin, T& cos, T value)
 	{
-		sin = std::sin(sin);
-		cos = std::cos(cos);
+		sin = std::sin(value);
+		cos = std::cos(value);
 	}
 }

@@ -1,8 +1,7 @@
 // ShaderW0.hlsl
 cbuffer constants : register(b0)
 {
-    float3 Offset;
-    float Radius;
+    float4x4 World;
 }
 
 struct VS_INPUT
@@ -21,8 +20,7 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
     
-    // 상수버퍼를 통해 넘겨 받은 Offset을 더해서 버텍스를 이동 시켜 픽셀쉐이더로 넘김
-    output.position = float4(input.position.xyz * Radius + Offset, 1.0f);
+    output.position = mul(float4(input.position.xyz, 1.0f), World);
     
     // Pass the color to the pixel shader
     output.color = input.color;
