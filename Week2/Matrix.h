@@ -1,14 +1,15 @@
 ﻿#pragma once
 #include "Vector.h"
-struct FMatrix {
 
+struct FMatrix { 
 	float M[4][4];
+
 	static const FMatrix Identity;
 	static const FMatrix Zero;
-
+	
 
 	FMatrix Inverse(FMatrix) const; // 4 x 4 역행렬
-		
+	
 
 	static FMatrix makeIdentity() // 단위행렬 만드는 함수
 	{
@@ -17,7 +18,7 @@ struct FMatrix {
 		return R;
 	}
 
-	inline FMatrix operator* (const FMatrix& Other) const  // 4 x 4 행렬곱
+	FMatrix operator* (const FMatrix& Other) const  // 4 x 4 행렬곱
 	{
 		FMatrix result = {};
 
@@ -31,7 +32,7 @@ struct FMatrix {
 		return result;
 	}
 
-	inline FMatrix operator*(float Scalar) const  // M x 상수(Sclalar) ,Scaling 아님
+	FMatrix operator*(float Scalar) const  // M x 상수(Sclalar) ,Scaling 아님
 	{ 
 		FMatrix result;
 		for (int row = 0; row < 4; ++row) {
@@ -44,7 +45,7 @@ struct FMatrix {
 	}
 
 
-	inline FMatrix operator+ (const FMatrix& Other) const   // M + M , 행렬끼리의 합
+	FMatrix operator+ (const FMatrix& Other) const   // M + M , 행렬끼리의 합
 	{ 
 		FMatrix result = {};
 
@@ -58,7 +59,7 @@ struct FMatrix {
 
 
 
-	inline FMatrix operator- (const FMatrix& Other) const  // M - M , 행렬끼리의 차
+	FMatrix operator- (const FMatrix& Other) const  // M - M , 행렬끼리의 차
 	{ 
 		FMatrix result = {};
 
@@ -71,7 +72,7 @@ struct FMatrix {
 	}
 
 
-	inline FMatrix operator+(float f) const // M + f : 각원소 덧셈(f)
+	FMatrix operator+(float f) const // M + f : 각원소 덧셈(f)
 	{ 
 		FMatrix result = {};
 		for (int row = 0; row < 4; ++row) {
@@ -82,7 +83,7 @@ struct FMatrix {
 		return result;
 	}
 
-	inline FMatrix operator-(float f) const // M - f : 각원소 뺄셈(f)
+	FMatrix operator-(float f) const // M - f : 각원소 뺄셈(f)
 	{ 
 		FMatrix result={};
 		for (int row = 0; row < 4; ++row) {
@@ -95,7 +96,7 @@ struct FMatrix {
 
 
 
-	FMatrix Transpose()  // 전치행렬
+	FMatrix Transpose() const // 전치행렬
 	{ 
 		FMatrix result = {};
 		for (int row = 0; row < 4; ++row) {
