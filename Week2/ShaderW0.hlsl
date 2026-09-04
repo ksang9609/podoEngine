@@ -2,6 +2,7 @@
 cbuffer constants : register(b0)
 {
     row_major float4x4 World;
+    row_major float4x4 ViewProjection;
 }
 
 struct VS_INPUT
@@ -20,7 +21,7 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
     
-    output.position = mul(float4(input.position.xyz, 1.0f), World);
+    output.position = mul(mul(float4(input.position.xyz, 1.0f), World), ViewProjection);
     
     // Pass the color to the pixel shader
     output.color = input.color;

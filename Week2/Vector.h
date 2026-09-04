@@ -26,6 +26,11 @@ typedef struct FVector
         z -= Others.z;
     }
 
+	FVector operator-() const
+	{
+		return FVector(-x, -y, -z);
+	}
+
 	//내적
     inline static float dot(const FVector& A, const FVector& B)
     {
@@ -39,6 +44,14 @@ typedef struct FVector
 	}
 
 	float Length() const { return std::sqrt(x * x + y * y + z * z); }
+
+	void Normalize()
+	{
+		float len = Length();
+		x /= len;
+		y /= len;
+		z /= len;
+	}
 	
 } FVector3;
 

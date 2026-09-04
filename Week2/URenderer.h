@@ -18,7 +18,8 @@ struct FVertexSimple
 
 struct FConstants
 {
-	FMatrix Matrix;
+	FMatrix World;
+	FMatrix ViewProjection;
 };
 
 
@@ -288,7 +289,7 @@ public:
         }
     }
 
-    void UpdateConstant(FMatrix Matrix)
+    void UpdateConstant(FMatrix World, FMatrix ViewProjection)
     {
         if (ConstantBuffer)
         {
@@ -297,7 +298,8 @@ public:
             DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
             FConstants* constants = (FConstants*)constantbufferMSR.pData;
             {
-				constants->Matrix = Matrix;
+				constants->World = World;
+				constants->ViewProjection = ViewProjection;
             }
             DeviceContext->Unmap(ConstantBuffer, 0);
         }

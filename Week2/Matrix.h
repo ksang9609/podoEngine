@@ -127,6 +127,54 @@ struct FMatrix {
 	}
 
 
+
+	// 각 축 단독 회전. 인자는 도(degree) 단위.
+	// 행벡터 규약(v' = v * M)이며, 언리얼과 맞추기 위해
+	// RotateX(Roll)와 RotateY(Pitch)는 표준 오른손 형태에서 sin 부호를 뒤집었다.
+	// RotateX(Roll) * RotateY(Pitch) * RotateZ(Yaw) == Rotate(FRotator) 가 성립한다.
+
+	static FMatrix RotateX(float degree) // Roll : X축 회전, yz평면
+	{
+		FMatrix result = Identity;
+		float s, c;
+		FMath::sincos<float>(s, c, degree * PI / 180);
+
+		result.M[1][1] = c;
+		result.M[1][2] = -s;
+		result.M[2][1] = s;
+		result.M[2][2] = c;
+
+		return result;
+	}
+
+	static FMatrix RotateY(float degree) // Pitch : Y축 회전, zx평면
+	{
+		FMatrix result = Identity;
+		float s, c;
+		FMath::sincos<float>(s, c, degree * PI / 180);
+
+		result.M[0][0] = c;
+		result.M[0][2] = s;
+		result.M[2][0] = -s;
+		result.M[2][2] = c;
+
+		return result;
+	}
+
+	static FMatrix RotateZ(float degree) // Yaw : Z축 회전, xy평면
+	{
+		FMatrix result = Identity;
+		float s, c;
+		FMath::sincos<float>(s, c, degree * PI / 180);
+
+		result.M[0][0] = c;
+		result.M[0][1] = s;
+		result.M[1][0] = -s;
+		result.M[1][1] = c;
+
+		return result;
+	}
+
 	static FMatrix Rotate(const FRotator r)
 	{
 		//Pitch, Yaw, Roll의 각각 cossin 구하기

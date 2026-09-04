@@ -3,6 +3,7 @@
 #include "Sphere.h"
 #include "Ball.h"
 #include "FrameTimer.h"
+#include "Camera.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_internal.h"
@@ -79,6 +80,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	UFrameTimer FrameTimer(120);
 	UBall* ball = new UBall(FTransform({-0.5,0,0}, {0, 0, 0}, {0.1, 0.5, 0.1}), FVector(0));
+	FCamera* Camera = new FCamera(FTransform({ 0.5, 0.5, 0.5 }, {0, 0, 0}, {1, 1, 1}));
 
 	// Main Loop
 	bool bIsExit = false;
@@ -92,9 +94,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.Prepare();
 		renderer.PrepareShader();
 
-		//매 프레임 공의 좌표계 변환 행렬을 계산한다.
+		//1. Local -> World
+		FMatrix World = ball->Transform.MakeMatrix();
 
-		renderer.UpdateConstant(ball->Transform.MakeMatrix());
+		//2. World -> View
+		FVector Forward = ball->Transform.Location - Camera->Transform.Location;
+		Forward.Normalize();
+		FVector Right = FVector::cross(FVector(0, 1, 0), Forward);
+		Right.Normalize();
+		FVector Up = FVector::cross(Forward, Right);
+
+		FMatrix View = FMatrix::Translation(-Camera->Transform.Location) * FMatrix::Rotate(Camera->Transform.Rotation).Transpose();
+
+		renderer.UpdateConstant(World, View);
 		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
 
 		//ImGui
