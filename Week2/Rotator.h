@@ -35,6 +35,8 @@ struct TRotator
 		Matrix.M[2][0] = -(cosR * sinP * cosY + sinR * sinY);
 		Matrix.M[2][1] = sinR * cosY - cosR * sinP * sinY;
 		Matrix.M[2][2] = cosR * cosP;
+
+		return Matrix;
 	}
 };
 

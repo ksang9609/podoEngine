@@ -143,7 +143,6 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Rotator.h" />
-    <ClInclude Include="Vector.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />

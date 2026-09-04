@@ -94,7 +94,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		//매 프레임 공의 좌표계 변환 행렬을 계산한다.
 
-		renderer.UpdateConstant(FMatrix());
+		renderer.UpdateConstant(ball->Transform.MakeMatrix());
 		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
 
 		//ImGui
