@@ -7,57 +7,17 @@ namespace UObjectTest
 
 	class UMockObject : public UObject
 	{
-	public:
-		static FClassInfo* GetClass()
-		{
-			static FClassInfo classInstance = FClassInfo(
-				"UMockObject",
-				UObject::GetClass(),
-				[]() -> UObject* { return new UMockObject(); }
-			);
-			return &classInstance;
-		}
-
-		virtual FClassInfo* GetRuntimeClass() const
-		{
-			return GetClass();
-		}
+		REFLECT_CLASS(UMockObject, UObject);
 	};
 
 	class UMockObjectChildA : public UMockObject
 	{
-	public:
-		static FClassInfo* GetClass()
-		{
-			static FClassInfo classInstance = FClassInfo(
-				"UMockObjectChildA",
-				UMockObject::GetClass(),
-				[]() -> UObject* { return new UMockObjectChildA(); }
-			);
-			return &classInstance;
-		}
-		virtual FClassInfo* GetRuntimeClass() const
-		{
-			return GetClass();
-		}
+		REFLECT_CLASS(UMockObjectChildA, UMockObject);
 	};
 
 	class UMockObjectChildB : public UMockObject
 	{
-	public:
-		static FClassInfo* GetClass()
-		{
-			static FClassInfo classInstance = FClassInfo(
-				"UMockObjectChildB",
-				UMockObject::GetClass(),
-				[]() -> UObject* { return new UMockObjectChildB(); }
-			);
-			return &classInstance;
-		}
-		virtual FClassInfo* GetRuntimeClass() const
-		{
-			return GetClass();
-		}
+		REFLECT_CLASS(UMockObjectChildB, UMockObject);
 	};
 
 	TEST(TestUObject, WhenCreatingInstance_ReturnsCorrectType)

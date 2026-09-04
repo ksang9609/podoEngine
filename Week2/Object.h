@@ -49,3 +49,17 @@ public:
 
 protected:
 };
+
+#define REFLECT_CLASS(className, superClassName)									\
+public:																				\
+	static FClassInfo* GetClass()													\
+	{																				\
+		static FClassInfo classInstance = FClassInfo(								\
+			#className,																\
+			superClassName::GetClass(),												\
+			[]() -> UObject* { return new className(); }							\
+		);																			\
+		return &classInstance;														\
+	}																				\
+	virtual FClassInfo* GetRuntimeClass() const override { return GetClass(); }		\
+private:
