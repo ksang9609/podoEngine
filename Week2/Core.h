@@ -109,7 +109,6 @@ public:
 
 	bool operator== (const FString& str) const;
 
-
 private:
 	std::string mData;
 };

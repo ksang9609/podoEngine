@@ -1,4 +1,8 @@
-﻿#include "Object.h"
+﻿
+#include "Object.h"
+#include "EngineStatics.h"
+
+TArray<UObject*> UObject::GUObjectArray;
 
 UObject* FClassInfo::CreateInstance() const
 {
@@ -19,8 +23,19 @@ UObject* FObjectFactory::ConstructObject(FClassInfo* classInfo)
 }
 
 UObject::UObject()
-	: UUID(0), InternalIndex(0)
 {
+	UUID = UEngineStatics::GenerateUUID();
+	InternalIndex = GUObjectArray.Add(this);
+}
+
+UObject::~UObject()
+{
+	GUObjectArray.RemoveAt(InternalIndex, 1);
+
+	for (uint32 index = InternalIndex; index < GUObjectArray.Num(); ++index)
+	{
+		--(GUObjectArray[index]->InternalIndex);
+	}
 }
 
 FClassInfo* UObject::GetClass()

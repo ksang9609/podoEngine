@@ -1,4 +1,5 @@
 ﻿#include <windows.h>
+
 #include "URenderer.h"
 #include "Sphere.h"
 #include "Ball.h"
@@ -11,6 +12,33 @@
 #include "imGui/imgui_impl_win32.h"
 
 #include "Console.h"
+#include "Object.h"
+
+void* operator new(size_t size);
+void operator delete(void* deleteObject, size_t size);
+
+static uint32 sTotalAllocationCount;
+static uint32 sTotalAllocationBytes;
+
+void* operator new(size_t size)
+{
+	++sTotalAllocationCount;
+	sTotalAllocationBytes += static_cast<uint32>(size);
+
+	void* newObject = malloc(size);
+
+	return newObject;
+}
+
+void operator delete(void* deleteObject, size_t size)
+{
+	assert(deleteObject);
+
+	--sTotalAllocationCount;
+	sTotalAllocationBytes -= static_cast<uint32>(size);
+
+	free(deleteObject);
+}
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -86,6 +114,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	UFrameTimer FrameTimer(120);
 	UBall* ball = new UBall({ 0, 0, 0 }, { 0, 0, 0 }, 1.f);
+
 
 	// Main Loop
 	bool bIsExit = false;
