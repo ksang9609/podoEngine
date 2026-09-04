@@ -158,6 +158,7 @@ public:
         D3D11_RASTERIZER_DESC rasterizerdesc = {};
         rasterizerdesc.FillMode = D3D11_FILL_SOLID;
         rasterizerdesc.CullMode = D3D11_CULL_BACK;
+		rasterizerdesc.DepthClipEnable = TRUE;
 
         Device->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
     }
