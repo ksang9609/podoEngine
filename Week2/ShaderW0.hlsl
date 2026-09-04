@@ -1,7 +1,7 @@
 // ShaderW0.hlsl
 cbuffer constants : register(b0)
 {
-    float4x4 World;
+    row_major float4x4 World;
 }
 
 struct VS_INPUT

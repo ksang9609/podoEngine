@@ -9,5 +9,5 @@ void UBall::Move(float deltaTime)
 
 void UBall::SetRadius(float newRadius)
 {
-	Transform.Scale = newRadius;
+	//Transform.Scale = newRadius;
 }
