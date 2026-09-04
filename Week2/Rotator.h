@@ -17,7 +17,7 @@ struct TRotator
 	const FMatrix ToMatrix() const
 	{
 		//Pitch, Yaw, Roll의 각각 cossin 구하기
-		FMatrix Matrix = FMatrix::Zero;
+		FMatrix Matrix = FMatrix::Identity;
 		T cosP, cosY, cosR;
 		T sinP, sinY, sinR;
 
