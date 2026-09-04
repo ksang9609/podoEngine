@@ -79,7 +79,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 
 	UFrameTimer FrameTimer(120);
-	UBall* ball = new UBall(FTransform({-0.5,0,0}, {0, 0, 0}, {0.1, 0.5, 0.1}), FVector(0));
+	UBall* ball = new UBall(FTransform({0,0,0}, {0, 0, 0}, {0.3, 0.3, 0.3}), FVector(0));
 	FCamera* Camera = new FCamera(FTransform({ 0.5, 0.5, 0.5 }, {0, 0, 0}, {1, 1, 1}));
 
 	// Main Loop
