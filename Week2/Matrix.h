@@ -111,7 +111,7 @@ struct FMatrix {
 	}
 
 	static FMatrix Scale(float n) // scaling, 상수배
-	{
+	  {
 		FMatrix result = Identity;
 		result.M[0][0] = n;
 		result.M[1][1] = n;
