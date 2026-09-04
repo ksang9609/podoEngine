@@ -131,18 +131,18 @@ struct FMatrix {
 	static FMatrix Translation(const float n) // translate
 	{
 		FMatrix result = Identity;
-		result[0][0] = n;
-		result[1][1] = n;
-		result[2][2] = n;
+		result[3][0] = n;
+		result[3][1] = n;
+		result[3][2] = n;
 
 		return result;
 	}
 	static FMatrix Translation(const FVector v) // translate
 	{
 		FMatrix result = Identity;
-		result[0][0] = v.x;
-		result[1][1] = v.y;
-		result[2][2] = v.z;
+		result[3][0] = v.x;
+		result[3][1] = v.y;
+		result[3][2] = v.z;
 
 		return result;
 	}
