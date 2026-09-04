@@ -9,6 +9,15 @@ UObject* FClassInfo::CreateInstance() const
 	return nullptr;
 }
 
+UObject* FObjectFactory::ConstructObject(FClassInfo* classInfo)
+{
+	if (!classInfo || !classInfo->Constructor)
+	{
+		return nullptr;
+	}
+	return classInfo->CreateInstance();
+}
+
 UObject::UObject()
 	: UUID(0), InternalIndex(0)
 {

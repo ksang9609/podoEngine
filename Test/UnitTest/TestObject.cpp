@@ -79,4 +79,19 @@ namespace UObjectTest
 		EXPECT_FALSE(objChildB->IsA(UMockObjectChildA::GetClass()));
 		delete obj, objChildA, objChildB;
 	}
+
+	TEST(TestConstructObject, WhenConstructing_ReturnsCorrectType)
+	{
+		UObject* obj = FObjectFactory::ConstructObject(UMockObject::GetClass());
+		EXPECT_EQ(obj->GetRuntimeClass()->Name, UMockObject::GetClass()->Name);
+		delete obj;
+	}
+
+	TEST(TestConstructObject, WhenConstructingT_ReturnsCorrectType)
+	{
+		UMockObject* obj = FObjectFactory::ConstructObject<UMockObject>();
+		EXPECT_EQ(obj->GetRuntimeClass(), UMockObject::GetClass());
+		delete obj;
+	}
+
 }

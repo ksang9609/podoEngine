@@ -21,6 +21,17 @@ struct FClassInfo
 private:
 };
 
+struct FObjectFactory
+{
+	static UObject* ConstructObject(FClassInfo* classInfo);
+
+	template<typename TObject> requires std::derived_from<TObject, UObject>
+	static TObject* ConstructObject()
+	{
+		return static_cast<TObject*>(ConstructObject(TObject::GetClass()));
+	}
+};
+
 class UObject
 {
 public:
