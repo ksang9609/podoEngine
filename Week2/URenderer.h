@@ -134,15 +134,6 @@ public:
     {
         UINT numVertices = ByteWidth / sizeof(FVertexSimple);
 
-        float scaleMod = 0.1f;
-
-        for (UINT i = 0; i < numVertices; ++i)
-        {
-           vertices[i].x *= scaleMod;
-           vertices[i].y *= scaleMod;
-           vertices[i].z *= scaleMod;
-        }
-
         D3D11_BUFFER_DESC vertexbufferdesc = {};
         vertexbufferdesc.ByteWidth = ByteWidth;
         vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;

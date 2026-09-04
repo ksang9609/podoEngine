@@ -107,7 +107,7 @@ struct FMatrix {
 		return result;
 	}
 
-	FMatrix Scale(float n) // scaling, 상수배
+	static FMatrix Scale(float n) // scaling, 상수배
 	{
 		FMatrix result = Identity;
 		result.M[0][0] = n;
@@ -117,7 +117,7 @@ struct FMatrix {
 		return result;
 	}
 
-	FMatrix Scale(const FVector v) // scaling, xyz배율만큼
+	static FMatrix Scale(const FVector v) // scaling, xyz배율만큼
 	{
 		FMatrix result = Identity;
 		result.M[0][0] = v.x;
@@ -127,7 +127,7 @@ struct FMatrix {
 		return result;
 	}
 
-	FMatrix Translation(const FVector v) // translate
+	static FMatrix Translation(const FVector v) // translate
 	{
 		FMatrix result = Identity;
 		result.M[3][0] = v.x;
