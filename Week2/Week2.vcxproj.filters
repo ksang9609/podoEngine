@@ -92,7 +92,10 @@
     <ClInclude Include="FrameTimer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Test11.h">
+    <ClInclude Include="Core.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Colsole.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
