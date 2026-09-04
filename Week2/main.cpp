@@ -1,7 +1,7 @@
 ﻿#include <windows.h>
 #include "URenderer.h"
 #include "Sphere.h"
-#include "Ball.h"
+#include "Primitive.h"
 #include "FrameTimer.h"
 #include "Camera.h"
 
@@ -79,8 +79,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 
 	UFrameTimer FrameTimer(120);
-	UBall* ball = new UBall(FTransform({-0.5,0,0}, {0, 0, 0}, {0.1, 0.5, 0.1}), FVector(0));
+	Sphere* sphere = new Sphere(FTransform({-0.5,0,0}, {0, 0, 0}, {0.1, 0.5, 0.1}));
 	FCamera* Camera = new FCamera(FTransform({ 0.5, 0.5, 0.5 }, {0, 0, 0}, {1, 1, 1}));
+
+	FRotator LookAt = FRotator::LookAt(Camera->Transform.Location, sphere->Transform.Location);
+	Camera->Transform.Rotation = LookAt;
+
 
 	// Main Loop
 	bool bIsExit = false;
@@ -95,16 +99,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.PrepareShader();
 
 		//1. Local -> World
-		FMatrix World = ball->Transform.MakeMatrix();
-
-		//2. World -> View
-		FVector Forward = ball->Transform.Location - Camera->Transform.Location;
-		Forward.Normalize();
-		FVector Right = FVector::cross(FVector(0, 1, 0), Forward);
-		Right.Normalize();
-		FVector Up = FVector::cross(Forward, Right);
-
-		FMatrix View = FMatrix::Translation(-Camera->Transform.Location) * FMatrix::Rotate(Camera->Transform.Rotation).Transpose();
+		FMatrix World = sphere->Transform.MakeMatrix();
+		FMatrix View = Camera->Transform.InverseMatrix();
 
 		renderer.UpdateConstant(World, View);
 		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
@@ -129,7 +125,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		FrameTimer.EndFrame();
 	}
 
-	delete(ball);
+	delete(sphere);
+	delete(Camera);
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
