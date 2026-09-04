@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "Vector.h"
+#include "MathUtility.h"
+#include "Rotator.h"
 
 struct FMatrix { 
 	float M[4][4];
@@ -125,6 +127,32 @@ struct FMatrix {
 		result.M[2][2] = v.z;
 
 		return result;
+	}
+
+
+	static FMatrix Rotate(const FRotator r)
+	{
+		//Pitch, Yaw, Roll의 각각 cossin 구하기
+		FMatrix Matrix = FMatrix::Identity;
+		float cosP, cosY, cosR;
+		float sinP, sinY, sinR;
+
+		//도 -> 라디안 변환 후 sincos 호출
+		FMath::sincos<float>(sinP, cosP, r.Pitch * PI / 180);
+		FMath::sincos<float>(sinY, cosY, r.Yaw * PI / 180);
+		FMath::sincos<float>(sinR, cosR, r.Roll * PI / 180);
+
+		Matrix.M[0][0] = cosP * cosY;
+		Matrix.M[0][1] = cosP * sinY;
+		Matrix.M[0][2] = sinP;
+		Matrix.M[1][0] = sinR * sinP * cosY - cosR * sinY;
+		Matrix.M[1][1] = sinR * sinP * sinY + cosR * cosY;
+		Matrix.M[1][2] = -sinR * cosP;
+		Matrix.M[2][0] = -(cosR * sinP * cosY + sinR * sinY);
+		Matrix.M[2][1] = sinR * cosY - cosR * sinP * sinY;
+		Matrix.M[2][2] = cosR * cosP;
+
+		return Matrix;
 	}
 
 	static FMatrix Translation(const FVector v) // translate

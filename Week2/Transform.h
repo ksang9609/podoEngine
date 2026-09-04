@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Vector.h"
 #include "Rotator.h"
+#include "Matrix.h"
 
 struct FTransform
 {
@@ -15,6 +16,6 @@ struct FTransform
 
 	FMatrix MakeMatrix() const
 	{
-		return  FMatrix::Scale(Scale) * Rotation.ToMatrix() * FMatrix::Translation(Location);
+		return  FMatrix::Scale(Scale) * FMatrix::Rotate(Rotation) * FMatrix::Translation(Location);
 	}
 };
