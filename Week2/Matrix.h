@@ -8,6 +8,10 @@ struct FMatrix {
 
 	static const FMatrix Identity;
 	static const FMatrix Zero;
+
+	// 언리얼 좌표계(X 전방 / Y 우측 / Z 상방)를
+	// DirectX NDC(X 우측 / Y 위 / Z 화면 안쪽)로 바꾸는 축 교환 행렬.
+	static const FMatrix UEToDX;
 	
 
 	static FMatrix makeIdentity() // 단위행렬 만드는 함수
@@ -126,13 +130,6 @@ struct FMatrix {
 		return result;
 	}
 
-
-
-	// 각 축 단독 회전. 인자는 도(degree) 단위.
-	// 행벡터 규약(v' = v * M)이며, 언리얼과 맞추기 위해
-	// RotateX(Roll)와 RotateY(Pitch)는 표준 오른손 형태에서 sin 부호를 뒤집었다.
-	// RotateX(Roll) * RotateY(Pitch) * RotateZ(Yaw) == Rotate(FRotator) 가 성립한다.
-
 	static FMatrix RotateX(float degree) // Roll : X축 회전, yz평면
 	{
 		FMatrix result = Identity;
@@ -228,3 +225,10 @@ inline const FMatrix FMatrix::Zero = { {
 	{0, 0, 0, 0}
 } };
 
+
+inline const FMatrix FMatrix::UEToDX = { {
+	{0, 0, 1, 0},   // UE X(전방) -> DX Z(화면 안쪽)
+	{1, 0, 0, 0},   // UE Y(우측) -> DX X(우측)
+	{0, 1, 0, 0},   // UE Z(상방) -> DX Y(위)
+	{0, 0, 0, 1}
+} };

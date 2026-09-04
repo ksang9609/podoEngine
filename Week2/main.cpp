@@ -80,10 +80,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	UFrameTimer FrameTimer(120);
 	Sphere* sphere = new Sphere(FTransform({-0.5,0,0}, {0, 0, 0}, {0.1, 0.5, 0.1}));
-	FCamera* Camera = new FCamera(FTransform({ 0.5, 0.5, 0.5 }, {0, 0, 0}, {1, 1, 1}));
+	FCamera* Camera = new FCamera(FTransform({ -1.0, 0.3, 0.2 }, { 0, 0, 0 }, { 1, 1, 1 }));
 
-	FRotator LookAt = FRotator::LookAt(Camera->Transform.Location, sphere->Transform.Location);
-	Camera->Transform.Rotation = LookAt;
+	Camera->LookAt(sphere->Transform.Location);
 
 
 	// Main Loop
@@ -100,7 +99,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		//1. Local -> World
 		FMatrix World = sphere->Transform.MakeMatrix();
-		FMatrix View = Camera->Transform.InverseMatrix();
+		FMatrix View = Camera->GetViewMatrix();
 
 		renderer.UpdateConstant(World, View);
 		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
