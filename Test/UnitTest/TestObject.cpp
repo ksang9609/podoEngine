@@ -20,6 +20,21 @@ namespace UObjectTest
 		REFLECT_CLASS(UMockObjectChildB, UMockObject);
 	};
 
+	class UMockObjectParameter : public UObject
+	{
+		REFLECT_CLASS(UMockObjectParameter, UObject);
+
+	public:
+		void Initialize(int32 param1, int32 param2)
+		{
+			Param1 = param1;
+			Param2 = param2;
+		}
+
+		int32 Param1;
+		int32 Param2;
+	};
+
 	TEST(TestUObject, WhenCreatingInstance_ReturnsCorrectType)
 	{
 		UObject* obj = new UMockObject();
@@ -91,6 +106,19 @@ namespace UObjectTest
 	{
 		UMockObject* obj = FObjectFactory::ConstructObject<UMockObject>();
 		EXPECT_EQ(obj->GetRuntimeClass(), UMockObject::GetClass());
+		delete obj;
+	}
+
+	TEST(TestConstructObject, WhenConstructingTWithParameters_ReturnsCorrectTypeAndParameters)
+	{
+		int32 param1 = 42;
+		int32 param2 = 84;
+		UMockObjectParameter* obj = FObjectFactory::ConstructObject<UMockObjectParameter>(param1, param2);
+
+		EXPECT_EQ(obj->GetRuntimeClass(), UMockObjectParameter::GetClass());
+		EXPECT_EQ(obj->Param1, param1);
+		EXPECT_EQ(obj->Param2, param2);
+
 		delete obj;
 	}
 
