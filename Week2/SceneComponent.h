@@ -13,7 +13,7 @@ class USceneComponent : public UActorComponent
 public:
 	USceneComponent();
 
-	USceneComponent(FVector location, FRotator rotation, FVector scale3D);
+	void Initialize(FVector location, FRotator rotation, FVector scale3D);
 	virtual ~USceneComponent();
 
 	FVector GetRelativeLocation() const;

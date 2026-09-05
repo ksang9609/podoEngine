@@ -17,6 +17,7 @@
 #include "GraphicsManager.h"
 
 #include "CubeComponent.h"
+#include "SphereComponent.h"
 
 void* operator new(size_t size);
 void operator delete(void* deleteObject, size_t size);
@@ -112,6 +113,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplDX11_Init(renderer->Device, renderer->DeviceContext);
 
 	graphicsManager.CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
+	graphicsManager.CreateBuffer(EPrimitive::EP_Sphere, sphere_vertices, sizeof(sphere_vertices));
 
 	UFrameTimer FrameTimer(120);
 
@@ -128,15 +130,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	const FVector4 NearTint(1.0f,  0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint (0.25f, 0.55f, 1.0f,  0.85f); // 파랑 = 먼 쪽
 
-	UCubeComponent* nearCube = new UCubeComponent(&graphicsManager);
+	UCubeComponent* nearCube = FObjectFactory::ConstructObject<UCubeComponent>(&graphicsManager);
 	nearCube->SetRelativeLocation({ -0.2f, -0.2f,  -0.2f });
 	nearCube->SetRelativeRotation({ 0, 0, 0 });
 	nearCube->SetRelativeScale3D({ 0.4f, 0.4f, 0.4f });
 
-	UCubeComponent* farCube = new UCubeComponent(&graphicsManager);
+	UCubeComponent* farCube = FObjectFactory::ConstructObject<UCubeComponent>(&graphicsManager);
 	farCube->SetRelativeLocation({ 0.8f, -0.05f, -0.35f });
 	farCube->SetRelativeRotation({ 0, 0, 0 });
 	farCube->SetRelativeScale3D({ 0.8f, 0.8f, 0.8f });
+
+	USphereComponent* sphere = FObjectFactory::ConstructObject<USphereComponent>(&graphicsManager);
+	sphere->SetRelativeLocation({ 0.0f, 0.0f, 0.0f });
+	sphere->SetRelativeRotation({ 0, 0, 0 });
+	sphere->SetRelativeScale3D({ 1.0f, 1.0f, 1.0f });
 
 	// Main Loop
 	bool bIsExit = false;
@@ -156,6 +163,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			graphicsManager.Prepare();
 			nearCube->Render();
 			farCube->Render();
+			sphere->Render();
 
 			//ImGui
 			{
@@ -186,8 +194,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		FrameTimer.EndFrame();
 	}
 
-	delete(NearCube);
-	delete(FarCube);
+	delete sphere;
+	delete nearCube;
+	delete farCube;
+	delete NearCube;
+	delete FarCube;
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();

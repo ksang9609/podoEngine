@@ -5,9 +5,9 @@ UCubeComponent::UCubeComponent()
 {
 }
 
-UCubeComponent::UCubeComponent(GraphicsManager* graphicsManager)
-	: UPrimitiveComponent(graphicsManager, EPrimitive::EP_Cube)
+void UCubeComponent::Initialize(GraphicsManager* graphicsManager)
 {
+	UPrimitiveComponent::Initialize(graphicsManager, EPrimitive::EP_Cube);
 }
 
 UCubeComponent::~UCubeComponent()

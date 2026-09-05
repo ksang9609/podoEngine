@@ -4,10 +4,10 @@ UPrimitiveComponent::UPrimitiveComponent()
 {
 }
 
-UPrimitiveComponent::UPrimitiveComponent(GraphicsManager* graphicsManager, EPrimitive ePrimitive)
-	: mGraphicsManager(graphicsManager)
-	, mePrimitive(ePrimitive)
+void UPrimitiveComponent::Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive)
 {
+	mGraphicsManager = graphicsManager;
+	mePrimitive = ePrimitive;
 }
 
 UPrimitiveComponent::~UPrimitiveComponent()

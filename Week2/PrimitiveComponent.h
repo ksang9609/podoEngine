@@ -8,7 +8,7 @@ class UPrimitiveComponent : public USceneComponent
 public:
 	UPrimitiveComponent();
 
-	UPrimitiveComponent(GraphicsManager* graphicsManager, EPrimitive ePrimitive);
+	void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive);
 	virtual ~UPrimitiveComponent();
 
 	virtual void Render();
