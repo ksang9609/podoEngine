@@ -33,6 +33,14 @@ bool AActor::RemoveComponent(uint32 componentUUID)
 	return true;
 }
 
+void AActor::Render()
+{
+	for (UActorComponent* component : mComponents)
+	{
+		component->Render();
+	}
+}
+
 int32 AActor::getComponentIndex(uint32 componentUUID) const
 {
 	for (uint32 i = 0; i < mComponents.Num(); ++i)
