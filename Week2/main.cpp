@@ -212,6 +212,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
 
 			ImGui::Separator();
+			ImGui::SliderFloat("Speed", &Camera->Speed, -10.0f, 10.0f);
 			if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 			{
 				ImGui::Checkbox("Wire frame", &bwireFrame);
