@@ -11,6 +11,8 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 
+#include "Console.h"
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -69,6 +71,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	renderer.Create(hWnd);
 	renderer.CreateShader();
 	renderer.CreateConstantBuffer();
+
+	/* Console Window */
+	ConsoleWindow& console = ConsoleWindow::GetInstance();
+	console.Init("Jungle Console Window", 1024);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -131,8 +137,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			ImGui::Begin("Jungle Property Window");
-			ImGui::Text("Hello Jungle World!");
+			//	ImGui::Begin("Jungle Property Window");
+			//	ImGui::Text("Hello Jungle World!");
 
 			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
 
@@ -141,8 +147,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui::TextUnformatted(renderer.bDepthTestEnabled
 				? "ON : orange (near) stays in front"
 				: "OFF: blue (far, drawn last) overwrites");
-			ImGui::End();
 
+			ImGui::End();
+			console.Draw();
 			ImGui::Render();
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		}

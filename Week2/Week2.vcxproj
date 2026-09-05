@@ -102,7 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,6 +125,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Console.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
@@ -141,6 +142,8 @@
     <ClInclude Include="Cube.h" />
     <ClInclude Include="MathUtility.h" />
     <ClInclude Include="Matrix.h" />
+    <ClInclude Include="Console.h" />
+    <ClInclude Include="Core.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Primitive.h" />
     <ClInclude Include="Projection.h" />
