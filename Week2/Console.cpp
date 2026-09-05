@@ -25,14 +25,14 @@ void ConsoleWindow::Init(std::string_view title, int maxLines)
 
 void ConsoleWindow::Draw()
 {
-	ImGui::Begin(mTitle.c_str());
+	ImGui::Begin(mTitle.CStr());
 
 	// Draw console buffer
 	if (ImGui::BeginChild("ConsoleMessage", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true))
 	{
 		for (const auto& message : mConsoleBuffer)
 		{
-			ImGui::TextUnformatted(message.c_str());
+			ImGui::TextUnformatted(message.CStr());
 		}
 	}
 

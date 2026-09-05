@@ -1,5 +1,12 @@
 ﻿#include <windows.h>
 
+#include "Sphere.h"
+#include "Renderer.h"
+#include "Cube.h"
+#include "Primitive.h"
+#include "FrameTimer.h"
+#include "Camera.h"
+
 #include "WindowApplication.h"
 #include "LaunchEngineLoop.h"
 
@@ -7,6 +14,38 @@ enum : UINT_PTR
 {
 	RESIZE_TIMER_ID = 1,
 };
+#include "Console.h"
+#include "Object.h"
+#include "GraphicsManager.h"
+
+#include "CubeComponent.h"
+#include "SphereComponent.h"
+
+void* operator new(size_t size);
+void operator delete(void* deleteObject, size_t size);
+
+static uint32 sTotalAllocationCount;
+static uint32 sTotalAllocationBytes;
+
+void* operator new(size_t size)
+{
+	++sTotalAllocationCount;
+	sTotalAllocationBytes += static_cast<uint32>(size);
+
+	void* newObject = malloc(size);
+
+	return newObject;
+}
+
+void operator delete(void* deleteObject, size_t size)
+{
+	assert(deleteObject);
+
+	--sTotalAllocationCount;
+	sTotalAllocationBytes -= static_cast<uint32>(size);
+
+	free(deleteObject);
+}
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -109,6 +148,60 @@ void ProcessMessage(bool& bIsExit)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	GEngineLoop.Init(hInstance, WndProc);
+
+	HWND hWnd = CreateWindowExW(0, WindowClass, Title, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024,
+		nullptr, nullptr, hInstance, nullptr);
+
+
+	GraphicsManager graphicsManager(hWnd);
+	URenderer* renderer = graphicsManager.GetRenderer();
+
+	RAWINPUTDEVICE rid = {};
+	rid.usUsagePage = 0x01;		// Generic Desktop
+	rid.usUsage = 0x02;			// Mouse
+	rid.dwFlags = 0;		// 포커스 있을 때만 수신
+	rid.hwndTarget = hWnd;
+	RegisterRawInputDevices(&rid, 1, sizeof(rid));
+
+	/* Console Window */
+	ConsoleWindow& console = ConsoleWindow::GetInstance();
+	console.Init("Jungle Console Window", 1024);
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui_ImplWin32_Init((void*)hWnd);
+	ImGui_ImplDX11_Init(renderer->Device, renderer->DeviceContext);
+
+	graphicsManager.CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
+	graphicsManager.CreateBuffer(EPrimitive::EP_Sphere, sphere_vertices, sizeof(sphere_vertices));
+
+	UFrameTimer FrameTimer(120);
+
+	Sphere* NearCube = new Sphere(FTransform({ -0.2f, -0.2f,  -0.2f  }, { 0, 0, 0 }, { 0.4f, 0.4f, 0.4f }));
+	Sphere* FarCube  = new Sphere(FTransform({  0.8f, -0.05f, -0.35f }, { 0, 0, 0 }, { 0.8f, 0.8f, 0.8f }));
+
+	const FVector4 NearTint(1.0f,  0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
+	const FVector4 FarTint (0.25f, 0.55f, 1.0f,  0.85f); // 파랑 = 먼 쪽
+
+
+	UCubeComponent* nearCube = FObjectFactory::ConstructObject<UCubeComponent>(&graphicsManager);
+	nearCube->SetRelativeLocation({ -0.2f, -0.2f,  -0.2f });
+	nearCube->SetRelativeRotation({ 0, 0, 0 });
+	nearCube->SetRelativeScale3D({ 0.4f, 0.4f, 0.4f });
+
+	bool bWireFrame = false;
+
+	UCubeComponent* farCube = FObjectFactory::ConstructObject<UCubeComponent>(&graphicsManager);
+	farCube->SetRelativeLocation({ 0.8f, -0.05f, -0.35f });
+	farCube->SetRelativeRotation({ 0, 0, 0 });
+	farCube->SetRelativeScale3D({ 0.8f, 0.8f, 0.8f });
+
+	USphereComponent* sphere = FObjectFactory::ConstructObject<USphereComponent>(&graphicsManager);
+	sphere->SetRelativeLocation({ 0.0f, 0.0f, 0.0f });
+	sphere->SetRelativeRotation({ 0, 0, 0 });
+	sphere->SetRelativeScale3D({ 1.0f, 1.0f, 1.0f });
 
 	// Main Loop
 	bool bIsExit = false;

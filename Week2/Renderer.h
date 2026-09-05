@@ -8,7 +8,6 @@
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
-
 // 1. Define the triangle vertices
 struct FVertexSimple
 {
@@ -356,7 +355,24 @@ public:
 		if (DepthStencilState) { DepthStencilState->Release();  DepthStencilState = nullptr; }
 	}
 
-    void UpdateConstant(FMatrix World, FMatrix ViewProjection)
+	void UpdateConstant(FMatrix world, FMatrix viewProjection)
+	{
+		if (ConstantBuffer)
+		{
+			D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+
+			DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+			FConstants* constants = (FConstants*)constantbufferMSR.pData;
+			{
+				constants->World = world;
+				constants->ViewProjection = viewProjection;
+			}
+			DeviceContext->Unmap(ConstantBuffer, 0);
+		}
+	}
+
+	/*
+    void UpdateConstantWorld(FMatrix World)
     {
         if (ConstantBuffer)
         {
@@ -366,11 +382,26 @@ public:
             FConstants* constants = (FConstants*)constantbufferMSR.pData;
             {
 				constants->World = World;
+            }
+            DeviceContext->Unmap(ConstantBuffer, 0);
+        }
+    }
+
+	void UpdateConstantViewProjection(FMatrix ViewProjection)
+	{
+		if (ConstantBuffer)
+		{
+			D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+
+			DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+			FConstants* constants = (FConstants*)constantbufferMSR.pData;
+			{
 				constants->ViewProjection = ViewProjection;
             }
             DeviceContext->Unmap(ConstantBuffer, 0);
         }
     }
+    */
 
 	void OnResize(UINT Width, UINT Height)
 	{
