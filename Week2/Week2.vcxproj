@@ -134,12 +134,13 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="URenderer.cpp" />
+    <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="Cube.h" />
+    <ClInclude Include="InputState.h" />
     <ClInclude Include="MathUtility.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Console.h" />
@@ -157,8 +158,9 @@
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Transform.h" />
-    <ClInclude Include="URenderer.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="Vector.h" />
+    <ClInclude Include="WindowApplication.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">

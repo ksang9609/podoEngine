@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include "Transform.h"
-#include "URenderer.h"
 #include <cmath>
 #include "Vector.h"
 #define PI 3.141592
 
+#include "Renderer.h"
 class FCamera
 {
 public:
@@ -45,15 +45,15 @@ public:
 		return result;
 	}
 
-	FVector* GetCameraLocationPointer()
+	void Rotate(long Dx, long Dy)
 	{
-		return &Transform.Location;
+		Transform.Rotation.Yaw += Dx * Sensitivity;
+		Transform.Rotation.Pitch -= Dy * Sensitivity;
 	}
 
-	FRotator* GetCameraRotationPointer()
-	{
-		return &Transform.Rotation;
-		
-	}
-	
+
+	void SetSensitivity(float _v) { Sensitivity = _v; }
+
+private:
+	float Sensitivity = 0.1f;
 };
