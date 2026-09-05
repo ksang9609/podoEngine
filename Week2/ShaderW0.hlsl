@@ -1,8 +1,9 @@
 // ShaderW0.hlsl
 cbuffer constants : register(b0)
 {
-    float3 Offset;
-    float Radius;
+    row_major float4x4 World;
+    row_major float4x4 ViewProjection;
+    float4 Tint; // rgb = 덧입힐 색, a = 섞는 비율(0 이면 정점 색 그대로)
 }
 
 struct VS_INPUT
@@ -21,11 +22,10 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
     
-    // 상수버퍼를 통해 넘겨 받은 Offset을 더해서 버텍스를 이동 시켜 픽셀쉐이더로 넘김
-    output.position = float4(input.position.xyz * Radius + Offset, 1.0f);
+    output.position = mul(mul(float4(input.position.xyz, 1.0f), World), ViewProjection);
     
-    // Pass the color to the pixel shader
-    output.color = input.color;
+    // 큐브 면 색을 Tint 쪽으로 섞어서, 같은 정점 버퍼로도 오브젝트를 구분할 수 있게 한다
+    output.color = float4(lerp(input.color.rgb, Tint.rgb, Tint.a), 1.0f);
     
     return output;
 }

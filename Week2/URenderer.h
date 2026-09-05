@@ -2,7 +2,7 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
-#include "FVector.h"
+#include "Matrix.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
@@ -18,8 +18,9 @@ struct FVertexSimple
 
 struct FConstants
 {
-    FVector Offset;
-    float Radius;
+	FMatrix World; //Model
+	FMatrix ViewProjection;
+
 };
 
 
@@ -34,6 +35,9 @@ public:
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
     ID3D11RasterizerState* RasterizerState = nullptr;
     ID3D11Buffer* ConstantBuffer = nullptr;
+	ID3D11Texture2D* DepthStencilBuffer = nullptr;		// 실제 깊이값이 저장될 메모리
+	ID3D11DepthStencilView* DepthStencilView = nullptr;  // 그 메모리를 "출력 대상"으로 보는 뷰
+	ID3D11DepthStencilState* DepthStencilState = nullptr;  // 깊이 테스트 규칙(켬/끔, 비교 함수)
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
     D3D11_VIEWPORT ViewportInfo;
@@ -44,15 +48,14 @@ public:
     unsigned int Stride;
 
 public:
-    void Create(HWND hWindow)
-    {
-        CreateDeviceAndSwapChain(hWindow);
-
-        CreateFrameBuffer();
-
-        CreateRasterizerState();
-
-    }
+	void Create(HWND hWindow)
+	{
+		CreateDeviceAndSwapChain(hWindow);   // ViewportInfo가 여기서 채워짐
+		CreateFrameBuffer();
+		CreateDepthStencilBuffer();          // ← ViewportInfo를 쓰므로 반드시 위 두 개 뒤
+		CreateDepthStencilState();
+		CreateRasterizerState();
+	}
 
     void CreateDeviceAndSwapChain(HWND hWindow)
     {
@@ -133,16 +136,7 @@ public:
 
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth)
     {
-        UINT numVertices = sizeof(vertices) / sizeof(FVertexSimple);
-
-        float scaleMod = 0.1f;
-
-        for (UINT i = 0; i < numVertices; ++i)
-        {
-           vertices[i].x *= scaleMod;
-           vertices[i].y *= scaleMod;
-           vertices[i].z *= scaleMod;
-        }
+        UINT numVertices = ByteWidth / sizeof(FVertexSimple);
 
         D3D11_BUFFER_DESC vertexbufferdesc = {};
         vertexbufferdesc.ByteWidth = ByteWidth;
@@ -167,6 +161,7 @@ public:
         D3D11_RASTERIZER_DESC rasterizerdesc = {};
         rasterizerdesc.FillMode = D3D11_FILL_SOLID;
         rasterizerdesc.CullMode = D3D11_CULL_BACK;
+		rasterizerdesc.DepthClipEnable = TRUE;
 
         Device->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
     }
@@ -186,6 +181,7 @@ public:
 
         DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
+		ReleaseDepthStencilBuffer();
         ReleaseFrameBuffer();
         ReleaseDeviceAndSwapChain();
     }
@@ -245,15 +241,22 @@ public:
 
     void Prepare()
     {
-        DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
-            
-        DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 
-        DeviceContext->RSSetViewports(1, &ViewportInfo);
-        DeviceContext->RSSetState(RasterizerState);
+		//매 프레임 깊이 버퍼를 1.0(가장 먼 값)으로 초기화
+		DeviceContext->ClearDepthStencilView(DepthStencilView,
+			D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-        DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
-        DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		DeviceContext->RSSetViewports(1, &ViewportInfo);
+		DeviceContext->RSSetState(RasterizerState);
+
+		//세 번째 인자에 nullptr 대신 DSV를 넘긴다
+		DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
+		//깊이 테스트 규칙 적용
+		DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+		DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
     }
 
     void PrepareShader()
@@ -298,7 +301,47 @@ public:
         }
     }
 
-    void UpdateConstant(FVector Offset, float Radius)
+	void CreateDepthStencilBuffer()
+	{
+		D3D11_TEXTURE2D_DESC desc = {};
+		desc.Width = (UINT)ViewportInfo.Width;   // 백버퍼와 크기가 정확히 같아야 함
+		desc.Height = (UINT)ViewportInfo.Height;
+		desc.MipLevels = 1;
+		desc.ArraySize = 1;
+		desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;  // 깊이 24비트 + 스텐실 8비트
+		desc.SampleDesc.Count = 1;                    // 스왑체인의 SampleDesc와 반드시 동일
+		desc.SampleDesc.Quality = 0;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;    // 이 플래그가 없으면 DSV 생성 실패
+
+		Device->CreateTexture2D(&desc, nullptr, &DepthStencilBuffer);
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC dsvdesc = {};
+		dsvdesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		dsvdesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+
+		Device->CreateDepthStencilView(DepthStencilBuffer, &dsvdesc, &DepthStencilView);
+	}
+
+	void CreateDepthStencilState()
+	{
+		D3D11_DEPTH_STENCIL_DESC desc = {};
+		desc.DepthEnable = TRUE;                          // 깊이 테스트 켜기
+		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;    // 통과한 픽셀의 z를 기록
+		desc.DepthFunc = D3D11_COMPARISON_LESS;         // 더 가까우면(작으면) 통과
+		desc.StencilEnable = FALSE;
+
+		Device->CreateDepthStencilState(&desc, &DepthStencilState);
+	}
+
+	void ReleaseDepthStencilBuffer()
+	{
+		if (DepthStencilView) { DepthStencilView->Release();   DepthStencilView = nullptr; }
+		if (DepthStencilBuffer) { DepthStencilBuffer->Release(); DepthStencilBuffer = nullptr; }
+		if (DepthStencilState) { DepthStencilState->Release();  DepthStencilState = nullptr; }
+	}
+
+    void UpdateConstant(FMatrix World, FMatrix ViewProjection)
     {
         if (ConstantBuffer)
         {
@@ -307,8 +350,8 @@ public:
             DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
             FConstants* constants = (FConstants*)constantbufferMSR.pData;
             {
-                constants->Offset = Offset;
-                constants->Radius = Radius;
+				constants->World = World;
+				constants->ViewProjection = ViewProjection;
             }
             DeviceContext->Unmap(ConstantBuffer, 0);
         }
