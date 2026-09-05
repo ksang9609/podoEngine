@@ -8,15 +8,19 @@ class UPrimitiveComponent : public USceneComponent
 public:
 	UPrimitiveComponent();
 
-	void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive);
-	void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D);
+	//void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive);
+	//void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D);
+
+	void Initialize(EPrimitive ePrimitive);
+	void Initialize(EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D);
 
 	virtual ~UPrimitiveComponent();
 
-	virtual void Render();
+	//virtual void Render();
+	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) override;
 
 protected:
-	GraphicsManager* mGraphicsManager;
+	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
 };
 

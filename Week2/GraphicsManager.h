@@ -3,10 +3,11 @@
 #include "Matrix.h"
 #include "Enum.h"
 
+#include "TArray.h"
 #include "TMap.h"
 #include "Renderer.h"
-#include "Transform.h"
 #include "Camera.h"
+#include "RenderInfo.h"
 
 struct FBuffer
 {
@@ -21,9 +22,12 @@ public:
 	~GraphicsManager();
 
 	void Prepare(bool bWireFrame);
-	void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive);
+	//void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive); // FRenderInfo
+	void Render(const TArray<FRenderInfo> renderInfos); // FRenderInfo
+
 	void Display();
 	void Update(float deltaTime);
+
 	FCamera* GetCamera() { return mCamera; }
 	float GetAspect() const { return mAspect; }
 	float GetFov() const { return mFovDegree; }
@@ -34,11 +38,11 @@ public:
 
 private:
 	URenderer* mRenderer;
-	FCamera* mCamera;
 	FMatrix mViewProjectionMatrix;
 
 	TMap<EPrimitive, FBuffer> mBufferMap;
 
+	FCamera* mCamera;
 	float mAspect;
 	float mFovDegree;
 };

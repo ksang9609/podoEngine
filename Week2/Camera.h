@@ -55,4 +55,7 @@ public:
 	FVector Velocity = FVector(0);
 private:
 	float Sensitivity = 0.1f;
+
+
+
 };

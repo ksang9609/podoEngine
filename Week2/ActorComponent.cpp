@@ -9,10 +9,12 @@ UActorComponent::~UActorComponent()
 {
 }
 
+/*
 void UActorComponent::Update()
 {
 }
+*/
 
-void UActorComponent::Render()
+void UActorComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos)
 {
 }

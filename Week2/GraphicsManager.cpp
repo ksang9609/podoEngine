@@ -50,6 +50,18 @@ void GraphicsManager::Prepare(bool bWireFrame)
 	//mRenderer->UpdateConstantViewProjection(viewProjection);
 }
 
+void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
+{
+	for (const FRenderInfo& renderInfo : renderInfos)
+	{
+		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix);
+
+		FBuffer vertexBuffer = mBufferMap[renderInfo.ePrimitive];
+		mRenderer->RenderPrimitive(vertexBuffer.Buffer, vertexBuffer.SourceNum);
+	}
+}
+
+/*
 void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimitive)
 {
 	mRenderer->UpdateConstant(worldTransformMatrix.MakeMatrix(), mViewProjectionMatrix);
@@ -57,6 +69,7 @@ void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimit
 	FBuffer vertexBuffer = mBufferMap[ePrimitive];
 	mRenderer->RenderPrimitive(vertexBuffer.Buffer, vertexBuffer.SourceNum);
 }
+*/
 
 void GraphicsManager::Display()
 {

@@ -1,4 +1,5 @@
-﻿#include "Actor.h"
+﻿
+#include "Actor.h"
 
 AActor::AActor()
 {
@@ -33,11 +34,18 @@ bool AActor::RemoveComponent(uint32 componentUUID)
 	return true;
 }
 
+/*
 void AActor::Render()
+{
+
+}
+*/
+
+void AActor::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos)
 {
 	for (UActorComponent* component : mComponents)
 	{
-		component->Render();
+		component->GetRenderInfos(outRenderInfos);
 	}
 }
 

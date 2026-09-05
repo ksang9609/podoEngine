@@ -1,4 +1,14 @@
-﻿#include "World.h"
+﻿
+#include "World.h"
+#include "RenderInfo.h"
+
+UWorld::~UWorld()
+{
+	for (AActor* removeActor : mActors)
+	{
+		delete removeActor;
+	}
+}
 
 void UWorld::AddActor(AActor* actor)
 {
@@ -21,6 +31,25 @@ bool UWorld::RemoveActor(uint32 componentUUID)
 	return true;
 }
 
+const TArray<FRenderInfo> UWorld::GetRenderInfos()
+{
+	return mRenderInfos;
+}
+
+void UWorld::Update()
+{
+	mRenderInfos.Reset(DEFAULT_RESERVE_MEM);
+
+	for (AActor* actor : mActors)
+	{
+		// Update actors
+
+		//
+		actor->GetRenderInfos(&mRenderInfos);
+	}
+}
+
+/*
 void UWorld::Render()
 {
 	for (AActor* actor : mActors)
@@ -28,6 +57,7 @@ void UWorld::Render()
 		actor->Render();
 	}
 }
+*/
 
 int32 UWorld::getActorIndex(uint32 actorUUID) const
 {

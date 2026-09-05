@@ -14,6 +14,8 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
+#include "Actor.h"
+#include "World.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -33,7 +35,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	rid.hwndTarget = hWnd;
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
-	GM = new GraphicsManager(hWnd);
+	mGraphicsManager = new GraphicsManager(hWnd);
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
@@ -42,9 +44,9 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
-	ImGui_ImplDX11_Init(GM->GetRenderer()->Device, GM->GetRenderer()->DeviceContext);
+	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
 
-	GM->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
+	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 
 	UFrameTimer FrameTimer(120);
 
@@ -52,6 +54,13 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
 	bwireFrame = false;
+
+	UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
+	AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
+	cubeActor->AddComponent(cubeComonent);
+
+	mWorld = FObjectFactory::ConstructObject<UWorld>();
+	mWorld->AddActor(cubeActor);
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
@@ -67,18 +76,15 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	WindowApplication.ProcessDeferredEvents();
 	if (WindowApplication.bPendingResize)
 	{
-		GM->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
+		mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
 		WindowApplication.bPendingResize = false;
 	}
 
-	GM->Update(deltaTime);
-	GM->Prepare(bwireFrame);
+	mWorld->Update();
+	mGraphicsManager->Update(deltaTime);
 
-	UCubeComponent* Comp = FObjectFactory::ConstructObject<UCubeComponent>(GM, FVector(0), FRotator(), FVector(1));
-	if (Comp)
-	{
-		Comp->Render();
-	}
+	mGraphicsManager->Prepare(bwireFrame);
+	mGraphicsManager->Render(mWorld->GetRenderInfos());
 
 	//ImGui
 	{
@@ -139,11 +145,10 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	}
 
-	GM->Display();
+	mGraphicsManager->Display();
 	FrameTimer.EndFrame();
 
 	GInTick = false;
-	delete Comp;
 }
 
 void FEngineLoop::End()
@@ -153,5 +158,5 @@ void FEngineLoop::End()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	delete GM;
+	delete mGraphicsManager;
 }

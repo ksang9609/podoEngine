@@ -3,6 +3,9 @@
 #include <Windows.h>
 #include "FrameTimer.h"
 #include "FEditorViewportClient.h"
+#include "Camera.h"
+#include "Renderer.h"
+#include "World.h"
 
 #include <d3d11.h>
 
@@ -20,11 +23,13 @@ public:
 	void End();
 
 private:
+	// Todo: Make as pointer
 	UFrameTimer FrameTimer;
-	GraphicsManager *GM;
 	bool bwireFrame = false;
 	bool GInTick = false;
 	FEditorViewportClient ViewportClient;
+	GraphicsManager* mGraphicsManager;
+	UWorld* mWorld;
 };
 
-inline FEngineLoop GEngineLoop;
+//inline FEngineLoop GEngineLoop;
