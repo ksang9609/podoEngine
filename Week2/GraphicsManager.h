@@ -32,6 +32,7 @@ public:
 private:
 	URenderer* mRenderer;
 	FCamera* mCamera;
+	FMatrix mViewProjectionMatrix;
 
 	TMap<EPrimitive, FBuffer> mBufferMap;
 

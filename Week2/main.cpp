@@ -128,10 +128,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	const FVector4 NearTint(1.0f,  0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint (0.25f, 0.55f, 1.0f,  0.85f); // 파랑 = 먼 쪽
 
-	UCubeComponent* cube = new UCubeComponent(&graphicsManager);
-	cube->SetRelativeLocation({ -0.2f, -0.2f,  -0.2f });
-	cube->SetRelativeRotation({ 0, 0, 0 });
-	cube->SetRelativeScale3D({ 0.4f, 0.4f, 0.4f });
+	UCubeComponent* nearCube = new UCubeComponent(&graphicsManager);
+	nearCube->SetRelativeLocation({ -0.2f, -0.2f,  -0.2f });
+	nearCube->SetRelativeRotation({ 0, 0, 0 });
+	nearCube->SetRelativeScale3D({ 0.4f, 0.4f, 0.4f });
+
+	UCubeComponent* farCube = new UCubeComponent(&graphicsManager);
+	farCube->SetRelativeLocation({ 0.8f, -0.05f, -0.35f });
+	farCube->SetRelativeRotation({ 0, 0, 0 });
+	farCube->SetRelativeScale3D({ 0.8f, 0.8f, 0.8f });
 
 	// Main Loop
 	bool bIsExit = false;
@@ -149,7 +154,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// GraphicsManager.Render()
 		{
 			graphicsManager.Prepare();
-			cube->Render();
+			nearCube->Render();
+			farCube->Render();
 
 			//ImGui
 			{
