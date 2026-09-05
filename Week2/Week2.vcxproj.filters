@@ -194,9 +194,6 @@
     <ClInclude Include="WindowApplication.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="enum.h">
-      <Filter>리소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="LaunchEngineLoop.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>	

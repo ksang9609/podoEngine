@@ -23,10 +23,13 @@ public:
 	void Prepare(bool bWireFrame);
 	void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive);
 	void Display();
+	void Update(float deltaTime);
+	FCamera* GetCamera() { return mCamera; }
+	float GetAspect() const { return mAspect; }
+	float GetFov() const { return mFovDegree; }
 
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
-
 	URenderer* GetRenderer() const;
 
 private:
@@ -37,5 +40,5 @@ private:
 	TMap<EPrimitive, FBuffer> mBufferMap;
 
 	float mAspect;
-	float mFovRad;
+	float mFovDegree;
 };

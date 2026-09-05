@@ -8,6 +8,7 @@
 #include <d3d11.h>
 
 class Sphere;
+class GraphicsManager;
 
 class FEngineLoop
 {
@@ -21,15 +22,8 @@ public:
 
 private:
 	UFrameTimer FrameTimer;
-	FCamera Camera;
-	URenderer renderer;
+	GraphicsManager *GM;
 	bool bwireFrame = false;
-	float fovDegree = 60.0f;   // 60도
-	Sphere* NearCube = nullptr;
-	Sphere* FarCube = nullptr;
-	UINT numVerticesCube;
-	ID3D11Buffer* vertexBufferCube;
-
 	bool GInTick = false;
 };
 

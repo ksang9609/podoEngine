@@ -260,7 +260,7 @@ public:
 
 		DeviceContext->RSSetViewports(1, &ViewportInfo);
 
-			DeviceContext->RSSetState(RasterizerState[bWireFrame ? 1 : 0]);
+		DeviceContext->RSSetState(RasterizerState[bWireFrame ? 1 : 0]);
 
 		//세 번째 인자에 nullptr 대신 DSV를 넘긴다
 		DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);

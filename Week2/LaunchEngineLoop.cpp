@@ -7,8 +7,9 @@
 #include "Camera.h"
 #include "Transform.h"
 #include "Cube.h"
-#include "Primitive.h"
 #include "Console.h"
+#include "GraphicsManager.h"
+#include "CubeComponent.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -32,9 +33,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	rid.hwndTarget = hWnd;
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
-	renderer.Create(hWnd);
-	renderer.CreateShader();
-	renderer.CreateConstantBuffer();
+	GM = new GraphicsManager(hWnd);
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
@@ -43,23 +42,16 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
-	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
+	ImGui_ImplDX11_Init(GM->GetRenderer()->Device, GM->GetRenderer()->DeviceContext);
 
-	numVerticesCube = sizeof(Cube_vertices) / sizeof(FVertexSimple);
-	vertexBufferCube = renderer.CreateVertexBuffer(Cube_vertices, sizeof(Cube_vertices));
+	GM->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 
 	UFrameTimer FrameTimer(120);
-
-	NearCube = new Sphere(FTransform({ -0.2f, -0.2f,  -0.2f }, { 0, 0, 0 }, { 0.4f, 0.4f, 0.4f }));
-	FarCube = new Sphere(FTransform({ 0.8f, -0.05f, -0.35f }, { 0, 0, 0 }, { 0.8f, 0.8f, 0.8f }));
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
-	Camera.Transform = FTransform({ -2.0f, 1.0f, 1.0f }, { 0, 30, 0 }, { 1, 1, 1 });
-	Camera.LookAt({ 0, 0, 0 });   // NearCube 의 중심
-	float fovDegree = 60.0f;   // 60도
-	bool bwireFrame = false;
+	bwireFrame = false;
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
@@ -70,71 +62,23 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	FrameTimer.StartFrame();
 	float deltaTime = FrameTimer.GetDeltaTime();
 
-	ImGuiIO& io = ImGui::GetIO();
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
 	WindowApplication.ProcessDeferredEvents();
 	if (WindowApplication.bPendingResize)
 	{
-		renderer.OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
+		GM->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
 		WindowApplication.bPendingResize = false;
 	}
 
-	//CameraMove
+	GM->Update(deltaTime);
+	GM->Prepare(bwireFrame);
+
+	UCubeComponent* Comp = FObjectFactory::ConstructObject<UCubeComponent>(GM, FVector(0), FRotator(), FVector(1));
+	if (Comp)
 	{
-		const FInputState& Input = WindowApplication.Input;
-
-		// 회전을 이동보다 먼저 — 이번 프레임에 돌린 방향으로 바로 움직이게
-		if (!io.WantCaptureMouse && Input.IsDown(VK_RBUTTON))
-		{
-			Camera.Rotate(Input.MouseDX, Input.MouseDY);
-		}
-
-		if (!io.WantCaptureMouse && Input.MouseWheelDelta != 0.0f)
-		{
-			Camera.Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
-			Camera.Speed = FMath::Clamp(Camera.Speed, 0.1f, 100.0f);
-		}
-
-		if (!io.WantCaptureKeyboard)
-		{
-			const FMatrix R = FMatrix::Rotate(Camera.Transform.Rotation);
-			const FVector Forward = R.GetUnitAxis(EAxis::X);
-			const FVector Right = R.GetUnitAxis(EAxis::Y);
-
-			FVector MoveInput(0.f, 0.f, 0.f);
-			if (Input.IsDown('W')) MoveInput += Forward;
-			if (Input.IsDown('S')) MoveInput -= Forward;
-			if (Input.IsDown('D')) MoveInput += Right;
-			if (Input.IsDown('A')) MoveInput -= Right;
-			if (Input.IsDown('E')) MoveInput += FVector(0.f, 0.f, 1.f);   // 상승은 월드 업 기준
-			if (Input.IsDown('Q')) MoveInput -= FVector(0.f, 0.f, 1.f);
-
-			if (MoveInput.Length() > SMALL_NUMBER)
-			{
-				MoveInput.Normalize();
-				Camera.Velocity = MoveInput * Camera.Speed;
-				Camera.Transform.Location += Camera.Velocity * deltaTime;
-			}
-		}
+		Comp->Render();
 	}
-
-	const float aspect = renderer.ViewportInfo.Width / renderer.ViewportInfo.Height;
-
-	renderer.Prepare(bwireFrame);
-	renderer.PrepareShader();
-
-	FMatrix View = Camera.GetViewMatrix();
-	FMatrix Projection = Camera.GetProjectionMatrix(aspect, fovDegree, 0.1f, 100.0f);
-	FMatrix ViewProjection = View * Projection;
-
-	// 깊이 테스트가 켜져 있으면 나중에 그린 FarCube 가 깊이 비교에서 탈락해
-	// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
-	renderer.UpdateConstant(NearCube->Transform.MakeMatrix(), ViewProjection);
-	renderer.RenderPrimitive(vertexBufferCube, numVerticesCube);
-
-	renderer.UpdateConstant(FarCube->Transform.MakeMatrix(), ViewProjection);
-	renderer.RenderPrimitive(vertexBufferCube, numVerticesCube);
 
 	//ImGui
 	{
@@ -147,7 +91,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
 
 		ImGui::Separator();
-		ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
+		//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
 		if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 		{
 			ImGui::Checkbox("Wire frame", &bwireFrame);
@@ -155,7 +99,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		}
 		ImGui::Text("FOV     ");
 		ImGui::SameLine();
-		ImGui::SliderFloat("##FOV", &fovDegree, 0.0f, 180.0f);
+		//ImGui::SliderFloat("##FOV", &fovDegree, 0.0f, 180.0f);
 
 		// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
 		ImGui::Text("Location");
@@ -165,25 +109,25 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		const float spacing = ImGui::GetStyle().ItemSpacing.x;
 		const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
 
-		ImGui::SetNextItemWidth(itemWidth);
-		ImGui::DragFloat("##CamLocX", &Camera.Transform.Location.x, -10.0f, 10.0f);
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(itemWidth);
-		ImGui::DragFloat("##CamLocY", &Camera.Transform.Location.y, -10.0f, 10.0f);
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(itemWidth);
-		ImGui::DragFloat("##CamLocZ", &Camera.Transform.Location.z, -10.0f, 10.0f);
+		//ImGui::SetNextItemWidth(itemWidth);
+		//ImGui::DragFloat("##CamLocX", &Camera.Transform.Location.x, -10.0f, 10.0f);
+		//ImGui::SameLine();
+		//ImGui::SetNextItemWidth(itemWidth);
+		//ImGui::DragFloat("##CamLocY", &Camera.Transform.Location.y, -10.0f, 10.0f);
+		//ImGui::SameLine();
+		//ImGui::SetNextItemWidth(itemWidth);
+		//ImGui::DragFloat("##CamLocZ", &Camera.Transform.Location.z, -10.0f, 10.0f);
 
-		ImGui::Text("Rotation");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(itemWidth);
-		ImGui::DragFloat("##CamRotX", &Camera.Transform.Rotation.Roll, -10.0f, 180.0f);
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(itemWidth);
-		ImGui::DragFloat("##CamRotY", &Camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(itemWidth);
-		ImGui::DragFloat("##CamRotZ", &Camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
+		//ImGui::Text("Rotation");
+		//ImGui::SameLine();
+		//ImGui::SetNextItemWidth(itemWidth);
+		//ImGui::DragFloat("##CamRotX", &Camera.Transform.Rotation.Roll, -10.0f, 180.0f);
+		//ImGui::SameLine();
+		//ImGui::SetNextItemWidth(itemWidth);
+		//ImGui::DragFloat("##CamRotY", &Camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
+		//ImGui::SameLine();
+		//ImGui::SetNextItemWidth(itemWidth);
+		//ImGui::DragFloat("##CamRotZ", &Camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
 		//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
 		//ImGui::TextUnformatted(renderer.bDepthTestEnabled
 		//	? "ON : orange (near) stays in front"
@@ -195,24 +139,19 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	}
 
-	renderer.SwapBuffer();
+	GM->Display();
 	FrameTimer.EndFrame();
 
 	GInTick = false;
+	delete Comp;
 }
 
 void FEngineLoop::End()
 {
-	delete(NearCube);
-	delete(FarCube);
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	renderer.ReleaseVertexBuffer(vertexBufferCube);
-
-	renderer.ReleaseConstantBuffer();
-	renderer.ReleaseShader();
-	renderer.Release();
+	delete GM;
 }
