@@ -143,7 +143,6 @@
     <ClInclude Include="MathUtility.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Console.h" />
-    <ClInclude Include="Core.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Primitive.h" />
     <ClInclude Include="Projection.h" />

@@ -125,10 +125,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// 그리는 순서가 중요하다: 가까운 것을 먼저, 먼 것을 나중에.
 		// 깊이 테스트가 켜져 있으면 나중에 그린 FarCube 가 깊이 비교에서 탈락해
 		// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
-		renderer.UpdateConstant(NearCube->Transform.MakeMatrix(), ViewProjection, NearTint);
+		renderer.UpdateConstant(NearCube->Transform.MakeMatrix(), ViewProjection);
 		renderer.RenderPrimitive(vertexBufferCube, numVerticesCube);
 
-		renderer.UpdateConstant(FarCube->Transform.MakeMatrix(), ViewProjection, FarTint);
+		renderer.UpdateConstant(FarCube->Transform.MakeMatrix(), ViewProjection);
 		renderer.RenderPrimitive(vertexBufferCube, numVerticesCube);
 
 		//ImGui
@@ -137,16 +137,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			//	ImGui::Begin("Jungle Property Window");
+			ImGui::Begin("Jungle Property Window");
 			//	ImGui::Text("Hello Jungle World!");
 
 			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
 
 			ImGui::Separator();
-			ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
-			ImGui::TextUnformatted(renderer.bDepthTestEnabled
-				? "ON : orange (near) stays in front"
-				: "OFF: blue (far, drawn last) overwrites");
+			//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
+			//ImGui::TextUnformatted(renderer.bDepthTestEnabled
+			//	? "ON : orange (near) stays in front"
+			//	: "OFF: blue (far, drawn last) overwrites");
 
 			ImGui::End();
 			console.Draw();
