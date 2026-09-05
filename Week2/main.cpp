@@ -1,16 +1,16 @@
 ﻿#include <windows.h>
 
-#include "URenderer.h"
 #include "Sphere.h"
+#include "Renderer.h"
 #include "Cube.h"
 #include "Primitive.h"
 #include "FrameTimer.h"
 #include "Camera.h"
 
 #include "ImGui/imgui.h"
-#include "ImGui/imgui_internal.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
+#include "WindowApplication.h"
 
 #include "Console.h"
 #include "Object.h"
@@ -57,9 +57,42 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_DESTROY:
-		// Signal that the app should quit
 		PostQuitMessage(0);
 		break;
+
+	//다음 메세지들은 입력 지연
+	case WM_KEYDOWN: case WM_KEYUP:
+	case WM_LBUTTONDOWN: case WM_LBUTTONUP:
+	case WM_RBUTTONDOWN: case WM_RBUTTONUP:
+	case WM_MOUSEMOVE:   case WM_MOUSEWHEEL:
+	case WM_KILLFOCUS:
+		WindowApplication.Defer({ hWnd, message, wParam, lParam });
+		return 0;
+
+	//마우스가 얼마정도 이동했나
+	case WM_INPUT:
+	{
+		FDeferredMessage M{ hWnd, message, wParam, lParam };
+
+		BYTE  buf[sizeof(RAWINPUT)];
+		UINT  size = sizeof(buf);
+		if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, buf, &size, sizeof(RAWINPUTHEADER)) != (UINT)-1)
+		{
+			const RAWINPUT* ri = (const RAWINPUT*)buf;
+			if (ri->header.dwType == RIM_TYPEMOUSE &&
+				(ri->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE) == 0)
+			{
+				M.RawMouseDX = ri->data.mouse.lLastX;
+				M.RawMouseDY = ri->data.mouse.lLastY;
+			}
+		}
+		WindowApplication.Defer(M);
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	//SYS_ : Alt가 눌린 상태의 입력
+	case WM_SYSKEYDOWN: case WM_SYSKEYUP:
+		WindowApplication.Defer({ hWnd, message, wParam, lParam });
+		return DefWindowProc(hWnd, message, wParam, lParam);
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
@@ -75,15 +108,13 @@ void ProcessMessage(bool& bIsExit)
 	{
 		TranslateMessage(&msg);
 
+		//WinProc 호출
 		DispatchMessage(&msg);
 
 		if (msg.message == WM_QUIT)
 		{
 			bIsExit = true;
 			break;
-		}
-		else if (msg.message == WM_KEYDOWN)
-		{
 		}
 	}
 }
@@ -99,8 +130,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024,
 		nullptr, nullptr, hInstance, nullptr);
 
+
 	GraphicsManager graphicsManager(hWnd);
 	URenderer* renderer = graphicsManager.GetRenderer();
+
+	RAWINPUTDEVICE rid = {};
+	rid.usUsagePage = 0x01;		// Generic Desktop
+	rid.usUsage = 0x02;			// Mouse
+	rid.dwFlags = 0;		// 포커스 있을 때만 수신
+	rid.hwndTarget = hWnd;
+	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
@@ -117,23 +156,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	UFrameTimer FrameTimer(120);
 
-	// 깊이 테스트 확인용 배치.
-	// 카메라가 원점을 향해 +X(언리얼 전방)로 바라보고, 큐브 둘을 그 시선 축 위에 앞뒤로 겹쳐 둔다.
-	// Cube_vertices 는 원점이 '최소 코너'라서, 중심을 맞추려면 Location 에 -Scale/2 를 준다.
-	//   NearCube : 중심 (0, 0, 0)          — 카메라로부터 2.0
-	//   FarCube  : 중심 (1.2, 0.35, 0.05)  — 카메라로부터 약 3.2. 더 크고 오른쪽으로 밀어서
-	//              화면상 NearCube 와 절반쯤 겹치게 했다.
 	Sphere* NearCube = new Sphere(FTransform({ -0.2f, -0.2f,  -0.2f  }, { 0, 0, 0 }, { 0.4f, 0.4f, 0.4f }));
 	Sphere* FarCube  = new Sphere(FTransform({  0.8f, -0.05f, -0.35f }, { 0, 0, 0 }, { 0.8f, 0.8f, 0.8f }));
 
-	// 둘 다 같은 정점 버퍼를 쓰고 카메라를 향한 -X 면이 똑같이 파랑이라, 색으로 구분해 준다.
 	const FVector4 NearTint(1.0f,  0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint (0.25f, 0.55f, 1.0f,  0.85f); // 파랑 = 먼 쪽
+
 
 	UCubeComponent* nearCube = FObjectFactory::ConstructObject<UCubeComponent>(&graphicsManager);
 	nearCube->SetRelativeLocation({ -0.2f, -0.2f,  -0.2f });
 	nearCube->SetRelativeRotation({ 0, 0, 0 });
 	nearCube->SetRelativeScale3D({ 0.4f, 0.4f, 0.4f });
+
+	bool bWireFrame = false;
 
 	UCubeComponent* farCube = FObjectFactory::ConstructObject<UCubeComponent>(&graphicsManager);
 	farCube->SetRelativeLocation({ 0.8f, -0.05f, -0.35f });
@@ -153,14 +188,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		float deltaTime = FrameTimer.GetDeltaTime();
 
 		ProcessMessage(bIsExit);
-
-		// Update
-		{
-		}
+		WindowApplication.ProcessDeferredEvents();
 
 		// GraphicsManager.Render()
 		{
-			graphicsManager.Prepare();
+			graphicsManager.Prepare(bWireFrame);
 			nearCube->Render();
 			farCube->Render();
 			sphere->Render();

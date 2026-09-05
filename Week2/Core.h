@@ -112,3 +112,12 @@ public:
 private:
 	std::string mData;
 };
+
+#ifndef FORCEINLINE
+	#if defined(_MSC_VER)
+		#define FORCEINLINE __forceinline
+	#else
+		#define FORCEINLINE inline __attribute__((always_inline))
+	#endif
+#endif
+

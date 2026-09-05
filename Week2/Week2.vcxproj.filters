@@ -24,7 +24,7 @@
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="URenderer.cpp">
+    <ClCompile Include="Renderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -84,9 +84,12 @@
     <ClCompile Include="World.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="MathUtility.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="URenderer.h">
+    <ClInclude Include="Renderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ImGui\imconfig.h">
@@ -171,6 +174,27 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="World.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Cube.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MathUtility.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="InputState.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowApplication.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

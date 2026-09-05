@@ -1,6 +1,6 @@
 ﻿#include "GraphicsManager.h"
 
-#include "URenderer.h"
+#include "Renderer.h"
 
 GraphicsManager::GraphicsManager(HWND hWindow)
 {
@@ -32,9 +32,9 @@ GraphicsManager::~GraphicsManager()
 	delete mCamera;
 }
 
-void GraphicsManager::Prepare()
+void GraphicsManager::Prepare(bool bWireFrame)
 {
-	mRenderer->Prepare();
+	mRenderer->Prepare(bWireFrame);
 	mRenderer->PrepareShader();
 
 	// Todo: 

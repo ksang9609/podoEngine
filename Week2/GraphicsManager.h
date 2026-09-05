@@ -4,7 +4,7 @@
 #include "Enum.h"
 
 #include "TMap.h"
-#include "URenderer.h"
+#include "Renderer.h"
 #include "Transform.h"
 #include "Camera.h"
 
@@ -20,7 +20,7 @@ public:
 	GraphicsManager(HWND hWindow);
 	~GraphicsManager();
 
-	void Prepare();
+	void Prepare(bool bWireFrame);
 	void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive);
 	void Display();
 

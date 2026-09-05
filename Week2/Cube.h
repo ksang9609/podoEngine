@@ -1,6 +1,6 @@
-﻿#include <DirectXMath.h>
-#include "URenderer.h"
+﻿//#include <DirectXMath.h>
 
+#include "Renderer.h"
 
 // 원점(0,0,0)이 큐브의 최소 코너, +X/+Y/+Z 방향으로 한 변 1.0
 FVertexSimple Cube_vertices[36] =

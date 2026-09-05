@@ -1,17 +1,15 @@
 ﻿#pragma once
 #include "Transform.h"
-#include "URenderer.h"
+#include <cmath>
+#include "Vector.h"
+#include "Renderer.h"
+
 class FCamera
 {
 public:
 	FCamera(FTransform _FTransform) : Transform(_FTransform) {}
 	FTransform Transform;
 
-	// 뷰 행렬 = 카메라 월드 행렬의 역행렬 * 축 교환
-	//
-	//   InverseMatrix() 까지는 좌표가 '언리얼 카메라 공간'(X 전방 / Y 우측 / Z 상방)에 있다.
-	//   DirectX NDC 는 X 우측 / Y 위 / Z 안쪽 이므로 마지막에 축을 갈아끼워야
-	//   카메라 정면에 있는 물체가 화면 중앙에 온다.
 	FMatrix GetViewMatrix() const
 	{
 		return Transform.InverseMatrix() * FMatrix::UEToDX;
@@ -23,12 +21,12 @@ public:
 		Transform.Rotation = FRotator::LookAt(Transform.Location, Target);
 	}
 
-	FMatrix GetProjectionMatrix(float Aspect, float fovRad, float n, float f)
+	FMatrix GetProjectionMatrix(float Aspect, float fovDegree, float n, float f)
 	{
 		//fov 단위는 라디안
 		//Aspect = width/height
 		FMatrix result = FMatrix::Zero; //영벡터
-		float yScale = 1.0f / tan((fovRad / 2)); //xScale
+		float yScale = 1.0f / tanf((fovDegree / 2)*PI/180); //xScale
 		float xScale = yScale / Aspect;
 
 
@@ -40,4 +38,20 @@ public:
 
 		return result;
 	}
+
+	void Rotate(long Dx, long Dy)
+	{
+		Transform.Rotation.Yaw += FMath::Fmod(Dx * Sensitivity, 360.f);
+		Transform.Rotation.Pitch -= FMath::Fmod(Dy * Sensitivity, 360.f);
+	}
+
+	void SetSensitivity(float _v) { Sensitivity = _v; }
+	FVector GetForwardVector() const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::X); }
+	FVector GetRightVector()   const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::Y); }
+	FVector GetUpVector()      const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::Z); }
+
+	float Speed = 1.f;
+	FVector Velocity = FVector(0);
+private:
+	float Sensitivity = 0.1f;
 };
