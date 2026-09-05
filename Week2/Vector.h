@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <cmath>
+#include "MathUtility.h"
 
 typedef struct FVector
 {
@@ -43,7 +43,7 @@ typedef struct FVector
 		return	FVector(A.y * B.z - A.z * B.y, A.z * B.x - A.x * B.z, A.x * B.y - A.y * B.x);
 	}
 
-	float Length() const { return std::sqrt(x * x + y * y + z * z); }
+	float Length() const { return FMath::Sqrt(x * x + y * y + z * z); }
 
 	void Normalize()
 	{
@@ -101,6 +101,6 @@ typedef struct FVector4
 
 	//4차원에는 외적이 없다.
 
-	float Length() const { return std::sqrt(x * x + y * y + z * z + w * w); }
+	float Length() const { return FMath::Sqrt(x * x + y * y + z * z + w * w); }
 
-};
+} FVector4;

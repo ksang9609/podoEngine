@@ -3,6 +3,8 @@
 #include "MathUtility.h"
 #include "Rotator.h"
 
+enum class EAxis : int { X = 0, Y = 1, Z = 2 };
+
 struct FMatrix { 
 	float M[4][4];
 
@@ -207,6 +209,12 @@ struct FMatrix {
 		return result;
 	}
 
+	[[nodiscard]] FVector GetUnitAxis(EAxis Axis) const
+	{
+		const int i = static_cast<int>(Axis);
+		return FVector(M[i][0], M[i][1], M[i][2]);
+	}
+
 
 	// end Struct Matrix
 };
@@ -226,6 +234,7 @@ inline const FMatrix FMatrix::Zero = { {
 } };
 
 
+//축 교환 행렬
 inline const FMatrix FMatrix::UEToDX = { {
 	{0, 0, 1, 0},   // UE X(전방) -> DX Z(화면 안쪽)
 	{1, 0, 0, 0},   // UE Y(우측) -> DX X(우측)

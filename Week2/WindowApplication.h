@@ -50,7 +50,9 @@ public:
 			case WM_LBUTTONUP:   Input.OnKeyUp(VK_LBUTTON);   break;
 			case WM_RBUTTONDOWN: Input.OnKeyDown(VK_RBUTTON); break;
 			case WM_RBUTTONUP:   Input.OnKeyUp(VK_RBUTTON);   break;
-
+			case WM_MOUSEWHEEL:
+				Input.OnMouseWheel(GET_WHEEL_DELTA_WPARAM(M.wParam) / (float)WHEEL_DELTA);
+				break;
 			case WM_MOUSEMOVE:
 				Input.CursorX = (short)LOWORD(M.lParam);
 				Input.CursorY = (short)HIWORD(M.lParam);

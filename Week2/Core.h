@@ -11,3 +11,11 @@ typedef unsigned long long uint64;
 
 typedef float float32;
 typedef double float64;
+
+#ifndef FORCEINLINE
+	#if defined(_MSC_VER)
+		#define FORCEINLINE __forceinline
+	#else
+		#define FORCEINLINE inline __attribute__((always_inline))
+	#endif
+#endif
