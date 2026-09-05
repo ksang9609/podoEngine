@@ -1,6 +1,10 @@
 ﻿#pragma once
 #include "Transform.h"
 #include "URenderer.h"
+#include <cmath>
+#include "Vector.h"
+#define PI 3.141592
+
 class FCamera
 {
 public:
@@ -23,12 +27,12 @@ public:
 		Transform.Rotation = FRotator::LookAt(Transform.Location, Target);
 	}
 
-	FMatrix GetProjectionMatrix(float Aspect, float fovRad, float n, float f)
+	FMatrix GetProjectionMatrix(float Aspect, float fovDegree, float n, float f)
 	{
 		//fov 단위는 라디안
 		//Aspect = width/height
 		FMatrix result = FMatrix::Zero; //영벡터
-		float yScale = 1.0f / tan((fovRad / 2)); //xScale
+		float yScale = 1.0f / tanf((fovDegree / 2)*PI/180); //xScale
 		float xScale = yScale / Aspect;
 
 
@@ -40,4 +44,16 @@ public:
 
 		return result;
 	}
+
+	FVector* GetCameraLocationPointer()
+	{
+		return &Transform.Location;
+	}
+
+	FRotator* GetCameraRotationPointer()
+	{
+		return &Transform.Rotation;
+		
+	}
+	
 };

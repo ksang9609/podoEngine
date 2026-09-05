@@ -29,6 +29,7 @@ struct TRotator
 	{
 		return FromDirection(To - From);
 	}
+
 };
 
 using FRotator = TRotator;

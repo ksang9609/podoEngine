@@ -103,7 +103,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FCamera* Camera = new FCamera(FTransform({ -2.0f, 1.0f, 1.0f }, { 0, 30, 0 }, { 1, 1, 1 }));
 	Camera->LookAt({ 0, 0, 0 });   // NearCube 의 중심
 	float aspect = renderer.ViewportInfo.Width / renderer.ViewportInfo.Height;
-	float fovRad = 1.047f;   // 60도
+	float fovDegree = 60.0f;   // 60도
 
 
 	// Main Loop
@@ -119,7 +119,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.PrepareShader();
 
 		FMatrix View = Camera->GetViewMatrix();
-		FMatrix Projection = Camera->GetProjectionMatrix(aspect, fovRad, 0.1f, 100.0f);
+		FMatrix Projection = Camera->GetProjectionMatrix(aspect, fovDegree, 0.1f, 100.0f);
 		FMatrix ViewProjection = View * Projection;
 
 		// 그리는 순서가 중요하다: 가까운 것을 먼저, 먼 것을 나중에.
@@ -136,13 +136,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui_ImplDX11_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
-
+			
 			ImGui::Begin("Jungle Property Window");
-			//	ImGui::Text("Hello Jungle World!");
-
+			ImGui::Text("Hello Jungle World!");
 			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
 
 			ImGui::Separator();
+			ImGui::Text("FOV     ");
+			ImGui::SameLine();
+			ImGui::SliderFloat("##FOV", &fovDegree, 0.0f, 180.0f);
+
+			// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
+			ImGui::Text("Location");
+			ImGui::SameLine();
+
+			// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
+			const float spacing = ImGui::GetStyle().ItemSpacing.x;
+			const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
+
+			FVector* loc = Camera->GetCameraLocationPointer();
+			FRotator* rot = Camera->GetCameraRotationPointer();
+			ImGui::SetNextItemWidth(itemWidth);
+			ImGui::SliderFloat("##CamLocX", &loc->x, -10.0f, 10.0f);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(itemWidth);
+			ImGui::SliderFloat("##CamLocY", &loc->y, -10.0f, 10.0f);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(itemWidth);
+			ImGui::SliderFloat("##CamLocZ", &loc->z, -10.0f, 10.0f);
+
+			ImGui::Text("Rotation");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(itemWidth);
+			ImGui::SliderFloat("##CamRotX", &rot->Pitch, -10.0f, 180.0f);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(itemWidth);
+			ImGui::SliderFloat("##CamRotY", &rot->Yaw, -10.0f, 180.0f);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(itemWidth);
+			ImGui::SliderFloat("##CamRotZ", &rot->Roll, -10.0f, 180.0f);
 			//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
 			//ImGui::TextUnformatted(renderer.bDepthTestEnabled
 			//	? "ON : orange (near) stays in front"
