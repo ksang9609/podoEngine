@@ -33,7 +33,7 @@ public:
 
     ID3D11Texture2D* FrameBuffer = nullptr;
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
-    ID3D11RasterizerState* RasterizerState = nullptr;
+	ID3D11RasterizerState* RasterizerState[2] = {};
     ID3D11Buffer* ConstantBuffer = nullptr;
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;		// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;  // 그 메모리를 "출력 대상"으로 보는 뷰
@@ -158,26 +158,35 @@ public:
 
     void CreateRasterizerState()
     {
-        D3D11_RASTERIZER_DESC rasterizerdesc = {};
-        rasterizerdesc.FillMode = D3D11_FILL_SOLID;
-        rasterizerdesc.CullMode = D3D11_CULL_BACK;
-		rasterizerdesc.DepthClipEnable = TRUE;
+        D3D11_RASTERIZER_DESC rasterizerdesc[2] = {};
+        rasterizerdesc[0].FillMode = D3D11_FILL_SOLID;
+        rasterizerdesc[0].CullMode = D3D11_CULL_BACK;
+		rasterizerdesc[0].DepthClipEnable = TRUE;
 
-        Device->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
+
+		rasterizerdesc[1].FillMode = D3D11_FILL_WIREFRAME;
+		rasterizerdesc[1].CullMode = D3D11_CULL_NONE;
+		rasterizerdesc[1].DepthClipEnable = TRUE;
+
+        Device->CreateRasterizerState(&rasterizerdesc[0], &RasterizerState[0]);
+		Device->CreateRasterizerState(&rasterizerdesc[1], &RasterizerState[1]);
+
     }
 
-    void ReleaseRasterizerState()
-    {
-        if (RasterizerState)
-        {
-            RasterizerState->Release();
-            RasterizerState = nullptr;
-        }
-    }
-
+	void ReleaseRasterizerState()
+	{
+		for (int i = 0; i < 2; ++i)
+		{
+			if (RasterizerState[i])
+			{
+				RasterizerState[i]->Release();
+				RasterizerState[i] = nullptr;
+			}
+		}
+	}
     void Release()
     {
-        RasterizerState->Release();
+		ReleaseRasterizerState();
 
         DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
@@ -239,7 +248,7 @@ public:
         }
     }
 
-    void Prepare()
+    void Prepare(bool bWireFrame)
     {
 		DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 
@@ -250,7 +259,8 @@ public:
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		DeviceContext->RSSetViewports(1, &ViewportInfo);
-		DeviceContext->RSSetState(RasterizerState);
+
+			DeviceContext->RSSetState(RasterizerState[bWireFrame ? 1 : 0]);
 
 		//세 번째 인자에 nullptr 대신 DSV를 넘긴다
 		DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);

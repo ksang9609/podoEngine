@@ -134,6 +134,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Camera->LookAt({ 0, 0, 0 });   // NearCube 의 중심
 	float aspect = renderer.ViewportInfo.Width / renderer.ViewportInfo.Height;
 	float fovDegree = 60.0f;   // 60도
+	bool bwireFrame=false;
 
 
 	// Main Loop
@@ -157,7 +158,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		renderer.Prepare();
+		renderer.Prepare(bwireFrame);
 		renderer.PrepareShader();
 
 		FMatrix View = Camera->GetViewMatrix();
@@ -183,6 +184,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
 
 			ImGui::Separator();
+			if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
+			{
+				ImGui::Checkbox("Wire frame", &bwireFrame);
+				ImGui::EndCombo();
+			}
 			ImGui::Text("FOV     ");
 			ImGui::SameLine();
 			ImGui::SliderFloat("##FOV", &fovDegree, 0.0f, 180.0f);
@@ -196,24 +202,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
 
 			ImGui::SetNextItemWidth(itemWidth);
-			ImGui::SliderFloat("##CamLocX", &Camera->Transform.Location.x, -10.0f, 10.0f);
+			ImGui::DragFloat("##CamLocX", &Camera->Transform.Location.x, -10.0f, 10.0f);
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(itemWidth);
-			ImGui::SliderFloat("##CamLocY", &Camera->Transform.Location.y, -10.0f, 10.0f);
+			ImGui::DragFloat("##CamLocY", &Camera->Transform.Location.y, -10.0f, 10.0f);
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(itemWidth);
-			ImGui::SliderFloat("##CamLocZ", &Camera->Transform.Location.z, -10.0f, 10.0f);
+			ImGui::DragFloat("##CamLocZ", &Camera->Transform.Location.z, -10.0f, 10.0f);
 
 			ImGui::Text("Rotation");
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(itemWidth);
-			ImGui::SliderFloat("##CamRotX", &Camera->Transform.Rotation.Pitch, -10.0f, 180.0f);
+			ImGui::DragFloat("##CamRotX", &Camera->Transform.Rotation.Roll, -10.0f, 180.0f);
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(itemWidth);
-			ImGui::SliderFloat("##CamRotY", &Camera->Transform.Rotation.Yaw, -10.0f, 180.0f);
+			ImGui::DragFloat("##CamRotY", &Camera->Transform.Rotation.Pitch, -10.0f, 180.0f);
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(itemWidth);
-			ImGui::SliderFloat("##CamRotZ", &Camera->Transform.Rotation.Pitch, -10.0f, 180.0f);
+			ImGui::DragFloat("##CamRotZ", &Camera->Transform.Rotation.Yaw, -10.0f, 180.0f);
 			//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
 			//ImGui::TextUnformatted(renderer.bDepthTestEnabled
 			//	? "ON : orange (near) stays in front"
