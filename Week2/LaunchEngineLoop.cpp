@@ -110,7 +110,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
 
 		//ImGui::SetNextItemWidth(itemWidth);
-		//ImGui::DragFloat("##CamLocX", &Camera.Transform.Location.x, -10.0f, 10.0f);
+		//ImGui::DragFloat("##CamLocX", &Camera.Transform.Location.x, -10.0f, 10.0f);d
 		//ImGui::SameLine();
 		//ImGui::SetNextItemWidth(itemWidth);
 		//ImGui::DragFloat("##CamLocY", &Camera.Transform.Location.y, -10.0f, 10.0f);

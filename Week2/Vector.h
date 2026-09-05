@@ -67,6 +67,11 @@ inline const FVector operator*(float f, const FVector& v)
     return FVector(v.x * f, v.y * f, v.z * f);
 }
 
+inline FVector operator+(const FVector& A, const FVector& B)
+{
+	return FVector(A.x + B.x, A.y + B.y, A.z + B.z);
+}
+
 
 //Vector 4
 typedef struct FVector4
