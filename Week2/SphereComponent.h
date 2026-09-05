@@ -7,6 +7,8 @@ class USphereComponent : public UPrimitiveComponent
 	REFLECT_CLASS(USphereComponent, UPrimitiveComponent)
 public:
 	USphereComponent();
-	void Initialize(GraphicsManager* graphicsManager);
 	virtual ~USphereComponent();
+
+	void Initialize(GraphicsManager* graphicsManager);
+	void Initialize(GraphicsManager* graphicsManager, FVector location, FRotator rotation, FVector scale3D);
 };

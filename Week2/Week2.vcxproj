@@ -145,6 +145,7 @@
     <ClCompile Include="CubeComponent.cpp" />
     <ClCompile Include="URenderer.cpp" />
     <ClCompile Include="USphereComponent.cpp" />
+    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="CubeComponent.h" />
     <ClInclude Include="URenderer.h" />
     <ClInclude Include="Vector.h" />
+    <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">

@@ -8,9 +8,8 @@ class UCubeComponent : public UPrimitiveComponent
 public:
 	UCubeComponent();
 
-	UCubeComponent(GraphicsManager* graphicsManager, FVector location, FRotator rotation, FVector scale3D);
-	UCubeComponent(GraphicsManager* graphicsManager);
 	void Initialize(GraphicsManager* graphicsManager);
+	void Initialize(GraphicsManager* graphicsManager, FVector location, FRotator rotation, FVector scale3D);
 
 	virtual ~UCubeComponent();
 

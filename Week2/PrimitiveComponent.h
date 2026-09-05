@@ -9,6 +9,8 @@ public:
 	UPrimitiveComponent();
 
 	void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive);
+	void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D);
+
 	virtual ~UPrimitiveComponent();
 
 	virtual void Render();

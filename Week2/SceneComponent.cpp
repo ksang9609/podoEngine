@@ -8,6 +8,8 @@ USceneComponent::USceneComponent()
 
 void USceneComponent::Initialize(FVector location, FRotator rotation, FVector scale3D)
 {
+
+
 	mRelativeLocation = location;
 	mRelativeRotation = rotation;
 	mRelativeScale3D = scale3D;
