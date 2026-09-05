@@ -8,7 +8,6 @@ struct FTransform
 	FTransform(){ }
 	FTransform(FVector _Location, FRotator _Rotation, FVector _Scale) : Location(_Location), Rotation(_Rotation), Scale(_Scale)
 	{
-
 	}
 	FVector Location = FVector(0);
 	FRotator Rotation = FRotator(0, 0, 0);

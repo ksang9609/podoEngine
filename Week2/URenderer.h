@@ -341,7 +341,7 @@ public:
 		if (DepthStencilState) { DepthStencilState->Release();  DepthStencilState = nullptr; }
 	}
 
-    void UpdateConstant(FMatrix World, FMatrix ViewProjection)
+    void UpdateConstantWorld(FMatrix World)
     {
         if (ConstantBuffer)
         {
@@ -351,9 +351,23 @@ public:
             FConstants* constants = (FConstants*)constantbufferMSR.pData;
             {
 				constants->World = World;
-				constants->ViewProjection = ViewProjection;
             }
             DeviceContext->Unmap(ConstantBuffer, 0);
         }
     }
+
+	void UpdateConstantViewProjection(FMatrix ViewProjection)
+	{
+		if (ConstantBuffer)
+		{
+			D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+
+			DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+			FConstants* constants = (FConstants*)constantbufferMSR.pData;
+			{
+				constants->ViewProjection = ViewProjection;
+			}
+			DeviceContext->Unmap(ConstantBuffer, 0);
+		}
+	}
 };

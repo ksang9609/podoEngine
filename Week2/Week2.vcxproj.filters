@@ -48,9 +48,6 @@
     <ClCompile Include="ImGui\imgui_widgets.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="Ball.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Console.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -73,6 +70,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="GraphicsManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="PrimitiveComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CubeComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -105,12 +108,6 @@
       <Filter>ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Sphere.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Ball.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="FVector.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="FrameTimer.h">
@@ -150,6 +147,18 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="GraphicsManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Enum.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PrimitiveComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CubeComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
