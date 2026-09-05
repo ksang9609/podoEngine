@@ -147,14 +147,42 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ProcessMessage(bIsExit);
 		WindowApplication.ProcessDeferredEvents();
 
-		//Game Logic
+		//CameraMove
 		{
-			if (!io.WantCaptureKeyboard && WindowApplication.Input.IsDown('W'))
+			const FInputState& Input = WindowApplication.Input;
+
+			// 회전을 이동보다 먼저 — 이번 프레임에 돌린 방향으로 바로 움직이게
+			if (!io.WantCaptureMouse && Input.IsDown(VK_RBUTTON))
 			{
+				Camera->Rotate(Input.MouseDX, Input.MouseDY);
 			}
-			if (!io.WantCaptureMouse && WindowApplication.Input.IsDown(VK_RBUTTON))
+
+			if (!io.WantCaptureMouse && Input.MouseWheelDelta != 0.0f)
 			{
-				Camera->Rotate(WindowApplication.Input.MouseDX, WindowApplication.Input.MouseDY);
+				Camera->Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
+				Camera->Speed = FMath::Clamp(Camera->Speed, 0.1f, 100.0f);
+			}
+
+			if (!io.WantCaptureKeyboard)
+			{
+				const FMatrix R = FMatrix::Rotate(Camera->Transform.Rotation);
+				const FVector Forward = R.GetUnitAxis(EAxis::X);
+				const FVector Right = R.GetUnitAxis(EAxis::Y);
+
+				FVector MoveInput(0.f, 0.f, 0.f);
+				if (Input.IsDown('W')) MoveInput += Forward;
+				if (Input.IsDown('S')) MoveInput -= Forward;
+				if (Input.IsDown('D')) MoveInput += Right;
+				if (Input.IsDown('A')) MoveInput -= Right;
+				if (Input.IsDown('E')) MoveInput += FVector(0.f, 0.f, 1.f);   // 상승은 월드 업 기준
+				if (Input.IsDown('Q')) MoveInput -= FVector(0.f, 0.f, 1.f);
+
+				if (MoveInput.Length() > SMALL_NUMBER)
+				{
+					MoveInput.Normalize();
+					Camera->Velocity = MoveInput * Camera->Speed;
+					Camera->Transform.Location += Camera->Velocity * deltaTime;
+				}
 			}
 		}
 
