@@ -23,13 +23,13 @@ public:
 		Transform.Rotation = FRotator::LookAt(Transform.Location, Target);
 	}
 
-	FMatrix GetProjectionMatrix(int Aspect, float fovRad, float n, float f)
+	FMatrix GetProjectionMatrix(float Aspect, float fovRad, float n, float f)
 	{
 		//fov 단위는 라디안
 		//Aspect = width/height
 		FMatrix result = FMatrix::Zero; //영벡터
 		float yScale = 1.0f / tan((fovRad / 2)); //xScale
-		float xScale = yScale * Aspect;
+		float xScale = yScale / Aspect;
 
 
 		result.M[0][0] = xScale; //xScale
