@@ -2,8 +2,7 @@
 
 #include <Windows.h>
 #include "FrameTimer.h"
-#include "Camera.h"
-#include "Renderer.h"
+#include "FEditorViewportClient.h"
 
 #include <d3d11.h>
 
@@ -25,6 +24,7 @@ private:
 	GraphicsManager *GM;
 	bool bwireFrame = false;
 	bool GInTick = false;
+	FEditorViewportClient ViewportClient;
 };
 
 inline FEngineLoop GEngineLoop;
