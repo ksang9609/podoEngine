@@ -133,6 +133,7 @@
     <ClCompile Include="ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="LaunchEngineLoop.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MathUtility.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -141,7 +142,9 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="Cube.h" />
+    <ClInclude Include="enum.h" />
     <ClInclude Include="InputState.h" />
+    <ClInclude Include="LaunchEngineLoop.h" />
     <ClInclude Include="MathUtility.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Console.h" />

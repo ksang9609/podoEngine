@@ -7,6 +7,7 @@
 class FCamera
 {
 public:
+	FCamera() : Transform(FTransform()){}
 	FCamera(FTransform _FTransform) : Transform(_FTransform) {}
 	FTransform Transform;
 

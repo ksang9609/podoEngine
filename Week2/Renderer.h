@@ -191,6 +191,7 @@ public:
         DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 		ReleaseDepthStencilBuffer();
+		ReleaseDepthStencilState();
         ReleaseFrameBuffer();
         ReleaseDeviceAndSwapChain();
     }
@@ -348,6 +349,10 @@ public:
 	{
 		if (DepthStencilView) { DepthStencilView->Release();   DepthStencilView = nullptr; }
 		if (DepthStencilBuffer) { DepthStencilBuffer->Release(); DepthStencilBuffer = nullptr; }
+	}
+
+	void ReleaseDepthStencilState()
+	{
 		if (DepthStencilState) { DepthStencilState->Release();  DepthStencilState = nullptr; }
 	}
 
@@ -366,4 +371,24 @@ public:
             DeviceContext->Unmap(ConstantBuffer, 0);
         }
     }
+
+	void OnResize(UINT Width, UINT Height)
+	{
+		if (!SwapChain || Width == 0 || Height == 0) return;
+		if ((UINT)ViewportInfo.Width == Width && (UINT)ViewportInfo.Height == Height) return;
+
+		DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+		ReleaseFrameBuffer();
+		ReleaseDepthStencilBuffer();
+
+		HRESULT hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
+		if (FAILED(hr)) return;
+
+		DXGI_SWAP_CHAIN_DESC desc;
+		SwapChain->GetDesc(&desc);
+		ViewportInfo = { 0.0f, 0.0f, (float)desc.BufferDesc.Width, (float)desc.BufferDesc.Height, 0.0f, 1.0f };
+
+		CreateFrameBuffer();
+		CreateDepthStencilBuffer();
+	}
 };

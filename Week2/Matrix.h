@@ -2,8 +2,7 @@
 #include "Vector.h"
 #include "MathUtility.h"
 #include "Rotator.h"
-
-enum class EAxis : int { X = 0, Y = 1, Z = 2 };
+#include "enum.h"
 
 struct FMatrix { 
 	float M[4][4];

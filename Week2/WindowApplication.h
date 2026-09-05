@@ -20,6 +20,8 @@ struct FDeferredMessage
 class FWindowApplication
 {
 public:
+	bool bPendingResize = false;
+	UINT PendingWidth = 0, PendingHeight = 0;
 	FInputState Input;
 
 	void Defer(const FDeferredMessage& M) { Deferred.push_back(M); }
@@ -73,4 +75,4 @@ private:
 	std::vector<FDeferredMessage> Deferred;
 };
 
-FWindowApplication WindowApplication;
+inline FWindowApplication WindowApplication;
