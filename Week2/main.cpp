@@ -2,9 +2,10 @@
 
 #include "URenderer.h"
 #include "Sphere.h"
-#include "Ball.h"
+#include "Cube.h"
+#include "Primitive.h"
 #include "FrameTimer.h"
-#include "BallSimulation.h"
+#include "Camera.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_internal.h"
@@ -13,6 +14,9 @@
 
 #include "Console.h"
 #include "Object.h"
+#include "GraphicsManager.h"
+
+#include "CubeComponent.h"
 
 void* operator new(size_t size);
 void operator delete(void* deleteObject, size_t size);
@@ -94,10 +98,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024,
 		nullptr, nullptr, hInstance, nullptr);
 
-	URenderer renderer;
-	renderer.Create(hWnd);
-	renderer.CreateShader();
-	renderer.CreateConstantBuffer();
+	GraphicsManager graphicsManager(hWnd);
+	URenderer* renderer = graphicsManager.GetRenderer();
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
@@ -107,14 +109,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplWin32_Init((void*)hWnd);
-	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
+	ImGui_ImplDX11_Init(renderer->Device, renderer->DeviceContext);
 
-	UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
-	ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+	graphicsManager.CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 
 	UFrameTimer FrameTimer(120);
-	UBall* ball = new UBall({ 0, 0, 0 }, { 0, 0, 0 }, 1.f);
 
+	// 깊이 테스트 확인용 배치.
+	// 카메라가 원점을 향해 +X(언리얼 전방)로 바라보고, 큐브 둘을 그 시선 축 위에 앞뒤로 겹쳐 둔다.
+	// Cube_vertices 는 원점이 '최소 코너'라서, 중심을 맞추려면 Location 에 -Scale/2 를 준다.
+	//   NearCube : 중심 (0, 0, 0)          — 카메라로부터 2.0
+	//   FarCube  : 중심 (1.2, 0.35, 0.05)  — 카메라로부터 약 3.2. 더 크고 오른쪽으로 밀어서
+	//              화면상 NearCube 와 절반쯤 겹치게 했다.
+	Sphere* NearCube = new Sphere(FTransform({ -0.2f, -0.2f,  -0.2f  }, { 0, 0, 0 }, { 0.4f, 0.4f, 0.4f }));
+	Sphere* FarCube  = new Sphere(FTransform({  0.8f, -0.05f, -0.35f }, { 0, 0, 0 }, { 0.8f, 0.8f, 0.8f }));
+
+	// 둘 다 같은 정점 버퍼를 쓰고 카메라를 향한 -X 면이 똑같이 파랑이라, 색으로 구분해 준다.
+	const FVector4 NearTint(1.0f,  0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
+	const FVector4 FarTint (0.25f, 0.55f, 1.0f,  0.85f); // 파랑 = 먼 쪽
+
+	UCubeComponent* cube = new UCubeComponent(&graphicsManager);
+	cube->SetRelativeLocation({ -0.2f, -0.2f,  -0.2f });
+	cube->SetRelativeRotation({ 0, 0, 0 });
+	cube->SetRelativeScale3D({ 0.4f, 0.4f, 0.4f });
 
 	// Main Loop
 	bool bIsExit = false;
@@ -125,44 +142,50 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		ProcessMessage(bIsExit);
 
-		renderer.Prepare();
-		renderer.PrepareShader();
-
-		renderer.UpdateConstant(ball->Location, ball->Radius);
-		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
-
-		//ImGui
+		// Update
 		{
-			ImGui_ImplDX11_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
-
-			//	ImGui::Begin("Jungle Property Window");
-			//	ImGui::Text("Hello Jungle World!");
-
-			//	ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
-			//	ImGui::End();
-			console.Draw();
-
-			ImGui::Render();
-			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		}
 
-		renderer.SwapBuffer();
+		// GraphicsManager.Render()
+		{
+			graphicsManager.Prepare();
+			cube->Render();
+
+			//ImGui
+			{
+				ImGui_ImplDX11_NewFrame();
+				ImGui_ImplWin32_NewFrame();
+				ImGui::NewFrame();
+
+				ImGui::Begin("Jungle Property Window");
+				//	ImGui::Text("Hello Jungle World!");
+
+				ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
+
+				ImGui::Separator();
+				//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
+				//ImGui::TextUnformatted(renderer.bDepthTestEnabled
+				//	? "ON : orange (near) stays in front"
+				//	: "OFF: blue (far, drawn last) overwrites");
+
+				ImGui::End();
+				console.Draw();
+				ImGui::Render();
+				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+			}
+
+			graphicsManager.Display();
+		}
+		
 		FrameTimer.EndFrame();
 	}
 
-	delete(ball);
+	delete(NearCube);
+	delete(FarCube);
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
-
-	renderer.ReleaseVertexBuffer(vertexBufferSphere);
-
-	renderer.ReleaseConstantBuffer();
-	renderer.ReleaseShader();
-	renderer.Release();
 
 	return 0;
 }

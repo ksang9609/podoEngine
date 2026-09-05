@@ -13,15 +13,22 @@ public:
 	TArray() = default;
 	~TArray() = default;
 
-	T& operator[](uint32 Index);
-	
+	T& operator[](uint32 index);
+	const T& operator[](uint32 index) const;
+
+	std::vector<T>::iterator begin();
+	std::vector<T>::iterator end();
+
+	std::vector<T>::const_iterator begin() const;
+	std::vector<T>::const_iterator end() const;
+
 	// Todo: Delete, Memory leak if use pointer type
-	void Init(const T& element, uint32 count);
+	void Init(const T& data, uint32 count);
 
 	void SetNum(int32 NewNum, bool bAllowShrinking = true);
 
-	uint32 Add(const T& element);
-	uint32 Emplace(const T& element);
+	uint32 Add(const T& data);
+	uint32 Emplace(const T& data);
 	uint32 Insert(const T& data, uint32 index);
 	void Reserve(uint32 Number);
 
@@ -56,6 +63,38 @@ inline T& TArray<T>::operator[](uint32 index)
 	assert(index < mDatas.size());
 
 	return mDatas[index];
+}
+
+template<typename T>
+inline const T& TArray<T>::operator[](uint32 index) const
+{
+	assert(index < mDatas.size());
+
+	return mDatas[index];
+}
+
+template<typename T>
+inline std::vector<T>::iterator TArray<T>::begin()
+{
+	return mDatas.begin();
+}
+
+template<typename T>
+inline std::vector<T>::iterator TArray<T>::end()
+{
+	return mDatas.end();
+}
+
+template<typename T>
+inline std::vector<T>::const_iterator TArray<T>::begin() const
+{
+	return mDatas.cbegin();
+}
+
+template<typename T>
+inline std::vector<T>::const_iterator TArray<T>::end() const
+{
+	return mDatas.cend();
 }
 
 // Todo: Need to fix code

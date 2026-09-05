@@ -12,9 +12,15 @@ public:
 	TMap() = default;
 	~TMap() = default;
 
+	std::unordered_map<T, V>::iterator begin();
+	std::unordered_map<T, V>::iterator end();
+
+	std::unordered_map<T, V>::const_iterator begin() const;
+	std::unordered_map<T, V>::const_iterator end() const;
+
 	void Add(const T& key, const V& Value);
 	int32 Remove(const T& key);
-
+	
 	uint32 Num() const;
 	void Reset();
 	void Empty(int32 ExpectedNumElements = 0);
@@ -29,6 +35,30 @@ public:
 private:
 	std::unordered_map<T, V> mMap;
 };
+
+template<typename T, typename V>
+inline std::unordered_map<T, V>::iterator TMap<T, V>::begin()
+{
+	return mMap.begin();
+}
+
+template<typename T, typename V>
+inline std::unordered_map<T, V>::iterator TMap<T, V>::end()
+{
+	return mMap.end();
+}
+
+template<typename T, typename V>
+inline std::unordered_map<T, V>::const_iterator TMap<T, V>::begin() const
+{
+	return mMap.cbegin();
+}
+
+template<typename T, typename V>
+inline std::unordered_map<T, V>::const_iterator TMap<T, V>::end() const
+{
+	return mMap.cend();
+}
 
 template <typename T, typename V>
 inline void TMap<T, V>::Add(const T& key, const V& value)

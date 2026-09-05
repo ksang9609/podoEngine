@@ -125,10 +125,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Ball.cpp" />
+    <ClCompile Include="Actor.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
+    <ClCompile Include="GraphicsManager.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
@@ -138,15 +139,20 @@
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="ActorComponent.cpp" />
+    <ClCompile Include="PrimitiveComponent.cpp" />
+    <ClCompile Include="SceneComponent.cpp" />
+    <ClCompile Include="CubeComponent.cpp" />
     <ClCompile Include="URenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Ball.h" />
+    <ClInclude Include="Actor.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="EngineStatics.h" />
+    <ClInclude Include="Enum.h" />
     <ClInclude Include="FrameTimer.h" />
-    <ClInclude Include="FVector.h" />
+    <ClInclude Include="GraphicsManager.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
@@ -156,12 +162,17 @@
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="Object.h" />
+    <ClInclude Include="PrimitiveComponent.h" />
+    <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="TArray.h" />
     <ClInclude Include="TMap.h" />
     <ClInclude Include="TQueue.h" />
     <ClInclude Include="TSet.h" />
+    <ClInclude Include="ActorComponent.h" />
+    <ClInclude Include="CubeComponent.h" />
     <ClInclude Include="URenderer.h" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
