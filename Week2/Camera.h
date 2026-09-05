@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Transform.h"
-
+#include "URenderer.h"
 class FCamera
 {
 public:
@@ -21,5 +21,23 @@ public:
 	void LookAt(const FVector& Target)
 	{
 		Transform.Rotation = FRotator::LookAt(Transform.Location, Target);
+	}
+
+	FMatrix GetProjectionMatrix(int Aspect, float fovRad, float n, float f)
+	{
+		//fov 단위는 라디안
+		//Aspect = width/height
+		FMatrix result = FMatrix::Zero; //영벡터
+		float yScale = 1.0f / tan((fovRad / 2)); //xScale
+		float xScale = yScale * Aspect;
+
+
+		result.M[0][0] = xScale; //xScale
+		result.M[1][1] = yScale; //yScale
+		result.M[2][2] = f / (f - n); //A 임시
+		result.M[3][2] = -n * f / (f - n); //B 임시
+		result.M[2][3] = 1;
+
+		return result;
 	}
 };

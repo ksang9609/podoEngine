@@ -1,6 +1,7 @@
 ﻿#include <windows.h>
 #include "URenderer.h"
 #include "Sphere.h"
+#include "Cube.h"
 #include "Primitive.h"
 #include "FrameTimer.h"
 #include "Camera.h"
@@ -75,13 +76,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplWin32_Init((void*)hWnd);
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
 
-	UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
-	ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+	UINT numVerticesSphere = sizeof(Cube_vertices) / sizeof(FVertexSimple);
+	ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(Cube_vertices, sizeof(Cube_vertices));
 
 	UFrameTimer FrameTimer(120);
 	Sphere* sphere = new Sphere(FTransform({-0.5,0,0}, {0, 0, 0}, {0.1, 0.5, 0.1}));
-	FCamera* Camera = new FCamera(FTransform({ -1.0, 0.3, 0.2 }, { 0, 0, 0 }, { 1, 1, 1 }));
-
+	FCamera* Camera = new FCamera(FTransform({ -1.0, 0.0, 0.1 }, { 0, 0, 0 }, { 1, 1, 1 }));
+	float aspect = renderer.ViewportInfo.Width / renderer.ViewportInfo.Height;
+	float fovRad = 0.5f;
 	Camera->LookAt(sphere->Transform.Location);
 
 
@@ -100,8 +102,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		//1. Local -> World
 		FMatrix World = sphere->Transform.MakeMatrix();
 		FMatrix View = Camera->GetViewMatrix();
+		FMatrix Projection = Camera->GetProjectionMatrix(aspect, fovRad, 0.1, 0.2);
+		
 
-		renderer.UpdateConstant(World, View);
+		renderer.UpdateConstant(World, View*Projection);
 		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
 
 		//ImGui

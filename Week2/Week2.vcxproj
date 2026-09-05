@@ -143,6 +143,7 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Primitive.h" />
+    <ClInclude Include="Projection.h" />
     <ClInclude Include="Rotator.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />

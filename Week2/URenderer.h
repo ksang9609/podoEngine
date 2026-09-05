@@ -18,8 +18,9 @@ struct FVertexSimple
 
 struct FConstants
 {
-	FMatrix World;
+	FMatrix World; //Model
 	FMatrix ViewProjection;
+
 };
 
 
