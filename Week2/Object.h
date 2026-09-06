@@ -41,7 +41,6 @@ public:
 	uint32 UUID;
 	uint32 InternalIndex;
 
-	UObject();
 	virtual ~UObject();
 
 	void Initialize() {};
@@ -50,7 +49,7 @@ public:
 	static FClassInfo* GetClass();
 
 	// GetClass() in Unreal Engine
-	inline virtual FClassInfo* GetRuntimeClass() const { return GetClass(); }
+	inline FClassInfo* GetRuntimeClass() const { return mClassInfo; }
 
 	template<typename TObject>
 	bool IsA() const;
@@ -58,28 +57,14 @@ public:
 	bool IsA(FClassInfo* classInfo) const;
 
 protected:
+	UObject();
 
 private:
 	static TArray<UObject*> GUObjectArray;
 
+	friend struct FObjectFactory;
+	FClassInfo* mClassInfo;
 };
 
-#define REFLECT_CLASS(className, superClassName)									\
-public:																				\
-	static FClassInfo* GetClass()													\
-	{																				\
-		static FClassInfo classInstance = FClassInfo(								\
-			#className,																\
-			superClassName::GetClass(),												\
-			[]() -> UObject* {														\
-				UObject* instance = new className();								\
-				instance->Initialize();												\
-				return instance;													\
-			}																		\
-		);																			\
-		return &classInstance;														\
-	}																				\
-	virtual FClassInfo* GetRuntimeClass() const override { return GetClass(); }		\
-private:
 
 #include  "Object.inl"

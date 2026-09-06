@@ -37,7 +37,7 @@ namespace UObjectTest
 
 	TEST(TestUObject, WhenCreatingInstance_ReturnsCorrectType)
 	{
-		UObject* obj = new UMockObject();
+		UObject* obj = FObjectFactory::ConstructObject(UMockObject::GetClass());
 		FClassInfo* classInfo = obj->GetRuntimeClass();
 
 		EXPECT_EQ(classInfo->Name, "UMockObject");
@@ -59,40 +59,47 @@ namespace UObjectTest
 
 	TEST(TestIsA, WhenInputIsItself_ReturnsTrue)
 	{
-		UObject* obj = new UMockObject();
-		UObject* objChildA = new UMockObjectChildA();
-		UObject* objChildB = new UMockObjectChildB();
+		UObject* obj = FObjectFactory::ConstructObject(UMockObject::GetClass());
+		UObject* objChildA = FObjectFactory::ConstructObject(UMockObjectChildA::GetClass());
+		UObject* objChildB = FObjectFactory::ConstructObject(UMockObjectChildB::GetClass());
 
 		EXPECT_TRUE(obj->IsA(UMockObject::GetClass()));
 		EXPECT_TRUE(objChildA->IsA(UMockObjectChildA::GetClass()));
 		EXPECT_TRUE(objChildB->IsA(UMockObjectChildB::GetClass()));
 
-		delete obj, objChildA, objChildB;
+		delete obj;
+		delete objChildA;
+		delete objChildB;
 	}
 
 	TEST(TestIsA, WhenInputIsParentClass_ReturnsTrue)
 	{
-		UObject* objChildA = new UMockObjectChildA();
-		UObject* objChildB = new UMockObjectChildB();
+		UObject* objChildA = FObjectFactory::ConstructObject(UMockObjectChildA::GetClass());
+		UObject* objChildB = FObjectFactory::ConstructObject(UMockObjectChildB::GetClass());
 
 		EXPECT_TRUE(objChildA->IsA(UMockObject::GetClass()));
 		EXPECT_TRUE(objChildB->IsA(UMockObject::GetClass()));
 		EXPECT_TRUE(objChildA->IsA(UObject::GetClass()));
 		EXPECT_TRUE(objChildB->IsA(UObject::GetClass()));
 
-		delete objChildA, objChildB;
+		delete objChildA;
+		delete objChildB;
 	}
 
 	TEST(TestIsA, WhenInputIsUnrelatedClass_ReturnsFalse)
 	{
-		UObject* obj = new UMockObject();
-		UObject* objChildA = new UMockObjectChildA();
-		UObject* objChildB = new UMockObjectChildB();
+		UObject* obj = FObjectFactory::ConstructObject(UMockObject::GetClass());
+		UObject* objChildA = FObjectFactory::ConstructObject(UMockObjectChildA::GetClass());
+		UObject* objChildB = FObjectFactory::ConstructObject(UMockObjectChildB::GetClass());
+
 		EXPECT_FALSE(obj->IsA(UMockObjectChildA::GetClass()));
 		EXPECT_FALSE(obj->IsA(UMockObjectChildB::GetClass()));
 		EXPECT_FALSE(objChildA->IsA(UMockObjectChildB::GetClass()));
 		EXPECT_FALSE(objChildB->IsA(UMockObjectChildA::GetClass()));
-		delete obj, objChildA, objChildB;
+
+		delete obj;
+		delete objChildA;
+		delete objChildB;
 	}
 
 	TEST(TestConstructObject, WhenConstructing_ReturnsCorrectType)

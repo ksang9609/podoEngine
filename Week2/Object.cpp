@@ -19,7 +19,12 @@ UObject* FObjectFactory::ConstructObject(FClassInfo* classInfo)
 	{
 		return nullptr;
 	}
-	return classInfo->CreateInstance();
+	UObject* instance = classInfo->CreateInstance();
+	if (instance)
+	{
+		instance->mClassInfo = classInfo;
+	}
+	return instance;
 }
 
 UObject::UObject()
