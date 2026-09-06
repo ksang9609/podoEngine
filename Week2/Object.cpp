@@ -13,7 +13,7 @@ UObject* FClassInfo::CreateInstance() const
 	return nullptr;
 }
 
-UObject* FObjectFactory::ConstructObject(FClassInfo* classInfo)
+UObject* FObjectFactory::ConstructObject(const FClassInfo* classInfo)
 {
 	if (!classInfo || !classInfo->Constructor)
 	{
@@ -43,7 +43,7 @@ UObject::~UObject()
 	}
 }
 
-FClassInfo* UObject::GetClass()
+const FClassInfo* UObject::GetClass()
 {
 	static FClassInfo classInstance = FClassInfo(
 		"UObject",
@@ -53,9 +53,9 @@ FClassInfo* UObject::GetClass()
 	return &classInstance;
 }
 
-bool UObject::IsA(FClassInfo* classInfo) const
+bool UObject::IsA(const FClassInfo* classInfo) const
 {
-	FClassInfo* currentClass = GetRuntimeClass();
+	const FClassInfo* currentClass = GetRuntimeClass();
 	while (currentClass)
 	{
 		if (currentClass == classInfo)

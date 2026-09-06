@@ -38,7 +38,7 @@ namespace UObjectTest
 	TEST(TestUObject, WhenCreatingInstance_ReturnsCorrectType)
 	{
 		UObject* obj = FObjectFactory::ConstructObject(UMockObject::GetClass());
-		FClassInfo* classInfo = obj->GetRuntimeClass();
+		const FClassInfo* classInfo = obj->GetRuntimeClass();
 
 		EXPECT_EQ(classInfo->Name, "UMockObject");
 		EXPECT_EQ(classInfo->SuperClass->Name, "UObject");
@@ -48,8 +48,8 @@ namespace UObjectTest
 
 	TEST(TestGetClass, WhenFunctionCalled_ReturnsCorrectClassInfo)
 	{
-		FClassInfo* uMockObjectInfo = UMockObject::GetClass();
-		FClassInfo* uObjectInfo = UObject::GetClass();
+		const FClassInfo* uMockObjectInfo = UMockObject::GetClass();
+		const FClassInfo* uObjectInfo = UObject::GetClass();
 
 		EXPECT_EQ(uMockObjectInfo->Name, "UMockObject");
 		EXPECT_EQ(uMockObjectInfo->SuperClass, uObjectInfo);

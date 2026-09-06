@@ -1,7 +1,7 @@
 ﻿
 #define REFLECT_CLASS(className, superClassName)									\
 public:																				\
-	static FClassInfo* GetClass()													\
+	static const FClassInfo* GetClass()												\
 	{																				\
 		static FClassInfo classInstance = FClassInfo(								\
 			#className,																\
@@ -26,7 +26,7 @@ static TObject* FObjectFactory::ConstructObject(Args&& ...args)
 
 	}, "TObject must have an Initialize method that accepts the provided arguments.");
 
-	FClassInfo* classInfo = TObject::GetClass();
+	const FClassInfo* classInfo = TObject::GetClass();
 	if (!classInfo || !classInfo->Constructor)
 	{
 		return nullptr;
