@@ -42,8 +42,12 @@ public:
 	void Draw();
 
 private:
+	// Configs
 	FString mTitle;
 	int mMaxLines;
+
+	// Runtime data
+	bool mbAutoScroll = true;
 
 	std::vector<FString> mConsoleBuffer;
 

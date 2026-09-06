@@ -30,9 +30,17 @@ void ConsoleWindow::Draw()
 	// Draw console buffer
 	if (ImGui::BeginChild("ConsoleMessage", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true))
 	{
+		// Auto-scroll to bottom if enabled
+		const bool bWasAtBottom = (ImGui::GetScrollY() >= ImGui::GetScrollMaxY());
+
 		for (const auto& message : mConsoleBuffer)
 		{
 			ImGui::TextUnformatted(message.CStr());
+		}
+
+		if (mbAutoScroll && bWasAtBottom)
+		{
+			ImGui::SetScrollHereY(1.0f);
 		}
 	}
 
