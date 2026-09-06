@@ -13,19 +13,6 @@ UObject* FClassInfo::CreateInstance() const
 	return nullptr;
 }
 
-UObject* FObjectFactory::ConstructObject(const FClassInfo* classInfo)
-{
-	if (!classInfo || !classInfo->Constructor)
-	{
-		return nullptr;
-	}
-	UObject* instance = classInfo->CreateInstance();
-	if (instance)
-	{
-		instance->mClassInfo = classInfo;
-	}
-	return instance;
-}
 
 UObject::UObject()
 {
@@ -37,6 +24,7 @@ UObject::~UObject()
 {
 	GUObjectArray.RemoveAt(InternalIndex, 1);
 
+	// TODO: Move the last element into the removed slot
 	for (uint32 index = InternalIndex; index < GUObjectArray.Num(); ++index)
 	{
 		--(GUObjectArray[index]->InternalIndex);

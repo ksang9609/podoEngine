@@ -20,7 +20,7 @@ FFileManager::FFileManager(std::string_view fileDirPath, std::string_view rootPa
 {
 }
 
-FString FFileManager::ReadFileToString(std::string_view fileName)
+FString FFileManager::ReadFileToString(std::string_view fileName) const
 {
 	std::filesystem::path filePath = mFileDirPath / fileName;
 	if (!IsUnderFileDir(filePath))
@@ -39,7 +39,7 @@ FString FFileManager::ReadFileToString(std::string_view fileName)
 	return FString(buffer.str());
 }
 
-void FFileManager::WriteStringToFile(std::string_view fileName, std::string_view content)
+void FFileManager::WriteStringToFile(std::string_view fileName, std::string_view content) const
 {
 	std::filesystem::path filePath = mFileDirPath / fileName;
 	if (!IsUnderFileDir(filePath))

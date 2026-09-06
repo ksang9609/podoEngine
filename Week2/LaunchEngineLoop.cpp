@@ -10,6 +10,7 @@
 #include "Console.h"
 #include "GraphicsManager.h"
 #include "CubeComponent.h"
+#include "FObjectFactory.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"

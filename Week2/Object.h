@@ -25,15 +25,6 @@ struct FClassInfo
 private:
 };
 
-struct FObjectFactory
-{
-	static UObject* ConstructObject(const FClassInfo* classInfo);
-
-	template<typename TObject, typename... Args>
-		requires std::derived_from<TObject, UObject>
-	static TObject* ConstructObject(Args&& ...args);
-};
-
 class UObject
 {
 public:

@@ -6,7 +6,6 @@
 
 inline constexpr std::string_view kDefaultRootPath = ".\\";
 inline constexpr std::string_view kDefaultAssetsPath = ".\\Assets\\";
-inline constexpr std::string_view kSceneDataSuffix = ".Scene";
 
 class FFileManager
 {
@@ -15,8 +14,8 @@ public:
 	FFileManager(std::string_view fileDirPath);
 	FFileManager(std::string_view fileDirPath, std::string_view rootPath);
 
-	FString ReadFileToString(std::string_view fileName);
-	void WriteStringToFile(std::string_view fileName, std::string_view content);
+	FString ReadFileToString(std::string_view fileName) const;
+	void WriteStringToFile(std::string_view fileName, std::string_view content) const;
 
 private:
 	std::filesystem::path mFileDirPath;

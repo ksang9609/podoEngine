@@ -130,6 +130,7 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="FileManager.cpp" />
+    <ClCompile Include="FObjectFactory.cpp" />
     <ClCompile Include="GraphicsManager.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
@@ -146,6 +147,7 @@
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="CubeComponent.cpp" />
     <ClCompile Include="SceneData.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="USphereComponent.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
@@ -160,6 +162,8 @@
     <ClInclude Include="Cube.h" />
     <ClInclude Include="FEditorViewportClient.h" />
     <ClInclude Include="FileManager.h" />
+    <ClInclude Include="FObjectFactory.h" />
+    <ClInclude Include="SceneManager.h" />
     <ClInclude Include="InputState.h" />
     <ClInclude Include="Json\json.hpp" />
     <ClInclude Include="SceneData.h" />
