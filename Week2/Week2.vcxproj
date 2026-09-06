@@ -129,6 +129,7 @@
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
+    <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="GraphicsManager.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="Core.h" />
     <ClInclude Include="Cube.h" />
     <ClInclude Include="FEditorViewportClient.h" />
+    <ClInclude Include="FileManager.h" />
     <ClInclude Include="InputState.h" />
     <ClInclude Include="Json\json.hpp" />
     <ClInclude Include="SceneData.h" />
