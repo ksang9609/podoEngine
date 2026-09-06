@@ -39,6 +39,8 @@ public:
 
 	void Reset(int32 newSize);
 	void RemoveAt(uint32 index, int32 count);
+	void RemoveAtSwap(uint32 index);
+	void RemoveLast();
 
 	/*
 	int32 Find(const ElementType& Item) const;
@@ -163,14 +165,36 @@ inline void TArray<T>::Reset(int32 newSize)
 	mDatas.reserve(newSize);
 }
 
-// Crashes if index out of bound
 template<typename T>
 inline void TArray<T>::RemoveAt(uint32 index, int32 count)
 {
+	assert(mDatas.empty() == false);
 	assert(index < mDatas.size());
+	assert((index + count) <= mDatas.size());
 
 	auto removeBeginIter = mDatas.begin() + index;
 	mDatas.erase(removeBeginIter, removeBeginIter + count);
+}
+
+template<typename T>
+inline void TArray<T>::RemoveAtSwap(uint32 index)
+{
+	assert(mDatas.empty() == false);
+	assert(index < mDatas.size());
+
+	T moveData = mDatas.back();
+	mDatas[index] = moveData;
+
+	RemoveLast();
+}
+
+template<typename T>
+inline void TArray<T>::RemoveLast()
+{
+	assert(mDatas.empty() == false);
+
+	mDatas.erase(mDatas.begin() + mDatas.size() - 1);
+
 }
 
 

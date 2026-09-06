@@ -27,6 +27,7 @@
     <ClCompile Include="..\..\Week2\SceneData.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="TestsTArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
