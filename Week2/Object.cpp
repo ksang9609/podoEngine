@@ -22,12 +22,13 @@ UObject::UObject()
 
 UObject::~UObject()
 {
-	GUObjectArray.RemoveAt(InternalIndex, 1);
+	GUObjectArray.RemoveAtSwap(InternalIndex);
 
-	// TODO: Move the last element into the removed slot
-	for (uint32 index = InternalIndex; index < GUObjectArray.Num(); ++index)
+	if (InternalIndex < GUObjectArray.Num())
 	{
-		--(GUObjectArray[index]->InternalIndex);
+		assert(InternalIndex < GUObjectArray.Num());
+
+		GUObjectArray[InternalIndex]->InternalIndex = InternalIndex;
 	}
 }
 

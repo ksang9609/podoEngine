@@ -6,7 +6,7 @@
 #include "RenderInfo.h"
 //struct FRenderInfo;
 
-class UWorld : public UObject
+class UWorld final : public UObject
 {
 	REFLECT_CLASS(UWorld, UObject)
 public:

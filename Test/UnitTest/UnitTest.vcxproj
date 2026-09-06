@@ -140,6 +140,7 @@
     <ClCompile Include="TestFileManager.cpp" />
     <ClCompile Include="TestObject.cpp" />
     <ClCompile Include="TestSceneData.cpp" />
+    <ClCompile Include="TestsTArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Week2\Week2.vcxproj">
