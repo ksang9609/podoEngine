@@ -144,6 +144,7 @@
     <ClCompile Include="PrimitiveComponent.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="CubeComponent.cpp" />
+    <ClCompile Include="SceneData.cpp" />
     <ClCompile Include="USphereComponent.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
@@ -158,6 +159,8 @@
     <ClInclude Include="Cube.h" />
     <ClInclude Include="FEditorViewportClient.h" />
     <ClInclude Include="InputState.h" />
+    <ClInclude Include="Json\json.hpp" />
+    <ClInclude Include="SceneData.h" />
     <ClInclude Include="LaunchEngineLoop.h" />
     <ClInclude Include="MathUtility.h" />
     <ClInclude Include="Matrix.h" />

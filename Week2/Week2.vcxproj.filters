@@ -19,6 +19,9 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{1eb93b47-d381-43d9-8583-ffd9edc14d98}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Json">
+      <UniqueIdentifier>{b53c8b88-1e9b-488b-b73f-093142aa82d8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -88,6 +91,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="LaunchEngineLoop.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneData.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -202,6 +208,12 @@
     </ClInclude>
     <ClInclude Include="Transform.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneData.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Json\json.hpp">
+      <Filter>Json</Filter>
     </ClInclude>
     <ClInclude Include="FEditorViewportClient.h">
       <Filter>헤더 파일</Filter>
