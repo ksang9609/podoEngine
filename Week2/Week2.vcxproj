@@ -103,6 +103,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -130,7 +131,7 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="FileManager.cpp" />
-    <ClCompile Include="FObjectFactory.cpp" />
+    <ClCompile Include="ObjectFactory.cpp" />
     <ClCompile Include="GraphicsManager.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
@@ -162,7 +163,7 @@
     <ClInclude Include="Cube.h" />
     <ClInclude Include="FEditorViewportClient.h" />
     <ClInclude Include="FileManager.h" />
-    <ClInclude Include="FObjectFactory.h" />
+    <ClInclude Include="ObjectFactory.h" />
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="InputState.h" />
     <ClInclude Include="Json\json.hpp" />

@@ -5,7 +5,7 @@
 #include "FileManager.h"
 #include "World.h"
 #include "EngineStatics.h"
-#include "FObjectFactory.h"
+#include "ObjectFactory.h"
 #include "PrimitiveComponent.h"
 
 void FSceneManager::NewScene(UWorld* world)
@@ -45,7 +45,7 @@ UWorld* FSceneManager::BuildWorldFromSceneData(const FSceneData& sceneData)
 {
 	//UWorld* newWorld = FObjectFactory::ConstructObject<UWorld>();
 
-	//for (const auto& [UUID, primitiveData] : sceneData.Primitives)
+	//for (const auto& [UUID, primitiveData] : sceneData.Primitives) 
 	//{
 	//	// TODO: Replace AActor creation logic later
 	//	AActor* newActor = FObjectFactory::ConstructObject<AActor>();

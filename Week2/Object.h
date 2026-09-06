@@ -4,6 +4,7 @@
 
 #include "Core.h"
 #include "TArray.h"
+#include "ObjectFactory.h"
 
 
 class UObject;
