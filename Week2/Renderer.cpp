@@ -7,6 +7,7 @@ void URenderer::Create(HWND hWindow)
 	CreateDepthStencilBuffer();
 	CreateDepthStencilState();
 	CreateStencilMarkState();
+	CreateStencilOutlineState();
 	CreateRasterizerState();
 }
 
@@ -242,6 +243,22 @@ void URenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 	DeviceContext->Draw(numVertices, 0);
 }
 
+void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix Outline, const FRenderInfo& RI)
+{
+	// (a) 스텐실에 1 마킹. 색은 원본과 같으니 화면 변화 없음
+	DeviceContext->OMSetDepthStencilState(StencilMarkState, 1);
+	UpdateConstant(RI.WorldTransformMatrix, mViewProjectionMatrix);
+	RenderPrimitive(pBuffer, Num);
+
+	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
+	DeviceContext->OMSetDepthStencilState(StencilOutlineState, 1);
+	UpdateConstant(Outline, mViewProjectionMatrix, FVector4(1.f, 0.6f, 0.f, 1.f));
+	RenderPrimitive(pBuffer, Num);
+
+	// (c) 원상복구
+	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+}
+
 
 //=============================================
 
@@ -319,6 +336,26 @@ void URenderer::CreateStencilMarkState()
 	Device->CreateDepthStencilState(&desc, &StencilMarkState);
 }
 
+void URenderer::CreateStencilOutlineState()
+{
+	D3D11_DEPTH_STENCIL_DESC desc = {};
+	desc.DepthEnable = FALSE;							// 항상 위에 그린다
+	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+
+	desc.StencilEnable = TRUE;
+	desc.StencilReadMask = 0xFF;
+	desc.StencilWriteMask = 0x00;						// 읽기만, 쓰지 않는다
+
+	// 마킹된 곳(=원본 실루엣)은 통과 못 함 -> 바깥 테두리만 남는다
+	desc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+	desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	desc.BackFace = desc.FrontFace;
+
+	Device->CreateDepthStencilState(&desc, &StencilOutlineState);
+}
+
 void URenderer::ReleaseDepthStencilBuffer()
 {
 	if (DepthStencilView) { DepthStencilView->Release();   DepthStencilView = nullptr; }
@@ -328,9 +365,11 @@ void URenderer::ReleaseDepthStencilBuffer()
 void URenderer::ReleaseDepthStencilState()
 {
 	if (DepthStencilState) { DepthStencilState->Release();  DepthStencilState = nullptr; }
+	if (StencilMarkState) { StencilMarkState->Release();  StencilMarkState = nullptr; }
+	if (StencilOutlineState) { StencilOutlineState->Release();  StencilOutlineState = nullptr; }
 }
 
-void URenderer::UpdateConstant(FMatrix world, FMatrix viewProjection)
+void URenderer::UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint)
 {
 	if (ConstantBuffer)
 	{
@@ -341,6 +380,7 @@ void URenderer::UpdateConstant(FMatrix world, FMatrix viewProjection)
 		{
 			constants->World = world;
 			constants->ViewProjection = viewProjection;
+			constants->Tint = tint;
 		}
 		DeviceContext->Unmap(ConstantBuffer, 0);
 	}

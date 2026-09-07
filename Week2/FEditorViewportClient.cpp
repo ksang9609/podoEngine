@@ -33,8 +33,6 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 	DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
 		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
 
-	// t 는 near -> far 구간의 비율(0~1)이다. 월드 거리가 아니므로 FLT_MAX 로 시작한다.
-	// 아핀 변환은 t 를 보존하므로 스케일이 다른 오브젝트끼리도 그대로 비교할 수 있다.
 	float NearlistT = FLT_MAX;
 
 	const TArray<FRenderInfo> RenderInfos = World->GetRenderInfos();
@@ -47,8 +45,6 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 			continue;   // 모르는 프리미티브는 건너뛴다
 		}
 
-		// 정점 수천 개를 월드로 보내는 대신, 레이 두 점을 오브젝트의 로컬 공간으로 가져온다.
-		// 회전과 비균등 스케일이 이 한 번의 변환으로 전부 처리된다.
 		const FMatrix WorldToLocal = RI.WorldTransformMatrix.Inverse();
 		const FVector LocalNear = WorldToLocal.TransformPosition(NearPoint);
 		const FVector LocalFar = WorldToLocal.TransformPosition(FarPoint);

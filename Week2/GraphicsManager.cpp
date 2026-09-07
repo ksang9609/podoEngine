@@ -97,3 +97,25 @@ URenderer* GraphicsManager::GetRenderer() const
 
 	return mRenderer;
 }
+
+FVector GraphicsManager::GetPrimitiveCenter(EPrimitive type)
+{
+	switch (type)
+	{
+		case EPrimitive::EP_Sphere:	return FVector(0, 0, 0);
+		case EPrimitive::EP_Cube:	return FVector(0.5, 0.5, 0.5);
+		default:					return FVector(0, 0, 0);
+	}
+}
+
+void GraphicsManager::RenderHighLight(const FRenderInfo& RI)
+{
+	FVector Center = GetPrimitiveCenter(RI.ePrimitive);
+	const FMatrix Outline = FMatrix::Translation(FVector(-Center.x, -Center.y, -Center.z))
+		* FMatrix::Scale(FVector(1.02f))
+		* FMatrix::Translation(Center)
+		* RI.WorldTransformMatrix;
+
+	FBuffer vertexBuffer = mBufferMap[RI.ePrimitive];
+	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewProjectionMatrix, Outline, RI);
+}

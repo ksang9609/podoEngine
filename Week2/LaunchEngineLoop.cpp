@@ -167,7 +167,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		//Render Threads
 		{
-
 			if (WindowApplication.bPendingResize)
 			{
 				mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
@@ -178,6 +177,14 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			mGraphicsManager->Prepare(bwireFrame, &ViewportClient.mCamera);
 			mGraphicsManager->Render(mSceneManager.GetRenderInfos());
 
+			//강조
+			if (ViewportClient.IsMouseHit())
+			{
+				UE_LOG("Hit");
+
+				//큐브가 선택되었으면 강조 표시
+				mGraphicsManager->RenderHighLight(ViewportClient.HoveredRenderInfo);
+			}
 
 			//ImGui
 			{
@@ -188,14 +195,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 			mGraphicsManager->Display();
 
-			//강조
-			if (ViewportClient.IsMouseHit())
-			{
-				UE_LOG("Hit");
-
-				//큐브가 선택되었으면 강조 표시
-				//mGraphicsManager->GetRenderer()->DeviceContext->OMSetRenderTargets(0, nullptr, D)
-			}
 		}
 
 		FrameTimer.EndFrame();

@@ -4,6 +4,7 @@
 #include <d3dcompiler.h>
 #include "Matrix.h"
 #include "Vector.h"
+#include "RenderInfo.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
@@ -22,7 +23,7 @@ struct FConstants
 {
 	FMatrix World; //Model
 	FMatrix ViewProjection;
-
+	FVector4 Tint;          // rgb = 색, a = 섞는 비율
 };
 
 
@@ -40,7 +41,8 @@ public:
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
 	ID3D11DepthStencilState* DepthStencilState = nullptr;	// 깊이 테스트용 상태
-	ID3D11DepthStencilState* StencilMarkState = nullptr;	// 스텐실
+	ID3D11DepthStencilState* StencilMarkState = nullptr;	// 스텐실에 1 마킹용 상태
+	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -64,7 +66,7 @@ public:
 	void CreateDepthStencilBuffer();
 	void CreateDepthStencilState();
 	void CreateStencilMarkState();
-
+	void CreateStencilOutlineState();
 	//release
 	void Release();
 	void ReleaseDeviceAndSwapChain();
@@ -79,8 +81,9 @@ public:
 	//Rendering
 	void Prepare(bool bWireFrame);
 	void PrepareShader();
-	void UpdateConstant(FMatrix world, FMatrix viewProjection);
+	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
 	void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
+	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix Outline, const FRenderInfo& RI);
 	void SwapBuffer();
 
     //=============================================

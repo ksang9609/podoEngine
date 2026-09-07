@@ -8,6 +8,7 @@
 #include "Renderer.h"
 #include "Camera.h"
 #include "RenderInfo.h"
+#include "Vector.h"
 
 struct FBuffer
 {
@@ -33,8 +34,10 @@ public:
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
 	URenderer* GetRenderer() const;
-
+	static FVector GetPrimitiveCenter(EPrimitive type);
+	void RenderHighLight(const FRenderInfo& RI);
 private:
+
 	URenderer* mRenderer;
 	FMatrix mViewProjectionMatrix;
 
