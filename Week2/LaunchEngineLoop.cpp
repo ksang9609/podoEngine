@@ -153,6 +153,13 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 	}
 
+	//Game Threads
+	{
+		// 레이캐스트보다 먼저 돌려야 한다.
+		// 여기서 RenderInfos 가 갱신되고, RayCast 가 그걸 읽는다.
+		mSceneManager->Update(deltaTime);
+	}
+
 	//Raycast
 	{
 		//Gizmo Test
@@ -164,37 +171,41 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		//UE_LOG("Gizmo axis : %d", static_cast<int>(ViewportClient.mGizmo.eAxis));
 
-		if (WindowApplication.Input.bPressed[VK_LBUTTON])
+		const FInputState& Input = WindowApplication.Input;
+
+		if (ViewportClient->ClickedActor)
 		{
+			ViewportClient->ClickedActor->BeginFrame();
+		}
+
+		// 누른 순간에만 선택을 갱신한다. 떼는 것으로는 선택이 풀리지 않는다.
+		if (!ImGui::GetIO().WantCaptureMouse && Input.WasPressed(VK_LBUTTON))
+		{
+			AActor* Hit = nullptr;
+
 			if (ViewportClient->IsMouseHit())
 			{
 				UObject* ClickedObject = UObject::GUObjectArray[ViewportClient->HoveredRenderInfo.ObejctID.InternalIndex];
 				if (ClickedObject && ClickedObject->IsA(AActor::GetClass()))
 				{
-					ViewportClient->ClickedActor = static_cast<AActor*>(ClickedObject);
-					ViewportClient->ClickedActor->Click();
+					Hit = static_cast<AActor*>(ClickedObject);
 				}
 			}
-			//else if (!ViewportClient->IsMouseHit() && ViewportClient->ClickedActor)
-			//{
-			//	ViewportClient->ClickedActor->UnClick();
-			//	ViewportClient->ClickedActor = nullptr;
-			//}
-		}
 
-		if (WindowApplication.Input.bReleased[VK_LBUTTON])
-		{
-			if (ViewportClient->ClickedActor)
+			// 다른 것을 눌렀으면 이전 선택 해제. 같은 것이면 유지.
+			if (ViewportClient->ClickedActor && ViewportClient->ClickedActor != Hit)
 			{
-				ViewportClient->ClickedActor->UnClick();
-				ViewportClient->ClickedActor = nullptr;
+				ViewportClient->ClickedActor->UnPressed();
+			}
+
+			ViewportClient->ClickedActor = Hit;   // 빈 공간을 눌렀으면 nullptr -> 선택 해제
+
+			if (Hit)
+			{
+				Hit->Pressed();      // 선택 유지
+				Hit->ClickStart();   // 이번 프레임에 시작했음을 표시
 			}
 		}
-	}
-
-	//Game Threads
-	{
-		mSceneManager->Update(deltaTime);
 	}
 
 	//Render Threads

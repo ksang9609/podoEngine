@@ -62,7 +62,7 @@ public:
 
 	bool IsA(const FClassInfo* classInfo) const;
 
-	static TArray<UObject*> GUObjectArray;
+	static TSparseArray<UObject*> GUObjectArray;
 
 protected:
 	UObject();

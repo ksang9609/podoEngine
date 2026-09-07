@@ -23,16 +23,22 @@ public:
 	void Update(TArray<FRenderInfo>* outRenderInfos);
 	//void Render();
 
-	//Actor가 클릭 되었을 때 호출
-	void Click();
-	void UnClick();
-	bool IsClicked();
+	void Pressed();
+	void UnPressed();
+	void ClickStart();
+
+	//매 프레임 시작 시 호출. 이번 프레임용 플래그를 지운다
+	void BeginFrame();
+
+	bool IsPressed() const;
+	bool IsStarted() const;   // 이번 프레임에 눌리기 시작 (1프레임만)
 
 private:
 	int32 getComponentIndex(uint32 componentUUID) const;
 
 private:
 	TArray<UActorComponent*> mComponents;
-	bool mbClicked = false;
+	bool mbPressed = false;
+	bool mbStarted = false;
 };
 

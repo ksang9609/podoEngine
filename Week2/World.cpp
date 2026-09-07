@@ -91,7 +91,7 @@ void UWorld::Update()
 
 	for (AActor* actor : mActors)
 	{
-		if (actor->IsClicked())
+		if (actor->IsStarted())
 		{
 			UE_LOG("Actor selected: %d", actor->UUID);
 		}

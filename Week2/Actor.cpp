@@ -14,8 +14,8 @@ AActor::~AActor()
 
 void AActor::Initialize()
 {
-	// Todo: Change to false 
-	mbClicked = false;
+	mbPressed = false;
+	mbStarted = false;
 }
 
 void AActor::SerializeClass(json::JSON& outJson) const
@@ -94,19 +94,34 @@ void AActor::Update(TArray<FRenderInfo>* outRenderInfos)
 	}
 }
 
-void AActor::Click()
+void AActor::Pressed()
 {
-	mbClicked = true;
+	mbPressed = true;
 }
 
-void AActor::UnClick()
+void AActor::UnPressed()
 {
-	mbClicked = false;
+	mbPressed = false;
 }
 
-bool AActor::IsClicked()
+void AActor::ClickStart()
 {
-	return mbClicked;
+	mbStarted = true;
+}
+
+void AActor::BeginFrame()
+{
+	mbStarted = false;
+}
+
+bool AActor::IsPressed() const
+{
+	return mbPressed;
+}
+
+bool AActor::IsStarted() const
+{
+	return mbStarted;
 }
 
 int32 AActor::getComponentIndex(uint32 componentUUID) const
