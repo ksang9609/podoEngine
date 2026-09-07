@@ -166,7 +166,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		mGraphicsManager->Update(deltaTime);
 		mGraphicsManager->Prepare(&ViewportClient->mCamera);
 		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
-		mGraphicsManager->Render(ViewportClient->mGizmo.GetGizmoRenderInfo());
 
 		//강조
 		if (ViewportClient->IsMouseHit())
@@ -183,6 +182,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		}
 
+		mGraphicsManager->RenderOverlay(ViewportClient->mGizmo.GetGizmoRenderInfo());
 		mGraphicsManager->Display();
 	}
 

@@ -67,6 +67,7 @@ public:
 	void CreateDepthStencilState();
 	void CreateStencilMarkState();
 	void CreateStencilOutlineState();
+	
 	//release
 	void Release();
 	void ReleaseDeviceAndSwapChain();
@@ -86,6 +87,8 @@ public:
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix Outline, const FRenderInfo& RI);
 	void SwapBuffer();
 
+	//Initialize
+	void ClearDepth();
     //=============================================
 	//해상도 변경 시 호출
 	void OnResize(UINT Width, UINT Height);

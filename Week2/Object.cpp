@@ -22,12 +22,14 @@ UObject::UObject()
 
 UObject::~UObject()
 {
-	//// Ensure that the object is in the GUObjectArray before attempting to remove it
-	//if (GUObjectArray.Num() < InternalIndex || GUObjectArray[InternalIndex] != this)
-	//{
-	//	assert(false && "Invalid InternalIndex or GUObjectArray mismatch.");
-	//	return;
-	//}
+	/*
+	// Ensure that the object is in the GUObjectArray before attempting to remove it
+	if (GUObjectArray.Num() < InternalIndex || GUObjectArray[InternalIndex] != this)
+	{
+		assert(false && "Invalid InternalIndex or GUObjectArray mismatch.");
+		return;
+	}
+	*/
 
 	GUObjectArray.RemoveAt(InternalIndex);
 }

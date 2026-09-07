@@ -60,7 +60,11 @@ void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
 }
-
+void GraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos) //깊이버퍼 초기화
+{
+	mRenderer->ClearDepth();
+	Render(renderInfos);
+}
 /*
 void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimitive)
 {

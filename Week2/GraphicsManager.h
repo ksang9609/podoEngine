@@ -25,7 +25,7 @@ public:
 	void Prepare(const FCamera* mCamera);
 	//void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive); // FRenderInfo
 	void Render(const TArray<FRenderInfo> renderInfos); // FRenderInfo
-
+	void RenderOverlay(const TArray<FRenderInfo> renderInfos); //깊이버퍼 초기화
 	void Display();
 	void Update(float deltaTime);
 

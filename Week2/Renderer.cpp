@@ -408,3 +408,8 @@ void URenderer::OnResize(UINT Width, UINT Height)
 	CreateFrameBuffer();
 	CreateDepthStencilBuffer();
 }
+
+void URenderer::ClearDepth()
+{
+	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
