@@ -11,7 +11,7 @@ class USceneComponent : public UActorComponent
 {
 	REFLECT_CLASS(USceneComponent, UActorComponent)
 public:
-	USceneComponent();
+	USceneComponent() = default;
 
 	void Initialize(FVector location, FRotator rotation, FVector scale3D);
 	virtual ~USceneComponent();

@@ -48,7 +48,7 @@ void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
-		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix);
+		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix, renderInfo.Color);
 
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
 		if (vertexBuffer == nullptr)

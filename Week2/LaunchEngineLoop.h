@@ -17,8 +17,6 @@ class FEngineLoop
 {
 public:
 	FEngineLoop()
-		: FrameTimer(120)
-		, mFileManager()
 	{
 	}
 	~FEngineLoop() {};
@@ -29,14 +27,14 @@ public:
 
 private:
 	// Todo: Make as pointer
-	UFrameTimer FrameTimer;
+	FFrameTimer* FrameTimer;
 	bool bwireFrame = false;
 	bool GInTick = false;
-	FEditorViewportClient ViewportClient;
+	FEditorViewportClient* ViewportClient;
 
 	GraphicsManager* mGraphicsManager;
-	FSceneManager mSceneManager;
-	FFileManager mFileManager;
+	FSceneManager* mSceneManager;
+	FFileManager* mFileManager;
 };
 
-//inline FEngineLoop GEngineLoop;
+inline FEngineLoop GEngineLoop;

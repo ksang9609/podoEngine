@@ -37,7 +37,7 @@ void operator delete(void* deleteObject, size_t size)
 	free(deleteObject);
 }
 
-FEngineLoop GEngineLoop;
+//FEngineLoop GEngineLoop;
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

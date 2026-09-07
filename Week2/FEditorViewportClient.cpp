@@ -35,6 +35,22 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 
 	float NearlistT = FLT_MAX;
 
+	if (true) //if(도형이 선택되었다면)
+	{
+		mGizmo.mbVisible = true;
+		// Gizmo 탐색
+		if (mGizmo.IsRayInGizmo(NearPoint, FarPoint))
+		{
+			// gizmo highlight
+			return;
+		}
+	}
+	else
+	{
+		mGizmo.mbVisible = false;
+	}
+
+	// Object 탐색
 	const TArray<FRenderInfo> RenderInfos = World->GetRenderInfos();
 	for (const FRenderInfo& RI : RenderInfos)
 	{
@@ -107,6 +123,8 @@ void FEditorViewportClient::Update(float deltaTime)
 			mCamera.Transform.Location += mCamera.Velocity * deltaTime;
 		}
 	}
+
+	mGizmo.Update(mCamera.Transform.Location, mCamera.GetForwardVector(), mCamera.mFovDegree);
 }
 
 bool FEditorViewportClient::RayIntersectsTriangle(const FVector& Origin, const FVector& Dir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT, float& OutU, float& OutV)

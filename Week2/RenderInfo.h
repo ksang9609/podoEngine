@@ -8,4 +8,5 @@ struct FRenderInfo
 	EPrimitive ePrimitive;
 	FMatrix WorldTransformMatrix;
 	FObjectID ObejctID;
+	FVector4 Color;
 };

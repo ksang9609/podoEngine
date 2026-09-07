@@ -5,6 +5,7 @@
 #include "World.h"
 #include "Camera.h"
 #include "RenderInfo.h"
+#include "Gizmo.h"
 
 class AActor;
 
@@ -23,6 +24,7 @@ public:
 	AActor* ClickedActor = nullptr;
 
 	FCamera mCamera;
+	FGizmo mGizmo;
 
 private:
 	bool RayIntersectsTriangle( // 두개의 

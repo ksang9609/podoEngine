@@ -5,10 +5,6 @@
 #include "Transform.h"
 #include "JsonUtil.h"
 
-USceneComponent::USceneComponent()
-{
-}
-
 void USceneComponent::Initialize(FVector location, FRotator rotation, FVector scale3D)
 {
 	mRelativeLocation = location;
@@ -54,7 +50,6 @@ void USceneComponent::DeserializeClass(const json::JSON& inJson)
 	{
 		throw std::runtime_error(std::format("{}: mRelativeScale3D property requires an array of length 3", GetRuntimeClass()->Name));
 	}
-
 
 	mRelativeLocation = FVectorFromJson(propertiesJson.at("mRelativeLocation"));
 	mRelativeRotation = FRotatorFromJson(propertiesJson.at("mRelativeRotation"));
