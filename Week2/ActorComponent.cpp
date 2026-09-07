@@ -2,11 +2,24 @@
 #include "ActorComponent.h"
 
 UActorComponent::UActorComponent()
+	: mOwner(nullptr)
 {
 }
 
 UActorComponent::~UActorComponent()
 {
+}
+
+void UActorComponent::SetOwner(AActor* owner)
+{
+	assert(mOwner == nullptr);
+
+	mOwner = owner;
+}
+
+AActor* UActorComponent::GetOwner() const
+{
+	return mOwner;
 }
 
 void UActorComponent::Update(TArray<FRenderInfo>* outRenderInfos)

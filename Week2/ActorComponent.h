@@ -11,9 +11,14 @@ public:
 	UActorComponent();
 	virtual ~UActorComponent();
 
+	void SetOwner(AActor* owner);
+	AActor* GetOwner() const;
+
 	// Todo: Make as pure class
 	virtual void Update(TArray<FRenderInfo>* outRenderInfos);
-
 	virtual void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos);
+
+protected:
+	AActor* mOwner;
 };
 

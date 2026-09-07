@@ -15,7 +15,7 @@ AActor::~AActor()
 void AActor::Initialize()
 {
 	// Todo: Change to false 
-	mbClicked = true;
+	mbClicked = false;
 }
 
 void AActor::SerializeClass(json::JSON& outJson) const
@@ -69,6 +69,7 @@ void AActor::AddComponent(UActorComponent* actorComponent)
 	assert(getComponentIndex(actorComponent->UUID) == -1);
 
 	mComponents.Add(actorComponent);
+	actorComponent->SetOwner(this);
 }
 
 bool AActor::RemoveComponent(uint32 componentUUID)

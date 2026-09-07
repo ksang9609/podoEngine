@@ -10,13 +10,14 @@
 #include "ObjectFactory.h"
 #include "Cube.h"
 #include "Sphere.h"
+#include "Object.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 #include "Actor.h"
 #include "World.h"
-#include "Console.h"
+
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -153,28 +154,43 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	}
 
 	//Raycast
-	/*
 	{
 		//Gizmo Test
-		ViewportClient.mGizmo.mbVisible = true;
-		ViewportClient.mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
+		ViewportClient->mGizmo.mbVisible = true;
+		ViewportClient->mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
 
-		ViewportClient.Update(deltaTime);
-		ViewportClient.RayCast(mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager.GetCurrentWorld());
+		ViewportClient->Update(deltaTime);
+		ViewportClient->RayCast(mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager->GetCurrentWorld());
 
-		UE_LOG("Gizmo axis : %d", static_cast<int>(ViewportClient.mGizmo.eAxis));
+		//UE_LOG("Gizmo axis : %d", static_cast<int>(ViewportClient.mGizmo.eAxis));
 
-		if (ViewportClient.IsMouseHit() && ViewportClient.ClickedActor)
+		if (WindowApplication.Input.bPressed[VK_LBUTTON])
 		{
-			ViewportClient->ClickedActor->Click();
+			if (ViewportClient->IsMouseHit())
+			{
+				UObject* ClickedObject = UObject::GUObjectArray[ViewportClient->HoveredRenderInfo.ObejctID.InternalIndex];
+				if (ClickedObject && ClickedObject->IsA(AActor::GetClass()))
+				{
+					ViewportClient->ClickedActor = static_cast<AActor*>(ClickedObject);
+					ViewportClient->ClickedActor->Click();
+				}
+			}
+			//else if (!ViewportClient->IsMouseHit() && ViewportClient->ClickedActor)
+			//{
+			//	ViewportClient->ClickedActor->UnClick();
+			//	ViewportClient->ClickedActor = nullptr;
+			//}
 		}
-		else if (ViewportClient->ClickedActor)
+
+		if (WindowApplication.Input.bReleased[VK_LBUTTON])
 		{
-			ViewportClient->ClickedActor->UnClick();
-			ViewportClient->ClickedActor = nullptr;
+			if (ViewportClient->ClickedActor)
+			{
+				ViewportClient->ClickedActor->UnClick();
+				ViewportClient->ClickedActor = nullptr;
+			}
 		}
 	}
-	*/
 
 	//Game Threads
 	{
@@ -197,7 +213,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		//강조
 		if (ViewportClient->IsMouseHit())
 		{
-			UE_LOG("Hit");
+			//UE_LOG("Hit");
 
 			//큐브가 선택되었으면 강조 표시
 			mGraphicsManager->RenderHighLight(ViewportClient->HoveredRenderInfo);
@@ -211,15 +227,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		}
 
 		mGraphicsManager->Display();
-
-		//강조
-		if (ViewportClient->IsMouseHit())
-		{
-			UE_LOG("Hit");
-
-			//큐브가 선택되었으면 강조 표시
-			//mGraphicsManager->GetRenderer()->DeviceContext->OMSetRenderTargets(0, nullptr, D)
-		}
 	}
 
 	FrameTimer->EndFrame();

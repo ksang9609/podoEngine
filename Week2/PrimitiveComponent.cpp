@@ -6,6 +6,8 @@
 #include "RenderInfo.h"
 #include "enum.h"
 #include "JsonUtil.h"
+#include "Console.h"
+#include "Actor.h"
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -60,10 +62,10 @@ void UPrimitiveComponent::Update(TArray<FRenderInfo>* outRenderInfos)
 {
 	// Todo: Update coordinates here
 	{
-
+		//UE_LOG("Primitive selected");
 	}
-
-	outRenderInfos->Add({ mePrimitive, GetTransformMatrix().MakeMatrix() });
+	
+	outRenderInfos->Add({ mePrimitive, GetTransformMatrix().MakeMatrix(), { mOwner->UUID, mOwner->InternalIndex }, FVector4(0, 0, 0, 0) });
 }
 
 /*

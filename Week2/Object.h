@@ -32,7 +32,7 @@ private:
 struct FObjectID
 {
 	int32 UUID;
-	int32 InternalIndex;
+	uint32 InternalIndex;
 };
 
 class UObject
@@ -62,11 +62,12 @@ public:
 
 	bool IsA(const FClassInfo* classInfo) const;
 
+	static TArray<UObject*> GUObjectArray;
+
 protected:
 	UObject();
 
 private:
-	static TSparseArray<UObject*> GUObjectArray;
 
 	friend struct FObjectFactory;
 	const FClassInfo* mClassInfo;

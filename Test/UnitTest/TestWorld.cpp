@@ -14,10 +14,10 @@ namespace UWorldTest
 	{
 		REFLECT_CLASS(AMockActor, AActor)
 
-		virtual void Update() override
-		{
-			++gUpdateCounter;
-		}
+		//virtual void Update() override
+		//{
+		//	++gUpdateCounter;
+		//}
 	};
 
 

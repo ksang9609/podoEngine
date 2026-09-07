@@ -4,6 +4,7 @@
 
 #include "RenderInfo.h"
 #include "JsonUtil.h"
+#include "Console.h"
 
 UWorld::~UWorld()
 {
@@ -92,8 +93,10 @@ void UWorld::Update()
 	{
 		if (actor->IsClicked())
 		{
-			actor->Update(&mRenderInfos);
+			UE_LOG("Actor selected: %d", actor->UUID);
 		}
+
+		actor->Update(&mRenderInfos);
 	}
 }
 
