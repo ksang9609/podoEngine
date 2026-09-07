@@ -28,11 +28,19 @@ struct FClassInfo
 private:
 };
 
+struct FObjectID
+{
+	int32 UUID;
+	int32 InternalIndex;
+};
+
+
 class UObject
 {
 public:
 	// Todo: Fix
-	uint32 UUID;
+	int32 UUID;
+	FObjectID ObjectID;
 	uint32 InternalIndex;
 
 	virtual ~UObject();

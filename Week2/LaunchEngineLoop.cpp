@@ -4,19 +4,18 @@
 
 #include "Renderer.h"
 #include "WindowApplication.h"
-#include "Camera.h"
-#include "Transform.h"
-#include "Cube.h"
 #include "Console.h"
 #include "GraphicsManager.h"
 #include "CubeComponent.h"
 #include "ObjectFactory.h"
+#include "Cube.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 #include "Actor.h"
 #include "World.h"
+#include "Console.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -59,11 +58,13 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager.NewScene();
 	//mSceneManager.LoadScene("TestScene", mFileManager);
 
-	UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
-	AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
-	cubeActor->AddComponent(cubeComonent);
-
-	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
+	//test code
+	{
+		UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
+		AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
+		cubeActor->AddComponent(cubeComonent);
+		mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
+	}
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
@@ -71,136 +72,134 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	if (GInTick) return;
 	GInTick = true;
 
-	// DEbug
-	UE_LOG_F("Hello world");
-
 	FrameTimer.StartFrame();
 	float deltaTime = FrameTimer.GetDeltaTime();
-
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
-	WindowApplication.ProcessDeferredEvents();
-	if (WindowApplication.bPendingResize)
+	//Input Threads
 	{
-		mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
-		WindowApplication.bPendingResize = false;
-	}
+		WindowApplication.ProcessDeferredEvents();
 
-	mSceneManager.Update();
-	mGraphicsManager->Update(deltaTime);
-
-	mGraphicsManager->Prepare(bwireFrame);
-	mGraphicsManager->Render(mSceneManager.GetRenderInfos());
-
-	FVector NearPoint, OutPoint;
-	ViewportClient.DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
-		mGraphicsManager->GetRenderer()->ViewportInfo.Width, mGraphicsManager->GetRenderer()->ViewportInfo.Height,
-		*mGraphicsManager->GetCamera(), mGraphicsManager->GetFov(), 0.1f, 100.f, NearPoint, OutPoint);
-
-	float OutT, OutU, OutV;
-	float NearlistT = (OutPoint-NearPoint).Length();
-	UObject* NearObj;
-	//for (오브젝트)
-	//{
-	//	bool bHit = false;
-	//	for (오브젝트를 _ABC _ABC 6개)
-	//	{
-	//		if (ViewportClient.RayIntersectsTriangle(NearPoint, OutPoint, , , , OutT, OutU, OutV))
-	//		{
-	//			bHit = true;
-	//			break;
-	//		}
-	//	 }
-
-	//	if (bHit && OutT < NearlistT)
-	//	{
-	//		NearlistT = OutT;
-	//		NearObj = 오브젝트[i];
-	//	}
-	//}
-
-	int length = sizeof(Cube_vertices) / sizeof(FVertexSimple);
-	bool bHit = false;
-	for (int i = 0; i < length - 2; i += 2)
-	{
-		FVector V0 = Cube_vertices[i].GetPosition(), V1 = Cube_vertices[i + 1].GetPosition(), V2 = Cube_vertices[i + 2].GetPosition();
-		if (ViewportClient.RayIntersectsTriangle(NearPoint, OutPoint, V0, V1, V2, OutT, OutU, OutV))
+		//ImGui Input
 		{
-			bHit = true;
-			break;
+			ImGui_ImplDX11_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+
+			ImGui::Begin("Jungle Property Window");
+			ImGui::Text("Hello Jungle World!");
+			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
+
+			ImGui::Separator();
+			//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
+			if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
+			{
+				ImGui::Checkbox("Wire frame", &bwireFrame);
+				ImGui::EndCombo();
+			}
+			ImGui::Text("FOV     ");
+			ImGui::SameLine();
+			//ImGui::SliderFloat("##FOV", &fovDegree, 0.0f, 180.0f);
+
+			// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
+			ImGui::Text("Location");
+			ImGui::SameLine();
+
+			// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
+			const float spacing = ImGui::GetStyle().ItemSpacing.x;
+			const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
+
+			//ImGui::SetNextItemWidth(itemWidth);
+			//ImGui::DragFloat("##CamLocX", &Camera.Transform.Location.x, -10.0f, 10.0f);d
+			//ImGui::SameLine();
+			//ImGui::SetNextItemWidth(itemWidth);
+			//ImGui::DragFloat("##CamLocY", &Camera.Transform.Location.y, -10.0f, 10.0f);
+			//ImGui::SameLine();
+			//ImGui::SetNextItemWidth(itemWidth);
+			//ImGui::DragFloat("##CamLocZ", &Camera.Transform.Location.z, -10.0f, 10.0f);
+
+			//ImGui::Text("Rotation");
+			//ImGui::SameLine();
+			//ImGui::SetNextItemWidth(itemWidth);
+			//ImGui::DragFloat("##CamRotX", &Camera.Transform.Rotation.Roll, -10.0f, 180.0f);
+			//ImGui::SameLine();
+			//ImGui::SetNextItemWidth(itemWidth);
+			//ImGui::DragFloat("##CamRotY", &Camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
+			//ImGui::SameLine();
+			//ImGui::SetNextItemWidth(itemWidth);
+			//ImGui::DragFloat("##CamRotZ", &Camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
+			//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
+			//ImGui::TextUnformatted(renderer.bDepthTestEnabled
+			//	? "ON : orange (near) stays in front"
+			//	: "OFF: blue (far, drawn last) overwrites");
+
+			ImGui::End();
 		}
-	}
 
-	if (bHit)
-	{
-		UE_LOG("CubHit, (T, U, V) = (%f, %f, %f)", OutT, OutU, OutV);
-	}
-
-
-
-	//ImGui
-	{
-		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
-		ImGui::Begin("Jungle Property Window");
-		ImGui::Text("Hello Jungle World!");
-		ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
-
-		ImGui::Separator();
-		//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
-		if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
+		//Physics Threads
 		{
-			ImGui::Checkbox("Wire frame", &bwireFrame);
-			ImGui::EndCombo();
+
 		}
-		ImGui::Text("FOV     ");
-		ImGui::SameLine();
-		//ImGui::SliderFloat("##FOV", &fovDegree, 0.0f, 180.0f);
 
-		// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
-		ImGui::Text("Location");
-		ImGui::SameLine();
+		//Raycast
+		{
+			ViewportClient.Update(deltaTime);
+			ViewportClient.RayCast(mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager.GetCurrentWorld());
 
-		// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
-		const float spacing = ImGui::GetStyle().ItemSpacing.x;
-		const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
+			if (ViewportClient.IsMouseHit() && ViewportClient.ClickedActor)
+			{
+				ViewportClient.ClickedActor->Clicked();
+			}
+			else if (ViewportClient.ClickedActor)
+			{
+				ViewportClient.ClickedActor->UnClicked();
+				ViewportClient.ClickedActor = nullptr;
+			}
+		}
 
-		//ImGui::SetNextItemWidth(itemWidth);
-		//ImGui::DragFloat("##CamLocX", &Camera.Transform.Location.x, -10.0f, 10.0f);d
-		//ImGui::SameLine();
-		//ImGui::SetNextItemWidth(itemWidth);
-		//ImGui::DragFloat("##CamLocY", &Camera.Transform.Location.y, -10.0f, 10.0f);
-		//ImGui::SameLine();
-		//ImGui::SetNextItemWidth(itemWidth);
-		//ImGui::DragFloat("##CamLocZ", &Camera.Transform.Location.z, -10.0f, 10.0f);
+		//Game Threads
+		{
+			mSceneManager.Update();
+		}
 
-		//ImGui::Text("Rotation");
-		//ImGui::SameLine();
-		//ImGui::SetNextItemWidth(itemWidth);
-		//ImGui::DragFloat("##CamRotX", &Camera.Transform.Rotation.Roll, -10.0f, 180.0f);
-		//ImGui::SameLine();
-		//ImGui::SetNextItemWidth(itemWidth);
-		//ImGui::DragFloat("##CamRotY", &Camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
-		//ImGui::SameLine();
-		//ImGui::SetNextItemWidth(itemWidth);
-		//ImGui::DragFloat("##CamRotZ", &Camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
-		//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
-		//ImGui::TextUnformatted(renderer.bDepthTestEnabled
-		//	? "ON : orange (near) stays in front"
-		//	: "OFF: blue (far, drawn last) overwrites");
 
-		ImGui::End();
-		console.Draw();
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		//Render Threads
+		{
+
+			if (WindowApplication.bPendingResize)
+			{
+				mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
+				WindowApplication.bPendingResize = false;
+			}
+
+			mGraphicsManager->Update(deltaTime);
+			mGraphicsManager->Prepare(bwireFrame, &ViewportClient.mCamera);
+			mGraphicsManager->Render(mSceneManager.GetRenderInfos());
+
+
+			//ImGui
+			{
+				console.Draw();
+				ImGui::Render();
+				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+			}
+
+			mGraphicsManager->Display();
+
+			//강조
+			if (ViewportClient.IsMouseHit())
+			{
+				UE_LOG("Hit");
+
+				//큐브가 선택되었으면 강조 표시
+				//mGraphicsManager->GetRenderer()->DeviceContext->OMSetRenderTargets(0, nullptr, D)
+			}
+		}
+
+		FrameTimer.EndFrame();
+
+		GInTick = false;
 	}
-
-	mGraphicsManager->Display();
-	FrameTimer.EndFrame();
-
-	GInTick = false;
 }
 
 void FEngineLoop::End()

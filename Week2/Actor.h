@@ -21,6 +21,10 @@ public:
 	virtual void Update();
 	//void Render();
 
+	//Actor가 클릭 되었을 때 호출
+	void Clicked();
+	void UnClicked();
+
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos);
 
 private:
@@ -28,5 +32,6 @@ private:
 
 private:
 	TArray<UActorComponent*> mComponents;
+	bool bClicked = false;
 };
 
