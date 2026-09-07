@@ -35,6 +35,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TestsTArray.cpp" />
+    <ClCompile Include="..\..\Week2\JsonUtil.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

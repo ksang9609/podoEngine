@@ -2,6 +2,7 @@
 
 #include "SceneData.h"
 #include "Json/json.hpp"
+#include "JsonUtil.h"
 
 namespace FSceneDataTest
 {

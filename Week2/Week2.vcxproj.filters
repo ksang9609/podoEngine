@@ -105,6 +105,9 @@
     <ClCompile Include="ObjectFactory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="JsonUtil.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h">
@@ -237,6 +240,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ObjectFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonUtil.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
