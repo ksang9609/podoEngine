@@ -22,7 +22,7 @@ public:
 	GraphicsManager(HWND hWindow);
 	~GraphicsManager();
 
-	void Prepare(bool bWireFrame, const FCamera* mCamera);
+	void Prepare(const FCamera* mCamera);
 	//void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive); // FRenderInfo
 	void Render(const TArray<FRenderInfo> renderInfos); // FRenderInfo
 
@@ -30,17 +30,23 @@ public:
 	void Update(float deltaTime);
 
 	float GetAspect() const { return mAspect; }
+	bool GetWireFrame() const { return mbWireFrame; } const
+	void SetWireFrame(bool bWireFrame) { mbWireFrame = bWireFrame; }
 
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
 	URenderer* GetRenderer() const;
 	static FVector GetPrimitiveCenter(EPrimitive type);
 	void RenderHighLight(const FRenderInfo& RI);
-private:
 
+private:
 	URenderer* mRenderer;
 	FMatrix mViewProjectionMatrix;
 
 	TMap<EPrimitive, FBuffer> mBufferMap;
+
+	// Graphics config
+	bool mbWireFrame;
 	float mAspect;
+
 };

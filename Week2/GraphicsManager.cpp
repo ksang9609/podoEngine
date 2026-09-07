@@ -5,6 +5,7 @@
 #include "Console.h"
 
 GraphicsManager::GraphicsManager(HWND hWindow)
+	: mbWireFrame(false)
 {
 	mRenderer = new URenderer;
 	mRenderer->Create(hWindow);
@@ -28,9 +29,9 @@ GraphicsManager::~GraphicsManager()
 	delete mRenderer;
 }
 
-void GraphicsManager::Prepare(bool bWireFrame, const FCamera *mCamera)
+void GraphicsManager::Prepare(const FCamera *mCamera)
 {
-	mRenderer->Prepare(bWireFrame);
+	mRenderer->Prepare(mbWireFrame);
 	mRenderer->PrepareShader();
 
 	// Todo: 

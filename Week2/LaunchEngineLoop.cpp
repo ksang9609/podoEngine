@@ -57,8 +57,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
-	bwireFrame = false;
-
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
 
@@ -91,58 +89,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		//ImGui Input
 		{
-			ImGui_ImplDX11_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
-
-			ImGui::Begin("Jungle Property Window");
-			ImGui::Text("Hello Jungle World!");
-			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer->GetFPS(), FrameTimer->GetDeltaTime());
-
-			ImGui::Separator();
-			//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
-			if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
-			{
-				ImGui::Checkbox("Wire frame", &bwireFrame);
-				ImGui::EndCombo();
-			}
-			ImGui::Text("FOV     ");
-			ImGui::SameLine();
-			//ImGui::SliderFloat("##FOV", &fovDegree, 0.0f, 180.0f);
-
-			// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
-			ImGui::Text("Location");
-			ImGui::SameLine();
-
-			// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
-			const float spacing = ImGui::GetStyle().ItemSpacing.x;
-			const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
-
-			//ImGui::SetNextItemWidth(itemWidth);
-			//ImGui::DragFloat("##CamLocX", &Camera.Transform.Location.x, -10.0f, 10.0f);d
-			//ImGui::SameLine();
-			//ImGui::SetNextItemWidth(itemWidth);
-			//ImGui::DragFloat("##CamLocY", &Camera.Transform.Location.y, -10.0f, 10.0f);
-			//ImGui::SameLine();
-			//ImGui::SetNextItemWidth(itemWidth);
-			//ImGui::DragFloat("##CamLocZ", &Camera.Transform.Location.z, -10.0f, 10.0f);
-
-			//ImGui::Text("Rotation");
-			//ImGui::SameLine();
-			//ImGui::SetNextItemWidth(itemWidth);
-			//ImGui::DragFloat("##CamRotX", &Camera.Transform.Rotation.Roll, -10.0f, 180.0f);
-			//ImGui::SameLine();
-			//ImGui::SetNextItemWidth(itemWidth);
-			//ImGui::DragFloat("##CamRotY", &Camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
-			//ImGui::SameLine();
-			//ImGui::SetNextItemWidth(itemWidth);
-			//ImGui::DragFloat("##CamRotZ", &Camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
-			//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
-			//ImGui::TextUnformatted(renderer.bDepthTestEnabled
-			//	? "ON : orange (near) stays in front"
-			//	: "OFF: blue (far, drawn last) overwrites");
-
-			ImGui::End();
+			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient });
 		}
 
 		ViewportClient->Update(deltaTime);
@@ -217,7 +164,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		}
 
 		mGraphicsManager->Update(deltaTime);
-		mGraphicsManager->Prepare(bwireFrame, &ViewportClient->mCamera);
+		mGraphicsManager->Prepare(&ViewportClient->mCamera);
 		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
 		mGraphicsManager->Render(ViewportClient->mGizmo.GetGizmoRenderInfo());
 
@@ -232,7 +179,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		//ImGui
 		{
-			console.Draw();
 			ImGui::Render();
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		}

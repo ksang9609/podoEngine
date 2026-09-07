@@ -11,6 +11,9 @@
 #include "PrimitiveComponent.h"
 #include "TArray.h"
 #include "World.h"
+#include "FEditorViewportClient.h"
+#include "Camera.h"
+#include "Console.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -52,7 +55,7 @@ void FSceneManager::Update(float delaTime)
 	mCurrentWorld->Update();
 }
 
-void FSceneManager::UpdateGUI(const FFrameTimer& frameTimer, bool* outbWireFrame)
+void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 {
 	//ImGui
 	ImGui_ImplDX11_NewFrame();
@@ -61,13 +64,15 @@ void FSceneManager::UpdateGUI(const FFrameTimer& frameTimer, bool* outbWireFrame
 
 	ImGui::Begin("Jungle Property Window");
 	ImGui::Text("Hello Jungle World!");
-	ImGui::Text("FPS: %.1f  dt: %.4f", frameTimer.GetFPS(), frameTimer.GetDeltaTime());
+	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
 	ImGui::Separator();
 	//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 	{
-		ImGui::Checkbox("Wire frame", outbWireFrame);
+		bool bWireFrame = guiReference.GraphicsManager->GetWireFrame();
+		ImGui::Checkbox("Wire frame", &bWireFrame);
+		guiReference.GraphicsManager->SetWireFrame(bWireFrame);
 		ImGui::EndCombo();
 	}
 	ImGui::Text("FOV     ");
@@ -82,33 +87,37 @@ void FSceneManager::UpdateGUI(const FFrameTimer& frameTimer, bool* outbWireFrame
 	const float spacing = ImGui::GetStyle().ItemSpacing.x;
 	const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
 
-	//ImGui::SetNextItemWidth(itemWidth);
-	//ImGui::DragFloat("##CamLocX", &Camera.Transform.Location.x, -10.0f, 10.0f);d
-	//ImGui::SameLine();
-	//ImGui::SetNextItemWidth(itemWidth);
-	//ImGui::DragFloat("##CamLocY", &Camera.Transform.Location.y, -10.0f, 10.0f);
-	//ImGui::SameLine();
-	//ImGui::SetNextItemWidth(itemWidth);
-	//ImGui::DragFloat("##CamLocZ", &Camera.Transform.Location.z, -10.0f, 10.0f);
 
-	//ImGui::Text("Rotation");
-	//ImGui::SameLine();
-	//ImGui::SetNextItemWidth(itemWidth);
-	//ImGui::DragFloat("##CamRotX", &Camera.Transform.Rotation.Roll, -10.0f, 180.0f);
-	//ImGui::SameLine();
-	//ImGui::SetNextItemWidth(itemWidth);
-	//ImGui::DragFloat("##CamRotY", &Camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
-	//ImGui::SameLine();
-	//ImGui::SetNextItemWidth(itemWidth);
-	//ImGui::DragFloat("##CamRotZ", &Camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
-	//ImGui::Checkbox("Depth Test", &renderer.bDepthTestEnabled);
-	//ImGui::TextUnformatted(renderer.bDepthTestEnabled
+	FCamera& camera = guiReference.ViewportClient->GetCamera();
+	URenderer* renderer = guiReference.GraphicsManager->GetRenderer();
+
+	ImGui::SetNextItemWidth(itemWidth);
+	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, -10.0f, 10.0f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(itemWidth);
+	ImGui::DragFloat("##CamLocY", &camera.Transform.Location.y, -10.0f, 10.0f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(itemWidth);
+	ImGui::DragFloat("##CamLocZ", &camera.Transform.Location.z, -10.0f, 10.0f);
+
+	ImGui::Text("Rotation");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(itemWidth);
+	ImGui::DragFloat("##CamRotX", &camera.Transform.Rotation.Roll, -10.0f, 180.0f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(itemWidth);
+	ImGui::DragFloat("##CamRotY", &camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(itemWidth);
+	ImGui::DragFloat("##CamRotZ", &camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
+	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
+	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
 	//	: "OFF: blue (far, drawn last) overwrites");
 
 	ImGui::End();
 
-	//console.Draw();
+	ConsoleWindow::GetInstance().Draw();
 }
 
 void FSceneManager::NewScene()

@@ -28,7 +28,6 @@ public:
 private:
 	// Todo: Make as pointer
 	FFrameTimer* FrameTimer;
-	bool bwireFrame = false;
 	bool GInTick = false;
 	FEditorViewportClient* ViewportClient;
 

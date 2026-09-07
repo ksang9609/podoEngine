@@ -11,7 +11,16 @@ inline constexpr std::string_view kSceneDataSuffix = ".Scene";
 
 class FFileManager;
 class FFrameTimer;
+class FEditorViewportClient;
+class GraphicsManager;
 class UWorld;
+
+struct FGuiReference
+{
+	const FFrameTimer& FrameTimer;
+	GraphicsManager* GraphicsManager;
+	FEditorViewportClient* ViewportClient;
+};
 
 class FSceneManager
 {
@@ -20,7 +29,7 @@ public:
 	~FSceneManager();
 
 	void Update(float delaTime);
-	void UpdateGUI(const FFrameTimer& frameTimer, bool* outbWireFrame);
+	void UpdateGUI(const FGuiReference& guiReference);
 
 	const TArray<FRenderInfo> GetRenderInfos();
 
