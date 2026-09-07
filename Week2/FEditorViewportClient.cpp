@@ -80,6 +80,10 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 				NearlistT = OutT;
 				bMouseHit = true;
 				HoveredRenderInfo = RI;
+				if (RI.ObejctID.UUID == ClickedRenderInfo.ObejctID.UUID)
+				{
+					ClickedRenderInfo = RI;
+				}
 			}
 		}
 	}

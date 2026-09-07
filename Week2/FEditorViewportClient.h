@@ -20,6 +20,7 @@ public:
 	//마우스 밑 무언가의
 
 	FRenderInfo HoveredRenderInfo;
+	FRenderInfo ClickedRenderInfo;
 
 	//마우스 밑 무언가가 Actor이면 저장. RayCast 에서 채워야 함 (아직 미구현)
 	AActor* ClickedActor = nullptr;
