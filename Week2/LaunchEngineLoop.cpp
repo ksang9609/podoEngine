@@ -145,8 +145,14 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		//Raycast
 		{
+			//Gizmo Test
+			ViewportClient.mGizmo.mbVisible = true;
+			ViewportClient.mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
+
 			ViewportClient.Update(deltaTime);
 			ViewportClient.RayCast(mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager.GetCurrentWorld());
+
+			UE_LOG("Gizmo axis : %d", static_cast<int>(ViewportClient.mGizmo.eAxis));
 
 			if (ViewportClient.IsMouseHit() && ViewportClient.ClickedActor)
 			{
@@ -176,6 +182,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			mGraphicsManager->Update(deltaTime);
 			mGraphicsManager->Prepare(bwireFrame, &ViewportClient.mCamera);
 			mGraphicsManager->Render(mSceneManager.GetRenderInfos());
+			mGraphicsManager->Render(ViewportClient.mGizmo.GetGizmoRenderInfo());
 
 			//강조
 			if (ViewportClient.IsMouseHit())
