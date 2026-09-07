@@ -5,6 +5,7 @@
 
 struct FEditorViewportClient
 {
+
 	bool RayIntersectsTriangle(
 		const FVector& Origin,
 		const FVector& Dir,
@@ -18,11 +19,11 @@ struct FEditorViewportClient
 		//삼각형판정 => O +tD = V0+ uE1+vE2
 		// -tD + uE1 + vE2 = O - V0
 		//E2=v2-v0. E1=v1-v0
-
+		FVector D = Dir - Origin;
 		FVector T = Origin - V0;
 		FVector E2 = V2 - V0;
 		FVector E1 = V1 - V0;
-		FVector P = FVector::cross(Dir, E2);
+		FVector P = FVector::cross(D, E2);
 		float Det = FVector::dot(E1, P);
 
 		if (fabsf(Det) < EPSILON) return false;   // 평면과 평행
@@ -33,7 +34,7 @@ struct FEditorViewportClient
 		if (OutU < 0.0f || OutU > 1.0f) return false;
 
 		FVector Q = FVector::cross(T, E1);
-		OutV = FVector::dot(Dir, Q) * InvDet;
+		OutV = FVector::dot(D, Q) * InvDet;
 		if (OutV < 0.0f || OutU + OutV > 1.0f) return false;
 
 		OutT = FVector::dot(E2, Q) * InvDet;

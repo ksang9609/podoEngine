@@ -2,11 +2,6 @@
 
 #include "Sphere.h"
 #include "Renderer.h"
-#include "Cube.h"
-#include "Primitive.h"
-#include "FrameTimer.h"
-#include "Camera.h"
-
 #include "WindowApplication.h"
 #include "LaunchEngineLoop.h"
 

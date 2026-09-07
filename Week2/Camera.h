@@ -13,7 +13,12 @@ public:
 
 	FMatrix GetViewMatrix() const
 	{
-		return Transform.InverseMatrix() * FMatrix::UEToDX;
+		// 카메라에는 스케일이 없다. 위치를 되돌리고, 회전을 되돌리고, 축을 교환한다.
+		return FMatrix::Translation(FVector(-Transform.Location.x,
+			-Transform.Location.y,
+			-Transform.Location.z))
+			* FMatrix::Rotate(Transform.Rotation).Transpose()
+			* FMatrix::UEToDX;
 	}
 
 	// 특정 지점을 바라보도록 회전을 맞춘다.
@@ -25,7 +30,6 @@ public:
 	FMatrix GetProjectionMatrix(float Aspect, float fovDegree, float n, float f)
 	{
 		//fov 단위는 라디안
-		//Aspect = width/height
 		FMatrix result = FMatrix::Zero; //영벡터
 		float yScale = 1.0f / tanf((fovDegree / 2)*PI/180); //xScale
 		float xScale = yScale / Aspect;

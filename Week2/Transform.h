@@ -2,6 +2,7 @@
 #include "Vector.h"
 #include "Rotator.h"
 #include "Matrix.h"
+#include <cassert>
 
 struct FTransform
 {
@@ -20,6 +21,8 @@ struct FTransform
 
 	FMatrix InverseMatrix() const
 	{
+		assert(Scale.x == 0.f || Scale.y == 0.f || Scale.z == 0.f);
+
 		return {
 			FMatrix::Translation(FVector(-Location.x, -Location.y, -Location.z))
 			* FMatrix::Rotate(Rotation).Transpose()

@@ -86,6 +86,52 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	mGraphicsManager->Prepare(bwireFrame);
 	mGraphicsManager->Render(mWorld->GetRenderInfos());
 
+	FVector NearPoint, OutPoint;
+	ViewportClient.DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
+		mGraphicsManager->GetRenderer()->ViewportInfo.Width, mGraphicsManager->GetRenderer()->ViewportInfo.Height,
+		*mGraphicsManager->GetCamera(), mGraphicsManager->GetFov(), 0.1f, 100.f, NearPoint, OutPoint);
+
+	float OutT, OutU, OutV;
+	float NearlistT = (OutPoint-NearPoint).Length();
+	UObject* NearObj;
+	//for (오브젝트)
+	//{
+	//	bool bHit = false;
+	//	for (오브젝트를 _ABC _ABC 6개)
+	//	{
+	//		if (ViewportClient.RayIntersectsTriangle(NearPoint, OutPoint, , , , OutT, OutU, OutV))
+	//		{
+	//			bHit = true;
+	//			break;
+	//		}
+	//	 }
+
+	//	if (bHit && OutT < NearlistT)
+	//	{
+	//		NearlistT = OutT;
+	//		NearObj = 오브젝트[i];
+	//	}
+	//}
+
+	int length = sizeof(Cube_vertices) / sizeof(FVertexSimple);
+	bool bHit = false;
+	for (int i = 0; i < length - 2; i += 2)
+	{
+		FVector V0 = Cube_vertices[i].GetPosition(), V1 = Cube_vertices[i + 1].GetPosition(), V2 = Cube_vertices[i + 2].GetPosition();
+		if (ViewportClient.RayIntersectsTriangle(NearPoint, OutPoint, V0, V1, V2, OutT, OutU, OutV))
+		{
+			bHit = true;
+			break;
+		}
+	}
+
+	if (bHit)
+	{
+		UE_LOG("CubHit, (T, U, V) = (%f, %f, %f)", OutT, OutU, OutV);
+	}
+
+
+
 	//ImGui
 	{
 		ImGui_ImplDX11_NewFrame();
