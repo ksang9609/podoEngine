@@ -32,7 +32,7 @@ public:
 	}
 
 	template<typename... Args>
-	void AddLogPrintf(std::string_view fmt, Args&&... args)
+	void AddLogPrintf(const char* fmt, Args&&... args)
 	{
 		char buffer[512];
 		snprintf(buffer, sizeof(buffer), fmt, std::forward<Args>(args)...);

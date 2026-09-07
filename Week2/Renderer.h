@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include "Matrix.h"
+#include "Vector.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
@@ -13,6 +14,8 @@ struct FVertexSimple
 {
     float x, y, z;    // Position
     float r, g, b, a; // Color
+
+	FVector GetPosition() const { return FVector(x, y, z); }
 };
 
 struct FConstants
