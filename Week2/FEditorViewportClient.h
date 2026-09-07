@@ -5,8 +5,7 @@
 
 struct FEditorViewportClient
 {
-
-	bool RayIntersectsTriangle(
+	bool RayIntersectsTriangle( // 두개의 
 		const FVector& Origin,
 		const FVector& Dir,
 		const FVector& V0,
@@ -19,6 +18,7 @@ struct FEditorViewportClient
 		//삼각형판정 => O +tD = V0+ uE1+vE2
 		// -tD + uE1 + vE2 = O - V0
 		//E2=v2-v0. E1=v1-v0
+
 		FVector D = Dir - Origin;
 		FVector T = Origin - V0;
 		FVector E2 = V2 - V0;
@@ -29,7 +29,7 @@ struct FEditorViewportClient
 		if (fabsf(Det) < EPSILON) return false;   // 평면과 평행
 
 		float InvDet = 1.0f / Det;
-		\
+		
 			OutU = FVector::dot(T, P) * InvDet;
 		if (OutU < 0.0f || OutU > 1.0f) return false;
 
@@ -40,6 +40,9 @@ struct FEditorViewportClient
 		OutT = FVector::dot(E2, Q) * InvDet;
 
 		return (OutT > EPSILON);                  // 광선 앞쪽만
+
+		// OutT : 맞은물체가 얼마나 가까이있나(float)
+		// OutU, OutV 정확환 클릭지점을 확인하려면 필요
 
 	}
 
@@ -68,4 +71,7 @@ struct FEditorViewportClient
 		OutNearPoint = Cam.Transform.Location + V * NearZ;
 		OutFarPoint = Cam.Transform.Location + V * FarZ;
 	}
+
+
+
 };
