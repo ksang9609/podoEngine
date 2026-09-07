@@ -12,6 +12,12 @@
 class Sphere;
 class GraphicsManager;
 
+struct FObjectID
+{
+	int32 UUID;
+	int32 InternalIndex;
+};
+
 class FEngineLoop
 {
 public:
