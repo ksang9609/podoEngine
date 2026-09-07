@@ -186,7 +186,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		//강조
 		if (ViewportClient.IsMouseHit())
 		{
-			UE_LOG("CubHit");
+			UE_LOG("Hit");
 
 			//큐브가 선택되었으면 강조 표시
 			//mGraphicsManager->GetRenderer()->DeviceContext->OMSetRenderTargets(0, nullptr, D)

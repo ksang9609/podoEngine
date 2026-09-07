@@ -5,52 +5,70 @@
 #include "WindowApplication.h"
 #include "ImGui/imgui.h"
 
+// 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
+// 포인터로 받으면 배열 크기 정보가 사라지므로 여기서 개수를 같이 넘긴다.
+static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVertices, uint32& OutCount)
+{
+	switch (ePrimitive)
+	{
+	case EPrimitive::EP_Cube:
+		OutVertices = Cube_vertices;
+		OutCount = static_cast<uint32>(sizeof(Cube_vertices) / sizeof(FVertexSimple));
+		return true;
+
+	case EPrimitive::EP_Sphere:
+		OutVertices = Sphere_vertices;
+		OutCount = static_cast<uint32>(sizeof(Sphere_vertices) / sizeof(FVertexSimple));
+		return true;
+	}
+
+	return false;
+}
+
 void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 {
 	bMouseHit = false;
 
-	FVector NearPoint, OutPoint;
+	FVector NearPoint, FarPoint;
 	DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
-		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, OutPoint);
+		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
 
-	float OutT, OutU, OutV;
-	float NearlistT = (OutPoint - NearPoint).Length();
+	// t 는 near -> far 구간의 비율(0~1)이다. 월드 거리가 아니므로 FLT_MAX 로 시작한다.
+	// 아핀 변환은 t 를 보존하므로 스케일이 다른 오브젝트끼리도 그대로 비교할 수 있다.
+	float NearlistT = FLT_MAX;
 
 	const TArray<FRenderInfo> RenderInfos = World->GetRenderInfos();
-	FVertexSimple* vertices = nullptr;
-	int length = 0;
 	for (const FRenderInfo& RI : RenderInfos)
 	{
-		bool bHit = false;
-		if (RI.ePrimitive == EPrimitive::EP_Cube)
+		const FVertexSimple* vertices = nullptr;
+		uint32 length = 0;
+		if (!GetPrimitiveMesh(RI.ePrimitive, vertices, length))
 		{
-			vertices = Cube_vertices;
-			length = 36;
+			continue;   // 모르는 프리미티브는 건너뛴다
 		}
-		else if (RI.ePrimitive == EPrimitive::EP_Sphere)
-		{
-			vertices = Sphere_vertices;
-			length = 2400;
-		}
-		else assert(!vertices && "Actor's RenderInfo.ePrimitive is NOT Valid");
 
-		length = sizeof(*vertices) / sizeof(FVertexSimple);
-		for (int i = 0; i < length - 2; i += 3)
+		// 정점 수천 개를 월드로 보내는 대신, 레이 두 점을 오브젝트의 로컬 공간으로 가져온다.
+		// 회전과 비균등 스케일이 이 한 번의 변환으로 전부 처리된다.
+		const FMatrix WorldToLocal = RI.WorldTransformMatrix.Inverse();
+		const FVector LocalNear = WorldToLocal.TransformPosition(NearPoint);
+		const FVector LocalFar = WorldToLocal.TransformPosition(FarPoint);
+
+		// 삼각형 리스트라 정점 3개씩 묶인다
+		for (uint32 i = 0; i + 2 < length; i += 3)
 		{
-			FVector V0 = vertices[i].GetPosition(), V1 = vertices[i + 1].GetPosition(), V2 = vertices[i + 2].GetPosition();
-			if (RayIntersectsTriangle(NearPoint, OutPoint, V0, V1, V2, OutT, OutU, OutV))
+			const FVector V0 = vertices[i].GetPosition();
+			const FVector V1 = vertices[i + 1].GetPosition();
+			const FVector V2 = vertices[i + 2].GetPosition();
+
+			float OutT, OutU, OutV;
+			if (RayIntersectsTriangle(LocalNear, LocalFar, V0, V1, V2, OutT, OutU, OutV)
+				&& OutT < NearlistT)
 			{
-				bHit = true;
-				break;
+				// 같은 메시 안에서도 더 가까운 삼각형이 뒤에 나올 수 있으므로 break 하지 않는다
+				NearlistT = OutT;
+				bMouseHit = true;
+				HoveredRenderInfo = RI;
 			}
-		}
-
-		if (bHit && OutT < NearlistT)
-		{
-			NearlistT = OutT;
-			bMouseHit = true;
-			HoveredRenderInfo = RI;
-			//if (RI.ObejctID.)
 		}
 	}
 }
