@@ -153,6 +153,9 @@
     <ClCompile Include="SceneData.cpp" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="SphereComponent.cpp" />
+    <ClInclude Include="TSparseArray.inl">
+      <FileType>Document</FileType>
+    </ClInclude>
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -201,6 +204,7 @@
     <ClInclude Include="TSet.h" />
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="CubeComponent.h" />
+    <ClInclude Include="TSparseArray.h" />
     <ClInclude Include="Vector.h" />
     <ClInclude Include="World.h" />
     <ClInclude Include="Transform.h" />

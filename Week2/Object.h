@@ -4,6 +4,7 @@
 
 #include "Core.h"
 #include "TArray.h"
+#include "TSparseArray.h"
 #include "ObjectFactory.h"
 
 
@@ -33,7 +34,6 @@ struct FObjectID
 	int32 UUID;
 	int32 InternalIndex;
 };
-
 
 class UObject
 {
@@ -66,7 +66,7 @@ protected:
 	UObject();
 
 private:
-	static TArray<UObject*> GUObjectArray;
+	static TSparseArray<UObject*> GUObjectArray;
 
 	friend struct FObjectFactory;
 	const FClassInfo* mClassInfo;

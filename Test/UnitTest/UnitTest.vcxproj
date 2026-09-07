@@ -155,6 +155,7 @@
     <ClCompile Include="TestFileManager.cpp" />
     <ClCompile Include="TestObject.cpp" />
     <ClCompile Include="TestSceneData.cpp" />
+    <ClCompile Include="TestSparseArray.cpp" />
     <ClCompile Include="TestsTArray.cpp" />
     <ClCompile Include="TestWorld.cpp" />
   </ItemGroup>

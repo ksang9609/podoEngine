@@ -51,6 +51,7 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TestWorld.cpp" />
+    <ClCompile Include="TestSparseArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

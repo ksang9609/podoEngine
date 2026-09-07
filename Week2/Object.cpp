@@ -3,7 +3,7 @@
 #include "EngineStatics.h"
 #include "Json/json.hpp"
 
-TArray<UObject*> UObject::GUObjectArray;
+TSparseArray<UObject*> UObject::GUObjectArray;
 
 UObject* FClassInfo::CreateInstance() const
 {
@@ -29,14 +29,7 @@ UObject::~UObject()
 		return;
 	}
 
-	GUObjectArray.RemoveAtSwap(InternalIndex);
-
-	if (InternalIndex < GUObjectArray.Num())
-	{
-		assert(InternalIndex < GUObjectArray.Num());
-
-		GUObjectArray[InternalIndex]->InternalIndex = InternalIndex;
-	}
+	GUObjectArray.RemoveAt(InternalIndex);
 }
 
 void UObject::Initialize()
