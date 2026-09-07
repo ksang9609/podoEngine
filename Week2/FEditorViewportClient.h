@@ -1,7 +1,7 @@
 ﻿#pragma once
+#include "Vector.h"
 
 #include <d3d11.h>
-#include "Vector.h"
 #include "World.h"
 #include "Camera.h"
 #include "RenderInfo.h"
