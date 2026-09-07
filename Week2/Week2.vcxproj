@@ -158,6 +158,7 @@
     <ClInclude Include="Core.h" />
     <ClInclude Include="Cube.h" />
     <ClInclude Include="FEditorViewportClient.h" />
+    <ClInclude Include="Gizmo.h" />
     <ClInclude Include="InputState.h" />
     <ClInclude Include="Json\json.hpp" />
     <ClInclude Include="SceneData.h" />

@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "Vector.h"
-
 #include "Camera.h"
 
 struct FEditorViewportClient
