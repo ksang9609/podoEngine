@@ -10,22 +10,26 @@ inline constexpr std::string_view kSceneDataDir = "SceneData\\";
 inline constexpr std::string_view kSceneDataSuffix = ".Scene";
 
 class FFileManager;
+class FFrameTimer;
 class UWorld;
 
 class FSceneManager
 {
 public:
-	FSceneManager() = default;
-	~FSceneManager() = default;
+	FSceneManager();
+	~FSceneManager();
+
+	void Update(float delaTime);
+	void UpdateGUI(const FFrameTimer& frameTimer, bool* outbWireFrame);
+
+	const TArray<FRenderInfo> GetRenderInfos();
 
 	// Clear world
 	void NewScene();
+	void DeleteScene();
 
 	void SaveScene(std::string_view sceneName, const FFileManager& fileManager);
 	void LoadScene(std::string_view sceneName, const FFileManager& fileManager);
-
-	void Update();
-	const TArray<FRenderInfo> GetRenderInfos();
 
 	UWorld* GetCurrentWorld() const { return mCurrentWorld; }
 

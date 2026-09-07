@@ -11,7 +11,7 @@ class UWorld final : public UObject
 	REFLECT_CLASS(UWorld, UObject)
 public:
 	UWorld() = default;
-	~UWorld();
+	virtual ~UWorld();
 
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
@@ -36,5 +36,7 @@ private:
 	
 	// Todo: Must reserve
 	TArray<AActor*> mActors;
+
+	// Todo: Maybe, move to FSceneManager
 	TArray<FRenderInfo> mRenderInfos;
 };

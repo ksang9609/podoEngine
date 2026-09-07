@@ -50,13 +50,18 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
 
-	UFrameTimer FrameTimer(120);
+	FrameTimer = new FFrameTimer(120);
+	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
 	bwireFrame = false;
 
+	mSceneManager = new FSceneManager();
+	mFileManager = new FFileManager();
+
+	/*
 	mSceneManager.NewScene();
 	mSceneManager.LoadScene("TestScene", mFileManager);
 
@@ -67,6 +72,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	//	cubeActor->AddComponent(cubeComonent);
 	//	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
 	//}
+	*/
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
@@ -74,8 +80,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	if (GInTick) return;
 	GInTick = true;
 
-	FrameTimer.StartFrame();
-	float deltaTime = FrameTimer.GetDeltaTime();
+	FrameTimer->StartFrame();
+	float deltaTime = FrameTimer->GetDeltaTime();
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
 	//Input Threads
@@ -90,7 +96,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 			ImGui::Begin("Jungle Property Window");
 			ImGui::Text("Hello Jungle World!");
-			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer.GetFPS(), FrameTimer.GetDeltaTime());
+			ImGui::Text("FPS: %.1f  dt: %.4f", FrameTimer->GetFPS(), FrameTimer->GetDeltaTime());
 
 			ImGui::Separator();
 			//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
@@ -138,87 +144,102 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			ImGui::End();
 		}
 
-		//Physics Threads
-		{
-
-		}
-
-		//Raycast
-		{
-			//Gizmo Test
-			ViewportClient.mGizmo.mbVisible = true;
-			ViewportClient.mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
-
-			ViewportClient.Update(deltaTime);
-			ViewportClient.RayCast(mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager.GetCurrentWorld());
-
-			UE_LOG("Gizmo axis : %d", static_cast<int>(ViewportClient.mGizmo.eAxis));
-
-			if (ViewportClient.IsMouseHit() && ViewportClient.ClickedActor)
-			{
-				ViewportClient.ClickedActor->Clicked();
-			}
-			else if (ViewportClient.ClickedActor)
-			{
-				ViewportClient.ClickedActor->UnClicked();
-				ViewportClient.ClickedActor = nullptr;
-			}
-		}
-
-		//Game Threads
-		{
-			mSceneManager.Update();
-		}
-
-
-		//Render Threads
-		{
-			if (WindowApplication.bPendingResize)
-			{
-				mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
-				WindowApplication.bPendingResize = false;
-			}
-
-			mGraphicsManager->Update(deltaTime);
-			mGraphicsManager->Prepare(bwireFrame, &ViewportClient.mCamera);
-			mGraphicsManager->Render(mSceneManager.GetRenderInfos());
-			mGraphicsManager->Render(ViewportClient.mGizmo.GetGizmoRenderInfo());
-
-			//강조
-			if (ViewportClient.IsMouseHit())
-			{
-				UE_LOG("Hit");
-
-				//큐브가 선택되었으면 강조 표시
-				mGraphicsManager->RenderHighLight(ViewportClient.HoveredRenderInfo);
-			}
-
-			//ImGui
-			{
-				console.Draw();
-				ImGui::Render();
-				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-			}
-
-			mGraphicsManager->Display();
-
-		}
-
-		FrameTimer.EndFrame();
-
-		GInTick = false;
+		ViewportClient->Update(deltaTime);
 	}
+
+	//Physics Threads
+	{
+
+	}
+
+	//Raycast
+	/*
+	{
+		//Gizmo Test
+		ViewportClient.mGizmo.mbVisible = true;
+		ViewportClient.mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
+
+		ViewportClient.Update(deltaTime);
+		ViewportClient.RayCast(mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager.GetCurrentWorld());
+
+		UE_LOG("Gizmo axis : %d", static_cast<int>(ViewportClient.mGizmo.eAxis));
+
+		if (ViewportClient.IsMouseHit() && ViewportClient.ClickedActor)
+		{
+			ViewportClient->ClickedActor->Click();
+		}
+		else if (ViewportClient->ClickedActor)
+		{
+			ViewportClient->ClickedActor->UnClick();
+			ViewportClient->ClickedActor = nullptr;
+		}
+	}
+	*/
+
+	//Game Threads
+	{
+		mSceneManager->Update(deltaTime);
+	}
+
+	//Render Threads
+	{
+		if (WindowApplication.bPendingResize)
+		{
+			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
+			WindowApplication.bPendingResize = false;
+		}
+
+		mGraphicsManager->Update(deltaTime);
+		mGraphicsManager->Prepare(bwireFrame, &ViewportClient->mCamera);
+		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
+		mGraphicsManager->Render(ViewportClient->mGizmo.GetGizmoRenderInfo());
+
+		//강조
+		if (ViewportClient->IsMouseHit())
+		{
+			UE_LOG("Hit");
+
+			//큐브가 선택되었으면 강조 표시
+			mGraphicsManager->RenderHighLight(ViewportClient->HoveredRenderInfo);
+		}
+
+		//ImGui
+		{
+			console.Draw();
+			ImGui::Render();
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		}
+
+		mGraphicsManager->Display();
+
+		//강조
+		if (ViewportClient->IsMouseHit())
+		{
+			UE_LOG("Hit");
+
+			//큐브가 선택되었으면 강조 표시
+			//mGraphicsManager->GetRenderer()->DeviceContext->OMSetRenderTargets(0, nullptr, D)
+		}
+	}
+
+	FrameTimer->EndFrame();
+
+	GInTick = false;
 }
 
 void FEngineLoop::End()
 {
-
 	// Debug
-	mSceneManager.SaveScene("TestScene", mFileManager);
+	mSceneManager->SaveScene("TestScene", *mFileManager);
+	mSceneManager->DeleteScene();
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+
+	delete FrameTimer;
+	delete mSceneManager;
+	delete mFileManager;
 
 	delete mGraphicsManager;
 }

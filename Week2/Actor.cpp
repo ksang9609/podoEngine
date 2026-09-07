@@ -4,16 +4,18 @@
 
 #include "JsonUtil.h"
 
-AActor::AActor()
-{
-}
-
 AActor::~AActor()
 {
 	for (UActorComponent* removeComponent : mComponents)
 	{
 		delete removeComponent;
 	}
+}
+
+void AActor::Initialize()
+{
+	// Todo: Change to false 
+	mbClicked = true;
 }
 
 void AActor::SerializeClass(json::JSON& outJson) const
@@ -82,37 +84,28 @@ bool AActor::RemoveComponent(uint32 componentUUID)
 	return true;
 }
 
-void AActor::Update()
+
+void AActor::Update(TArray<FRenderInfo>* outRenderInfos)
 {
 	for (UActorComponent* component : mComponents)
 	{
-		component->Update();
+		component->Update(outRenderInfos);
 	}
 }
 
-/*
-void AActor::Render()
+void AActor::Click()
 {
-
-}
-*/
-
-void AActor::Clicked()
-{
-	bClicked = true;
+	mbClicked = true;
 }
 
-void AActor::UnClicked()
+void AActor::UnClick()
 {
-	bClicked = false;
+	mbClicked = false;
 }
 
-void AActor::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos)
+bool AActor::IsClicked()
 {
-	for (UActorComponent* component : mComponents)
-	{
-		component->GetRenderInfos(outRenderInfos);
-	}
+	return mbClicked;
 }
 
 int32 AActor::getComponentIndex(uint32 componentUUID) const

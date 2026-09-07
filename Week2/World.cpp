@@ -90,10 +90,10 @@ void UWorld::Update()
 
 	for (AActor* actor : mActors)
 	{
-		// Update actors
-		actor->Update();
-		//
-		actor->GetRenderInfos(&mRenderInfos);
+		if (actor->IsClicked())
+		{
+			actor->Update(&mRenderInfos);
+		}
 	}
 }
 

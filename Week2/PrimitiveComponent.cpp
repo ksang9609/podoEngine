@@ -56,8 +56,13 @@ void UPrimitiveComponent::DeserializeClass(const json::JSON& inJson)
 	mePrimitive = EPrimitiveFromJson(propertiesJson.at("mePrimitiveType"));
 }
 
-void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos)
+void UPrimitiveComponent::Update(TArray<FRenderInfo>* outRenderInfos)
 {
+	// Todo: Update coordinates here
+	{
+
+	}
+
 	outRenderInfos->Add({ mePrimitive, GetTransformMatrix().MakeMatrix() });
 }
 

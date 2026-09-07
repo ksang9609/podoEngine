@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include <windows.h>
 
-class UFrameTimer
+class FFrameTimer
 {
 public:
-	UFrameTimer(int TargetFPS) : targetFrameTime(1000.0 / TargetFPS), elapsedTime(1000.0 / TargetFPS)
+	FFrameTimer(int TargetFPS) : targetFrameTime(1000.0 / TargetFPS), elapsedTime(1000.0 / TargetFPS)
 	{
 		QueryPerformanceFrequency(&Frequency);
 	}

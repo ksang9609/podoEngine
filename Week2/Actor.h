@@ -9,8 +9,10 @@ class AActor : public UObject
 {
 	REFLECT_CLASS(AActor, UObject)
 public:
-	AActor();
+	AActor() = default;
 	virtual ~AActor();
+
+	void Initialize();
 
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
@@ -18,20 +20,19 @@ public:
 	void AddComponent(UActorComponent* actorComponent);
 	bool RemoveComponent(uint32 componentUUID);
 
-	virtual void Update();
+	void Update(TArray<FRenderInfo>* outRenderInfos);
 	//void Render();
 
 	//Actor가 클릭 되었을 때 호출
-	void Clicked();
-	void UnClicked();
-
-	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos);
+	void Click();
+	void UnClick();
+	bool IsClicked();
 
 private:
 	int32 getComponentIndex(uint32 componentUUID) const;
 
 private:
 	TArray<UActorComponent*> mComponents;
-	bool bClicked = false;
+	bool mbClicked = false;
 };
 

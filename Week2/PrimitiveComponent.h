@@ -20,7 +20,7 @@ public:
 	virtual void DeserializeClass(const json::JSON& inJson) override;
 
 	//virtual void Render();
-	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) override;
+	void Update(TArray<FRenderInfo>* outRenderInfos) override final;
 
 protected:
 	//GraphicsManager* mGraphicsManager;
