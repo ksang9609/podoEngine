@@ -2,12 +2,15 @@
 #include "Transform.h"
 #include <cmath>
 #include "Vector.h"
-#include "Renderer.h"
 
 class FCamera
 {
 public:
-	FCamera() : Transform(FTransform()){}
+	FCamera() : Transform(FTransform({ -2.0f, 1.0f, 1.0f }, { 0, 30, 0 }, { 1, 1, 1 }))
+	{
+		LookAt({ 0, 0, 0 });
+	}
+
 	FCamera(FTransform _FTransform) : Transform(_FTransform) {}
 	FTransform Transform;
 
@@ -27,7 +30,7 @@ public:
 		Transform.Rotation = FRotator::LookAt(Transform.Location, Target);
 	}
 
-	FMatrix GetProjectionMatrix(float Aspect, float fovDegree, float n, float f)
+	FMatrix GetProjectionMatrix(float Aspect, float fovDegree, float n, float f) const
 	{
 		//fov 단위는 라디안
 		FMatrix result = FMatrix::Zero; //영벡터
@@ -50,6 +53,8 @@ public:
 		Transform.Rotation.Pitch -= FMath::Fmod(Dy * Sensitivity, 360.f);
 	}
 
+	void Update();
+
 	void SetSensitivity(float _v) { Sensitivity = _v; }
 	FVector GetForwardVector() const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::X); }
 	FVector GetRightVector()   const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::Y); }
@@ -57,9 +62,6 @@ public:
 
 	float Speed = 1.f;
 	FVector Velocity = FVector(0);
-private:
 	float Sensitivity = 0.1f;
-
-
-
+	float mFovDegree = 60.f;
 };

@@ -4,17 +4,12 @@
 #include "Renderer.h"
 #include "WindowApplication.h"
 #include "LaunchEngineLoop.h"
+#include "Object.h"
 
 enum : UINT_PTR
 {
 	RESIZE_TIMER_ID = 1,
 };
-#include "Console.h"
-#include "Object.h"
-#include "GraphicsManager.h"
-
-#include "CubeComponent.h"
-#include "SphereComponent.h"
 
 void* operator new(size_t size);
 void operator delete(void* deleteObject, size_t size);

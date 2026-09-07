@@ -12,6 +12,8 @@ struct FDeferredMessage
 	WPARAM wParam = 0;
 	LPARAM lParam = 0;
 
+	// WM_INPUT 은 lParam 의 HRAWINPUT 핸들이 WndProc 안에서만 유효하다.
+	// 그래서 WndProc 에서 미리 풀어 여기에 담아 둔다.
 	long   RawMouseDX = 0;
 	long   RawMouseDY = 0;
 };

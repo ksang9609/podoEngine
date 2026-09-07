@@ -127,12 +127,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="JsonUtil.cpp" />
     <ClCompile Include="ObjectFactory.cpp" />
+    <ClCompile Include="FEditorViewportClient.cpp" />
     <ClCompile Include="GraphicsManager.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />

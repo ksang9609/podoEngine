@@ -1,8 +1,7 @@
 ﻿#include "GraphicsManager.h"
 
 #include "Renderer.h"
-#include "WindowApplication.h"
-#include "ImGui/imgui.h"
+#include "Camera.h"
 
 GraphicsManager::GraphicsManager(HWND hWindow)
 {
@@ -11,12 +10,7 @@ GraphicsManager::GraphicsManager(HWND hWindow)
 	mRenderer->CreateShader();
 	mRenderer->CreateConstantBuffer();
 
-	// Todo: Fix
-	mCamera = new FCamera(FTransform({ -2.0f, 1.0f, 1.0f }, { 0, 30, 0 }, { 1, 1, 1 }));
-	mCamera->LookAt({ 0, 0, 0 });   // center of NearCube
-
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
-	mFovDegree = 60.f;
 }
 
 GraphicsManager::~GraphicsManager()
@@ -31,17 +25,16 @@ GraphicsManager::~GraphicsManager()
 	mRenderer->Release();
 
 	delete mRenderer;
-	delete mCamera;
 }
 
-void GraphicsManager::Prepare(bool bWireFrame)
+void GraphicsManager::Prepare(bool bWireFrame, const FCamera *mCamera)
 {
 	mRenderer->Prepare(bWireFrame);
 	mRenderer->PrepareShader();
 
 	// Todo: 
 	FMatrix view = mCamera->GetViewMatrix();
-	FMatrix projection = mCamera->GetProjectionMatrix(mAspect, mFovDegree, 0.1f, 100.0f);
+	FMatrix projection = mCamera->GetProjectionMatrix(mAspect, mCamera->mFovDegree, 0.1f, 100.0f);
 	mViewProjectionMatrix = view * projection;
 
 	// 그리는 순서가 중요하다: 가까운 것을 먼저, 먼 것을 나중에.
@@ -78,45 +71,7 @@ void GraphicsManager::Display()
 
 void GraphicsManager::Update(float deltaTime)
 {
-	ImGuiIO& io = ImGui::GetIO();
-
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
-	//CameraMove
-	const FInputState& Input = WindowApplication.Input;
-
-	// 회전을 이동보다 먼저 — 이번 프레임에 돌린 방향으로 바로 움직이게
-	if (!io.WantCaptureMouse && Input.IsDown(VK_RBUTTON))
-	{
-		mCamera->Rotate(Input.MouseDX, Input.MouseDY);
-	}
-
-	if (!io.WantCaptureMouse && Input.MouseWheelDelta != 0.0f)
-	{
-		mCamera->Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
-		mCamera->Speed = FMath::Clamp(mCamera->Speed, 0.1f, 100.0f);
-	}
-
-	if (!io.WantCaptureKeyboard)
-	{
-		const FMatrix R = FMatrix::Rotate(mCamera->Transform.Rotation);
-		const FVector Forward = R.GetUnitAxis(EAxis::X);
-		const FVector Right = R.GetUnitAxis(EAxis::Y);
-
-		FVector MoveInput(0.f, 0.f, 0.f);
-		if (Input.IsDown('W')) MoveInput += Forward;
-		if (Input.IsDown('S')) MoveInput -= Forward;
-		if (Input.IsDown('D')) MoveInput += Right;
-		if (Input.IsDown('A')) MoveInput -= Right;
-		if (Input.IsDown('E')) MoveInput += FVector(0.f, 0.f, 1.f);   // 상승은 월드 업 기준
-		if (Input.IsDown('Q')) MoveInput -= FVector(0.f, 0.f, 1.f);
-
-		if (MoveInput.Length() > SMALL_NUMBER)
-		{
-			MoveInput.Normalize();
-			mCamera->Velocity = MoveInput * mCamera->Speed;
-			mCamera->Transform.Location += mCamera->Velocity * deltaTime;
-		}
-	}
 }
 
 void GraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize)
