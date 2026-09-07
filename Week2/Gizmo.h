@@ -11,7 +11,7 @@ struct FGizmo {
 		Y,
 		Z
 	};
-
+	
 	enum EGIZMO_TYPE {
 		TRANSLATE,
 		ROTATE,
@@ -24,11 +24,12 @@ struct FGizmo {
 	bool bMouseOnGizmo = false;
 	float mGizmoScale=1.0f;
 	float mAxisLength = mGizmoScale * 1.0f;
-	float mAxisThickness = mGizmoScale * 0.1f;
+	float mAxisThickness = mGizmoScale * 0.2f;
 	float mHitRadius= mAxisThickness*1.1f; // 마우스 판정보정
-	float mGizmoSizeRatio = 0.1f;
-	EGIZMO_AXIS eAxis = NONE; 
+	float mGizmoSizeRatio = 0.2f;
+	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_TYPE eType=TRANSLATE;
+	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
 		switch (axis)
@@ -40,7 +41,7 @@ struct FGizmo {
 		}
 	}
 
-	float mDragStartLocation;
+	FVector mDragStartLocation;
 	float mDragStartAxis;
 
 	bool IsRayInGizmo(FVector nearPoint, FVector farPoint)
@@ -97,7 +98,7 @@ struct FGizmo {
 	{
 		switch (eType)
 		{
-		case TRANSLATE: return EPrimitive::EP_Cube;
+		case TRANSLATE: return EPrimitive::EP_GizmoArrow;
 		case ROTATE: return EPrimitive::EP_Cube; //EP_Rotate
 		default: break;
 		}
@@ -140,7 +141,7 @@ struct FGizmo {
 		for (int i = 0; i < 3; ++i)
 		{
 			if(axis[i]==eAxis) { /* highlight */ }
-			renderInfos.Add({ EPrimitive::EP_Cube, GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
+			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i])});
 		}
 
 		return renderInfos;
@@ -148,9 +149,8 @@ struct FGizmo {
 
 	void Update(const FVector& cameraLocation, const FVector& cameraForward, float fovDegree) // Gizmo 깊이에따른 원근크기 보정
 	{
-		const float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
+		float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
 		const float tanHalfFov = tanf(FMath::DegreesToRadians(fovDegree * 0.5f));
-
 		mGizmoScale = depth * tanHalfFov * mGizmoSizeRatio;
 	}
 

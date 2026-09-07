@@ -7,5 +7,5 @@ enum class EPrimitive
 	EP_Sphere,
 	EP_Cube,
 	EP_Triangle,
-	EP_ARROW,
+	EP_GizmoArrow,
 };

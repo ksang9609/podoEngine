@@ -11,7 +11,7 @@
 #include "Cube.h"
 #include "Sphere.h"
 #include "Object.h"
-
+#include "GizmoArrow.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
@@ -50,6 +50,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
+	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
 
 	FrameTimer = new FFrameTimer(120);
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
