@@ -24,20 +24,20 @@
 
 FSceneManager::FSceneManager()
 {
-	mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
+	//mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
 
 	// Todo: Test code, move to other function
-	{
-		UCubeComponent* cubeComponent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
-		AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
-		cubeActor->AddComponent(cubeComponent);
-		mCurrentWorld->AddActor(cubeActor);
+	//{
+	//	UCubeComponent* cubeComponent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
+	//	AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
+	//	cubeActor->AddComponent(cubeComponent);
+	//	mCurrentWorld->AddActor(cubeActor);
 
-		UCubeComponent* cubeComponent2 = FObjectFactory::ConstructObject<UCubeComponent>(FVector(1, 1, 1), FRotator(), FVector(0.5));
-		AActor* cubeActor2 = FObjectFactory::ConstructObject<AActor>();
-		cubeActor2->AddComponent(cubeComponent2);
-		mCurrentWorld->AddActor(cubeActor2);
-	}
+	//	UCubeComponent* cubeComponent2 = FObjectFactory::ConstructObject<UCubeComponent>(FVector(1, 1, 1), FRotator(), FVector(0.5));
+	//	AActor* cubeActor2 = FObjectFactory::ConstructObject<AActor>();
+	//	cubeActor2->AddComponent(cubeComponent2);
+	//	mCurrentWorld->AddActor(cubeActor2);
+	//}
 }
 
 FSceneManager::~FSceneManager()

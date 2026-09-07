@@ -3,6 +3,7 @@
 #include <format>
 
 #include "JsonUtil.h"
+#include "SceneComponent.h"
 
 AActor::~AActor()
 {
@@ -30,6 +31,7 @@ void AActor::SerializeClass(json::JSON& outJson) const
 		componentsJson.append(std::move(componentJson));
 	}
 	outJson["Properties"]["mComponents"] = componentsJson;
+	outJson["Properties"]["mRootComponentUUID"] = mRootComponent ? mRootComponent->UUID : -1;
 }
 
 void AActor::DeserializeClass(const json::JSON& inJson)
@@ -61,6 +63,27 @@ void AActor::DeserializeClass(const json::JSON& inJson)
 		UActorComponent* component = static_cast<UActorComponent*>(FObjectFactory::LoadObject(classInfo, componentJson));
 		AddComponent(component);
 	}
+
+	if (!propertiesJson.hasKey("mRootComponentUUID") || propertiesJson.at("mRootComponentUUID").JSONType() != json::JSON::Class::Integral)
+	{
+		throw std::runtime_error(std::format("{}: mRootComponentUUID requires an integral", GetRuntimeClass()->Name));
+	}
+	int32 rootComponentUUID = propertiesJson.at("mRootComponentUUID").ToInt();
+	if (rootComponentUUID == -1)
+	{
+		mRootComponent = nullptr;
+	}
+	else
+	{
+		int32 rootComponentIndex = getComponentIndex(rootComponentUUID);
+		if (rootComponentIndex == -1)
+		{
+			throw std::runtime_error(std::format("{}: Invalid root component UUID: {}", GetRuntimeClass()->Name, rootComponentUUID));
+		}
+		mRootComponent = static_cast<USceneComponent*>(mComponents[rootComponentIndex]);
+	}
+
+
 }
 
 void AActor::AddComponent(UActorComponent* actorComponent)
@@ -70,6 +93,15 @@ void AActor::AddComponent(UActorComponent* actorComponent)
 
 	mComponents.Add(actorComponent);
 	actorComponent->SetOwner(this);
+}
+
+void AActor::AddRootSceneComponent(USceneComponent* sceneComponent)
+{
+	assert(sceneComponent);
+	assert(getComponentIndex(sceneComponent->UUID) == -1);
+
+	mRootComponent = sceneComponent;
+	AddComponent(sceneComponent);
 }
 
 bool AActor::RemoveComponent(uint32 componentUUID)
@@ -83,6 +115,18 @@ bool AActor::RemoveComponent(uint32 componentUUID)
 	mComponents.RemoveAt(componentIndex, 1);
 
 	return true;
+}
+
+FTransform AActor::GetTransform() const
+{
+	if (mRootComponent)
+	{
+		return mRootComponent->GetTransformMatrix();
+	}
+	else
+	{
+		return FTransform();
+	}
 }
 
 

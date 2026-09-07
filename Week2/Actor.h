@@ -4,6 +4,8 @@
 #include "ActorComponent.h"
 
 struct FRenderInfo;
+struct FTransform;
+class USceneComponent;
 
 class AActor : public UObject
 {
@@ -18,7 +20,10 @@ public:
 	virtual void DeserializeClass(const json::JSON& inJson) override;
 
 	void AddComponent(UActorComponent* actorComponent);
+	void AddRootSceneComponent(USceneComponent* sceneComponent);
 	bool RemoveComponent(uint32 componentUUID);
+
+	FTransform GetTransform() const;
 
 	void Update(TArray<FRenderInfo>* outRenderInfos);
 	//void Render();
@@ -37,6 +42,7 @@ private:
 	int32 getComponentIndex(uint32 componentUUID) const;
 
 private:
+	USceneComponent* mRootComponent = nullptr;
 	TArray<UActorComponent*> mComponents;
 	bool mbPressed = false;
 	bool mbStarted = false;

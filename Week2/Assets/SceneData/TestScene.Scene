@@ -18,7 +18,8 @@
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
                   "mePrimitiveType" : "Cube"
                 }
-              }]
+              }],
+            "mRootComponentUUID" : 2
           }
         }, {
           "ClassName" : "AActor",
@@ -33,7 +34,8 @@
                   "mRelativeScale3D" : [0.500000, 0.500000, 0.500000],
                   "mePrimitiveType" : "Cube"
                 }
-              }]
+              }],
+            "mRootComponentUUID" : 4
           }
         }]
     }

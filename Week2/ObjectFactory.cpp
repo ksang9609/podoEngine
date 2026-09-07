@@ -3,6 +3,7 @@
 #include "Json/json.hpp"
 
 #include "Actor.h"
+#include "PrimitiveComponent.h"
 
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
@@ -37,9 +38,10 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 	// Create a new actor
 	AActor* actor = ConstructObject<AActor>();
 
-	/**
-	* TODO: Add a component based on the primitiveType.
-	*/
+	UPrimitiveComponent* component = ConstructObject<UPrimitiveComponent>(
+		primitiveType, Location, Rotation, Scale);
+
+	actor->AddRootSceneComponent(component);
 
 	return actor;
 }

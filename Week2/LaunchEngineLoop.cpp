@@ -60,9 +60,9 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
 
-	/*
-	mSceneManager.NewScene();
-	mSceneManager.LoadScene("TestScene", mFileManager);
+
+	mSceneManager->NewScene();
+	mSceneManager->LoadScene("TestScene", *mFileManager);
 
 	//test code
 	//{
@@ -71,7 +71,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	//	cubeActor->AddComponent(cubeComonent);
 	//	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
 	//}
-	*/
+	
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
