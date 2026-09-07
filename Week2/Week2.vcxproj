@@ -150,7 +150,7 @@
     <ClCompile Include="CubeComponent.cpp" />
     <ClCompile Include="SceneData.cpp" />
     <ClCompile Include="SceneManager.cpp" />
-    <ClCompile Include="USphereComponent.cpp" />
+    <ClCompile Include="SphereComponent.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>

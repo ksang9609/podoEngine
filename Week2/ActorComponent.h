@@ -11,8 +11,8 @@ public:
 	UActorComponent();
 	virtual ~UActorComponent();
 
-	// Todo: Make as pure class
-	//virtual void Update();
+	 //Todo: Make as pure class
+	virtual void Update() {};
 	//virtual void Render();
 
 	virtual void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos);

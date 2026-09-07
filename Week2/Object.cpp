@@ -17,12 +17,12 @@ UObject* FClassInfo::CreateInstance() const
 
 UObject::UObject()
 {
+	InternalIndex = GUObjectArray.Add(this);
 }
 
 UObject::~UObject()
 {
 	// Ensure that the object is in the GUObjectArray before attempting to remove it
-	// This case may happen if the object is create not through the factory
 	if (GUObjectArray.Num() < InternalIndex || GUObjectArray[InternalIndex] != this)
 	{
 		assert(false && "Invalid InternalIndex or GUObjectArray mismatch.");
@@ -41,9 +41,7 @@ UObject::~UObject()
 
 void UObject::Initialize()
 {
-
 	UUID = UEngineStatics::GenerateUUID();
-	InternalIndex = GUObjectArray.Add(this);
 }
 
 const FClassInfo* UObject::GetClass()

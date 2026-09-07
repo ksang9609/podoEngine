@@ -45,16 +45,16 @@ void AActor::DeserializeClass(const json::JSON& inJson)
 
 	for (const auto& componentJson : componentsJson.ArrayRange())
 	{
-		if (!componentJson.hasKey("ClassName"))
+		if (!componentJson.hasKey("ClassName") || componentJson.at("ClassName").JSONType() != json::JSON::Class::String)
 		{
-			throw std::runtime_error("Invalid JSON format for UActorComponent: Missing ClassName");
+			throw std::runtime_error(std::format("{}: ClassName requires a string", GetRuntimeClass()->Name));
 		}
 		FString className(componentJson.at("ClassName").ToString());
 
 		const FClassInfo* classInfo = FObjectFactory::GetClassInfoByName(className);
 		if (!classInfo)
 		{
-			throw std::runtime_error(std::format("Unknown class name: {}", className));
+			throw std::runtime_error(std::format("{}: Unknown class name: {}", GetRuntimeClass()->Name, className));
 		}
 		UActorComponent* component = static_cast<UActorComponent*>(FObjectFactory::LoadObject(classInfo, componentJson));
 		AddComponent(component);
@@ -80,6 +80,14 @@ bool AActor::RemoveComponent(uint32 componentUUID)
 	mComponents.RemoveAt(componentIndex, 1);
 
 	return true;
+}
+
+void AActor::Update()
+{
+	for (UActorComponent* component : mComponents)
+	{
+		component->Update();
+	}
 }
 
 /*

@@ -46,7 +46,22 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 
 const FClassInfo* FObjectFactory::GetClassInfoByName(const FString& className)
 {
+	if (!mClassInfoMap.Contains(className))
+	{
+		return nullptr;
+	}
+
 	return mClassInfoMap[className]();
+}
+
+bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* classInfo)
+{
+	if (mClassInfoMap.Contains(className))
+	{
+		return false;
+	}
+	mClassInfoMap.Add(className, [classInfo]() -> const FClassInfo* { return classInfo; });
+	return true;
 }
 
 #include "SceneComponent.h"
@@ -55,7 +70,7 @@ const FClassInfo* FObjectFactory::GetClassInfoByName(const FString& className)
 #include "SphereComponent.h"
 #include "World.h"
 
-const TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
+TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetClass },
 	{"AActor", &AActor::GetClass },
 	{"UActorComponent", &UActorComponent::GetClass },

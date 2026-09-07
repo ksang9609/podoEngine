@@ -18,7 +18,7 @@ public:
 	void AddComponent(UActorComponent* actorComponent);
 	bool RemoveComponent(uint32 componentUUID);
 
-	void Update();
+	virtual void Update();
 	//void Render();
 
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos);

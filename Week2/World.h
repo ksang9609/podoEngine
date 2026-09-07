@@ -13,6 +13,9 @@ public:
 	UWorld() = default;
 	~UWorld();
 
+	virtual void SerializeClass(json::JSON& outJson) const override;
+	virtual void DeserializeClass(const json::JSON& inJson) override;
+
 	void AddActor(AActor* actor);
 	bool RemoveActor(uint32 componentUUID);
 

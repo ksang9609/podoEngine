@@ -81,9 +81,6 @@
     <ClCompile Include="CubeComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="USphereComponent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="World.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -106,6 +103,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="JsonUtil.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SphereComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

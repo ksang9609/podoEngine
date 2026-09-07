@@ -36,9 +36,11 @@ struct FObjectFactory
 
 	static const FClassInfo* GetClassInfoByName(const FString& className);
 
+	static bool RegisterClassInfo(FString className, const FClassInfo* classInfo);
+
 private:
 	// TODO: Automate the registration of class info for all UObject-derived classes.
-	static const TMap<FString, std::function<const FClassInfo* ()>> mClassInfoMap;
+	static TMap<FString, std::function<const FClassInfo* ()>> mClassInfoMap;
 };
 
 
