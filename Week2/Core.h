@@ -23,6 +23,12 @@ public:
 	FString(std::string_view str);
 	FString(const char* str);
 
+	FString(const FString& other);
+	FString& operator=(const FString& other);
+	FString& operator=(std::string_view str);
+	FString(FString&& other) noexcept;
+	FString& operator=(FString&& other) noexcept;
+
 	using iterator = std::string::iterator;
 	using const_iterator = std::string::const_iterator;
 
@@ -110,8 +116,30 @@ public:
 
 	bool operator== (const FString& str) const;
 
+
 private:
 	std::unique_ptr<std::string> mData;
+};
+
+template<>
+struct std::hash<FString>
+{
+	std::size_t operator()(const FString& str) const noexcept
+	{
+		return std::hash<std::string_view>{}(static_cast<std::string_view>(str));
+	}
+};
+
+#include <format>
+
+template<>
+struct std::formatter<FString, char> : std::formatter<std::string_view, char>
+{
+	template<typename FormatContext>
+	auto format(const FString& str, FormatContext& ctx) const
+	{
+		return std::formatter<std::string_view, char>::format(static_cast<std::string_view>(str), ctx);
+	}
 };
 
 #ifndef FORCEINLINE

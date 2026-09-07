@@ -1,11 +1,9 @@
 ﻿#pragma once
 
+#include "Json/json.hpp"
 #include "Vector.h"
 #include "Rotator.h"
 #include "enum.h"
-
-
-namespace json { class JSON; }
 
 json::JSON FVectorToJson(const FVector& Vector);
 json::JSON FRotatorToJson(const FRotator& Rotator);

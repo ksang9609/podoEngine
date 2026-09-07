@@ -69,6 +69,9 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	if (GInTick) return;
 	GInTick = true;
 
+	// DEbug
+	UE_LOG_F("Hello world");
+
 	FrameTimer.StartFrame();
 	float deltaTime = FrameTimer.GetDeltaTime();
 

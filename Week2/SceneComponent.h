@@ -16,6 +16,9 @@ public:
 	void Initialize(FVector location, FRotator rotation, FVector scale3D);
 	virtual ~USceneComponent();
 
+	virtual void SerializeClass(json::JSON& outJson) const override;
+	virtual void DeserializeClass(const json::JSON& inJson) override;
+
 	FVector GetRelativeLocation() const;
 	void SetRelativeLocation(FVector location);
 

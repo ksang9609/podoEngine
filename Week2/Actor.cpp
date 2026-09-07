@@ -1,5 +1,8 @@
-﻿
-#include "Actor.h"
+﻿#include "Actor.h"
+
+#include <format>
+
+#include "JsonUtil.h"
 
 AActor::AActor()
 {
@@ -10,6 +13,51 @@ AActor::~AActor()
 	for (UActorComponent* removeComponent : mComponents)
 	{
 		delete removeComponent;
+	}
+}
+
+void AActor::SerializeClass(json::JSON& outJson) const
+{
+	UObject::SerializeClass(outJson);
+	json::JSON componentsJson = json::JSON::Make(json::JSON::Class::Array);
+
+	for (const UActorComponent* component : mComponents)
+	{
+		json::JSON componentJson;
+		component->SerializeClass(componentJson);
+		componentsJson.append(std::move(componentJson));
+	}
+	outJson["Properties"]["mComponents"] = componentsJson;
+}
+
+void AActor::DeserializeClass(const json::JSON& inJson)
+{
+	UObject::DeserializeClass(inJson);
+
+	const json::JSON& propertiesJson = inJson.at("Properties");
+
+	if (!propertiesJson.hasKey("mComponents") || propertiesJson.at("mComponents").JSONType() != json::JSON::Class::Array)
+	{
+		throw std::runtime_error(std::format("{}: mComponents requires an array", GetRuntimeClass()->Name));
+	}
+
+	const json::JSON& componentsJson = propertiesJson.at("mComponents");
+
+	for (const auto& componentJson : componentsJson.ArrayRange())
+	{
+		if (!componentJson.hasKey("ClassName"))
+		{
+			throw std::runtime_error("Invalid JSON format for UActorComponent: Missing ClassName");
+		}
+		FString className(componentJson.at("ClassName").ToString());
+
+		const FClassInfo* classInfo = FObjectFactory::GetClassInfoByName(className);
+		if (!classInfo)
+		{
+			throw std::runtime_error(std::format("Unknown class name: {}", className));
+		}
+		UActorComponent* component = static_cast<UActorComponent*>(FObjectFactory::LoadObject(classInfo, componentJson));
+		AddComponent(component);
 	}
 }
 

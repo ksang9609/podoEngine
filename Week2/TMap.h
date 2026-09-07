@@ -3,6 +3,8 @@
 #include <cassert>
 #include <unordered_map>
 #include <utility>
+#include <initializer_list>
+
 #include "Core.h"
 
 template <typename T, typename V>
@@ -10,6 +12,8 @@ class TMap
 {
 public:
 	TMap() = default;
+	TMap(std::initializer_list<std::pair<const T, V>> initList) : mMap(initList) {}
+
 	~TMap() = default;
 
 	std::unordered_map<T, V>::iterator begin();
@@ -31,6 +35,7 @@ public:
 	void Reserve(int32 Capacity);
 
 	V& operator[](const T& key);
+	const V& operator[](const T& key) const;
 
 private:
 	std::unordered_map<T, V> mMap;
@@ -125,4 +130,10 @@ template <typename T, typename V>
 inline V& TMap<T, V>::operator[](const T& key)
 {
 	return mMap[key];
+}
+
+template <typename T, typename V>
+inline const V& TMap<T, V>::operator[](const T& key) const
+{
+	return mMap.at(key);
 }

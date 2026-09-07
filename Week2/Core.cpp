@@ -16,6 +16,40 @@ FString::FString(const char* str)
 {
 }
 
+FString::FString(const FString& other)
+	: mData(std::make_unique<std::string>(*other.mData))
+{
+}
+
+FString& FString::operator=(const FString& other)
+{
+	if (this != &other)
+	{
+		mData = std::make_unique<std::string>(*other.mData);
+	}
+	return *this;
+}
+
+FString& FString::operator=(std::string_view str)
+{
+	mData = std::make_unique<std::string>(str);
+	return *this;
+}
+
+FString::FString(FString&& other) noexcept
+	: mData(std::move(other.mData))
+{
+}
+
+FString& FString::operator=(FString&& other) noexcept
+{
+	if (this != &other)
+	{
+		mData = std::move(other.mData);
+	}
+	return *this;
+}
+
 FString& FString::Append(std::string_view str)
 {
 	mData->append(str);
@@ -69,6 +103,16 @@ bool FString::EndsWith(std::string_view suffix) const
 bool FString::EndsWith(const FString& suffix) const
 {
 	return EndsWith(*suffix.mData);
+}
+
+bool FString::Equals(std::string_view other) const
+{
+	return *mData == other;
+}
+
+bool FString::Equals(const FString& other) const
+{
+	return *mData == *other.mData;
 }
 
 int32 FString::Find(std::string_view subStr, int32 startIndex) const
@@ -270,7 +314,7 @@ FString FString::ToLower() const
 	FString result(*mData);
 	for (char& c : *result.mData)
 		c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-	
+
 	return result;
 }
 
@@ -297,5 +341,5 @@ FString& FString::operator+=(const FString& str)
 
 bool FString::operator== (const FString& str) const
 {
-	return *mData == *str.mData;
+	return Equals(str);
 }
