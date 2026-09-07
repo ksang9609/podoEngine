@@ -56,12 +56,14 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	bwireFrame = false;
 
+	mSceneManager.NewScene();
+	//mSceneManager.LoadScene("TestScene", mFileManager);
+
 	UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
 	AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
 	cubeActor->AddComponent(cubeComonent);
 
-	mWorld = FObjectFactory::ConstructObject<UWorld>();
-	mWorld->AddActor(cubeActor);
+	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
@@ -84,11 +86,11 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		WindowApplication.bPendingResize = false;
 	}
 
-	mWorld->Update();
+	mSceneManager.Update();
 	mGraphicsManager->Update(deltaTime);
 
 	mGraphicsManager->Prepare(bwireFrame);
-	mGraphicsManager->Render(mWorld->GetRenderInfos());
+	mGraphicsManager->Render(mSceneManager.GetRenderInfos());
 
 	FVector NearPoint, OutPoint;
 	ViewportClient.DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
@@ -203,6 +205,9 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 void FEngineLoop::End()
 {
+
+	// Debug
+	mSceneManager.SaveScene("TestScene", mFileManager);
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();

@@ -4,6 +4,8 @@
 #include "FrameTimer.h"
 #include "FEditorViewportClient.h"
 #include "Camera.h"
+#include "SceneManager.h"
+#include "FileManager.h"
 #include "Renderer.h"
 #include "World.h"
 
@@ -11,11 +13,14 @@
 
 class Sphere;
 class GraphicsManager;
-
 class FEngineLoop
 {
 public:
-	FEngineLoop() : FrameTimer(120) {}
+	FEngineLoop()
+		: FrameTimer(120)
+		, mFileManager()
+	{
+	}
 	~FEngineLoop() {};
 
 	void Init(HINSTANCE hInstance, WNDPROC WndProc);
@@ -28,8 +33,10 @@ private:
 	bool bwireFrame = false;
 	bool GInTick = false;
 	FEditorViewportClient ViewportClient;
+
 	GraphicsManager* mGraphicsManager;
-	UWorld* mWorld;
+	FSceneManager mSceneManager;
+	FFileManager mFileManager;
 };
 
 //inline FEngineLoop GEngineLoop;

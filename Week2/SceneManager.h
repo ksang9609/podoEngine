@@ -3,7 +3,10 @@
 #include <string_view>
 
 #include "SceneData.h"
+#include "TArray.h"
+#include "RenderInfo.h"
 
+inline constexpr std::string_view kSceneDataDir = "SceneData\\";
 inline constexpr std::string_view kSceneDataSuffix = ".Scene";
 
 class FFileManager;
@@ -16,12 +19,16 @@ public:
 	~FSceneManager() = default;
 
 	// Clear world
-	void NewScene(UWorld* world);
+	void NewScene();
 
-	void SaveScene(std::string_view sceneName, const FFileManager& fileManager, const UWorld* world);
-	void LoadScene(std::string_view sceneName, const FFileManager& fileManager, UWorld* world);
+	void SaveScene(std::string_view sceneName, const FFileManager& fileManager);
+	void LoadScene(std::string_view sceneName, const FFileManager& fileManager);
+
+	void Update();
+	const TArray<FRenderInfo> GetRenderInfos();
+
+	UWorld* GetCurrentWorld() const { return mCurrentWorld; }
 
 private:
-	FSceneData ReadSceneData(std::string_view sceneName, const FFileManager& fileManager);
-	UWorld* BuildWorldFromSceneData(const FSceneData& sceneData);
+	UWorld* mCurrentWorld = nullptr;
 };
