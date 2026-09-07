@@ -142,6 +142,16 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	{
 		ViewportClient.Update(deltaTime);
 		ViewportClient.RayCast(mGraphicsManager->GetRenderer()->ViewportInfo, mWorld);
+
+		if (ViewportClient.IsMouseHit() && ViewportClient.ClickedActor)
+		{
+			ViewportClient.ClickedActor->Clicked();
+		}
+		else if (ViewportClient.ClickedActor)
+		{
+			ViewportClient.ClickedActor->UnClicked();
+			ViewportClient.ClickedActor = nullptr;
+		}
 	}
 
 	//Game Threads

@@ -17,17 +17,25 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 	float NearlistT = (OutPoint - NearPoint).Length();
 
 	const TArray<FRenderInfo> RenderInfos = World->GetRenderInfos();
-	int length = 0;
 	FVertexSimple* vertices = nullptr;
+	int length = 0;
 	for (const FRenderInfo& RI : RenderInfos)
 	{
 		bool bHit = false;
-		if (RI.ePrimitive == EPrimitive::EP_Cube) vertices = Cube_vertices;
-		else if (RI.ePrimitive == EPrimitive::EP_Sphere) vertices = Sphere_vertices;
+		if (RI.ePrimitive == EPrimitive::EP_Cube)
+		{
+			vertices = Cube_vertices;
+			length = 36;
+		}
+		else if (RI.ePrimitive == EPrimitive::EP_Sphere)
+		{
+			vertices = Sphere_vertices;
+			length = 2400;
+		}
 		else assert(!vertices && "Actor's RenderInfo.ePrimitive is NOT Valid");
 
 		length = sizeof(*vertices) / sizeof(FVertexSimple);
-		for (int i = 0; i < length - 2; i += 2)
+		for (int i = 0; i < length - 2; i += 3)
 		{
 			FVector V0 = vertices[i].GetPosition(), V1 = vertices[i + 1].GetPosition(), V2 = vertices[i + 2].GetPosition();
 			if (RayIntersectsTriangle(NearPoint, OutPoint, V0, V1, V2, OutT, OutU, OutV))
@@ -42,6 +50,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 			NearlistT = OutT;
 			bMouseHit = true;
 			HoveredRenderInfo = RI;
+			//if (RI.ObejctID.)
 		}
 	}
 }

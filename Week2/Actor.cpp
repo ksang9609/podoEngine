@@ -89,6 +89,16 @@ void AActor::Render()
 }
 */
 
+void AActor::Clicked()
+{
+	bClicked = true;
+}
+
+void AActor::UnClicked()
+{
+	bClicked = false;
+}
+
 void AActor::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos)
 {
 	for (UActorComponent* component : mComponents)

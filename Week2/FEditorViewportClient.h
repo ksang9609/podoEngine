@@ -6,6 +6,8 @@
 #include "Camera.h"
 #include "RenderInfo.h"
 
+class AActor;
+
 struct FEditorViewportClient
 {
 public:
@@ -14,6 +16,9 @@ public:
 	void Update(float deltaTime);
 	bool IsMouseHit() const { return bMouseHit; }
 
+	//마우스 밑 무언가가 Actor이면 저장
+	FRenderInfo HoveredRenderInfo;
+	AActor* ClickedActor = nullptr;
 	FCamera mCamera;
 
 private:
@@ -32,7 +37,4 @@ private:
 
 
 	bool bMouseHit = false;
-
-	//마우스 밑 무언가의 RenderInfo
-	FRenderInfo HoveredRenderInfo;
 };

@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Transform.h"
-#include "ObejctID.h"
+#include "Object.h"
 
 struct FRenderInfo
 {
