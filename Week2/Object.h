@@ -4,7 +4,10 @@
 
 #include "Core.h"
 #include "TArray.h"
+#include "ObjectFactory.h"
 
+
+namespace json { class JSON; }
 
 class UObject;
 
@@ -25,15 +28,6 @@ struct FClassInfo
 private:
 };
 
-struct FObjectFactory
-{
-	static UObject* ConstructObject(const FClassInfo* classInfo);
-
-	template<typename TObject, typename... Args>
-		requires std::derived_from<TObject, UObject>
-	static TObject* ConstructObject(Args&& ...args);
-};
-
 class UObject
 {
 public:
@@ -43,13 +37,17 @@ public:
 
 	virtual ~UObject();
 
-	void Initialize() {};
+	void Initialize();
 
 	// StaticClass() in Unreal Engine
 	static const FClassInfo* GetClass();
 
 	// GetClass() in Unreal Engine
 	inline const FClassInfo* GetRuntimeClass() const { return mClassInfo; }
+
+	// TODO?: Replace json type with a more generic type, such as a variant or a map
+	virtual void SerializeClass(json::JSON& outJson) const;
+	virtual void DeserializeClass(const json::JSON& inJson);
 
 	template<typename TObject>
 	bool IsA() const;

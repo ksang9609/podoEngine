@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <memory>
 
 typedef char int8;
 typedef unsigned char uint8;
@@ -22,17 +23,23 @@ public:
 	FString(std::string_view str);
 	FString(const char* str);
 
+	FString(const FString& other);
+	FString& operator=(const FString& other);
+	FString& operator=(std::string_view str);
+	FString(FString&& other) noexcept;
+	FString& operator=(FString&& other) noexcept;
+
 	using iterator = std::string::iterator;
 	using const_iterator = std::string::const_iterator;
 
-	iterator begin() { return mData.begin(); }
-	const_iterator begin() const { return mData.begin(); }
+	iterator begin() { return mData->begin(); }
+	const_iterator begin() const { return mData->begin(); }
 
-	iterator end() { return mData.end(); }
-	const_iterator end() const { return mData.end(); }
+	iterator end() { return mData->end(); }
+	const_iterator end() const { return mData->end(); }
 
-	inline operator std::string() const { return mData; }
-	inline operator std::string_view() const { return mData; }
+	inline operator std::string() const { return *mData; }
+	inline operator std::string_view() const { return *mData; }
 
 	FString& Append(std::string_view str);
 	FString& Append(const FString& str);
@@ -43,7 +50,7 @@ public:
 	{
 		std::string formatted;
 		snprintf(formatted.data(), formatted.size(), fmt.data(), std::forward<Args>(args)...);
-		mData.append(formatted);
+		mData->append(formatted);
 		return *this;
 	}
 	void AppendInt(int32 num);
@@ -109,8 +116,30 @@ public:
 
 	bool operator== (const FString& str) const;
 
+
 private:
-	std::string mData;
+	std::unique_ptr<std::string> mData;
+};
+
+template<>
+struct std::hash<FString>
+{
+	std::size_t operator()(const FString& str) const noexcept
+	{
+		return std::hash<std::string_view>{}(static_cast<std::string_view>(str));
+	}
+};
+
+#include <format>
+
+template<>
+struct std::formatter<FString, char> : std::formatter<std::string_view, char>
+{
+	template<typename FormatContext>
+	auto format(const FString& str, FormatContext& ctx) const
+	{
+		return std::formatter<std::string_view, char>::format(static_cast<std::string_view>(str), ctx);
+	}
 };
 
 #ifndef FORCEINLINE

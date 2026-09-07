@@ -2,6 +2,7 @@
 
 #include "Actor.h"
 #include "SceneComponent.h"
+#include "ObjectFactory.h"
 
 namespace AActorTest
 {

@@ -3,7 +3,8 @@
 #include "Object.h"
 #include "Actor.h"
 
-struct FRenderInfo;
+#include "RenderInfo.h"
+//struct FRenderInfo;
 
 class UWorld final : public UObject
 {

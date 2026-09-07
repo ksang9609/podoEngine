@@ -16,6 +16,9 @@ public:
 
 	virtual ~UPrimitiveComponent();
 
+	virtual void SerializeClass(json::JSON& outJson) const override;
+	virtual void DeserializeClass(const json::JSON& inJson) override;
+
 	//virtual void Render();
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) override;
 

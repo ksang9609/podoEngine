@@ -16,10 +16,6 @@ struct FInputState
 	//이번 프레임 마우스휠(중간) 이동량
 	float MouseWheelDelta = 0;
 
-	//WnProc 메시지 1개 이동량
-	long   RawMouseDX = 0;
-	long   RawMouseDY = 0;
-
 	void BeginFrame()
 	{
 		memset(bPressed, 0, sizeof(bPressed));

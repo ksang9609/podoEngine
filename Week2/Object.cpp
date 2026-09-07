@@ -1,6 +1,7 @@
 ﻿
 #include "Object.h"
 #include "EngineStatics.h"
+#include "Json/json.hpp"
 
 TArray<UObject*> UObject::GUObjectArray;
 
@@ -13,28 +14,21 @@ UObject* FClassInfo::CreateInstance() const
 	return nullptr;
 }
 
-UObject* FObjectFactory::ConstructObject(const FClassInfo* classInfo)
-{
-	if (!classInfo || !classInfo->Constructor)
-	{
-		return nullptr;
-	}
-	UObject* instance = classInfo->CreateInstance();
-	if (instance)
-	{
-		instance->mClassInfo = classInfo;
-	}
-	return instance;
-}
 
 UObject::UObject()
 {
-	UUID = UEngineStatics::GenerateUUID();
-	InternalIndex = GUObjectArray.Add(this);
 }
 
 UObject::~UObject()
 {
+	// Ensure that the object is in the GUObjectArray before attempting to remove it
+	// This case may happen if the object is create not through the factory
+	if (GUObjectArray.Num() < InternalIndex || GUObjectArray[InternalIndex] != this)
+	{
+		assert(false && "Invalid InternalIndex or GUObjectArray mismatch.");
+		return;
+	}
+
 	GUObjectArray.RemoveAtSwap(InternalIndex);
 
 	if (InternalIndex < GUObjectArray.Num())
@@ -45,6 +39,13 @@ UObject::~UObject()
 	}
 }
 
+void UObject::Initialize()
+{
+
+	UUID = UEngineStatics::GenerateUUID();
+	InternalIndex = GUObjectArray.Add(this);
+}
+
 const FClassInfo* UObject::GetClass()
 {
 	static FClassInfo classInstance = FClassInfo(
@@ -53,6 +54,31 @@ const FClassInfo* UObject::GetClass()
 		[]() -> UObject* { return new UObject(); }
 	);
 	return &classInstance;
+}
+
+void UObject::SerializeClass(json::JSON& outJson) const
+{
+	outJson["ClassName"] = GetRuntimeClass()->Name;
+
+	json::JSON propertiesJson = json::JSON::Make(json::JSON::Class::Object);
+	propertiesJson["UUID"] = UUID;
+	outJson["Properties"] = propertiesJson;
+}
+
+void UObject::DeserializeClass(const json::JSON& inJson)
+{
+	if (!inJson.hasKey("Properties") || inJson.at("Properties").JSONType() != json::JSON::Class::Object)
+	{
+		throw std::runtime_error("Invalid JSON format for Properties");
+	}
+	const json::JSON& propertiesJson = inJson.at("Properties");
+
+	if (!propertiesJson.hasKey("UUID") || propertiesJson.at("UUID").JSONType() != json::JSON::Class::Integral)
+	{
+		throw std::runtime_error("Invalid JSON format for UUID");
+	}
+
+	UUID = propertiesJson.at("UUID").ToInt();
 }
 
 bool UObject::IsA(const FClassInfo* classInfo) const

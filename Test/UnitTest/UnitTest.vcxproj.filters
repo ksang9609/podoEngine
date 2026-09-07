@@ -27,7 +27,17 @@
     <ClCompile Include="..\..\Week2\SceneData.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="TestFileManager.cpp" />
+    <ClCompile Include="..\..\Week2\FileManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Week2\ObjectFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="TestsTArray.cpp" />
+    <ClCompile Include="..\..\Week2\JsonUtil.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

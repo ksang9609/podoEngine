@@ -6,7 +6,7 @@ struct FRenderInfo;
 
 class UActorComponent : public UObject
 {
-	//REFLECT_CLASS(UActorComponent, UObject)
+	REFLECT_CLASS(UActorComponent, UObject)
 public:
 	UActorComponent();
 	virtual ~UActorComponent();

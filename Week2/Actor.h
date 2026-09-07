@@ -12,6 +12,9 @@ public:
 	AActor();
 	virtual ~AActor();
 
+	virtual void SerializeClass(json::JSON& outJson) const override;
+	virtual void DeserializeClass(const json::JSON& inJson) override;
+
 	void AddComponent(UActorComponent* actorComponent);
 	bool RemoveComponent(uint32 componentUUID);
 

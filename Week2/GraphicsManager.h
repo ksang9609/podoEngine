@@ -21,16 +21,14 @@ public:
 	GraphicsManager(HWND hWindow);
 	~GraphicsManager();
 
-	void Prepare(bool bWireFrame);
+	void Prepare(bool bWireFrame, const FCamera* mCamera);
 	//void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive); // FRenderInfo
 	void Render(const TArray<FRenderInfo> renderInfos); // FRenderInfo
 
 	void Display();
 	void Update(float deltaTime);
 
-	FCamera* GetCamera() { return mCamera; }
 	float GetAspect() const { return mAspect; }
-	float GetFov() const { return mFovDegree; }
 
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
@@ -41,8 +39,5 @@ private:
 	FMatrix mViewProjectionMatrix;
 
 	TMap<EPrimitive, FBuffer> mBufferMap;
-
-	FCamera* mCamera;
 	float mAspect;
-	float mFovDegree;
 };
