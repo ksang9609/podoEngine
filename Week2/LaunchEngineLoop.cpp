@@ -9,6 +9,7 @@
 #include "CubeComponent.h"
 #include "ObjectFactory.h"
 #include "Cube.h"
+#include "Sphere.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -47,6 +48,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
 
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
+	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
 
 	UFrameTimer FrameTimer(120);
 
@@ -56,15 +58,15 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	bwireFrame = false;
 
 	mSceneManager.NewScene();
-	//mSceneManager.LoadScene("TestScene", mFileManager);
+	mSceneManager.LoadScene("TestScene", mFileManager);
 
 	//test code
-	{
-		UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
-		AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
-		cubeActor->AddComponent(cubeComonent);
-		mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
-	}
+	//{
+	//	UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
+	//	AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
+	//	cubeActor->AddComponent(cubeComonent);
+	//	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
+	//}
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)

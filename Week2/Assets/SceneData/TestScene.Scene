@@ -1,5 +1,5 @@
 {
-  "NextUUID" : 5,
+  "NextUUID" : 6,
   "Version" : 0,
   "World" : {
     "ClassName" : "UWorld",
@@ -17,6 +17,21 @@
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
                   "mePrimitiveType" : "Cube"
+                }
+              }]
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "UUID" : 5,
+            "mComponents" : [{
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "UUID" : 3,
+                  "mRelativeLocation" : [-0.500000, -0.500000, 0.500000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [0.500000, 0.500000, 0.500000],
+                  "mePrimitiveType" : "Sphere"
                 }
               }]
           }

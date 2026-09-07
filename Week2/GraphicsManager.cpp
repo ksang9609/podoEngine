@@ -2,6 +2,7 @@
 
 #include "Renderer.h"
 #include "Camera.h"
+#include "Console.h"
 
 GraphicsManager::GraphicsManager(HWND hWindow)
 {
@@ -49,8 +50,13 @@ void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 	{
 		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix);
 
-		FBuffer vertexBuffer = mBufferMap[renderInfo.ePrimitive];
-		mRenderer->RenderPrimitive(vertexBuffer.Buffer, vertexBuffer.SourceNum);
+		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
+		if (vertexBuffer == nullptr)
+		{
+			UE_LOG("Error: Vertex buffer not found for primitive type.");
+			continue;
+		}
+		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
 }
 
