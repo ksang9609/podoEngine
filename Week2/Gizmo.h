@@ -452,7 +452,8 @@ struct FGizmo {
 		const AActor* targetActor,
 		const FVector& cameraLocation,
 		const FVector& cameraForward,
-		float fovDegree) // Gizmo 깊이에따른 원근크기 보정
+		float fovDegree,
+		bool bPerspectiveProjection) // Gizmo 깊이에따른 원근크기 보정
 	{
 		if (!targetActor)
 		{
@@ -463,9 +464,12 @@ struct FGizmo {
 		mbVisible = true;
 		mLocation = targetActor->GetTransform().Location;
 
-		float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
-		const float tanHalfFov = tanf(FMath::DegreesToRadians(fovDegree * 0.5f));
-		mGizmoScale = depth * tanHalfFov * mGizmoSizeRatio;
+		if (bPerspectiveProjection)
+		{
+			float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
+			const float tanHalfFov = tanf(FMath::DegreesToRadians(fovDegree * 0.5f));
+			mGizmoScale = depth * tanHalfFov * mGizmoSizeRatio;
+		}
 	}
 
 };
