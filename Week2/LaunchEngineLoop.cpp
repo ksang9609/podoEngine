@@ -19,6 +19,7 @@
 #include "Actor.h"
 #include "World.h"
 
+bool gbPerspectiveProjection = false;
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -108,8 +109,18 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		//ImGui Input
 		{
 			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
+
+			//Todo: Test
+			{
+				ImGui::Begin("Jungle Property Window");
+				ImGui::Checkbox("Perspective Projection", &gbPerspectiveProjection);
+				ImGui::End();
+
+				mGraphicsManager->SetPerspectiveProjection(gbPerspectiveProjection);
+			}
 		}
-		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager);
+
+		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->IsPerspectiveProjection());
 	}
 
 	//Physics Threads
@@ -122,8 +133,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		// 레이캐스트보다 먼저 돌려야 한다.
 		// 여기서 RenderInfos 가 갱신되고, RayCast 가 그걸 읽는다.
 		mSceneManager->Update(deltaTime);
-
-
 	}
 
 	//Render Threads

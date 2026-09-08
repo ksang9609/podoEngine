@@ -15,7 +15,7 @@ struct FEditorViewportClient
 public:
 	void RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World);
 	float GetFov() const { return mCamera.mFovDegree; }
-	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager);
+	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, bool bPerspectiveProjection);
 	bool IsMouseHit() const { return bMouseHit; }
 
 	void Reset();

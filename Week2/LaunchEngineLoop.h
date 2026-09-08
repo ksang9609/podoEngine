@@ -33,7 +33,6 @@ private:
 	GraphicsManager* mGraphicsManager;
 	FSceneManager* mSceneManager;
 	FFileManager* mFileManager;
-
 };
 
 inline FEngineLoop GEngineLoop;

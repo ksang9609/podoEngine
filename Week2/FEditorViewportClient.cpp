@@ -94,7 +94,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 	}
 }
 
-void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager)
+void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, bool bPerspectiveProjection)
 {
 	const FInputState& Input = WindowApplication.Input;
 	ImGuiIO& io = ImGui::GetIO();
@@ -243,7 +243,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	}
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
-	mGizmo.Update(sceneManager->GetSelectedActor(), mCamera.Transform.Location, mCamera.GetForwardVector(), mCamera.mFovDegree);
+	mGizmo.Update(sceneManager->GetSelectedActor(), mCamera.Transform.Location, mCamera.GetForwardVector(), mCamera.mFovDegree, bPerspectiveProjection);
 
 }
 

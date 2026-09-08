@@ -9,6 +9,7 @@ static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 
 GraphicsManager::GraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
+	, mbPerspectiveProjection(false)
 {
 	mRenderer = new URenderer;
 	mRenderer->Create(hWindow);
@@ -39,10 +40,13 @@ void GraphicsManager::Prepare(const FCamera *mCamera)
 	mRenderer->Prepare(mbWireFrame);
 	mRenderer->PrepareShader();
 
-	// Todo:
 	FMatrix view = mCamera->GetViewMatrix();
-	FMatrix projection = mCamera->GetProjectionMatrix(mAspect, mCamera->mFovDegree, 0.1f, 100.0f);
-	mViewProjectionMatrix = view * projection;
+
+	mViewProjectionMatrix = view * mCamera->GetProjectionMatrix(mAspect, mCamera->mFovDegree, 0.1f, 100.0f);
+
+	float orthoHeight = 5.f;
+	float orthoWidth = orthoHeight * mAspect;
+	mViewOrthogonalProjectionMatrix = view * mCamera->GetOrthographicMatrix(orthoWidth, orthoHeight, 0.1f, 100.f);
 
 	// 하이라이트 두께를 화면 픽셀 기준으로 환산할 때 쓴다
 	mCameraLocation = mCamera->Transform.Location;
@@ -57,9 +61,20 @@ void GraphicsManager::Prepare(const FCamera *mCamera)
 
 void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 {
+	FMatrix viewProjection;
+	if (mbPerspectiveProjection)
+	{
+		viewProjection = mViewProjectionMatrix;
+	}
+	else
+	{
+		viewProjection = mViewOrthogonalProjectionMatrix;
+	}
+
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
-		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix, renderInfo.Color);
+		//mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix, renderInfo.Color);
+		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, viewProjection, renderInfo.Color);
 
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
 		if (vertexBuffer == nullptr)
@@ -154,6 +169,16 @@ void GraphicsManager::Update(float deltaTime)
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 }
 
+bool GraphicsManager::IsPerspectiveProjection() const
+{
+	return mbPerspectiveProjection;
+}
+
+void GraphicsManager::SetPerspectiveProjection(bool bPerspectiveProjection)
+{
+	mbPerspectiveProjection = bPerspectiveProjection;
+}
+
 void GraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize)
 {
 	assert(vertices != nullptr);
@@ -237,5 +262,12 @@ void GraphicsManager::RenderHighLight(const FRenderInfo& RI)
 		* RI.WorldTransformMatrix;
 
 	FBuffer vertexBuffer = mBufferMap[RI.ePrimitive];
-	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewProjectionMatrix, Outline, RI);
+	if (mbPerspectiveProjection)
+	{
+		mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewProjectionMatrix, Outline, RI);
+	}
+	else
+	{
+		mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewOrthogonalProjectionMatrix, Outline, RI);
+	}
 }

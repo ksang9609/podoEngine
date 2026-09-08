@@ -37,12 +37,24 @@ public:
 		float yScale = 1.0f / tanf((fovDegree / 2)*PI/180); //xScale
 		float xScale = yScale / Aspect;
 
-
 		result.M[0][0] = xScale; //xScale
 		result.M[1][1] = yScale; //yScale
 		result.M[2][2] = f / (f - n); //A 임시
 		result.M[3][2] = -n * f / (f - n); //B 임시
 		result.M[2][3] = 1;
+
+		return result;
+	}
+
+	FMatrix GetOrthographicMatrix(float width, float height, float n, float f) const
+	{
+		FMatrix result = FMatrix::Zero; // 영벡터
+
+		result.M[0][0] = 2.0f / width;
+		result.M[1][1] = 2.0f / height;
+		result.M[2][2] = 1.0f / (f - n);
+		result.M[3][2] = -n / (f - n);
+		result.M[3][3] = 1.0f;
 
 		return result;
 	}
