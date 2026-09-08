@@ -56,12 +56,13 @@ struct FGizmo {
 		{
 			const FMatrix Result_yaw = FMatrix::RotateZ(UpdateRotation.Yaw);
 			const FMatrix Result_pitch = FMatrix::RotateY(UpdateRotation.Pitch);
+			const FMatrix Result_roll = FMatrix::RotateX(UpdateRotation.Roll);
 
 			switch (axis)
 			{
 			case Z: return FVector(0.0f, 0.0f, 1.0f);
 			case Y: return Result_yaw.GetUnitAxis(EAxis::Y);
-			case X: return Result_pitch.GetUnitAxis(EAxis::X);
+			case X: return (Result_pitch*Result_yaw).GetUnitAxis(EAxis::X);
 			default: return FVector(0);
 			}
 		}
@@ -451,8 +452,7 @@ struct FGizmo {
 		const AActor* targetActor,
 		const FVector& cameraLocation,
 		const FVector& cameraForward,
-		float fovDegree,
-		bool bPerspectiveProjection) // Gizmo 깊이에따른 원근크기 보정
+		float fovDegree) // Gizmo 깊이에따른 원근크기 보정
 	{
 		if (!targetActor)
 		{
@@ -463,12 +463,9 @@ struct FGizmo {
 		mbVisible = true;
 		mLocation = targetActor->GetTransform().Location;
 
-		if (bPerspectiveProjection)
-		{
-			float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
-			const float tanHalfFov = tanf(FMath::DegreesToRadians(fovDegree * 0.5f));
-			mGizmoScale = depth * tanHalfFov * mGizmoSizeRatio;
-		}
+		float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
+		const float tanHalfFov = tanf(FMath::DegreesToRadians(fovDegree * 0.5f));
+		mGizmoScale = depth * tanHalfFov * mGizmoSizeRatio;
 	}
 
 };
