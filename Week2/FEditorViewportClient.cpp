@@ -83,6 +83,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 				if (RI.ObejctID.UUID == ClickedRenderInfo.ObejctID.UUID)
 				{
 					ClickedRenderInfo = RI;
+					ClickedActor = UObject::GetObjectByInternalIndex<AActor>(RI.ObejctID.InternalIndex);
 				}
 			}
 		}
