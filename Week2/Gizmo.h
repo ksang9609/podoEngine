@@ -21,6 +21,7 @@ struct FGizmo {
 	FVector mLocation; // 기즈모의 위치
 	FMatrix TargetObjectTransformMatrix;
 	bool mbVisible = false;
+	bool mbHovered = false;
 	bool bMouseOnGizmo = false;
 	float mGizmoScale=1.0f;
 	float mAxisLength = mGizmoScale * 1.0f;
@@ -59,7 +60,7 @@ struct FGizmo {
 		3)W = ray시작점 + t*(ray단위벡터) - (기즈모시작점 + s*기즈모 단위벡터)
 
 		*/
-
+		mbHovered = false;
 		eAxis = NONE;
 		if (!mbVisible) return false;
 		FVector norm_ray = (farPoint - nearPoint);
@@ -78,7 +79,8 @@ struct FGizmo {
 				FVector H = (norm_ray * t) + nearPoint;
 				float r = (H-mLocation).Length(); //구 중심과 평면교점사이의 거리
 
-				if (FMath::Abs(r - mGizmoScale) > 0.0001f) continue;
+				if (FMath::Abs(r - mGizmoScale) < 0.1e-4f) continue;
+				if (t < 0.0f) continue;
 				if (t < 0.0f) continue;
 		}
 

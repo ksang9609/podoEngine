@@ -38,6 +38,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 	// Gizmo 탐색
 	if (mGizmo.IsRayInGizmo(NearPoint, FarPoint))
 	{
+		mGizmo.mbHovered = true;
 		// gizmo highlight
 		return;
 	}
