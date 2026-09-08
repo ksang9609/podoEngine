@@ -2,6 +2,9 @@
 
 #include "Cube.h"
 #include "Sphere.h"
+#include "Triangle.h"
+#include "GizmoArrow.h"
+#include "Circle.h"
 #include "WindowApplication.h"
 #include "ImGui/imgui.h"
 #include "Console.h"
@@ -17,10 +20,21 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 		OutVertices = Cube_vertices;
 		OutCount = static_cast<uint32>(sizeof(Cube_vertices) / sizeof(FVertexSimple));
 		return true;
-
 	case EPrimitive::EP_Sphere:
 		OutVertices = Sphere_vertices;
 		OutCount = static_cast<uint32>(sizeof(Sphere_vertices) / sizeof(FVertexSimple));
+		return true;
+	case EPrimitive::EP_Triangle:
+		OutVertices = Triangle_vertices;
+		OutCount = static_cast<uint32>(sizeof(Triangle_vertices) / sizeof(FVertexSimple));
+		return true;
+	case EPrimitive::EP_GizmoArrow:
+		OutVertices = GizmoArrow_vertices;
+		OutCount = static_cast<uint32>(sizeof(GizmoArrow_vertices) / sizeof(FVertexSimple));
+		return true;
+	case EPrimitive::EP_Circle:
+		OutVertices = Circle_vertices;
+		OutCount = static_cast<uint32>(sizeof(Circle_vertices) / sizeof(FVertexSimple));
 		return true;
 	}
 

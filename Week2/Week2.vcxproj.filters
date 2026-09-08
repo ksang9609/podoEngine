@@ -266,6 +266,9 @@
     <ClInclude Include="Circle.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Triangle.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">

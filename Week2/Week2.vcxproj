@@ -155,6 +155,7 @@
     <ClCompile Include="SphereComponent.cpp" />
     <ClInclude Include="Circle.h" />
     <ClInclude Include="GizmoArrow.h" />
+    <ClInclude Include="Triangle.h" />
     <ClInclude Include="TSparseArray.inl">
       <FileType>Document</FileType>
     </ClInclude>
