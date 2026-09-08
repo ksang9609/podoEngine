@@ -38,7 +38,7 @@ struct FGizmo {
 	float mGizmoSizeRatio = 0.2f;
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
-	EGIZMO_TYPE eType=ROTATE;
+	EGIZMO_TYPE eType=TRANSLATE;
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
 		switch (axis)
@@ -219,19 +219,16 @@ struct FGizmo {
 		const FRotator rotation = FRotator::FromDirection(AxisDirection(axis));
 		if (eType == ROTATE)
 		{
-			const EGIZMO_AXIS axis[3] = { X, Y, Z };
-			for (int i = 0;i < 3;i++) {
-				return FMatrix::Scale(FVector(mGizmoScale))
-					* FMatrix::Rotate(rotation)
-					* FMatrix::Translation(mLocation);
-			}
-		}
-		else if(eType == ROTATE) { //eType= Translate
-			return FMatrix::Scale(FVector(length, thickness, thickness))
-				* FMatrix::Translation(FVector(0.0f, -thickness * 0.5f, -thickness * 0.5f)) // 긴막대기 모양으로변환
+			return FMatrix::Scale(FVector(mGizmoScale))
 				* FMatrix::Rotate(rotation)
 				* FMatrix::Translation(mLocation);
 		}
+
+		// TRANSLATE / SCALE: 긴 막대기 모양
+		return FMatrix::Scale(FVector(length, thickness, thickness))
+			* FMatrix::Translation(FVector(0.0f, -thickness * 0.5f, -thickness * 0.5f))
+			* FMatrix::Rotate(rotation)
+			* FMatrix::Translation(mLocation);
 	}
 
 	FVector4 GetAxisColor(EGIZMO_AXIS axis) const
