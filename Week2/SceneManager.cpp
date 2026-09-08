@@ -185,9 +185,7 @@ void FSceneManager::NewScene()
 		delete mCurrentWorld;
 	}
 
-	//mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
-
-
+	mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
 }
 
 void FSceneManager::DeleteScene()
