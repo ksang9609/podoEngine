@@ -38,6 +38,15 @@ public:
 	URenderer* GetRenderer() const;
 
 	//Highlight
+	//Line batch
+	// 호출 즉시 그리지 않고 배열에 쌓는다. FlushLines()에서 한 번에 그린다.
+	void DrawLine(const FVector& start, const FVector& end, const FVector4& color);
+	void DrawWorldAxis();
+	void FlushLines();
+
+	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
+	void SetShowWorldAxis(bool bShow) { mbShowWorldAxis = bShow; }
+
 	static FVector GetPrimitiveCenter(EPrimitive type);
 	static FVector GetPrimitiveHalfExtent(EPrimitive type);
 	void RenderHighLight(const FRenderInfo& RI);
@@ -54,7 +63,11 @@ private:
 	TMap<EPrimitive, FBuffer> mBufferMap;
 
 	// Graphics config
+	// 이번 프레임에 쌓인 선분. 정점 2개가 선분 하나
+	TArray<FVertexSimple> mLineVertices;
+
 	bool mbWireFrame;
+	bool mbShowWorldAxis = true;
 	float mAspect;
 
 };

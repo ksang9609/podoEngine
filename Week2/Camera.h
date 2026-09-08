@@ -60,7 +60,7 @@ public:
 	FVector GetRightVector()   const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::Y); }
 	FVector GetUpVector()      const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::Z); }
 
-	float Speed = 1.f;
+	float Speed = 5.f;
 	FVector Velocity = FVector(0);
 	float Sensitivity = 0.1f;
 	float mFovDegree = 60.f;

@@ -49,7 +49,7 @@ struct FGizmo {
 	
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
-	EGIZMO_TYPE eType= ROTATE;
+	EGIZMO_TYPE eType= TRANSLATE;
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
 		if (eType == EGIZMO_TYPE::ROTATE)
