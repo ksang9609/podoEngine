@@ -29,7 +29,6 @@ public:
 
 	FCamera& GetCamera() { return mCamera; }
 
-
 	FCamera mCamera;
 	FGizmo mGizmo;
 

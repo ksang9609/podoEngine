@@ -24,7 +24,6 @@ public:
 	void Init(HINSTANCE hInstance, WNDPROC WndProc);
 	void Tick(bool bPumpMessages);
 	void End();
-
 private:
 	// Todo: Make as pointer
 	FFrameTimer* FrameTimer;
@@ -34,6 +33,7 @@ private:
 	GraphicsManager* mGraphicsManager;
 	FSceneManager* mSceneManager;
 	FFileManager* mFileManager;
+
 };
 
 inline FEngineLoop GEngineLoop;

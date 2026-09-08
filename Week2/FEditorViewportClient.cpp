@@ -209,6 +209,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			if (mGizmo.GetDragRotation(mRayNear, mRayFar, newRotation))
 			{
 				ClickedActor->SetRotation(newRotation);
+				mGizmo.UpdateRotation = newRotation;
 			}
 		}
 		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::SCALE)

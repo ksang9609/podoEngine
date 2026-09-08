@@ -45,17 +45,36 @@ struct FGizmo {
 	float mScaleBarThickness = mGizmoScale * 0.035f;
 	float mScaleHandleSize = mGizmoScale * 0.13;
 	float mGizmoSizeRatio = 0.3f;
+	FRotator UpdateRotation = {};
+	
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
 	EGIZMO_TYPE eType= ROTATE;
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
-		switch (axis)
+		if (eType == EGIZMO_TYPE::ROTATE)
 		{
-		case X:  return FVector(1.0f, 0.0f, 0.0f);
-		case Y:  return FVector(0.0f, 1.0f, 0.0f);
-		case Z:  return FVector(0.0f, 0.0f, 1.0f);
-		default: return FVector(0.0f, 0.0f, 0.0f);
+			const FMatrix Result_yaw = FMatrix::RotateZ(UpdateRotation.Yaw);
+			const FMatrix Result_pitch = FMatrix::RotateY(UpdateRotation.Pitch);
+
+			switch (axis)
+			{
+			case Z: return FVector(0.0f, 0.0f, 1.0f);
+			case Y: return Result_yaw.GetUnitAxis(EAxis::Y);
+			case X: return Result_pitch.GetUnitAxis(EAxis::X);
+			default: return FVector(0);
+			}
+		}
+
+
+		else {
+			switch (axis)
+			{
+			case X:  return FVector(1.0f, 0.0f, 0.0f);
+			case Y:  return FVector(0.0f, 1.0f, 0.0f);
+			case Z:  return FVector(0.0f, 0.0f, 1.0f);
+			default: return FVector(0.0f, 0.0f, 0.0f);
+			}
 		}
 	}
 
@@ -415,6 +434,10 @@ struct FGizmo {
 			if (eType == EGIZMO_TYPE::SCALE)
 			{
 				renderInfos.Add({ GetAxisPrimitive(), GetScaleHandleMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
+			}
+			else if( eType==EGIZMO_TYPE::ROTATE)
+			{
+
 			}
 			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
 		}

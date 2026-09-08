@@ -133,12 +133,14 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
 			WindowApplication.bPendingResize = false;
 		}
-
 		//mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
 
 		mGraphicsManager->Update(deltaTime);
 		mGraphicsManager->Prepare(&ViewportClient->mCamera);
 		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
+		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
+
+		
 
 		//강조
 		if (ViewportClient->ClickedActor)
