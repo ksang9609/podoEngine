@@ -26,10 +26,11 @@ struct FGizmo {
 	float mAxisLength = mGizmoScale * 1.0f;
 	float mAxisThickness = mGizmoScale * 0.2f;
 	float mHitRadius= mAxisThickness*1.1f; // 마우스 판정보정
+	//float mRingHitRadius = mAxisThickness * 1.1f; // 마우스 판정보정
 	float mGizmoSizeRatio = 0.2f;
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
-	EGIZMO_TYPE eType=TRANSLATE;
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
+	EGIZMO_TYPE eType=ROTATE;
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
 		switch (axis)
@@ -46,19 +47,61 @@ struct FGizmo {
 
 	bool IsRayInGizmo(FVector nearPoint, FVector farPoint)
 	{
+
+		/*
+		Ray와 Axis사이의 최단거리를 구한다.
+		3차원의 두 직선에 최단거리는 각 두 직선에 수직하는 선분이다.
+
+		수직벡터 = 광선벡터 - 기즈모축벡터 
+		1) W = D - A (모두 단위벡터임)
+		2) WxD=0, WxA=0 (수직이므로 내적값이 0)
+
+		3)W = ray시작점 + t*(ray단위벡터) - (기즈모시작점 + s*기즈모 단위벡터)
+
+		*/
+
 		eAxis = NONE;
 		if (!mbVisible) return false;
 		FVector norm_ray = (farPoint - nearPoint);
-		norm_ray.Normalize();
-		
-		FVector w0 = nearPoint - mLocation;
-		 //수학 함수 구현
+		norm_ray.Normalize(); // norm_ray= ray의 단위벡터
+		const EGIZMO_AXIS axis[3] = { X, Y, Z };
 
+		if (eType == ROTATE) //회전 기즈모의 충돌처리
+		{
+
+			for (int i = 0; i < 3; ++i)
+		{
+				//t x norm_ray = 링위의점
+				float t = FVector::dot((mLocation - nearPoint), AxisDirection(axis[i]))
+					/ FVector::dot(norm_ray, AxisDirection(axis[i]));
+
+				FVector H = (norm_ray * t) + nearPoint;
+				float r = (H-mLocation).Length(); //구 중심과 평면교점사이의 거리
+
+				if (FMath::Abs(r - mGizmoScale) > 0.0001f) continue;
+				if (t < 0.0f) continue;
+		}
+
+
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+		FVector w0 = nearPoint - mLocation; // \
+		 //수학 함수 구현
 		const float axisLength = mAxisLength * mGizmoScale;
 		const float hitRadius = mHitRadius * mGizmoScale;
 
-		const EGIZMO_AXIS axis[3] = { X, Y, Z };
-		float bestRayT = 0.0f;
+		float bestRayT = 0.0f; //near point에서 광선방향으로 얼마나 이동했냐
 
 		for (int i = 0; i < 3; ++i)
 		{
@@ -74,7 +117,7 @@ struct FGizmo {
 			float axisS = (axisProj - align * rayProj) / denom;
 			axisS = FMath::Clamp(axisS, 0.0f, axisLength);  // 무한 직선 → 선분
 
-			const FVector axisPoint = mLocation + axisDir * axisS;
+			const FVector axisPoint = mLocation + axisDir * axisS; // 현재위치에서 기즈모방향으로 얼만큼 이동했나
 
 			const float rayT = FVector::dot(norm_ray, axisPoint - nearPoint);
 			if (rayT < 0.0f) continue;                      // 카메라 뒤쪽
@@ -99,7 +142,7 @@ struct FGizmo {
 		switch (eType)
 		{
 		case TRANSLATE: return EPrimitive::EP_GizmoArrow;
-		case ROTATE: return EPrimitive::EP_Cube; //EP_Rotate
+		case ROTATE: return EPrimitive::EP_CirCle; //EP_Rotate
 		default: break;
 		}
 	}
@@ -110,11 +153,18 @@ struct FGizmo {
 		const float thickness = mAxisThickness * mGizmoScale;
 
 		const FRotator rotation = FRotator::FromDirection(AxisDirection(axis));
-
-		return FMatrix::Scale(FVector(length, thickness, thickness))
-			* FMatrix::Translation(FVector(0.0f, -thickness * 0.5f, -thickness * 0.5f)) // 긴막대기 모양으로변환
-			* FMatrix::Rotate(rotation)
-			* FMatrix::Translation(mLocation);
+		if (eType == ROTATE)
+		{
+			return FMatrix::Scale(FVector( mGizmoScale))
+				* FMatrix::Rotate(rotation)
+				* FMatrix::Translation(mLocation);
+		}
+		else { //eType= Translate
+			return FMatrix::Scale(FVector(length, thickness, thickness))
+				* FMatrix::Translation(FVector(0.0f, -thickness * 0.5f, -thickness * 0.5f)) // 긴막대기 모양으로변환
+				* FMatrix::Rotate(rotation)
+				* FMatrix::Translation(mLocation);
+		}
 	}
 
 	FVector4 GetAxisColor(EGIZMO_AXIS axis) const
@@ -142,6 +192,13 @@ struct FGizmo {
 		{
 			if(axis[i]==eAxis) { /* highlight */ }
 			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i])});
+		}
+		if (eType == ROTATE)
+		{
+			renderInfos.Add({ EPrimitive::EP_Sphere,
+				  FMatrix::Scale(FVector(0.96f * mGizmoScale)) * FMatrix::Translation(mLocation),
+				  FObjectID{},
+				  FVector4(1.0f, 1.0f, 1.0f, 1.0f) });   // 어두운 회색
 		}
 
 		return renderInfos;

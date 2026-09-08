@@ -8,4 +8,5 @@ enum class EPrimitive
 	EP_Cube,
 	EP_Triangle,
 	EP_GizmoArrow,
+	EP_CirCle,
 };
