@@ -65,6 +65,13 @@ void UPrimitiveComponent::Update(TArray<FRenderInfo>* outRenderInfos)
 		//UE_LOG("Primitive selected");
 	}
 	
+	GetRenderInfos(outRenderInfos);
+}
+
+void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const
+{
+	assert(outRenderInfos);
+
 	outRenderInfos->Add({ mePrimitive, GetTransformMatrix().MakeMatrix(), { mOwner->UUID, mOwner->InternalIndex }, FVector4(0, 0, 0, 0) });
 }
 

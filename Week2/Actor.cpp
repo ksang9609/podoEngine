@@ -3,6 +3,7 @@
 #include <format>
 
 #include "JsonUtil.h"
+#include "RenderInfo.h"
 #include "SceneComponent.h"
 
 AActor::~AActor()
@@ -135,6 +136,55 @@ void AActor::Update(TArray<FRenderInfo>* outRenderInfos)
 	for (UActorComponent* component : mComponents)
 	{
 		component->Update(outRenderInfos);
+	}
+}
+
+void AActor::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const
+{
+	assert(outRenderInfos);
+
+	for (const UActorComponent* component : mComponents)
+	{
+		component->GetRenderInfos(outRenderInfos);
+	}
+}
+
+bool AActor::GetFirstRenderInfo(FRenderInfo &outRenderInfo) const
+{
+	TArray<FRenderInfo> renderInfos;
+	GetRenderInfos(&renderInfos);
+
+	if (renderInfos.Num() == 0)
+	{
+		return false;
+	}
+
+	outRenderInfo = renderInfos[0];
+
+	return true;
+}
+
+void AActor::SetLocation(FVector location)
+{
+	if (mRootComponent)
+	{
+		mRootComponent->SetRelativeLocation(location);
+	}
+}
+
+void AActor::SetRotation(FRotator rotation)
+{
+	if (mRootComponent)
+	{
+		mRootComponent->SetRelativeRotation(rotation);
+	}
+}
+
+void AActor::SetScale(FVector scale)
+{
+	if (mRootComponent)
+	{
+		mRootComponent->SetRelativeScale3D(scale);
 	}
 }
 

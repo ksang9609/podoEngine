@@ -61,11 +61,41 @@ void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+	
+	updateControlPanelGUI(guiReference);
+	updatePropertyWindowGUI(guiReference);
 
-	ImGui::Begin("Jungle Property Window");
+	ConsoleWindow::GetInstance().Draw();
+}
+
+void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
+{
+	ImGui::Begin("Jungle Control Panel");
 	ImGui::Text("Hello Jungle World!");
 	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
+
+	/* Scene Control */
+	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName));
+	if (ImGui::Button("New scene"))
+	{
+		// TODO: add clear depth buffer function in renderer
+		//guiReference.GraphicsManager->GetRenderer()->ClearDepthBuffer();
+		guiReference.ViewportClient->Reset();
+		NewScene();
+	}
+	if (ImGui::Button("Save scene"))
+	{
+		SaveScene(mGuiInputField.SceneName, *guiReference.FileManager);
+	}
+	if (ImGui::Button("Load scene"))
+	{
+		guiReference.ViewportClient->Reset();
+		LoadScene(mGuiInputField.SceneName, *guiReference.FileManager);
+	}
+
+
+	/* Camera Control */
 	ImGui::Separator();
 	//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
@@ -92,44 +122,70 @@ void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 	URenderer* renderer = guiReference.GraphicsManager->GetRenderer();
 
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, -10.0f, 10.0f);
+	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, 0.1f, 10.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocY", &camera.Transform.Location.y, -10.0f, 10.0f);
+	ImGui::DragFloat("##CamLocY", &camera.Transform.Location.y, 0.1f, 10.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocZ", &camera.Transform.Location.z, -10.0f, 10.0f);
+	ImGui::DragFloat("##CamLocZ", &camera.Transform.Location.z, 0.1f, 10.0f);
 
 	ImGui::Text("Rotation");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotX", &camera.Transform.Rotation.Roll, -10.0f, 180.0f);
+	ImGui::DragFloat("##CamRotX", &camera.Transform.Rotation.Roll, 0.1f, 180.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotY", &camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
+	ImGui::DragFloat("##CamRotY", &camera.Transform.Rotation.Pitch, 0.1f, 180.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotZ", &camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
+	ImGui::DragFloat("##CamRotZ", &camera.Transform.Rotation.Yaw, 0.1f, 180.0f);
 	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
 	//	: "OFF: blue (far, drawn last) overwrites");
 
 	ImGui::End();
+}
 
-	ConsoleWindow::GetInstance().Draw();
+void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
+{
+	ImGui::Begin("Jungle Property Window");
+	if (guiReference.ViewportClient->ClickedActor)
+	{
+		// Temporary variables to hold the values for ImGui input fields
+		const FTransform& originalTransform = guiReference.ViewportClient->ClickedActor->GetTransform();
+
+		// Get the current transform of the clicked actor
+		FVector translationInput = originalTransform.Location;
+		FRotator rotationInput = originalTransform.Rotation;
+		FVector scaleInput = originalTransform.Scale;
+
+		// Display and edit the transform properties using ImGui input fields
+		if (ImGui::DragFloat3("Translation", &translationInput.x, 0.1f))
+		{
+			guiReference.ViewportClient->ClickedActor->SetLocation(translationInput);
+		}
+		if (ImGui::DragFloat3("Rotation", &rotationInput.Pitch, 0.1f))
+		{
+			guiReference.ViewportClient->ClickedActor->SetRotation(rotationInput);
+		}
+		if (ImGui::DragFloat3("Scale", &scaleInput.x, 0.1f, 0.001f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+		{
+			guiReference.ViewportClient->ClickedActor->SetScale(scaleInput);
+		}
+	}
+	ImGui::End();
 }
 
 void FSceneManager::NewScene()
 {
-	if (mCurrentWorld == nullptr)
+	if (mCurrentWorld != nullptr)
 	{
 		delete mCurrentWorld;
 	}
 
-	//mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
-
-
+	mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
 }
 
 void FSceneManager::DeleteScene()
@@ -190,27 +246,35 @@ void FSceneManager::LoadScene(
 	fileName += sceneName;
 	fileName += kSceneDataSuffix;
 
-	FString jsonString = fileManager.ReadFileToString(fileName);
-
-	json::JSON readSceneJson = json::JSON::Load(jsonString);
-
-	if (!readSceneJson.hasKey("NextUUID") || readSceneJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
+	try
 	{
-		throw std::runtime_error(std::format("Scene file {} does not contain a valid NextUUID field.", fileName));
-	}
-	uint32 nextUUID = readSceneJson.at("NextUUID").ToInt();
-	json::JSON worldJson = readSceneJson.at("World");
+		FString jsonString = fileManager.ReadFileToString(fileName);
 
-	UWorld* newWorld = FObjectFactory::LoadObject<UWorld>(worldJson);
-	if (!newWorld)
+		json::JSON readSceneJson = json::JSON::Load(jsonString);
+
+		if (!readSceneJson.hasKey("NextUUID") || readSceneJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
+		{
+			throw std::runtime_error(std::format("Scene file {} does not contain a valid NextUUID field.", fileName));
+		}
+		uint32 nextUUID = readSceneJson.at("NextUUID").ToInt();
+		json::JSON worldJson = readSceneJson.at("World");
+
+		UWorld* newWorld = FObjectFactory::LoadObject<UWorld>(worldJson);
+		if (!newWorld)
+		{
+			throw std::runtime_error(std::format("Failed to load world from scene: {}", sceneName));
+		}
+		UEngineStatics::SetNextUUID(nextUUID);
+
+		// Replace the contents of mCurrentWorld with newWorld
+		delete mCurrentWorld;
+		mCurrentWorld = newWorld;
+	}
+	catch (const std::exception& e)
 	{
-		throw std::runtime_error(std::format("Failed to load world from scene: {}", sceneName));
+		NewScene();
+		UE_LOG_F("Failed to load scene {}", sceneName);
 	}
-	UEngineStatics::SetNextUUID(nextUUID);
-
-	// Replace the contents of mCurrentWorld with newWorld
-	delete mCurrentWorld;
-	mCurrentWorld = newWorld;
 }
 
 const TArray<FRenderInfo> FSceneManager::GetRenderInfos()

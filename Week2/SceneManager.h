@@ -20,6 +20,12 @@ struct FGuiReference
 	const FFrameTimer& FrameTimer;
 	GraphicsManager* GraphicsManager;
 	FEditorViewportClient* ViewportClient;
+	const FFileManager* FileManager;
+};
+
+struct FGuiInputField
+{
+	char SceneName[512] = "Default";
 };
 
 class FSceneManager
@@ -44,4 +50,8 @@ public:
 
 private:
 	UWorld* mCurrentWorld = nullptr;
+	FGuiInputField mGuiInputField;
+
+	void updateControlPanelGUI(const FGuiReference& guiReference);
+	void updatePropertyWindowGUI(const FGuiReference& guiReference);
 };

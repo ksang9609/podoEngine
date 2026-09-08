@@ -28,6 +28,13 @@ public:
 	void Update(TArray<FRenderInfo>* outRenderInfos);
 	//void Render();
 
+	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const;
+	bool GetFirstRenderInfo(FRenderInfo& outRenderInfo) const;
+
+	void SetLocation(FVector location);
+	void SetRotation(FRotator rotation);
+	void SetScale(FVector scale);
+
 	void Pressed();
 	void UnPressed();
 	void ClickStart();

@@ -87,3 +87,24 @@ bool UObject::IsA(const FClassInfo* classInfo) const
 	}
 	return false;
 }
+
+UObject* UObject::GetObjectByUUID(int32 uuid)
+{
+	for (const auto& object : GUObjectArray)
+	{
+		if (object && object->UUID == uuid)
+		{
+			return object;
+		}
+	}
+	return nullptr;
+}
+
+UObject* UObject::GetObjectByInternalIndex(uint32 internalIndex)
+{
+	if (GUObjectArray.IsValidIndex(internalIndex))
+	{
+		return GUObjectArray[internalIndex];
+	}
+	return nullptr;
+}

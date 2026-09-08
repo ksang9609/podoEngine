@@ -113,11 +113,49 @@ FVector GraphicsManager::GetPrimitiveCenter(EPrimitive type)
 	}
 }
 
+// 테두리가 월드 공간에서 차지할 두께. 물체 크기와 무관하게 항상 이만큼만 자란다.
+static constexpr float OUTLINE_THICKNESS = 0.02f;
+
+// 월드 공간 반지름이 worldHalfExtent인 축을 OUTLINE_THICKNESS 만큼 키우는 배율
+static float GetOutlineAxisScale(float worldHalfExtent)
+{
+	if (worldHalfExtent <= SMALL_NUMBER)
+	{
+		return 1.0f;   // 납작하게 눌린 축은 건드리지 않는다. 안 그러면 배율이 발산한다
+	}
+
+	return 1.0f + OUTLINE_THICKNESS / worldHalfExtent;
+}
+
+FVector GraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
+{
+	switch (type)
+	{
+		case EPrimitive::EP_Sphere:	return FVector(1.0f, 1.0f, 1.0f);
+		case EPrimitive::EP_Cube:	return FVector(0.5f, 0.5f, 0.5f);
+		default:					return FVector(0.5f, 0.5f, 0.5f);
+	}
+}
+
 void GraphicsManager::RenderHighLight(const FRenderInfo& RI)
 {
-	FVector Center = GetPrimitiveCenter(RI.ePrimitive);
+	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
+	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
+
+	// 1.02배처럼 비율로 키우면 테두리 두께가 물체 크기에 그대로 비례한다.
+	// 축마다 월드 공간에서 OUTLINE_THICKNESS 만큼만 자라도록 배율을 따로 구한다.
+	const FVector WorldScale(
+		RI.WorldTransformMatrix.GetUnitAxis(EAxis::X).Length(),
+		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
+		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Z).Length());
+
+	const FVector OutlineScale(
+		GetOutlineAxisScale(HalfExtent.x * WorldScale.x),
+		GetOutlineAxisScale(HalfExtent.y * WorldScale.y),
+		GetOutlineAxisScale(HalfExtent.z * WorldScale.z));
+
 	const FMatrix Outline = FMatrix::Translation(FVector(-Center.x, -Center.y, -Center.z))
-		* FMatrix::Scale(FVector(1.02f))
+		* FMatrix::Scale(OutlineScale)
 		* FMatrix::Translation(Center)
 		* RI.WorldTransformMatrix;
 

@@ -137,6 +137,12 @@ struct FGizmo {
 		return eAxis != NONE;
 	}
 
+	void Reset()
+	{
+		mbVisible = false;
+		mLocation = FVector(0.0f, 0.0f, 0.0f);
+	}
+
 	EPrimitive GetAxisPrimitive() const
 	{
 		switch (eType)
@@ -204,8 +210,21 @@ struct FGizmo {
 		return renderInfos;
 	}
 
-	void Update(const FVector& cameraLocation, const FVector& cameraForward, float fovDegree) // Gizmo 깊이에따른 원근크기 보정
+	void Update(
+		const AActor* targetActor,
+		const FVector& cameraLocation,
+		const FVector& cameraForward,
+		float fovDegree) // Gizmo 깊이에따른 원근크기 보정
 	{
+		if (!targetActor)
+		{
+			mbVisible = false;
+			return;
+		}
+
+		mbVisible = true;
+		mLocation = targetActor->GetTransform().Location;
+
 		float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
 		const float tanHalfFov = tanf(FMath::DegreesToRadians(fovDegree * 0.5f));
 		mGizmoScale = depth * tanHalfFov * mGizmoSizeRatio;

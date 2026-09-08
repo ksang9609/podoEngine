@@ -29,7 +29,7 @@
                 "ClassName" : "UCubeComponent",
                 "Properties" : {
                   "UUID" : 4,
-                  "mRelativeLocation" : [3.000000, 1.000000, 1.000000],
+                  "mRelativeLocation" : [4.200000, 1.600000, 1.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [0.500000, 0.500000, 0.500000],
                   "mePrimitiveType" : "Cube"

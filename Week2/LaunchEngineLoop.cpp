@@ -65,7 +65,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mFileManager = new FFileManager();
 
 
-	mSceneManager->NewScene();
+	//mSceneManager->NewScene();
 	mSceneManager->LoadScene("TestScene", *mFileManager);
 
 	//test code
@@ -93,7 +93,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		//ImGui Input
 		{
-			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient });
+			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 		}
 
 		ViewportClient->Update(deltaTime);
@@ -136,7 +136,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 			if (ViewportClient->IsMouseHit())
 			{
-				UObject* ClickedObject = UObject::GUObjectArray[ViewportClient->HoveredRenderInfo.ObejctID.InternalIndex];
+				uint32 clickedObjectIndex = ViewportClient->HoveredRenderInfo.ObejctID.InternalIndex;
+				UObject* ClickedObject = UObject::GetObjectByInternalIndex(clickedObjectIndex);
 				if (ClickedObject && ClickedObject->IsA(AActor::GetClass()))
 				{
 					Hit = static_cast<AActor*>(ClickedObject);
@@ -172,12 +173,11 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
 
 		//강조
-		if (ViewportClient->IsMouseHit())
+		if (ViewportClient->ClickedActor)
 		{
-			//UE_LOG("Hit");
-
-			//큐브가 선택되었으면 강조 표시
-			mGraphicsManager->RenderHighLight(ViewportClient->HoveredRenderInfo);
+			FRenderInfo clickedRenderInfo;
+			ViewportClient->ClickedActor->GetFirstRenderInfo(clickedRenderInfo);
+			mGraphicsManager->RenderHighLight(clickedRenderInfo);
 		}
 
 		//ImGui
@@ -197,8 +197,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 void FEngineLoop::End()
 {
-	// Debug
-	mSceneManager->SaveScene("TestScene", *mFileManager);
 	mSceneManager->DeleteScene();
 
 	ImGui_ImplDX11_Shutdown();

@@ -86,6 +86,12 @@ void TSparseArray<T>::Reserve(uint32 capacity)
 }
 
 template<typename T>
+int32 TSparseArray<T>::Size() const
+{
+	return static_cast<int32>(mDatas.size());
+}
+
+template<typename T>
 int32 TSparseArray<T>::Max() const
 {
 	return static_cast<int32>(mDatas.capacity());
@@ -95,6 +101,12 @@ template<typename T>
 bool TSparseArray<T>::IsEmpty() const
 {
 	return mNumElements == 0;
+}
+
+template<typename T>
+bool TSparseArray<T>::IsValidIndex(uint32 index) const
+{
+	return index < mDatas.size() && mDatas[index].first;
 }
 
 template<typename T>

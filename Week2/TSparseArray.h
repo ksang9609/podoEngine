@@ -29,9 +29,11 @@ public:
 
 	int32 Num() const;
 	void Reserve(uint32 capacity);
+	int32 Size() const;
 	int32 Max() const;
 
 	bool IsEmpty() const;
+	bool IsValidIndex(uint32 index) const;
 
 	void Reset(int32 newSize);
 	void RemoveAt(uint32 index);
