@@ -145,12 +145,19 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			}
 
 			// 다른 것을 눌렀으면 이전 선택 해제. 같은 것이면 유지.
-			if (ViewportClient->ClickedActor && ViewportClient->ClickedActor != Hit)
+			if (ViewportClient->ClickedActor && ViewportClient->ClickedActor != Hit && !ViewportClient->mGizmo.mbHovered)
 			{
-				ViewportClient->ClickedActor->UnPressed();
+				if (!ViewportClient->mGizmo.mbHovered)
+				{
+					ViewportClient->ClickedActor->UnPressed();
+				}
 			}
 
-			ViewportClient->ClickedActor = Hit;   // 빈 공간을 눌렀으면 nullptr -> 선택 해제
+			//Gizmo를 제외한 다른 것을 눌렀을 때, ClickedActor로 갱신
+			if (!ViewportClient->mGizmo.mbHovered)
+			{
+				ViewportClient->ClickedActor = Hit;
+			}
 
 			if (Hit)
 			{
