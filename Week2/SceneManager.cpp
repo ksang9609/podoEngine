@@ -219,6 +219,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 					if (ImGui::Button("Select"))
 					{
 						guiReference.ViewportClient->ClickedActor = object->Cast<AActor>();
+						UE_LOG_F("Selected Actor UUID: {}", object->UUID);
 					}
 					// TODO: Implement delete functionality for actors
 					//ImGui::SameLine();
@@ -394,6 +395,13 @@ const TArray<FRenderInfo> FSceneManager::GetRenderInfos()
 
 	return TArray<FRenderInfo>();
 }
+
+const TArray<FRenderInfo> FSceneManager::GetAxisRenderInfos()
+{
+	// TODO: Implement axis render info retrieval logic
+	return TArray<FRenderInfo>();
+}
+
 
 //
 //FSceneData FSceneManager::ReadSceneData(

@@ -47,6 +47,7 @@ public:
 	void UpdateGUI(const FGuiReference& guiReference);
 
 	const TArray<FRenderInfo> GetRenderInfos();
+	const TArray<FRenderInfo> GetAxisRenderInfos();
 
 	// Clear world
 	void NewScene();
