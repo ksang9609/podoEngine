@@ -7,6 +7,7 @@
 ConsoleWindow::ConsoleWindow()
 	: mTitle("Console Window")
 	, mMaxLines(100)
+	, mbFirstFrame(true)
 {
 
 }
@@ -23,10 +24,30 @@ void ConsoleWindow::Init(std::string_view title, int maxLines)
 	mMaxLines = maxLines;
 }
 
-void ConsoleWindow::Draw()
+void ConsoleWindow::Draw(float panelWidth)
 {
-	ImGui::Begin(mTitle.CStr());
+	ImGuiIO& io = ImGui::GetIO();
 
+	float consolHeight = io.DisplaySize.y * HEIGHT_RATIO;
+
+	if (mbFirstFrame)
+	{
+		mbFirstFrame = false;
+	}
+
+	ImGui::SetNextWindowPos(
+		ImVec2(panelWidth, io.DisplaySize.y - consolHeight),
+		ImGuiCond_Always
+	);
+
+	ImGui::SetNextWindowSize(
+		ImVec2(io.DisplaySize.x - panelWidth, consolHeight),
+		ImGuiCond_Always
+	);
+
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+
+	ImGui::Begin(mTitle.CStr(), nullptr, flags);
 	// Draw console buffer
 	if (ImGui::BeginChild("ConsoleMessage", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true))
 	{

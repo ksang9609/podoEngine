@@ -22,14 +22,30 @@
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
+	// Initialize window infos
 	WCHAR WindowClass[] = L"JungleWindowClass";
 	WCHAR Title[] = L"Game Tech Lab";
 	WNDCLASSW wndclass = { 0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
 	RegisterClassW(&wndclass);
 
-	HWND hWnd = CreateWindowExW(0, WindowClass, Title, WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024,
-		nullptr, nullptr, hInstance, nullptr);
+	HWND hWnd = CreateWindowExW(
+		0,
+		WindowClass,
+		Title,
+		WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, CW_USEDEFAULT, 600, 1024,
+		nullptr, nullptr, hInstance, nullptr
+	);
+
+	// 창을 화면 크기에 맞게 최대화하여 표시
+	ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+	UpdateWindow(hWnd);
+
+	// 최대화된 후의 실제 클라이언트 크기를 구해 콘솔에 전달
+	RECT clientRect;
+	GetClientRect(hWnd, &clientRect);
+	int clientWidth = clientRect.right - clientRect.left;
+	int clientHeight = clientRect.bottom - clientRect.top;
 
 	RAWINPUTDEVICE rid = {};
 	rid.usUsagePage = 0x01;		// Generic Desktop
@@ -40,20 +56,19 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mGraphicsManager = new GraphicsManager(hWnd);
 
-	/* Console Window */
-	ConsoleWindow& console = ConsoleWindow::GetInstance();
-	console.Init("Jungle Console Window", 1024);
-
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
 	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
 
+	/* Console Window */
+	ConsoleWindow& console = ConsoleWindow::GetInstance();
+	console.Init("Jungle Console Window", clientWidth);
+
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_CirCle, Circle_vertices, sizeof(Circle_vertices));
-
 
 	FrameTimer = new FFrameTimer(120);
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
@@ -63,7 +78,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
-
 
 	//mSceneManager->NewScene();
 	mSceneManager->LoadScene("TestScene", *mFileManager);
@@ -119,6 +133,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
 			WindowApplication.bPendingResize = false;
 		}
+
+		//mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
 
 		mGraphicsManager->Update(deltaTime);
 		mGraphicsManager->Prepare(&ViewportClient->mCamera);

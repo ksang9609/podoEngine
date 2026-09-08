@@ -402,6 +402,7 @@ void URenderer::OnResize(UINT Width, UINT Height)
 
 	DXGI_SWAP_CHAIN_DESC desc;
 	SwapChain->GetDesc(&desc);
+
 	ViewportInfo = { 0.0f, 0.0f, (float)desc.BufferDesc.Width, (float)desc.BufferDesc.Height, 0.0f, 1.0f };
 
 	//상태는 이전에 생성한 걸 그대로 재사용

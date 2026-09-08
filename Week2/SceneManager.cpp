@@ -24,6 +24,9 @@
 
 FSceneManager::FSceneManager()
 {
+	ImGuiIO& io = ImGui::GetIO();
+	mPanelWidth = io.DisplaySize.x * MIN_WIDTH_RATIO;
+
 	//mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
 
 	// Todo: Test code, move to other function
@@ -64,13 +67,29 @@ void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 
 	updateControlPanelGUI(guiReference);
 	updatePropertyWindowGUI(guiReference);
-
-	ConsoleWindow::GetInstance().Draw();
+	updateObjectListPanelGUI(guiReference);
+	
+	ConsoleWindow::GetInstance().Draw(mPanelWidth);
 }
 
 void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 {
-	ImGui::Begin("Jungle Control Panel");
+	ImGuiIO& io = ImGui::GetIO();
+
+	float panelHeight = io.DisplaySize.y * CONTROL_PANEL_HEIGHT_RATIO;
+
+	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+
+	ImGui::SetNextWindowSizeConstraints(
+		ImVec2(io.DisplaySize.x * MIN_WIDTH_RATIO, panelHeight),
+		ImVec2(io.DisplaySize.x * MAX_WIDTH_RATIO, panelHeight)
+	);
+	ImGui::SetNextWindowSize(ImVec2(mPanelWidth, panelHeight), ImGuiCond_Always);
+
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+	ImGui::Begin("Jungle Control Panel", nullptr, flags);
+	mPanelWidth = ImGui::GetWindowWidth();
+
 	ImGui::Text("Hello Jungle World!");
 	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
@@ -145,13 +164,13 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::SameLine();
 	ImGui::SliderFloat("##FOV", &camera.mFovDegree, 0.0f, 180.0f);
 
-	// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
-	ImGui::Text("Location");
-	ImGui::SameLine();
+		// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
+		ImGui::Text("Location");
+		ImGui::SameLine();
 
-	// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
-	const float spacing = ImGui::GetStyle().ItemSpacing.x;
-	const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
+		// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
+		const float spacing = ImGui::GetStyle().ItemSpacing.x;
+		const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
 
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, 0.1f, 10.0f);
@@ -254,7 +273,25 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 
 void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 {
-	ImGui::Begin("Jungle Property Window");
+	ImGuiIO& io = ImGui::GetIO();
+
+	float controlPanelHeight = io.DisplaySize.y * CONTROL_PANEL_HEIGHT_RATIO;
+	float propertyHeight = io.DisplaySize.y * WINDOW_PROPERTY_HEIGHT_RATIO;
+
+	ImGui::SetNextWindowPos(ImVec2(0.0f, controlPanelHeight), ImGuiCond_Always);
+
+	ImGui::SetNextWindowSizeConstraints(
+		ImVec2(io.DisplaySize.x * MIN_WIDTH_RATIO, propertyHeight),
+		ImVec2(io.DisplaySize.x * MAX_WIDTH_RATIO, propertyHeight)
+	);
+	ImGui::SetNextWindowSize(ImVec2(mPanelWidth, propertyHeight), ImGuiCond_Always);
+
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+
+	ImGui::Begin("Jungle Property Window", nullptr, flags);
+
+	mPanelWidth = ImGui::GetWindowWidth();
+
 	if (guiReference.ViewportClient->ClickedActor)
 	{
 		// Temporary variables to hold the values for ImGui input fields
@@ -281,6 +318,31 @@ void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 	}
 	ImGui::End();
 }
+
+void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
+{
+	ImGuiIO& io = ImGui::GetIO();
+
+	float offsetHeight = io.DisplaySize.y * (CONTROL_PANEL_HEIGHT_RATIO + WINDOW_PROPERTY_HEIGHT_RATIO);
+	float objectListPanelHeight = io.DisplaySize.y - offsetHeight;
+
+	ImGui::SetNextWindowPos(ImVec2(0.0f, offsetHeight), ImGuiCond_Always);
+
+	ImGui::SetNextWindowSizeConstraints(
+		ImVec2(io.DisplaySize.x * MIN_WIDTH_RATIO, objectListPanelHeight),
+		ImVec2(io.DisplaySize.x * MAX_WIDTH_RATIO, objectListPanelHeight)
+	);
+	ImGui::SetNextWindowSize(ImVec2(mPanelWidth, objectListPanelHeight), ImGuiCond_Always);
+
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+
+	ImGui::Begin("Object List Panel", nullptr, flags);
+	{
+		// Todo: Update here
+	}
+	ImGui::End();
+}
+
 
 void FSceneManager::NewScene()
 {
@@ -384,6 +446,11 @@ void FSceneManager::LoadScene(
 		NewScene();
 		UE_LOG_F("Failed to load scene {}", sceneName);
 	}
+}
+
+float FSceneManager::GetPanelWidth() const
+{
+	return mPanelWidth;
 }
 
 const TArray<FRenderInfo> FSceneManager::GetRenderInfos()
