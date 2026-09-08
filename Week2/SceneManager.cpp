@@ -55,14 +55,25 @@ void FSceneManager::Update(float delaTime)
 	mCurrentWorld->Update();
 }
 
+void UpdateControlPanelGUI(const FGuiReference& guiReference);
+void UpdatePropertyWindowGUI(const FGuiReference& guiReference);
+
 void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 {
 	//ImGui
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+	
+	UpdateControlPanelGUI(guiReference);
+	UpdatePropertyWindowGUI(guiReference);
 
-	ImGui::Begin("Jungle Property Window");
+	ConsoleWindow::GetInstance().Draw();
+}
+
+void UpdateControlPanelGUI(const FGuiReference& guiReference)
+{
+	ImGui::Begin("Jungle Control Panel");
 	ImGui::Text("Hello Jungle World!");
 	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
@@ -116,13 +127,41 @@ void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 	//	: "OFF: blue (far, drawn last) overwrites");
 
 	ImGui::End();
+}
 
-	ConsoleWindow::GetInstance().Draw();
+void UpdatePropertyWindowGUI(const FGuiReference& guiReference)
+{
+	ImGui::Begin("Jungle Property Window");
+	if (guiReference.ViewportClient->ClickedActor)
+	{
+		// Temporary variables to hold the values for ImGui input fields
+		const FTransform& originalTransform = guiReference.ViewportClient->ClickedActor->GetTransform();
+
+		// Get the current transform of the clicked actor
+		FVector translationInput = originalTransform.Location;
+		FRotator rotationInput = originalTransform.Rotation;
+		FVector scaleInput = originalTransform.Scale;
+
+		// Display and edit the transform properties using ImGui input fields
+		if (ImGui::InputFloat3("Translation", &translationInput.x))
+		{
+			guiReference.ViewportClient->ClickedActor->SetLocation(translationInput);
+		}
+		if (ImGui::InputFloat3("Rotation", &rotationInput.Pitch))
+		{
+			guiReference.ViewportClient->ClickedActor->SetRotation(rotationInput);
+		}
+		if (ImGui::InputFloat3("Scale", &scaleInput.x))
+		{
+			guiReference.ViewportClient->ClickedActor->SetScale(scaleInput);
+		}
+	}
+	ImGui::End();
 }
 
 void FSceneManager::NewScene()
 {
-	if (mCurrentWorld == nullptr)
+	if (mCurrentWorld != nullptr)
 	{
 		delete mCurrentWorld;
 	}

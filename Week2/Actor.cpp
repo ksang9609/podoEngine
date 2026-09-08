@@ -138,6 +138,30 @@ void AActor::Update(TArray<FRenderInfo>* outRenderInfos)
 	}
 }
 
+void AActor::SetLocation(FVector location)
+{
+	if (mRootComponent)
+	{
+		mRootComponent->SetRelativeLocation(location);
+	}
+}
+
+void AActor::SetRotation(FRotator rotation)
+{
+	if (mRootComponent)
+	{
+		mRootComponent->SetRelativeRotation(rotation);
+	}
+}
+
+void AActor::SetScale(FVector scale)
+{
+	if (mRootComponent)
+	{
+		mRootComponent->SetRelativeScale3D(scale);
+	}
+}
+
 void AActor::Pressed()
 {
 	mbPressed = true;
