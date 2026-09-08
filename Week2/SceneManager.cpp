@@ -1,11 +1,11 @@
 ﻿
 #include "SceneManager.h"
 
+#include <algorithm>
 #include <format>
 
 #include "FileManager.h"
 #include "EngineStatics.h"
-#include "FileManager.h"
 #include "JsonUtil.h"
 #include "ObjectFactory.h"
 #include "PrimitiveComponent.h"
@@ -180,27 +180,36 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	/* Object Lists */
 	ImGui::SeparatorText("Object Lists");
 	if (ImGui::BeginChild("ObjectList", ImVec2(0, ImGui::GetFrameHeightWithSpacing() * 20),
-		ImGuiChildFlags_None))
+		ImGuiChildFlags_Borders))
 	{
-		TSparseArray<UObject*>& objects = UObject::GetGObjectArray();
+		if (mGuiInputField.LastGUObjectRevision != UObject::GetGObjectRevision())
+		{
+			mGuiInputField.SortedObjectLists = UObject::GetGObjectArray().ToTArray();
+			mGuiInputField.LastGUObjectRevision = UObject::GetGObjectRevision();
+
+			// Sort the objects by UUID
+			std::sort(mGuiInputField.SortedObjectLists.begin(), mGuiInputField.SortedObjectLists.end(),
+				[](UObject* a, UObject* b) { return a->UUID < b->UUID; });
+		}
 
 		int32 clickedActorUUID = guiReference.ViewportClient->ClickedActor
 			? guiReference.ViewportClient->ClickedActor->UUID
 			: -1;
 
-		for (UObject* object : objects)
+		for (UObject* object : mGuiInputField.SortedObjectLists)
 		{
 			ImGui::PushID(object->UUID); // Ensure unique ID for each child
+
+			//bool bDeleted = false;
 
 			// Highlight the frame if this object is the clicked actor
 			if (object->UUID == clickedActorUUID)
 			{
-				ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 255, 0, 255)); // Yellow border
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
 			}
 
-
 			if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
-				ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY))
+				ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
 			{
 				ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
 				ImGui::Text("UUID: %d", object->UUID);
@@ -211,14 +220,28 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 					{
 						guiReference.ViewportClient->ClickedActor = object->Cast<AActor>();
 					}
+					// TODO: Implement delete functionality for actors
+					//ImGui::SameLine();
+					//if (ImGui::Button("Delete"))
+					//{
+					//	bDeleted = true;
+					//}
 				}
 			}
+
+
 			ImGui::EndChild();
 
 			if (object->UUID == clickedActorUUID)
 			{
 				ImGui::PopStyleColor(); // Pop the border color if it was pushed
 			}
+
+			//if (bDeleted)
+			//{
+			//	delete object;
+			//}
+
 			ImGui::PopID();
 		}
 

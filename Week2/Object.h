@@ -43,6 +43,7 @@ public:
 	uint32 InternalIndex;
 
 	virtual ~UObject();
+	virtual void Destroy();
 
 	void Initialize();
 
@@ -80,9 +81,11 @@ public:
 	static TObject* GetObjectByInternalIndex(uint32 internalIndex);
 
 	static TSparseArray<UObject*>& GetGObjectArray() { return GUObjectArray; }
+	inline static uint64 GetGObjectRevision() { return GUObjectRevision; }
 
 protected:
 	UObject();
+	inline static uint64 GUObjectRevision = 0;
 
 private:
 

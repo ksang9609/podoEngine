@@ -31,6 +31,10 @@ struct FGuiInputField
 
 	/* Scene Control */
 	char SceneName[512] = "Default";
+
+	/* Object Lists */
+	TArray<UObject*> SortedObjectLists;
+	uint64 LastGUObjectRevision = -1;
 };
 
 class FSceneManager

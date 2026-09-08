@@ -3,6 +3,7 @@
 #include "Object.h"
 #include "ActorComponent.h"
 
+class UWorld;
 struct FRenderInfo;
 struct FTransform;
 class USceneComponent;
@@ -49,6 +50,7 @@ private:
 	int32 getComponentIndex(uint32 componentUUID) const;
 
 private:
+	
 	USceneComponent* mRootComponent = nullptr;
 	TArray<UActorComponent*> mComponents;
 	bool mbPressed = false;
