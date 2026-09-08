@@ -30,8 +30,8 @@
                 "Properties" : {
                   "UUID" : 4,
                   "mRelativeLocation" : [2.200000, 0.900000, 1.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [0.500000, 0.500000, 0.500000],
+                  "mRelativeRotation" : [0.000000, 0.000000, -68.000000],
+                  "mRelativeScale3D" : [0.500000, 3.400000, 0.500000],
                   "mePrimitiveType" : "Cube"
                 }
               }],
