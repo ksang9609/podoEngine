@@ -155,7 +155,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			//Gizmo라면 드래그 기준값을 저장
 			if (mGizmo.eAxis != FGizmo::EGIZMO_AXIS::NONE && ClickedActor && mGizmo.mDraggingAxis == FGizmo::EGIZMO_AXIS::NONE)
 			{
-				mGizmo.BeginDrag(mRayNear, mRayFar, ClickedActor->GetTransform().Location);
+				mGizmo.BeginDrag(mRayNear, mRayFar, ClickedActor->GetTransform());
 			}
 
 			//Actor라면 액터를 저장
@@ -204,6 +204,15 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::ROTATE)
 		{
 			//Rotate Logic
+		}
+		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::SCALE)
+		{
+			//Scale Logic
+			FVector newScale;
+			if (mGizmo.GetDragScale(mRayNear, mRayFar, newScale))
+			{
+				ClickedActor->SetScale(newScale);
+			}
 		}
 	}
 

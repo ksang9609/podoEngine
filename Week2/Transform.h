@@ -4,6 +4,11 @@
 #include "Matrix.h"
 #include <cassert>
 
+// 스케일 하한. 0에 가까워지면 MakeMatrix()의 행렬식(세 축 스케일의 곱)이 무너져
+// FMatrix::Inverse()가 Identity를 돌려주고, 그 액터는 레이캐스트로 클릭할 수 없게 된다.
+// SMALL_NUMBER는 부동소수점 오차를 재는 값이라 물리적 크기의 하한으로는 너무 작다.
+constexpr float MIN_SCALE = 0.001f;
+
 struct FTransform
 {
 	FTransform(){ }

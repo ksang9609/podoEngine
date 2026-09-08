@@ -250,7 +250,7 @@ void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 		{
 			guiReference.ViewportClient->ClickedActor->SetRotation(rotationInput);
 		}
-		if (ImGui::DragFloat3("Scale", &scaleInput.x, 0.1f, 0.001f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+		if (ImGui::DragFloat3("Scale", &scaleInput.x, 0.1f, MIN_SCALE, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 		{
 			guiReference.ViewportClient->ClickedActor->SetScale(scaleInput);
 		}

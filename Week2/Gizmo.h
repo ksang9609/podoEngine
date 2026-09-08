@@ -2,6 +2,7 @@
 #include "Vector.h"
 #include "RenderInfo.h"
 #include "TArray.h"
+#include "Transform.h"
 struct FGizmo {
 
 	enum EGIZMO_AXIS //어떤축이 선택되었는지
@@ -23,9 +24,10 @@ struct FGizmo {
 
 	// 드래그 기준값. 기즈모는 액터를 따라 움직이므로, 기준선을 시작 시점에 고정해 두지 않으면
 	// 결과가 기준을 다시 움직여서 발산한다.
-	FVector mDragStartLocation;       // 드래그 시작 시점의 액터 위치
+	FTransform mDragStartTransform;       // 드래그 시작 시점의 액터 트랜스폼
 	FVector mDragStartGizmoLocation;  // 드래그 시작 시점의 기즈모 위치 = 축 직선의 원점
 	float mDragStartAxisS = 0.0f;     // 그 직선 위에서 처음 잡은 지점
+	float mDragStartAxisLength = 1.0f; // 그 시점의 막대 길이. 스케일 비율의 분모라 같이 고정해야 한다
 
 	FMatrix TargetObjectTransformMatrix;
 	bool mbVisible = false;
@@ -40,7 +42,7 @@ struct FGizmo {
 	float mGizmoSizeRatio = 0.3f;
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
-	EGIZMO_TYPE eType= ROTATE;
+	EGIZMO_TYPE eType= SCALE;
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
 		switch (axis)
@@ -79,12 +81,13 @@ struct FGizmo {
 	}
 
 	// 축을 잡은 순간의 기준값을 저장한다. 이후 드래그는 전부 이 기준에 대한 상대량이다.
-	void BeginDrag(const FVector& nearPoint, const FVector& farPoint, const FVector& actorLocation)
+	void BeginDrag(const FVector& nearPoint, const FVector& farPoint, const FTransform &ActorTransform)
 	{
 		mDraggingAxis = eAxis;
-		mDragStartLocation = actorLocation;
+		mDragStartTransform = ActorTransform;
 		mDragStartGizmoLocation = mLocation;
 		mDragStartAxisS = 0.0f;
+		mDragStartAxisLength = mAxisLength * mGizmoScale;
 
 		GetClosestAxisParam(nearPoint, farPoint, mDragStartGizmoLocation, mDraggingAxis, mDragStartAxisS);
 	}
@@ -100,7 +103,35 @@ struct FGizmo {
 			return false;
 		}
 
-		outLocation = mDragStartLocation + AxisDirection(mDraggingAxis) * (axisS - mDragStartAxisS);
+		outLocation = mDragStartTransform.Location + AxisDirection(mDraggingAxis) * (axisS - mDragStartAxisS);
+
+		return true;
+	}
+
+	// 드래그 중인 축의 스케일. 이동과 달리 거리를 그대로 더하지 않고 막대 길이 대비 비율로 환산한다.
+	// 그래야 감도가 카메라 거리에 좌우되지 않고, 막대 끝까지 끌면 언제나 2배가 된다.
+	bool GetDragScale(const FVector& nearPoint, const FVector& farPoint, FVector& outScale) const
+	{
+		if (mDraggingAxis == NONE) return false;
+		if (mDragStartAxisLength <= SMALL_NUMBER) return false;
+
+		float axisS = 0.0f;
+		if (!GetClosestAxisParam(nearPoint, farPoint, mDragStartGizmoLocation, mDraggingAxis, axisS))
+		{
+			return false;
+		}
+
+		const float ratio = 1.0f + (axisS - mDragStartAxisS) / mDragStartAxisLength;
+
+		// 0을 지나 음수가 되면 물체가 뒤집히고, 행렬식이 무너져 레이캐스트의 Inverse()가 깨진다
+		outScale = mDragStartTransform.Scale;
+		switch (mDraggingAxis)
+		{
+		case X: outScale.x = FMath::Max(outScale.x * ratio, MIN_SCALE); break;
+		case Y: outScale.y = FMath::Max(outScale.y * ratio, MIN_SCALE); break;
+		case Z: outScale.z = FMath::Max(outScale.z * ratio, MIN_SCALE); break;
+		default: return false;
+		}
 
 		return true;
 	}
