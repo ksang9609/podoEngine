@@ -463,6 +463,8 @@ struct FGizmo {
 
 		mbVisible = true;
 		mLocation = targetActor->GetTransform().Location;
+		UpdateRotation = targetActor->GetTransform().Rotation;
+
 
 		if (bPerspectiveProjection)
 		{
