@@ -132,6 +132,21 @@ void TSparseArray<T>::RemoveAt(uint32 index)
 }
 
 template<typename T>
+TArray<T> TSparseArray<T>::ToTArray() const
+{
+	TArray<T> result;
+	result.Reserve(mNumElements);
+	for (const auto& [occupied, slot] : mDatas)
+	{
+		if (occupied)
+		{
+			result.Add(slot.Element);
+		}
+	}
+	return result;
+}
+
+template<typename T>
 void TSparseArray<T>::Iterator::SkipEmpty()
 {
 	while (Index < Owner->mDatas.size() && !Owner->mDatas[Index].first)

@@ -18,6 +18,7 @@ UObject* FClassInfo::CreateInstance() const
 UObject::UObject()
 {
 	InternalIndex = GUObjectArray.Add(this);
+	GUObjectRevision++;
 }
 
 UObject::~UObject()
@@ -32,6 +33,12 @@ UObject::~UObject()
 	*/
 
 	GUObjectArray.RemoveAt(InternalIndex);
+	GUObjectRevision++;
+}
+
+void UObject::Destroy()
+{
+	delete this;
 }
 
 void UObject::Initialize()

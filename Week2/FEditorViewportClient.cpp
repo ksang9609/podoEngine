@@ -136,8 +136,9 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	//mGizmo.mbVisible = true;
 	//mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
 
-	//RayCast
 	RayCast(ViewportInfo, World);
+
+	//RayCast
 
 	//Editor Click 처리
 	if (ClickedActor)
@@ -223,6 +224,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
 	mGizmo.Update(ClickedActor, mCamera.Transform.Location, mCamera.GetForwardVector(), mCamera.mFovDegree);
+
 }
 
 bool FEditorViewportClient::RayIntersectsTriangle(const FVector& Origin, const FVector& Dir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT, float& OutU, float& OutV)

@@ -38,6 +38,8 @@ public:
 	void Reset(int32 newSize);
 	void RemoveAt(uint32 index);
 
+	TArray<T> ToTArray() const;
+
 	class Iterator
 	{
 		TSparseArray* Owner;
