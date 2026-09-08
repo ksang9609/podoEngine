@@ -68,7 +68,7 @@ void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 	updateControlPanelGUI(guiReference);
 	updatePropertyWindowGUI(guiReference);
 	updateObjectListPanelGUI(guiReference);
-	
+
 	ConsoleWindow::GetInstance().Draw(mPanelWidth);
 }
 
@@ -164,13 +164,13 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::SameLine();
 	ImGui::SliderFloat("##FOV", &camera.mFovDegree, 0.0f, 180.0f);
 
-		// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
-		ImGui::Text("Location");
-		ImGui::SameLine();
+	// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
+	ImGui::Text("Location");
+	ImGui::SameLine();
 
-		// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
-		const float spacing = ImGui::GetStyle().ItemSpacing.x;
-		const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
+	// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
+	const float spacing = ImGui::GetStyle().ItemSpacing.x;
+	const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
 
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, 0.1f, 10.0f);
@@ -227,7 +227,11 @@ void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 
 		// Get the current transform of the clicked actor
 		FVector translationInput = originalTransform.Location;
-		FRotator rotationInput = originalTransform.Rotation;
+		FVector rotationInput = {
+			originalTransform.Rotation.Roll,
+			originalTransform.Rotation.Pitch,
+			originalTransform.Rotation.Yaw
+		};
 		FVector scaleInput = originalTransform.Scale;
 
 		// Display and edit the transform properties using ImGui input fields
@@ -235,9 +239,14 @@ void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 		{
 			mSelectedActor->SetLocation(translationInput);
 		}
-		if (ImGui::DragFloat3("Rotation", &rotationInput.Pitch, 0.1f))
+		if (ImGui::DragFloat3("Rotation", &rotationInput.x, 0.1f))
 		{
-			mSelectedActor->SetRotation(rotationInput);
+			mSelectedActor->SetRotation({
+				rotationInput.y, // Pitch
+				rotationInput.z, // Yaw
+				rotationInput.x  // Roll
+				});
+
 		}
 		if (ImGui::DragFloat3("Scale", &scaleInput.x, 0.1f, MIN_SCALE, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 		{
