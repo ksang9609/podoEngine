@@ -204,11 +204,15 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		}
 		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::ROTATE)
 		{
-			//Rotate Logic
+			// 링 평면 위에서 잰 각도. 시작 회전에 누적각을 한 번만 얹는다
+			FRotator newRotation;
+			if (mGizmo.GetDragRotation(mRayNear, mRayFar, newRotation))
+			{
+				ClickedActor->SetRotation(newRotation);
+			}
 		}
 		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::SCALE)
 		{
-			//Scale Logic
 			FVector newScale;
 			if (mGizmo.GetDragScale(mRayNear, mRayFar, newScale))
 			{

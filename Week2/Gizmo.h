@@ -29,6 +29,11 @@ struct FGizmo {
 	float mDragStartAxisS = 0.0f;     // 그 직선 위에서 처음 잡은 지점
 	float mDragStartAxisLength = 1.0f; // 그 시점의 막대 길이. 스케일 비율의 분모라 같이 고정해야 한다
 
+	// 회전용. 링 평면 안에 시작 시점 기준으로 2D 기저를 박아두고 그 기준으로 각도를 잰다.
+	FVector mDragStartRingDir;         // 잡은 방향. 이게 0도
+	float mDragAccumAngle = 0.0f;      // 시작 이후 누적 회전각(도)
+	float mDragLastAngle = 0.0f;       // 직전 프레임 각도. ±180 넘김을 잇는 데 쓴다
+
 	FMatrix TargetObjectTransformMatrix;
 	bool mbVisible = false;
 	bool mbHovered = false;
@@ -42,7 +47,7 @@ struct FGizmo {
 	float mGizmoSizeRatio = 0.3f;
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
-	EGIZMO_TYPE eType= SCALE;
+	EGIZMO_TYPE eType= ROTATE;
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
 		switch (axis)
@@ -52,6 +57,40 @@ struct FGizmo {
 		case Z:  return FVector(0.0f, 0.0f, 1.0f);
 		default: return FVector(0.0f, 0.0f, 0.0f);
 		}
+	}
+
+	// -180 ~ 180 으로 접는다
+	static float WrapAngle180(float degree)
+	{
+		degree = FMath::Fmod(degree + 180.0f, 360.0f);
+		if (degree < 0.0f) degree += 360.0f;
+
+		return degree - 180.0f;
+	}
+
+	// 링이 놓인 평면(원점 planeOrigin, 법선 axis)과 레이의 교점.
+	// 레이가 평면과 나란하면 교점이 없거나 무한히 많아서 false.
+	bool GetRingPlaneHit(
+		const FVector& nearPoint,
+		const FVector& farPoint,
+		const FVector& planeOrigin,
+		EGIZMO_AXIS axis,
+		FVector& outPoint) const
+	{
+		FVector norm_ray = farPoint - nearPoint;
+		norm_ray.Normalize();
+
+		const FVector axisDir = AxisDirection(axis);
+
+		const float dn = FVector::dot(norm_ray, axisDir);
+		if (FMath::Abs(dn) < 1e-4f) return false;   // 링을 모서리로 보는 각도
+
+		const float t = FVector::dot(planeOrigin - nearPoint, axisDir) / dn;
+		if (t < 0.0f) return false;                 // 카메라 뒤쪽
+
+		outPoint = nearPoint + norm_ray * t;
+
+		return true;
 	}
 
 	// 레이와 축 직선의 최단거리 지점을 축 파라미터 s로 돌려준다.
@@ -90,6 +129,22 @@ struct FGizmo {
 		mDragStartAxisLength = mAxisLength * mGizmoScale;
 
 		GetClosestAxisParam(nearPoint, farPoint, mDragStartGizmoLocation, mDraggingAxis, mDragStartAxisS);
+
+		// 회전은 축 직선이 아니라 링 평면 위에서 잰다. 잡은 방향을 0도 기준으로 박아둔다
+		mDragStartRingDir = FVector(0.0f, 0.0f, 0.0f);
+		mDragAccumAngle = 0.0f;
+		mDragLastAngle = 0.0f;
+
+		FVector ringHit;
+		if (GetRingPlaneHit(nearPoint, farPoint, mDragStartGizmoLocation, mDraggingAxis, ringHit))
+		{
+			FVector ringDir = ringHit - mDragStartGizmoLocation;
+			if (ringDir.Length() > SMALL_NUMBER)
+			{
+				ringDir.Normalize();
+				mDragStartRingDir = ringDir;
+			}
+		}
 	}
 
 	// 드래그 중인 축을 따라 액터가 있어야 할 위치. 축이 시선과 나란하면 false (이번 프레임은 건너뛴다)
@@ -130,6 +185,47 @@ struct FGizmo {
 		case X: outScale.x = FMath::Max(outScale.x * ratio, MIN_SCALE); break;
 		case Y: outScale.y = FMath::Max(outScale.y * ratio, MIN_SCALE); break;
 		case Z: outScale.z = FMath::Max(outScale.z * ratio, MIN_SCALE); break;
+		default: return false;
+		}
+
+		return true;
+	}
+
+	// 드래그 중인 링을 따라 액터가 가져야 할 회전.
+	// 누적각을 갱신하므로 const가 아니다.
+	bool GetDragRotation(const FVector& nearPoint, const FVector& farPoint, FRotator& outRotation)
+	{
+		if (mDraggingAxis == NONE) return false;
+		if (mDragStartRingDir.Length() <= SMALL_NUMBER) return false;   // 잡을 때 평면을 못 맞췄다
+
+		FVector ringHit;
+		if (!GetRingPlaneHit(nearPoint, farPoint, mDragStartGizmoLocation, mDraggingAxis, ringHit))
+		{
+			return false;
+		}
+
+		const FVector v = ringHit - mDragStartGizmoLocation;
+		if (v.Length() <= SMALL_NUMBER) return false;   // 중심을 정확히 지나면 각도가 정의되지 않는다
+
+		// 시작 시점에 박아둔 2D 기저. u가 0도, w가 90도 방향이다
+		const FVector u = mDragStartRingDir;
+		const FVector w = FVector::cross(AxisDirection(mDraggingAxis), u);   // 오른손 기준
+
+		const float angle = FMath::RadiansToDegrees(atan2f(FVector::dot(v, w), FVector::dot(v, u)));
+
+		// atan2는 -180~180이라 한 바퀴 넘길 때 부호가 튄다.
+		// 절대각을 그대로 쓰지 않고 프레임 간 차이를 접어서 누적한다
+		mDragAccumAngle += WrapAngle180(angle - mDragLastAngle);
+		mDragLastAngle = angle;
+
+		// FMatrix::Rotate를 미소각으로 전개해 보면 Yaw만 오른손이고 Pitch/Roll은 왼손이다.
+		// 위에서 구한 각도는 오른손 기준이라 축에 따라 부호를 뒤집는다
+		outRotation = mDragStartTransform.Rotation;
+		switch (mDraggingAxis)
+		{
+		case X: outRotation.Roll  = mDragStartTransform.Rotation.Roll  - mDragAccumAngle; break;
+		case Y: outRotation.Pitch = mDragStartTransform.Rotation.Pitch - mDragAccumAngle; break;
+		case Z: outRotation.Yaw   = mDragStartTransform.Rotation.Yaw   + mDragAccumAngle; break;
 		default: return false;
 		}
 
@@ -224,8 +320,9 @@ struct FGizmo {
 			}
 		}
 
+		return eAxis != NONE;
 	}
-
+		
 	void Reset()
 	{
 		mbVisible = false;
