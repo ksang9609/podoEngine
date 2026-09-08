@@ -51,6 +51,10 @@ public:
     ID3D11PixelShader* SimplePixelShader;
     ID3D11InputLayout* SimpleInputLayout;
 
+	// 매 프레임 내용이 바뀌는 선분용. 메시 버퍼와 달리 IMMUTABLE이 아니라 DYNAMIC이다
+	ID3D11Buffer* LineVertexBuffer = nullptr;
+	uint32 LineVertexCapacity = 0;
+
     unsigned int Stride;
 
 public:
@@ -61,6 +65,7 @@ public:
 	void CreateShader();
 	void CreateFrameBuffer();
 	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
+	void CreateLineVertexBuffer(uint32 maxVertices);
 	void CreateRasterizerState();
 	void CreateConstantBuffer();
 	void CreateDepthStencilBuffer();
@@ -74,6 +79,7 @@ public:
 	void ReleaseShader();
 	void ReleaseFrameBuffer();
 	void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer);
+	void ReleaseLineVertexBuffer();
 	void ReleaseRasterizerState();
 	void ReleaseConstantBuffer();
 	void ReleaseDepthStencilBuffer();
@@ -84,6 +90,7 @@ public:
 	void PrepareShader();
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
 	void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
+	void RenderLines(const FVertexSimple* vertices, uint32 numVertices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix Outline, const FRenderInfo& RI);
 	void SwapBuffer();
 

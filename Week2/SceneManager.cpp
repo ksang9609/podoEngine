@@ -158,6 +158,11 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		bool bWireFrame = guiReference.GraphicsManager->GetWireFrame();
 		ImGui::Checkbox("Wire frame", &bWireFrame);
 		guiReference.GraphicsManager->SetWireFrame(bWireFrame);
+
+		bool bShowWorldAxis = guiReference.GraphicsManager->GetShowWorldAxis();
+		ImGui::Checkbox("World axis", &bShowWorldAxis);
+		guiReference.GraphicsManager->SetShowWorldAxis(bShowWorldAxis);
+
 		ImGui::EndCombo();
 	}
 	ImGui::Text("FOV     ");

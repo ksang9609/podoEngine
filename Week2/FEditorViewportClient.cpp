@@ -134,9 +134,11 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		}
 	}
 
-	//Gizmo Test
-	//mGizmo.mbVisible = true;
-	//mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
+	if (!io.WantCaptureKeyboard && Input.WasPressed(VK_SPACE))
+	{
+		mGizmo.eType = static_cast<FGizmo::EGIZMO_TYPE>((mGizmo.eType + 1) % 3);
+	}
+
 
 	RayCast(ViewportInfo, sceneManager->GetCurrentWorld());
 

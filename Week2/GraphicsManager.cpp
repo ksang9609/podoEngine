@@ -4,6 +4,9 @@
 #include "Camera.h"
 #include "Console.h"
 
+// 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
+static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
+
 GraphicsManager::GraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
 {
@@ -11,6 +14,7 @@ GraphicsManager::GraphicsManager(HWND hWindow)
 	mRenderer->Create(hWindow);
 	mRenderer->CreateShader();
 	mRenderer->CreateConstantBuffer();
+	mRenderer->CreateLineVertexBuffer(LINE_VERTEX_CAPACITY);
 
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 }
@@ -22,6 +26,7 @@ GraphicsManager::~GraphicsManager()
 		buffer.second.Buffer->Release();
 	}
 
+	mRenderer->ReleaseLineVertexBuffer();
 	mRenderer->ReleaseConstantBuffer();
 	mRenderer->ReleaseShader();
 	mRenderer->Release();
@@ -65,6 +70,65 @@ void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
 }
+void GraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
+{
+	// 월드 좌표 그대로 넣는다. 그래서 그릴 때 World 행렬이 단위행렬이다
+	mLineVertices.Add({ start.x, start.y, start.z, color.x, color.y, color.z, color.w });
+	mLineVertices.Add({ end.x,   end.y,   end.z,   color.x, color.y, color.z, color.w });
+}
+
+void GraphicsManager::DrawWorldAxis()
+{
+	if (!mbShowWorldAxis) return;
+
+	// far plane이 100이라 그 안쪽으로 잡아야 잘리지 않는다
+	constexpr float AXIS_LENGTH = 50.0f;
+	// 세 축이 원점에서 정확히 겹치면 깊이 다툼이 생긴다. 눈에 안 띌 만큼만 띄운다
+	constexpr float AXIS_ORIGIN_GAP = 0.01f;
+	// 음의 방향은 어둡게 깔아 +쪽과 구분한다 (언리얼 에디터와 같은 처리)
+	constexpr float NEGATIVE_DIM = 0.25f;
+
+	const FVector axisDirections[3] =
+	{
+		FVector(1.0f, 0.0f, 0.0f),
+		FVector(0.0f, 1.0f, 0.0f),
+		FVector(0.0f, 0.0f, 1.0f),
+	};
+	const FVector4 axisColors[3] =
+	{
+		FVector4(1.0f, 0.0f, 0.0f, 1.0f),   // X = 빨강
+		FVector4(0.0f, 1.0f, 0.0f, 1.0f),   // Y = 초록
+		FVector4(0.0f, 0.4f, 1.0f, 1.0f),   // Z = 파랑
+	};
+
+	for (int32 i = 0; i < 3; ++i)
+	{
+		const FVector& direction = axisDirections[i];
+		const FVector4& color = axisColors[i];
+		const FVector4 dimColor(
+			color.x * NEGATIVE_DIM,
+			color.y * NEGATIVE_DIM,
+			color.z * NEGATIVE_DIM,
+			color.w);
+
+		DrawLine(direction * AXIS_ORIGIN_GAP, direction * AXIS_LENGTH, color);
+		DrawLine(direction * -AXIS_ORIGIN_GAP, direction * -AXIS_LENGTH, dimColor);
+	}
+}
+
+void GraphicsManager::FlushLines()
+{
+	if (mLineVertices.Num() == 0) return;
+
+	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
+	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
+	mRenderer->UpdateConstant(FMatrix::Identity, mViewProjectionMatrix, FVector4(0, 0, 0, 0));
+	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num());
+
+	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
+	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
+}
+
 void GraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos) //깊이버퍼 초기화
 {
 	mRenderer->ClearDepth();
