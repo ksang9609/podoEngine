@@ -133,7 +133,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 			if (ViewportClient->IsMouseHit())
 			{
-				UObject* ClickedObject = UObject::GUObjectArray[ViewportClient->HoveredRenderInfo.ObejctID.InternalIndex];
+				uint32 clickedObjectIndex = ViewportClient->HoveredRenderInfo.ObejctID.InternalIndex;
+				UObject* ClickedObject = UObject::GetObjectByInternalIndex(clickedObjectIndex);
 				if (ClickedObject && ClickedObject->IsA(AActor::GetClass()))
 				{
 					Hit = static_cast<AActor*>(ClickedObject);

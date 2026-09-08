@@ -57,11 +57,27 @@ public:
 	virtual void DeserializeClass(const json::JSON& inJson);
 
 	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
 	bool IsA() const;
 
 	bool IsA(const FClassInfo* classInfo) const;
 
+	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
+	TObject* Cast();
+
 	static TSparseArray<UObject*> GUObjectArray;
+
+	static UObject* GetObjectByUUID(int32 uuid);
+	static UObject* GetObjectByInternalIndex(uint32 internalIndex);
+
+	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
+	static TObject* GetObjectByUUID(int32 uuid);
+
+	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
+	static TObject* GetObjectByInternalIndex(uint32 internalIndex);
 
 protected:
 	UObject();
