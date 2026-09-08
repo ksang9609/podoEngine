@@ -196,78 +196,6 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	//	? "ON : orange (near) stays in front"
 	//	: "OFF: blue (far, drawn last) overwrites");
 
-	/* Object Lists */
-	ImGui::SeparatorText("Object Lists");
-	if (ImGui::BeginChild("ObjectList", ImVec2(0, ImGui::GetFrameHeightWithSpacing() * 20),
-		ImGuiChildFlags_Borders))
-	{
-		if (mGuiInputField.LastGUObjectRevision != UObject::GetGObjectRevision())
-		{
-			mGuiInputField.SortedObjectLists = UObject::GetGObjectArray().ToTArray();
-			mGuiInputField.LastGUObjectRevision = UObject::GetGObjectRevision();
-
-			// Sort the objects by UUID
-			std::sort(mGuiInputField.SortedObjectLists.begin(), mGuiInputField.SortedObjectLists.end(),
-				[](UObject* a, UObject* b) { return a->UUID < b->UUID; });
-		}
-
-		int32 clickedActorUUID = guiReference.ViewportClient->ClickedActor
-			? guiReference.ViewportClient->ClickedActor->UUID
-			: -1;
-
-		for (UObject* object : mGuiInputField.SortedObjectLists)
-		{
-			ImGui::PushID(object->UUID); // Ensure unique ID for each child
-
-			//bool bDeleted = false;
-
-			// Highlight the frame if this object is the clicked actor
-			if (object->UUID == clickedActorUUID)
-			{
-				ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
-			}
-
-			if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
-				ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
-			{
-				ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
-				ImGui::Text("UUID: %d", object->UUID);
-
-				if (object->IsA<AActor>())
-				{
-					if (ImGui::Button("Select"))
-					{
-						guiReference.ViewportClient->ClickedActor = object->Cast<AActor>();
-						UE_LOG_F("Selected Actor UUID: {}", object->UUID);
-					}
-					// TODO: Implement delete functionality for actors
-					//ImGui::SameLine();
-					//if (ImGui::Button("Delete"))
-					//{
-					//	bDeleted = true;
-					//}
-				}
-			}
-
-
-			ImGui::EndChild();
-
-			if (object->UUID == clickedActorUUID)
-			{
-				ImGui::PopStyleColor(); // Pop the border color if it was pushed
-			}
-
-			//if (bDeleted)
-			//{
-			//	delete object;
-			//}
-
-			ImGui::PopID();
-		}
-
-	}
-	ImGui::EndChild();
-
 	ImGui::End();
 }
 
@@ -292,10 +220,10 @@ void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 
 	mPanelWidth = ImGui::GetWindowWidth();
 
-	if (guiReference.ViewportClient->ClickedActor)
+	if (mSelectedActor)
 	{
 		// Temporary variables to hold the values for ImGui input fields
-		const FTransform& originalTransform = guiReference.ViewportClient->ClickedActor->GetTransform();
+		const FTransform& originalTransform = mSelectedActor->GetTransform();
 
 		// Get the current transform of the clicked actor
 		FVector translationInput = originalTransform.Location;
@@ -305,15 +233,15 @@ void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 		// Display and edit the transform properties using ImGui input fields
 		if (ImGui::DragFloat3("Translation", &translationInput.x, 0.1f))
 		{
-			guiReference.ViewportClient->ClickedActor->SetLocation(translationInput);
+			mSelectedActor->SetLocation(translationInput);
 		}
 		if (ImGui::DragFloat3("Rotation", &rotationInput.Pitch, 0.1f))
 		{
-			guiReference.ViewportClient->ClickedActor->SetRotation(rotationInput);
+			mSelectedActor->SetRotation(rotationInput);
 		}
 		if (ImGui::DragFloat3("Scale", &scaleInput.x, 0.1f, MIN_SCALE, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 		{
-			guiReference.ViewportClient->ClickedActor->SetScale(scaleInput);
+			mSelectedActor->SetScale(scaleInput);
 		}
 	}
 	ImGui::End();
@@ -338,7 +266,76 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 
 	ImGui::Begin("Object List Panel", nullptr, flags);
 	{
-		// Todo: Update here
+		/* Object Lists */
+		ImGui::SeparatorText("Object Lists");
+		if (ImGui::BeginChild("ObjectList", ImVec2(0, 0),
+			ImGuiChildFlags_Borders))
+		{
+			if (mGuiInputField.LastGUObjectRevision != UObject::GetGObjectRevision())
+			{
+				mGuiInputField.SortedObjectLists = UObject::GetGObjectArray().ToTArray();
+				mGuiInputField.LastGUObjectRevision = UObject::GetGObjectRevision();
+
+				// Sort the objects by UUID
+				std::sort(mGuiInputField.SortedObjectLists.begin(), mGuiInputField.SortedObjectLists.end(),
+					[](UObject* a, UObject* b) { return a->UUID < b->UUID; });
+			}
+
+			int32 selectedActorUUID = mSelectedActor
+				? mSelectedActor->UUID
+				: -1;
+
+			for (UObject* object : mGuiInputField.SortedObjectLists)
+			{
+				ImGui::PushID(object->UUID); // Ensure unique ID for each child
+
+				//bool bDeleted = false;
+
+				// Highlight the frame if this object is the clicked actor
+				if (object->UUID == selectedActorUUID)
+				{
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
+				}
+
+				if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
+					ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+				{
+					ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
+					ImGui::Text("UUID: %d", object->UUID);
+
+					if (object->IsA<AActor>())
+					{
+						if (ImGui::Button("Select"))
+						{
+							SetSelectedActor(object->Cast<AActor>());
+						}
+						// TODO: Implement delete functionality for actors
+						//ImGui::SameLine();
+						//if (ImGui::Button("Delete"))
+						//{
+						//	bDeleted = true;
+						//}
+					}
+				}
+
+
+				ImGui::EndChild();
+
+				if (object->UUID == selectedActorUUID)
+				{
+					ImGui::PopStyleColor(); // Pop the border color if it was pushed
+				}
+
+				//if (bDeleted)
+				//{
+				//	delete object;
+				//}
+
+				ImGui::PopID();
+			}
+
+		}
+		ImGui::EndChild();
 	}
 	ImGui::End();
 }
@@ -448,12 +445,30 @@ void FSceneManager::LoadScene(
 	}
 }
 
+void  FSceneManager::SetSelectedActor(AActor* actor)
+{
+	if (actor == nullptr)
+	{
+		UE_LOG_F("SetSelectedActor: Attempted to set selected actor to nullptr.");
+		return;
+	}
+
+	if (actor == mSelectedActor)
+	{
+		UE_LOG_F("SetSelectedActor: Actor with UUID {} is already selected.", actor->UUID);
+		return; // No change
+	}
+
+	UE_LOG_F("SetSelectedActor: Actor with UUID {} is now selected.", actor->UUID);
+	mSelectedActor = actor;
+}
+
 float FSceneManager::GetPanelWidth() const
 {
 	return mPanelWidth;
 }
 
-const TArray<FRenderInfo> FSceneManager::GetRenderInfos()
+const TArray<FRenderInfo> FSceneManager::GetRenderInfos() const
 {
 	if (mCurrentWorld)
 	{

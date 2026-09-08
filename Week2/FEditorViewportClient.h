@@ -8,24 +8,17 @@
 #include "Gizmo.h"
 
 class AActor;
+class FSceneManager;
 
 struct FEditorViewportClient
 {
 public:
 	void RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World);
 	float GetFov() const { return mCamera.mFovDegree; }
-	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, UWorld* World);
+	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager);
 	bool IsMouseHit() const { return bMouseHit; }
 
 	void Reset();
-
-	//마우스 밑 무언가의
-
-	FRenderInfo HoveredRenderInfo;
-
-	// 선택된 액터의 RenderInfo는 캐시하지 않는다. 필요할 때 ClickedActor->GetRenderInfos()로 그때그때 뽑는다.
-	//마우스 밑 무언가가 Actor이면 저장. RayCast 에서 채워야 함 (아직 미구현)
-	AActor* ClickedActor = nullptr;
 
 	FCamera& GetCamera() { return mCamera; }
 
@@ -33,6 +26,15 @@ public:
 	FGizmo mGizmo;
 
 private:
+	//마우스 밑 무언가의
+	FRenderInfo mHoveredRenderInfo;
+
+	// 선택된 액터의 RenderInfo는 캐시하지 않는다. 필요할 때 ClickedActor->GetRenderInfos()로 그때그때 뽑는다.
+	//마우스 밑 무언가가 Actor이면 저장. RayCast 에서 채워야 함 (아직 미구현)
+	// INFO: mClickedActor moved to FSceneManager::mSelectedActor.
+	//AActor* mClickedActor = nullptr;
+
+
 	bool RayIntersectsTriangle( // 두개의 
 		const FVector& Origin,
 		const FVector& Dir,
@@ -48,7 +50,7 @@ private:
 
 
 	bool bMouseHit = false;
-
+	
 	// RayCast가 이번 프레임에 쏜 광선. 기즈모 드래그가 같은 광선을 다시 쓴다
 	FVector mRayNear;
 	FVector mRayFar;

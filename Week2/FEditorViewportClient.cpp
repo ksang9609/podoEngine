@@ -4,6 +4,8 @@
 #include "Sphere.h"
 #include "WindowApplication.h"
 #include "ImGui/imgui.h"
+#include "Console.h"
+#include "SceneManager.h"
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
 // 포인터로 받으면 배열 크기 정보가 사라지므로 여기서 개수를 같이 넘긴다.
@@ -86,13 +88,13 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 				// 같은 메시 안에서도 더 가까운 삼각형이 뒤에 나올 수 있으므로 break 하지 않는다
 				NearlistT = OutT;
 				bMouseHit = true;
-				HoveredRenderInfo = RI;
+				mHoveredRenderInfo = RI;
 			}
 		}
 	}
 }
 
-void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, UWorld *World)
+void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager)
 {
 	const FInputState& Input = WindowApplication.Input;
 	ImGuiIO& io = ImGui::GetIO();
@@ -136,15 +138,15 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	//mGizmo.mbVisible = true;
 	//mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
 
-	RayCast(ViewportInfo, World);
+	RayCast(ViewportInfo, sceneManager->GetCurrentWorld());
 
 	//RayCast
 
-	//Editor Click 처리
-	if (ClickedActor)
-	{
-		ClickedActor->BeginFrame();
-	}
+	////Editor Click 처리
+	//if (mClickedActor)
+	//{
+	//	mClickedActor->BeginFrame();
+	//}
 
 	// 누른 순간에만 선택을 갱신한다. 떼는 것으로는 선택이 풀리지 않는다.
 	if (!ImGui::GetIO().WantCaptureMouse && Input.WasPressed(VK_LBUTTON))
@@ -154,15 +156,17 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		if (IsMouseHit())
 		{
 			//Gizmo라면 드래그 기준값을 저장
-			if (mGizmo.eAxis != FGizmo::EGIZMO_AXIS::NONE && ClickedActor && mGizmo.mDraggingAxis == FGizmo::EGIZMO_AXIS::NONE)
+			if (mGizmo.eAxis != FGizmo::EGIZMO_AXIS::NONE &&
+				sceneManager->IsActorSelected() &&
+				mGizmo.mDraggingAxis == FGizmo::EGIZMO_AXIS::NONE)
 			{
-				mGizmo.BeginDrag(mRayNear, mRayFar, ClickedActor->GetTransform());
+				mGizmo.BeginDrag(mRayNear, mRayFar, sceneManager->GetSelectedActor()->GetTransform());
 			}
 
 			//Actor라면 액터를 저장
 			else
 			{
-				uint32 clickedObjectIndex = HoveredRenderInfo.ObejctID.InternalIndex;
+				uint32 clickedObjectIndex = mHoveredRenderInfo.ObejctID.InternalIndex;
 				UObject* ClickedObject = UObject::GetObjectByInternalIndex(clickedObjectIndex);
 				if (ClickedObject && ClickedObject->IsA(AActor::GetClass()))
 				{
@@ -171,27 +175,35 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			}
 		}
 
-		// 다른 것을 눌렀으면 이전 선택 해제. 같은 것이면 유지.
-		if (ClickedActor && ClickedActor != Hit && !mGizmo.mbHovered)
-		{
-			ClickedActor->UnPressed();
-		}
+		//// 다른 것을 눌렀으면 이전 선택 해제. 같은 것이면 유지.
+		//if (mClickedActor && mClickedActor != Hit && !mGizmo.mbHovered)
+		//{
+		//
+		//	mClickedActor->UnPressed();
+		//}
 
 		//Gizmo를 제외한 다른 것을 눌렀을 때, ClickedActor로 갱신
 		if (!mGizmo.mbHovered)
 		{
-			ClickedActor = Hit;
+			if (Hit != nullptr)
+			{
+				sceneManager->SetSelectedActor(Hit);
+			}
+			else
+			{
+				sceneManager->ResetSelectedActor();
+			}
 		}
 
-		if (Hit)
-		{
-			Hit->Pressed();      // 선택 유지
-			Hit->ClickStart();   // 이번 프레임에 시작했음을 표시
-		}
+		//if (Hit)
+		//{
+		//	Hit->Pressed();      // 선택 유지
+		//	Hit->ClickStart();   // 이번 프레임에 시작했음을 표시
+		//}
 	}
 
 	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
-	if (mGizmo.mDraggingAxis != FGizmo::EGIZMO_AXIS::NONE && ClickedActor)
+	if (mGizmo.mDraggingAxis != FGizmo::EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
 	{
 		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::TRANSLATE)
 		{
@@ -199,7 +211,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			FVector newLocation;
 			if (mGizmo.GetDragLocation(mRayNear, mRayFar, newLocation))
 			{
-				ClickedActor->SetLocation(newLocation);
+				sceneManager->GetSelectedActor()->SetLocation(newLocation);
 			}
 		}
 		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::ROTATE)
@@ -210,6 +222,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			{
 				ClickedActor->SetRotation(newRotation);
 				mGizmo.UpdateRotation = newRotation;
+				sceneManager->GetSelectedActor()->SetRotation(newRotation);
 			}
 		}
 		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::SCALE)
@@ -217,7 +230,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			FVector newScale;
 			if (mGizmo.GetDragScale(mRayNear, mRayFar, newScale))
 			{
-				ClickedActor->SetScale(newScale);
+				sceneManager->GetSelectedActor()->SetScale(newScale);
 			}
 		}
 	}
@@ -228,7 +241,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	}
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
-	mGizmo.Update(ClickedActor, mCamera.Transform.Location, mCamera.GetForwardVector(), mCamera.mFovDegree);
+	mGizmo.Update(sceneManager->GetSelectedActor(), mCamera.Transform.Location, mCamera.GetForwardVector(), mCamera.mFovDegree);
 
 }
 
@@ -290,8 +303,7 @@ void FEditorViewportClient::DeprojectScreenToWorld(int32 MouseX, int32 MouseY, f
 
 void FEditorViewportClient::Reset()
 {
-	ClickedActor = nullptr;
-	HoveredRenderInfo = FRenderInfo();
+	mHoveredRenderInfo = FRenderInfo();
 	bMouseHit = false;
 	mGizmo.Reset();
 }

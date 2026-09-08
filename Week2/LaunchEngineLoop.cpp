@@ -109,7 +109,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		{
 			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 		}
-		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager->GetCurrentWorld());
+		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager);
 	}
 
 	//Physics Threads
@@ -143,10 +143,10 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		
 
 		//강조
-		if (ViewportClient->ClickedActor)
+		if (mSceneManager->GetSelectedActor())
 		{
 			FRenderInfo clickedRenderInfo;
-			ViewportClient->ClickedActor->GetFirstRenderInfo(clickedRenderInfo);
+			mSceneManager->GetSelectedActor()->GetFirstRenderInfo(clickedRenderInfo);
 			mGraphicsManager->RenderHighLight(clickedRenderInfo);
 		}
 
