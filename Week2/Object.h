@@ -79,6 +79,8 @@ public:
 		requires std::derived_from<TObject, UObject>
 	static TObject* GetObjectByInternalIndex(uint32 internalIndex);
 
+	static TSparseArray<UObject*>& GetGObjectArray() { return GUObjectArray; }
+
 protected:
 	UObject();
 

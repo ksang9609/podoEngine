@@ -49,7 +49,7 @@ void FSceneManager::Update(float delaTime)
 {
 	// Todo: Save / Load
 	{
-		
+
 	}
 
 	mCurrentWorld->Update();
@@ -61,7 +61,7 @@ void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-	
+
 	updateControlPanelGUI(guiReference);
 	updatePropertyWindowGUI(guiReference);
 
@@ -76,6 +76,8 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 
 	/* Spawn Actor */
 	// NOTE: This name array must be edited when adding new primitive types to EPrimitive enum.
+	ImGui::SeparatorText("Spawn Actor");
+
 	const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle", "GizmoArrow", "Circle" };
 	int32 primitiveTypeIndex = static_cast<int32>(mGuiInputField.PrimitiveType);
 	int32 spawnCount = mGuiInputField.SpawnCount;
@@ -104,9 +106,10 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		}
 		mGuiInputField.SpawnCount = spawnCount;
 	}
-	ImGui::Separator();
 
 	/* Scene Control */
+	ImGui::SeparatorText("Scene Control");
+
 	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName));
 	if (ImGui::Button("New scene"))
 	{
@@ -124,9 +127,12 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		guiReference.ViewportClient->Reset();
 		LoadScene(mGuiInputField.SceneName, *guiReference.FileManager);
 	}
-	ImGui::Separator();
-
 	/* Camera Control */
+	ImGui::SeparatorText("Camera Control");
+
+	FCamera& camera = guiReference.ViewportClient->GetCamera();
+	URenderer* renderer = guiReference.GraphicsManager->GetRenderer();
+
 	//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 	{
@@ -137,7 +143,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	}
 	ImGui::Text("FOV     ");
 	ImGui::SameLine();
-	//ImGui::SliderFloat("##FOV", &fovDegree, 0.0f, 180.0f);
+	ImGui::SliderFloat("##FOV", &camera.mFovDegree, 0.0f, 180.0f);
 
 	// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
 	ImGui::Text("Location");
@@ -146,10 +152,6 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
 	const float spacing = ImGui::GetStyle().ItemSpacing.x;
 	const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
-
-
-	FCamera& camera = guiReference.ViewportClient->GetCamera();
-	URenderer* renderer = guiReference.GraphicsManager->GetRenderer();
 
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, 0.1f, 10.0f);
@@ -174,6 +176,54 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
 	//	: "OFF: blue (far, drawn last) overwrites");
+
+	/* Object Lists */
+	ImGui::SeparatorText("Object Lists");
+	if (ImGui::BeginChild("ObjectList", ImVec2(0, ImGui::GetFrameHeightWithSpacing() * 20),
+		ImGuiChildFlags_None))
+	{
+		TSparseArray<UObject*>& objects = UObject::GetGObjectArray();
+
+		int32 clickedActorUUID = guiReference.ViewportClient->ClickedActor
+			? guiReference.ViewportClient->ClickedActor->UUID
+			: -1;
+
+		for (UObject* object : objects)
+		{
+			ImGui::PushID(object->UUID); // Ensure unique ID for each child
+
+			// Highlight the frame if this object is the clicked actor
+			if (object->UUID == clickedActorUUID)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 255, 0, 255)); // Yellow border
+			}
+
+
+			if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
+				ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY))
+			{
+				ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
+				ImGui::Text("UUID: %d", object->UUID);
+
+				if (object->IsA<AActor>())
+				{
+					if (ImGui::Button("Select"))
+					{
+						guiReference.ViewportClient->ClickedActor = object->Cast<AActor>();
+					}
+				}
+			}
+			ImGui::EndChild();
+
+			if (object->UUID == clickedActorUUID)
+			{
+				ImGui::PopStyleColor(); // Pop the border color if it was pushed
+			}
+			ImGui::PopID();
+		}
+
+	}
+	ImGui::EndChild();
 
 	ImGui::End();
 }
