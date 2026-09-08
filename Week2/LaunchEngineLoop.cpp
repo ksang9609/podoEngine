@@ -149,8 +149,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		mGraphicsManager->Update(deltaTime);
 		mGraphicsManager->Prepare(&ViewportClient->mCamera);
 		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
-		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
-
 		
 
 		//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
@@ -165,13 +163,15 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			mGraphicsManager->RenderHighLight(clickedRenderInfo);
 		}
 
+		// Gizmo
+		mGraphicsManager->RenderOverlay(ViewportClient->mGizmo.GetGizmoRenderInfo());
+
 		//ImGui
 		{
 			ImGui::Render();
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		}
 
-		mGraphicsManager->RenderOverlay(ViewportClient->mGizmo.GetGizmoRenderInfo());
 		mGraphicsManager->Display();
 	}
 
