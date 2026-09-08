@@ -190,7 +190,11 @@ void FSceneManager::NewScene()
 
 void FSceneManager::DeleteScene()
 {
-	//delete mCurrentWorld;
+	if (mCurrentWorld != nullptr)
+	{
+		delete mCurrentWorld;
+		mCurrentWorld = nullptr;
+	}
 }
 
 void FSceneManager::SaveScene(
