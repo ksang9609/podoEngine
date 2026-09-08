@@ -40,7 +40,6 @@ class UObject
 public:
 	// Todo: Fix
 	int32 UUID;
-	FObjectID ObjectID;
 	uint32 InternalIndex;
 
 	virtual ~UObject();
