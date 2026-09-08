@@ -46,7 +46,7 @@ public:
 	void Update(float delaTime);
 	void UpdateGUI(const FGuiReference& guiReference);
 
-	const TArray<FRenderInfo> GetRenderInfos();
+	const TArray<FRenderInfo> GetRenderInfos() const;
 	const TArray<FRenderInfo> GetAxisRenderInfos();
 
 	// Clear world
@@ -57,6 +57,11 @@ public:
 	void LoadScene(std::string_view sceneName, const FFileManager& fileManager);
 
 	UWorld* GetCurrentWorld() const { return mCurrentWorld; }
+
+	AActor* GetSelectedActor() const { return mSelectedActor; }
+	bool IsActorSelected() const { return mSelectedActor != nullptr; }
+	void SetSelectedActor(AActor* actor);
+	void ResetSelectedActor() { mSelectedActor = nullptr; }
 
 	float GetPanelWidth() const;
 
@@ -70,6 +75,7 @@ private:
 	float mPanelWidth;
 
 	UWorld* mCurrentWorld = nullptr;
+	AActor* mSelectedActor = nullptr;
 	FGuiInputField mGuiInputField;
 
 	void updateControlPanelGUI(const FGuiReference& guiReference);

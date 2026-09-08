@@ -190,36 +190,6 @@ void AActor::SetScale(FVector scale)
 	}
 }
 
-void AActor::Pressed()
-{
-	mbPressed = true;
-}
-
-void AActor::UnPressed()
-{
-	mbPressed = false;
-}
-
-void AActor::ClickStart()
-{
-	mbStarted = true;
-}
-
-void AActor::BeginFrame()
-{
-	mbStarted = false;
-}
-
-bool AActor::IsPressed() const
-{
-	return mbPressed;
-}
-
-bool AActor::IsStarted() const
-{
-	return mbStarted;
-}
-
 int32 AActor::getComponentIndex(uint32 componentUUID) const
 {
 	for (uint32 i = 0; i < mComponents.Num(); ++i)

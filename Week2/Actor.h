@@ -36,16 +36,6 @@ public:
 	void SetRotation(FRotator rotation);
 	void SetScale(FVector scale);
 
-	void Pressed();
-	void UnPressed();
-	void ClickStart();
-
-	//매 프레임 시작 시 호출. 이번 프레임용 플래그를 지운다
-	void BeginFrame();
-
-	bool IsPressed() const;
-	bool IsStarted() const;   // 이번 프레임에 눌리기 시작 (1프레임만)
-
 private:
 	int32 getComponentIndex(uint32 componentUUID) const;
 
