@@ -33,11 +33,25 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 	DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
 		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
 
+	mRayNear = NearPoint;
+	mRayFar = FarPoint;
+
 	float NearlistT = FLT_MAX;
+
+	// 드래그 중에는 히트 판정을 하지 않는다.
+	// 빠르게 끌면 커서가 축 캡슐을 벗어나는데, 그때 eAxis가 NONE이 되면 드래그가 끊긴다.
+	if (mGizmo.mDraggingAxis != FGizmo::EGIZMO_AXIS::NONE)
+	{
+		bMouseHit = true;
+		mGizmo.mbHovered = true;
+		mGizmo.eAxis = mGizmo.mDraggingAxis;   // 끌고 있는 축의 강조를 유지한다
+		return;
+	}
 
 	// Gizmo 탐색
 	if (mGizmo.IsRayInGizmo(NearPoint, FarPoint))
 	{
+		bMouseHit = true;
 		mGizmo.mbHovered = true;
 		// gizmo highlight
 		return;
@@ -78,11 +92,12 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
 	}
 }
 
-void FEditorViewportClient::Update(float deltaTime)
+void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, UWorld *World)
 {
 	const FInputState& Input = WindowApplication.Input;
 	ImGuiIO& io = ImGui::GetIO();
 
+	// Camera Transform
 	// 회전을 이동보다 먼저 — 이번 프레임에 돌린 방향으로 바로 움직이게
 	if (!io.WantCaptureMouse && Input.IsDown(VK_RBUTTON))
 	{
@@ -117,6 +132,87 @@ void FEditorViewportClient::Update(float deltaTime)
 		}
 	}
 
+	//Gizmo Test
+	//mGizmo.mbVisible = true;
+	//mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
+
+	//RayCast
+	RayCast(ViewportInfo, World);
+
+	//Editor Click 처리
+	if (ClickedActor)
+	{
+		ClickedActor->BeginFrame();
+	}
+
+	// 누른 순간에만 선택을 갱신한다. 떼는 것으로는 선택이 풀리지 않는다.
+	if (!ImGui::GetIO().WantCaptureMouse && Input.WasPressed(VK_LBUTTON))
+	{
+		AActor* Hit = nullptr;
+
+		if (IsMouseHit())
+		{
+			//Gizmo라면 드래그 기준값을 저장
+			if (mGizmo.eAxis != FGizmo::EGIZMO_AXIS::NONE && ClickedActor && mGizmo.mDraggingAxis == FGizmo::EGIZMO_AXIS::NONE)
+			{
+				mGizmo.BeginDrag(mRayNear, mRayFar, ClickedActor->GetTransform().Location);
+			}
+
+			//Actor라면 액터를 저장
+			else
+			{
+				uint32 clickedObjectIndex = HoveredRenderInfo.ObejctID.InternalIndex;
+				UObject* ClickedObject = UObject::GetObjectByInternalIndex(clickedObjectIndex);
+				if (ClickedObject && ClickedObject->IsA(AActor::GetClass()))
+				{
+					Hit = static_cast<AActor*>(ClickedObject);
+				}
+			}
+		}
+
+		// 다른 것을 눌렀으면 이전 선택 해제. 같은 것이면 유지.
+		if (ClickedActor && ClickedActor != Hit && !mGizmo.mbHovered)
+		{
+			ClickedActor->UnPressed();
+		}
+
+		//Gizmo를 제외한 다른 것을 눌렀을 때, ClickedActor로 갱신
+		if (!mGizmo.mbHovered)
+		{
+			ClickedActor = Hit;
+		}
+
+		if (Hit)
+		{
+			Hit->Pressed();      // 선택 유지
+			Hit->ClickStart();   // 이번 프레임에 시작했음을 표시
+		}
+	}
+
+	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
+	if (mGizmo.mDraggingAxis != FGizmo::EGIZMO_AXIS::NONE && ClickedActor)
+	{
+		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::TRANSLATE)
+		{
+			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다
+			FVector newLocation;
+			if (mGizmo.GetDragLocation(mRayNear, mRayFar, newLocation))
+			{
+				ClickedActor->SetLocation(newLocation);
+			}
+		}
+		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::ROTATE)
+		{
+			//Rotate Logic
+		}
+	}
+
+	if (!ImGui::GetIO().WantCaptureMouse && Input.WasReleased(VK_LBUTTON))
+	{
+		mGizmo.mDraggingAxis = FGizmo::EGIZMO_AXIS::NONE;
+	}
+
+	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
 	mGizmo.Update(ClickedActor, mCamera.Transform.Location, mCamera.GetForwardVector(), mCamera.mFovDegree);
 }
 

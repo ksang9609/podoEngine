@@ -14,7 +14,7 @@ struct FEditorViewportClient
 public:
 	void RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World);
 	float GetFov() const { return mCamera.mFovDegree; }
-	void Update(float deltaTime);
+	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, UWorld* World);
 	bool IsMouseHit() const { return bMouseHit; }
 
 	void Reset();
@@ -49,4 +49,8 @@ private:
 
 
 	bool bMouseHit = false;
+
+	// RayCast가 이번 프레임에 쏜 광선. 기즈모 드래그가 같은 광선을 다시 쓴다
+	FVector mRayNear;
+	FVector mRayFar;
 };

@@ -20,10 +20,16 @@ struct FGizmo {
 
 
 	FVector mLocation; // 기즈모의 위치
+
+	// 드래그 기준값. 기즈모는 액터를 따라 움직이므로, 기준선을 시작 시점에 고정해 두지 않으면
+	// 결과가 기준을 다시 움직여서 발산한다.
+	FVector mDragStartLocation;       // 드래그 시작 시점의 액터 위치
+	FVector mDragStartGizmoLocation;  // 드래그 시작 시점의 기즈모 위치 = 축 직선의 원점
+	float mDragStartAxisS = 0.0f;     // 그 직선 위에서 처음 잡은 지점
+
 	FMatrix TargetObjectTransformMatrix;
 	bool mbVisible = false;
 	bool mbHovered = false;
-	bool bMouseOnGizmo = false;
 	float mGizmoScale=1.0f;
 	float mAxisLength = mGizmoScale * 1.0f;
 	float mAxisThickness = mGizmoScale * 0.2f;
@@ -44,8 +50,58 @@ struct FGizmo {
 		}
 	}
 
-	FVector mDragStartLocation;
-	float mDragStartAxis;
+	// 레이와 축 직선의 최단거리 지점을 축 파라미터 s로 돌려준다.
+	bool GetClosestAxisParam(
+		const FVector& nearPoint,
+		const FVector& farPoint,
+		const FVector& axisOrigin,
+		EGIZMO_AXIS axis,
+		float& outAxisS) const
+	{
+		FVector norm_ray = farPoint - nearPoint;
+		norm_ray.Normalize();
+
+		const FVector axisDir = AxisDirection(axis);
+		const FVector w0 = nearPoint - axisOrigin;
+
+		const float align = FVector::dot(norm_ray, axisDir);
+		const float denom = 1.0f - align * align;
+		if (FMath::Abs(denom) < 1e-5f) return false;   // 레이와 축이 거의 나란함
+
+		const float rayProj = FVector::dot(norm_ray, w0);
+		const float axisProj = FVector::dot(axisDir, w0);
+
+		outAxisS = (axisProj - align * rayProj) / denom;
+
+		return true;
+	}
+
+	// 축을 잡은 순간의 기준값을 저장한다. 이후 드래그는 전부 이 기준에 대한 상대량이다.
+	void BeginDrag(const FVector& nearPoint, const FVector& farPoint, const FVector& actorLocation)
+	{
+		mDraggingAxis = eAxis;
+		mDragStartLocation = actorLocation;
+		mDragStartGizmoLocation = mLocation;
+		mDragStartAxisS = 0.0f;
+
+		GetClosestAxisParam(nearPoint, farPoint, mDragStartGizmoLocation, mDraggingAxis, mDragStartAxisS);
+	}
+
+	// 드래그 중인 축을 따라 액터가 있어야 할 위치. 축이 시선과 나란하면 false (이번 프레임은 건너뛴다)
+	bool GetDragLocation(const FVector& nearPoint, const FVector& farPoint, FVector& outLocation) const
+	{
+		if (mDraggingAxis == NONE) return false;
+
+		float axisS = 0.0f;
+		if (!GetClosestAxisParam(nearPoint, farPoint, mDragStartGizmoLocation, mDraggingAxis, axisS))
+		{
+			return false;
+		}
+
+		outLocation = mDragStartLocation + AxisDirection(mDraggingAxis) * (axisS - mDragStartAxisS);
+
+		return true;
+	}
 
 	bool IsRayInGizmo(FVector nearPoint, FVector farPoint)
 	{
@@ -110,15 +166,10 @@ struct FGizmo {
 			{
 				const FVector axisDir = AxisDirection(axis[i]);
 
-				const float align = FVector::dot(norm_ray, axisDir);
-				const float rayProj = FVector::dot(norm_ray, w0);
-				const float axisProj = FVector::dot(axisDir, w0);
+			float axisS = 0.0f;
+			if (!GetClosestAxisParam(nearPoint, farPoint, mLocation, axis[i], axisS)) continue;
 
-				const float denom = 1.0f - align * align;
-				if (FMath::Abs(denom) < 1e-5f) continue;        // 레이와 축이 거의 나란함
-
-				float axisS = (axisProj - align * rayProj) / denom;
-				axisS = FMath::Clamp(axisS, 0.0f, axisLength);  // 무한 직선 → 선분
+			axisS = FMath::Clamp(axisS, 0.0f, axisLength);  // 무한 직선 → 선분
 
 				const FVector axisPoint = mLocation + axisDir * axisS; // 현재위치에서 기즈모방향으로 얼만큼 이동했나
 
@@ -144,6 +195,10 @@ struct FGizmo {
 	{
 		mbVisible = false;
 		mLocation = FVector(0.0f, 0.0f, 0.0f);
+
+		// 드래그 상태도 같이 지운다. 안 그러면 선택이 풀린 뒤에도 드래그가 살아남는다
+		eAxis = NONE;
+		mDraggingAxis = NONE;
 	}
 
 	EPrimitive GetAxisPrimitive() const
@@ -203,10 +258,14 @@ struct FGizmo {
 		//기즈모타입을 확인후 타입에 맞는 모양을 리턴
 		for (int i = 0; i < 3; ++i)
 		{
-			if (axis[i] == eAxis)
-			{ /* highlight */}
-			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
-			
+			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i])});
+		}
+		if (eType == ROTATE)
+		{
+			renderInfos.Add({ EPrimitive::EP_Sphere,
+				  FMatrix::Scale(FVector(0.96f * mGizmoScale)) * FMatrix::Translation(mLocation),
+				  FObjectID{},
+				  FVector4(1.0f, 1.0f, 1.0f, 1.0f) });   // 어두운 회색
 		}
 	
 

@@ -95,8 +95,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		{
 			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 		}
-
-		ViewportClient->Update(deltaTime);
+		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager->GetCurrentWorld());
 	}
 
 	//Physics Threads
@@ -109,62 +108,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		// 레이캐스트보다 먼저 돌려야 한다.
 		// 여기서 RenderInfos 가 갱신되고, RayCast 가 그걸 읽는다.
 		mSceneManager->Update(deltaTime);
-	}
-
-	//Raycast
-	{
-		//Gizmo Test
-		ViewportClient->mGizmo.mbVisible = true;
-		ViewportClient->mGizmo.mLocation = { 0.0f, 2.0f, 0.0f };
-
-		ViewportClient->Update(deltaTime);
-		ViewportClient->RayCast(mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager->GetCurrentWorld());
-
-		//UE_LOG("Gizmo axis : %d", static_cast<int>(ViewportClient.mGizmo.eAxis));
-
-		const FInputState& Input = WindowApplication.Input;
-
-		if (ViewportClient->ClickedActor)
-		{
-			ViewportClient->ClickedActor->BeginFrame();
-		}
-
-		// 누른 순간에만 선택을 갱신한다. 떼는 것으로는 선택이 풀리지 않는다.
-		if (!ImGui::GetIO().WantCaptureMouse && Input.WasPressed(VK_LBUTTON))
-		{
-			AActor* Hit = nullptr;
-
-			if (ViewportClient->IsMouseHit())
-			{
-				uint32 clickedObjectIndex = ViewportClient->HoveredRenderInfo.ObejctID.InternalIndex;
-				UObject* ClickedObject = UObject::GetObjectByInternalIndex(clickedObjectIndex);
-				if (ClickedObject && ClickedObject->IsA(AActor::GetClass()))
-				{
-					Hit = static_cast<AActor*>(ClickedObject);
-				}
-			}
-
-			// 다른 것을 눌렀으면 이전 선택 해제. 같은 것이면 유지.
-			if (ViewportClient->ClickedActor && ViewportClient->ClickedActor != Hit && !ViewportClient->mGizmo.mbHovered)
-			{
-				if (!ViewportClient->mGizmo.mbHovered)
-				{
-					ViewportClient->ClickedActor->UnPressed();
-				}
-			}
-
-			//Gizmo를 제외한 다른 것을 눌렀을 때, ClickedActor로 갱신
-			if (!ViewportClient->mGizmo.mbHovered)
-			{
-				ViewportClient->ClickedActor = Hit;
-			}
-
-			if (Hit)
-			{
-				Hit->Pressed();      // 선택 유지
-				Hit->ClickStart();   // 이번 프레임에 시작했음을 표시
-			}
-		}
 	}
 
 	//Render Threads
