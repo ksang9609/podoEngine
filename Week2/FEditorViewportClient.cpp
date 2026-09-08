@@ -220,7 +220,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			FRotator newRotation;
 			if (mGizmo.GetDragRotation(mRayNear, mRayFar, newRotation))
 			{
-				ClickedActor->SetRotation(newRotation);
+				//ClickedActor->SetRotation(newRotation);
 				mGizmo.UpdateRotation = newRotation;
 				sceneManager->GetSelectedActor()->SetRotation(newRotation);
 			}
