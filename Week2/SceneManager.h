@@ -25,6 +25,11 @@ struct FGuiReference
 
 struct FGuiInputField
 {
+	/* Spawn Actor */
+	EPrimitive PrimitiveType = EPrimitive::EP_Cube;
+	int32 SpawnCount = 1;
+
+	/* Scene Control */
 	char SceneName[512] = "Default";
 };
 

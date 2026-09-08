@@ -74,6 +74,35 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::Text("Hello Jungle World!");
 	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
+	/* Spawn Actor */
+	// NOTE: This name array must be edited when adding new primitive types to EPrimitive enum.
+	const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle", "GizmoArrow", "Circle" };
+	int32 primitiveTypeIndex = static_cast<int32>(mGuiInputField.PrimitiveType);
+	int32 spawnCount = mGuiInputField.SpawnCount;
+
+	if (ImGui::Combo("Primitive Type", &primitiveTypeIndex, primitiveTypeNames, IM_ARRAYSIZE(primitiveTypeNames)))
+	{
+		mGuiInputField.PrimitiveType = static_cast<EPrimitive>(primitiveTypeIndex);
+	}
+	if (ImGui::Button("Spawn"))
+	{
+		for (int32 i = 0; i < mGuiInputField.SpawnCount; ++i)
+		{
+			AActor* newActor = FObjectFactory::SpawnPrimitiveActor(
+				mGuiInputField.PrimitiveType,
+				FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
+			);
+			mCurrentWorld->AddActor(newActor);
+		}
+	}
+	if (ImGui::InputInt("Number of spawn", &spawnCount))
+	{
+		if (spawnCount < 1)
+		{
+			spawnCount = 1;
+		}
+		mGuiInputField.SpawnCount = spawnCount;
+	}
 
 	/* Scene Control */
 	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName));
