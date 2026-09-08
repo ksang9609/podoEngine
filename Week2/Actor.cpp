@@ -16,6 +16,8 @@ AActor::~AActor()
 
 void AActor::Initialize()
 {
+	UObject::Initialize();
+
 	mbPressed = false;
 	mbStarted = false;
 }

@@ -8,7 +8,6 @@ public:																				\
 			superClassName::GetClass(),												\
 			[]() -> UObject* {														\
 				UObject* instance = new className();								\
-				instance->Initialize();												\
 				return instance;													\
 			}																		\
 		);																			\
