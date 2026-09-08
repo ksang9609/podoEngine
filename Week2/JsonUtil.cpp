@@ -30,6 +30,10 @@ json::JSON EPrimitiveToJson(const EPrimitive& Primitive)
 		return json::JSON("Cube");
 	case EPrimitive::EP_Triangle:
 		return json::JSON("Triangle");
+	case EPrimitive::EP_GizmoArrow:
+		return json::JSON("GizmoArrow");
+	case EPrimitive::EP_Circle:
+		return json::JSON("Circle");
 	default:
 		throw std::runtime_error("Unknown EPrimitive value");
 	}

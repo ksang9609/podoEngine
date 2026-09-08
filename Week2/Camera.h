@@ -76,4 +76,8 @@ public:
 	FVector Velocity = FVector(0);
 	float Sensitivity = 0.1f;
 	float mFovDegree = 60.f;
+
+	// 직교 투영에서 화면이 담는 월드 높이. 폭은 여기에 Aspect를 곱해서 얻는다.
+	// 렌더와 피킹이 같은 값을 봐야 하므로 카메라가 들고 있는다
+	float mOrthoHeight = 5.f;
 };

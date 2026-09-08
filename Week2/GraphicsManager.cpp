@@ -44,7 +44,7 @@ void GraphicsManager::Prepare(const FCamera *mCamera)
 
 	mViewProjectionMatrix = view * mCamera->GetProjectionMatrix(mAspect, mCamera->mFovDegree, 0.1f, 100.0f);
 
-	float orthoHeight = 5.f;
+	float orthoHeight = mCamera->mOrthoHeight;
 	float orthoWidth = orthoHeight * mAspect;
 	mViewOrthogonalProjectionMatrix = view * mCamera->GetOrthographicMatrix(orthoWidth, orthoHeight, 0.1f, 100.f);
 
@@ -137,7 +137,14 @@ void GraphicsManager::FlushLines()
 
 	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
 	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
-	mRenderer->UpdateConstant(FMatrix::Identity, mViewProjectionMatrix, FVector4(0, 0, 0, 0));
+	if (mbPerspectiveProjection)
+	{
+		mRenderer->UpdateConstant(FMatrix::Identity, mViewProjectionMatrix, FVector4(0, 0, 0, 0));
+	}
+	else
+	{
+		mRenderer->UpdateConstant(FMatrix::Identity, mViewOrthogonalProjectionMatrix, FVector4(0, 0, 0, 0));
+	}
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
@@ -242,7 +249,10 @@ void GraphicsManager::RenderHighLight(const FRenderInfo& RI)
 	const float Depth = FMath::Max(FVector::dot(ObjectLocation - mCameraLocation, mCameraForward), 0.01f);
 	const float TanHalfFov = tanf(FMath::DegreesToRadians(mCameraFovDegree * 0.5f));
 	const float WorldPerPixel = 2.0f * Depth * TanHalfFov / mRenderer->ViewportInfo.Height;
+	const float WorldPerPixelForOrtho = 2.0f * 5.0f * TanHalfFov / mRenderer->ViewportInfo.Height;
 	const float WorldThickness = OUTLINE_PIXELS * WorldPerPixel;
+	const float WorldThicknessForOrtho = OUTLINE_PIXELS * WorldPerPixelForOrtho;
+
 
 	// 1.02배처럼 비율로 키우면 테두리 두께가 물체 크기에 그대로 비례한다.
 	// 축마다 월드 공간에서 WorldThickness 만큼만 자라도록 배율을 따로 구한다.
@@ -251,10 +261,21 @@ void GraphicsManager::RenderHighLight(const FRenderInfo& RI)
 		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
 		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Z).Length());
 
-	const FVector OutlineScale(
+	FVector OutlineScale;
+	if (mbPerspectiveProjection)
+	{
+		OutlineScale = {
 		GetOutlineAxisScale(HalfExtent.x * WorldScale.x, WorldThickness),
 		GetOutlineAxisScale(HalfExtent.y * WorldScale.y, WorldThickness),
-		GetOutlineAxisScale(HalfExtent.z * WorldScale.z, WorldThickness));
+		GetOutlineAxisScale(HalfExtent.z * WorldScale.z, WorldThickness) };
+	}
+	else
+	{
+		OutlineScale = {
+		GetOutlineAxisScale(HalfExtent.x * WorldScale.x, WorldThicknessForOrtho),
+		GetOutlineAxisScale(HalfExtent.y * WorldScale.y, WorldThicknessForOrtho),
+		GetOutlineAxisScale(HalfExtent.z * WorldScale.z, WorldThicknessForOrtho) };
+	}
 
 	const FMatrix Outline = FMatrix::Translation(FVector(-Center.x, -Center.y, -Center.z))
 		* FMatrix::Scale(OutlineScale)

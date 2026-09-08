@@ -2,6 +2,9 @@
 
 #include "Cube.h"
 #include "Sphere.h"
+#include "Triangle.h"
+#include "GizmoArrow.h"
+#include "Circle.h"
 #include "WindowApplication.h"
 #include "ImGui/imgui.h"
 #include "Console.h"
@@ -17,23 +20,43 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 		OutVertices = Cube_vertices;
 		OutCount = static_cast<uint32>(sizeof(Cube_vertices) / sizeof(FVertexSimple));
 		return true;
-
 	case EPrimitive::EP_Sphere:
 		OutVertices = Sphere_vertices;
 		OutCount = static_cast<uint32>(sizeof(Sphere_vertices) / sizeof(FVertexSimple));
+		return true;
+	case EPrimitive::EP_Triangle:
+		OutVertices = Triangle_vertices;
+		OutCount = static_cast<uint32>(sizeof(Triangle_vertices) / sizeof(FVertexSimple));
+		return true;
+	case EPrimitive::EP_GizmoArrow:
+		OutVertices = GizmoArrow_vertices;
+		OutCount = static_cast<uint32>(sizeof(GizmoArrow_vertices) / sizeof(FVertexSimple));
+		return true;
+	case EPrimitive::EP_Circle:
+		OutVertices = Circle_vertices;
+		OutCount = static_cast<uint32>(sizeof(Circle_vertices) / sizeof(FVertexSimple));
 		return true;
 	}
 
 	return false;
 }
 
-void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World)
+void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, bool bPerspectiveProjection)
 {
 	bMouseHit = false;
 
+	// 투영 방식에 따라 광선을 만드는 법만 다르다. 두 점을 구하고 나면 이후 판정은 완전히 같다
 	FVector NearPoint, FarPoint;
-	DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
-		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
+	if (bPerspectiveProjection)
+	{
+		DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
+			ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
+	}
+	else
+	{
+		DeprojectScreenToWorldForOrtho(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
+			ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
+	}
 
 	mRayNear = NearPoint;
 	mRayFar = FarPoint;
@@ -140,7 +163,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	}
 
 
-	RayCast(ViewportInfo, sceneManager->GetCurrentWorld());
+	RayCast(ViewportInfo, sceneManager->GetCurrentWorld(), bPerspectiveProjection);
 
 	//RayCast
 
@@ -301,6 +324,33 @@ void FEditorViewportClient::DeprojectScreenToWorld(int32 MouseX, int32 MouseY, f
 	// 4) 곱하면 그대로 각 평면 위의 점
 	OutNearPoint = mCamera.Transform.Location + V * NearZ;
 	OutFarPoint = mCamera.Transform.Location + V * FarZ;
+}
+
+void FEditorViewportClient::DeprojectScreenToWorldForOrtho(int32 MouseX, int32 MouseY, float ScreenW, float ScreenH, float NearZ, float FarZ, FVector& OutNearPoint, FVector& OutFarPoint)
+{
+	// 1) 픽셀 -> NDC. 화면 Y 는 아래로 +, NDC Y 는 위로 + 라서 뒤집는다
+	const float ndcX = (2.0f * (MouseX + 0.5f) / ScreenW) - 1.0f;
+	const float ndcY = 1.0f - (2.0f * (MouseY + 0.5f) / ScreenH);
+
+	// 2) 화면이 담는 월드 크기 — GetOrthographicMatrix 에 넘기는 값과 반드시 같아야 한다.
+	//    직교 행렬은 2/width, 2/height 로 나누므로 되돌리려면 절반을 곱한다
+	const float Aspect = ScreenW / ScreenH;
+	const float orthoHeight = mCamera.mOrthoHeight;
+	const float orthoWidth = orthoHeight * Aspect;
+
+	const FMatrix R = FMatrix::Rotate(mCamera.Transform.Rotation);
+	const FVector Forward = R.GetUnitAxis(EAxis::X);
+	const FVector Right = R.GetUnitAxis(EAxis::Y);
+	const FVector Up = R.GetUnitAxis(EAxis::Z);
+
+	// 3) 원근과 결정적으로 다른 점: 방향이 아니라 시작점이 픽셀마다 달라진다.
+	//    모든 광선이 전방과 나란하고, 카메라 평면 위에서 평행이동한 자리에서 출발한다
+	const FVector RayOrigin = mCamera.Transform.Location
+		+ Right * (ndcX * orthoWidth * 0.5f)
+		+ Up * (ndcY * orthoHeight * 0.5f);
+
+	OutNearPoint = RayOrigin + Forward * NearZ;
+	OutFarPoint = RayOrigin + Forward * FarZ;
 }
 
 void FEditorViewportClient::Reset()

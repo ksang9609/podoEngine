@@ -11,6 +11,7 @@
 #include "Cube.h"
 #include "Sphere.h"
 #include "Circle.h"
+#include "Triangle.h"
 #include "Object.h"
 #include "GizmoArrow.h"
 #include "ImGui/imgui.h"
@@ -69,7 +70,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_CirCle, Circle_vertices, sizeof(Circle_vertices));
+	mGraphicsManager->CreateBuffer(EPrimitive::EP_Circle, Circle_vertices, sizeof(Circle_vertices));
+	mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
 
 	FrameTimer = new FFrameTimer(120);
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class

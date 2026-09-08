@@ -358,7 +358,7 @@ struct FGizmo {
 		switch (eType)
 		{
 		case TRANSLATE: return EPrimitive::EP_GizmoArrow;
-		case ROTATE: return EPrimitive::EP_CirCle; //EP_Rotate
+		case ROTATE: return EPrimitive::EP_Circle; //EP_Rotate
 		case SCALE: return EPrimitive::EP_Cube;
 		default: return EPrimitive::EP_GizmoArrow;
 		}

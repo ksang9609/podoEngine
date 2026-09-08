@@ -369,6 +369,7 @@ void FSceneManager::NewScene()
 	}
 
 	UEngineStatics::SetNextUUID(0);
+	ResetSelectedActor();
 	mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
 }
 
@@ -379,6 +380,7 @@ void FSceneManager::DeleteScene()
 		delete mCurrentWorld;
 		mCurrentWorld = nullptr;
 	}
+	ResetSelectedActor();
 }
 
 void FSceneManager::SaveScene(
@@ -463,6 +465,7 @@ void FSceneManager::LoadScene(
 		NewScene();
 		UE_LOG_F("Failed to load scene {}", sceneName);
 	}
+	ResetSelectedActor();
 }
 
 void  FSceneManager::SetSelectedActor(AActor* actor)
