@@ -174,3 +174,11 @@ void FEditorViewportClient::DeprojectScreenToWorld(int32 MouseX, int32 MouseY, f
 	OutNearPoint = mCamera.Transform.Location + V * NearZ;
 	OutFarPoint = mCamera.Transform.Location + V * FarZ;
 }
+
+void FEditorViewportClient::Reset()
+{
+	ClickedActor = nullptr;
+	HoveredRenderInfo = FRenderInfo();
+	bMouseHit = false;
+	mGizmo.Reset();
+}

@@ -17,6 +17,8 @@ public:
 	void Update(float deltaTime);
 	bool IsMouseHit() const { return bMouseHit; }
 
+	void Reset();
+
 	//마우스 밑 무언가의
 
 	FRenderInfo HoveredRenderInfo;

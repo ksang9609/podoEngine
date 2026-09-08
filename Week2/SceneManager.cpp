@@ -55,9 +55,6 @@ void FSceneManager::Update(float delaTime)
 	mCurrentWorld->Update();
 }
 
-void UpdateControlPanelGUI(const FGuiReference& guiReference);
-void UpdatePropertyWindowGUI(const FGuiReference& guiReference);
-
 void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 {
 	//ImGui
@@ -65,18 +62,40 @@ void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	
-	UpdateControlPanelGUI(guiReference);
-	UpdatePropertyWindowGUI(guiReference);
+	updateControlPanelGUI(guiReference);
+	updatePropertyWindowGUI(guiReference);
 
 	ConsoleWindow::GetInstance().Draw();
 }
 
-void UpdateControlPanelGUI(const FGuiReference& guiReference)
+void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 {
 	ImGui::Begin("Jungle Control Panel");
 	ImGui::Text("Hello Jungle World!");
 	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
+
+	/* Scene Control */
+	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName));
+	if (ImGui::Button("New scene"))
+	{
+		// TODO: add clear depth buffer function in renderer
+		//guiReference.GraphicsManager->GetRenderer()->ClearDepthBuffer();
+		guiReference.ViewportClient->Reset();
+		NewScene();
+	}
+	if (ImGui::Button("Save scene"))
+	{
+		SaveScene(mGuiInputField.SceneName, *guiReference.FileManager);
+	}
+	if (ImGui::Button("Load scene"))
+	{
+		guiReference.ViewportClient->Reset();
+		LoadScene(mGuiInputField.SceneName, *guiReference.FileManager);
+	}
+
+
+	/* Camera Control */
 	ImGui::Separator();
 	//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
@@ -129,7 +148,7 @@ void UpdateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::End();
 }
 
-void UpdatePropertyWindowGUI(const FGuiReference& guiReference)
+void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 {
 	ImGui::Begin("Jungle Property Window");
 	if (guiReference.ViewportClient->ClickedActor)
@@ -229,27 +248,35 @@ void FSceneManager::LoadScene(
 	fileName += sceneName;
 	fileName += kSceneDataSuffix;
 
-	FString jsonString = fileManager.ReadFileToString(fileName);
-
-	json::JSON readSceneJson = json::JSON::Load(jsonString);
-
-	if (!readSceneJson.hasKey("NextUUID") || readSceneJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
+	try
 	{
-		throw std::runtime_error(std::format("Scene file {} does not contain a valid NextUUID field.", fileName));
-	}
-	uint32 nextUUID = readSceneJson.at("NextUUID").ToInt();
-	json::JSON worldJson = readSceneJson.at("World");
+		FString jsonString = fileManager.ReadFileToString(fileName);
 
-	UWorld* newWorld = FObjectFactory::LoadObject<UWorld>(worldJson);
-	if (!newWorld)
+		json::JSON readSceneJson = json::JSON::Load(jsonString);
+
+		if (!readSceneJson.hasKey("NextUUID") || readSceneJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
+		{
+			throw std::runtime_error(std::format("Scene file {} does not contain a valid NextUUID field.", fileName));
+		}
+		uint32 nextUUID = readSceneJson.at("NextUUID").ToInt();
+		json::JSON worldJson = readSceneJson.at("World");
+
+		UWorld* newWorld = FObjectFactory::LoadObject<UWorld>(worldJson);
+		if (!newWorld)
+		{
+			throw std::runtime_error(std::format("Failed to load world from scene: {}", sceneName));
+		}
+		UEngineStatics::SetNextUUID(nextUUID);
+
+		// Replace the contents of mCurrentWorld with newWorld
+		delete mCurrentWorld;
+		mCurrentWorld = newWorld;
+	}
+	catch (const std::exception& e)
 	{
-		throw std::runtime_error(std::format("Failed to load world from scene: {}", sceneName));
+		NewScene();
+		UE_LOG_F("Failed to load scene {}", sceneName);
 	}
-	UEngineStatics::SetNextUUID(nextUUID);
-
-	// Replace the contents of mCurrentWorld with newWorld
-	delete mCurrentWorld;
-	mCurrentWorld = newWorld;
 }
 
 const TArray<FRenderInfo> FSceneManager::GetRenderInfos()

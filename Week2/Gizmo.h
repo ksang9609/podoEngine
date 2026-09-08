@@ -94,6 +94,12 @@ struct FGizmo {
 		return eAxis != NONE;
 	}
 
+	void Reset()
+	{
+		mbVisible = false;
+		mLocation = FVector(0.0f, 0.0f, 0.0f);
+	}
+
 	EPrimitive GetAxisPrimitive() const
 	{
 		switch (eType)
