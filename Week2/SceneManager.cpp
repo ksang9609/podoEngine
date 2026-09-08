@@ -196,6 +196,12 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	//	? "ON : orange (near) stays in front"
 	//	: "OFF: blue (far, drawn last) overwrites");
 
+	/* Memory Info */
+	ImGui::SeparatorText("Memory Info");
+
+	ImGui::Text("Total allocated memory count: %d", UEngineStatics::sTotalAllocationCount);
+	ImGui::Text("Total allocated memory size: %d bytes", UEngineStatics::sTotalAllocationBytes);
+
 	ImGui::End();
 }
 

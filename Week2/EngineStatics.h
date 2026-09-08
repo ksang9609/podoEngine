@@ -10,6 +10,10 @@ public:
 	// Used for scene load / save 
 	static uint32 GetNextUUID();
 	static void SetNextUUID(uint32 nextUUID);
+
+	inline static uint32 sTotalAllocationCount = 0;
+	inline static uint32 sTotalAllocationBytes = 0;
+
 private:
 	static uint32 msNextUUID;
 };

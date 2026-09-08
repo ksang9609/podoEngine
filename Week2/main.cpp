@@ -5,6 +5,7 @@
 #include "WindowApplication.h"
 #include "LaunchEngineLoop.h"
 #include "Object.h"
+#include "EngineStatics.h"
 
 enum : UINT_PTR
 {
@@ -14,13 +15,10 @@ enum : UINT_PTR
 void* operator new(size_t size);
 void operator delete(void* deleteObject, size_t size);
 
-static uint32 sTotalAllocationCount;
-static uint32 sTotalAllocationBytes;
-
 void* operator new(size_t size)
 {
-	++sTotalAllocationCount;
-	sTotalAllocationBytes += static_cast<uint32>(size);
+	++UEngineStatics::sTotalAllocationCount;
+	UEngineStatics::sTotalAllocationBytes += static_cast<uint32>(size);
 
 	void* newObject = malloc(size);
 
@@ -31,8 +29,8 @@ void operator delete(void* deleteObject, size_t size)
 {
 	assert(deleteObject);
 
-	--sTotalAllocationCount;
-	sTotalAllocationBytes -= static_cast<uint32>(size);
+	--UEngineStatics::sTotalAllocationCount;
+	UEngineStatics::sTotalAllocationBytes -= static_cast<uint32>(size);
 
 	free(deleteObject);
 }
