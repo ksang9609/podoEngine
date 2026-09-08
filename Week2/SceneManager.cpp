@@ -103,24 +103,24 @@ void UpdateControlPanelGUI(const FGuiReference& guiReference)
 	URenderer* renderer = guiReference.GraphicsManager->GetRenderer();
 
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, -10.0f, 10.0f);
+	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, 0.1f, 10.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocY", &camera.Transform.Location.y, -10.0f, 10.0f);
+	ImGui::DragFloat("##CamLocY", &camera.Transform.Location.y, 0.1f, 10.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocZ", &camera.Transform.Location.z, -10.0f, 10.0f);
+	ImGui::DragFloat("##CamLocZ", &camera.Transform.Location.z, 0.1f, 10.0f);
 
 	ImGui::Text("Rotation");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotX", &camera.Transform.Rotation.Roll, -10.0f, 180.0f);
+	ImGui::DragFloat("##CamRotX", &camera.Transform.Rotation.Roll, 0.1f, 180.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotY", &camera.Transform.Rotation.Pitch, -10.0f, 180.0f);
+	ImGui::DragFloat("##CamRotY", &camera.Transform.Rotation.Pitch, 0.1f, 180.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotZ", &camera.Transform.Rotation.Yaw, -10.0f, 180.0f);
+	ImGui::DragFloat("##CamRotZ", &camera.Transform.Rotation.Yaw, 0.1f, 180.0f);
 	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
@@ -143,15 +143,15 @@ void UpdatePropertyWindowGUI(const FGuiReference& guiReference)
 		FVector scaleInput = originalTransform.Scale;
 
 		// Display and edit the transform properties using ImGui input fields
-		if (ImGui::InputFloat3("Translation", &translationInput.x))
+		if (ImGui::DragFloat3("Translation", &translationInput.x, 0.1f))
 		{
 			guiReference.ViewportClient->ClickedActor->SetLocation(translationInput);
 		}
-		if (ImGui::InputFloat3("Rotation", &rotationInput.Pitch))
+		if (ImGui::DragFloat3("Rotation", &rotationInput.Pitch, 0.1f))
 		{
 			guiReference.ViewportClient->ClickedActor->SetRotation(rotationInput);
 		}
-		if (ImGui::InputFloat3("Scale", &scaleInput.x))
+		if (ImGui::DragFloat3("Scale", &scaleInput.x, 0.1f, 0.001f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 		{
 			guiReference.ViewportClient->ClickedActor->SetScale(scaleInput);
 		}

@@ -21,6 +21,7 @@ public:
 
 	//virtual void Render();
 	void Update(TArray<FRenderInfo>* outRenderInfos) override final;
+	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const override final;
 
 protected:
 	//GraphicsManager* mGraphicsManager;

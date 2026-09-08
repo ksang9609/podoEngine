@@ -28,7 +28,7 @@ void UActorComponent::Update(TArray<FRenderInfo>* outRenderInfos)
 	// assert(false);
 }
 
-void UActorComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos)
+void UActorComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const
 {
 	// Todo: Do nothing, must override, some components may not call GetRenderInfos()
 	// assert(false);

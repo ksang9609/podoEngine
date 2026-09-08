@@ -20,8 +20,8 @@ public:
 	//마우스 밑 무언가의
 
 	FRenderInfo HoveredRenderInfo;
-	FRenderInfo ClickedRenderInfo;
 
+	// 선택된 액터의 RenderInfo는 캐시하지 않는다. 필요할 때 ClickedActor->GetRenderInfos()로 그때그때 뽑는다.
 	//마우스 밑 무언가가 Actor이면 저장. RayCast 에서 채워야 함 (아직 미구현)
 	AActor* ClickedActor = nullptr;
 

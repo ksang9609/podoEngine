@@ -16,7 +16,7 @@ public:
 
 	// Todo: Make as pure class
 	virtual void Update(TArray<FRenderInfo>* outRenderInfos);
-	virtual void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos);
+	virtual void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const;
 
 protected:
 	AActor* mOwner;

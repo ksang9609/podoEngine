@@ -138,7 +138,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 				if (ClickedObject && ClickedObject->IsA(AActor::GetClass()))
 				{
 					Hit = static_cast<AActor*>(ClickedObject);
-					ViewportClient->ClickedRenderInfo = ViewportClient->HoveredRenderInfo;
 				}
 			}
 
@@ -173,10 +172,9 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		//강조
 		if (ViewportClient->ClickedActor)
 		{
-			//UE_LOG("Hit");
-
-			//큐브가 선택되었으면 강조 표시
-			mGraphicsManager->RenderHighLight(ViewportClient->ClickedRenderInfo);
+			FRenderInfo clickedRenderInfo;
+			ViewportClient->ClickedActor->GetFirstRenderInfo(clickedRenderInfo);
+			mGraphicsManager->RenderHighLight(clickedRenderInfo);
 		}
 
 		//ImGui

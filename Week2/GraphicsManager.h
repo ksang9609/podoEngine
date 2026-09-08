@@ -36,7 +36,10 @@ public:
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
 	URenderer* GetRenderer() const;
+
+	//Highlight
 	static FVector GetPrimitiveCenter(EPrimitive type);
+	static FVector GetPrimitiveHalfExtent(EPrimitive type);
 	void RenderHighLight(const FRenderInfo& RI);
 
 private:
