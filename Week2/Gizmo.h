@@ -40,7 +40,7 @@ struct FGizmo {
 	float mGizmoSizeRatio = 0.3f;
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
-	EGIZMO_TYPE eType=SCALE;
+	EGIZMO_TYPE eType=TRANSLATE;
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
 		switch (axis)
@@ -243,6 +243,7 @@ struct FGizmo {
 				* FMatrix::Rotate(rotation)
 				* FMatrix::Translation(mLocation);
 		}
+
 	}
 	
 
