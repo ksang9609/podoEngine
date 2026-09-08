@@ -32,13 +32,15 @@ struct FGizmo {
 	bool mbHovered = false;
 	float mGizmoScale=1.0f;
 	float mAxisLength = mGizmoScale * 1.0f;
-	float mAxisThickness = mGizmoScale * 0.2f;
+	float mAxisThickness = mGizmoScale * 0.1f;
 	float mHitRadius= mAxisThickness*1.1f; // Translate 마우스 판정보정
 	float mRingHitRadius = 0.3f; // Rotate마우스 판정보정 (+0.08배)
-	float mGizmoSizeRatio = 0.2f;
+	float mScaleBarThickness = mGizmoScale * 0.035f;
+	float mScaleHandleSize = mGizmoScale * 0.13;
+	float mGizmoSizeRatio = 0.3f;
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
-	EGIZMO_TYPE eType=ROTATE;
+	EGIZMO_TYPE eType=SCALE;
 
 	FVector AxisDirection(EGIZMO_AXIS axis) const {
 		switch (axis)
@@ -154,8 +156,8 @@ struct FGizmo {
 
 		
 
-		else if (eType == TRANSLATE) {
-			FVector w0 = nearPoint - mLocation; // \
+		else  { // TRANSLATE, SCALE
+			FVector w0 = nearPoint - mLocation; 
 					 //수학 함수 구현
 			const float axisLength = mAxisLength * mGizmoScale;
 			const float hitRadius = mHitRadius * mGizmoScale;
@@ -207,6 +209,7 @@ struct FGizmo {
 		{
 		case TRANSLATE: return EPrimitive::EP_GizmoArrow;
 		case ROTATE: return EPrimitive::EP_CirCle; //EP_Rotate
+		case SCALE: return EPrimitive::EP_Cube;
 		default: return EPrimitive::EP_GizmoArrow;
 		}
 	}
@@ -215,24 +218,33 @@ struct FGizmo {
 	{
 		const float length = mAxisLength * mGizmoScale;
 		const float thickness = mAxisThickness * mGizmoScale;
+		const float ScaleBarthickness = mScaleBarThickness * mGizmoScale;
 
 		const FRotator rotation = FRotator::FromDirection(AxisDirection(axis));
 		if (eType == ROTATE)
 		{
 			const EGIZMO_AXIS axis[3] = { X, Y, Z };
 			for (int i = 0;i < 3;i++) {
-				return FMatrix::Scale(FVector(mGizmoScale))
+				return FMatrix::Scale(FVector(mGizmoScale * 0.5))
 					* FMatrix::Rotate(rotation)
 					* FMatrix::Translation(mLocation);
 			}
 		}
-		else if(eType == ROTATE) { //eType= Translate
+		else if (eType == TRANSLATE) {
 			return FMatrix::Scale(FVector(length, thickness, thickness))
 				* FMatrix::Translation(FVector(0.0f, -thickness * 0.5f, -thickness * 0.5f)) // 긴막대기 모양으로변환
 				* FMatrix::Rotate(rotation)
 				* FMatrix::Translation(mLocation);
 		}
+
+		else  { // eType == SCALE
+			return FMatrix::Scale(FVector(length, ScaleBarthickness, ScaleBarthickness))
+				* FMatrix::Translation(FVector(length * 0.5f, 0.0f, 0.0f))
+				* FMatrix::Rotate(rotation)
+				* FMatrix::Translation(mLocation);
+		}
 	}
+	
 
 	FVector4 GetAxisColor(EGIZMO_AXIS axis) const
 	{
@@ -248,6 +260,16 @@ struct FGizmo {
 		}
 	}
 
+	FMatrix GetScaleHandleMatrix(EGIZMO_AXIS axis) const
+	{
+		const float len = mAxisLength * mGizmoScale;
+		const float handle = mScaleHandleSize * mGizmoScale;
+
+		return FMatrix::Scale(FVector(handle))
+			* FMatrix::Translation(FVector(len - handle*0.5f, 0.0f, 0.0f ))
+			* FMatrix::Rotate(FRotator::FromDirection(AxisDirection(axis)))
+			* FMatrix::Translation(mLocation);
+	}
 
 	TArray<FRenderInfo> GetGizmoRenderInfo() const // Gizmo 모형 렌더정보
 	{
@@ -256,22 +278,25 @@ struct FGizmo {
 		if (!mbVisible) return renderInfos;
 		const EGIZMO_AXIS axis[3] = { X, Y, Z };
 		//기즈모타입을 확인후 타입에 맞는 모양을 리턴
+
 		for (int i = 0; i < 3; ++i)
 		{
-			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i])});
-		}
-		if (eType == ROTATE)
-		{
-			renderInfos.Add({ EPrimitive::EP_Sphere,
-				  FMatrix::Scale(FVector(0.96f * mGizmoScale)) * FMatrix::Translation(mLocation),
-				  FObjectID{},
-				  FVector4(1.0f, 1.0f, 1.0f, 1.0f) });   // 어두운 회색
-		}
-	
+			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
 
-		return renderInfos;
+
+			if (eType == EGIZMO_TYPE::SCALE)
+			{
+				renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
+				renderInfos.Add({ GetAxisPrimitive(), GetScaleHandleMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
+			}
+			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
+		}
+			return renderInfos;
 	}
 
+	
+
+	
 	void Update(
 		const AActor* targetActor,
 		const FVector& cameraLocation,

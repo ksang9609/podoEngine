@@ -108,7 +108,7 @@ FVector GraphicsManager::GetPrimitiveCenter(EPrimitive type)
 	switch (type)
 	{
 		case EPrimitive::EP_Sphere:	return FVector(0, 0, 0);
-		case EPrimitive::EP_Cube:	return FVector(0.0, 0.0, 0.0);
+		case EPrimitive::EP_Cube:	return FVector(0, 0, 0);
 		default:					return FVector(0, 0, 0);
 	}
 }
