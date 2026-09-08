@@ -108,6 +108,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		// 레이캐스트보다 먼저 돌려야 한다.
 		// 여기서 RenderInfos 가 갱신되고, RayCast 가 그걸 읽는다.
 		mSceneManager->Update(deltaTime);
+
+
 	}
 
 	//Render Threads

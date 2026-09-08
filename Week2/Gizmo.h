@@ -34,7 +34,7 @@ struct FGizmo {
 	float mAxisLength = mGizmoScale * 1.0f;
 	float mAxisThickness = mGizmoScale * 0.1f;
 	float mHitRadius= mAxisThickness*1.1f; // Translate 마우스 판정보정
-	float mRingHitRadius = 0.3f; // Rotate마우스 판정보정 (+0.08배)
+	float mRingHitRadius = 0.08f; // Rotate마우스 판정보정 (+0.08배)
 	float mScaleBarThickness = mGizmoScale * 0.035f;
 	float mScaleHandleSize = mGizmoScale * 0.13;
 	float mGizmoSizeRatio = 0.3f;
@@ -131,17 +131,19 @@ struct FGizmo {
 			float shortAxisLen = 0.0f;
 			for (int i = 0; i < 3; ++i)
 			{
+				float dn = FVector::dot(norm_ray, AxisDirection(axis[i]));
+				if (FMath::Abs(dn) < 1e-4f) continue;
 
 				//t x norm_ray = 링위의점
 				float t = FVector::dot((mLocation - nearPoint), AxisDirection(axis[i]))
-					/ FVector::dot(norm_ray, AxisDirection(axis[i]));
+					/ dn;
 
 				if (t < 0.0f) continue;
 
 				FVector H = (norm_ray * t) + nearPoint;
 				float r = (H-mLocation).Length(); //구 중심과 평면교점사이의 거리
 
-				if (FMath::Abs(r - mGizmoScale) > mGizmoScale *mRingHitRadius) continue;
+				if (FMath::Abs(r - mGizmoScale) > mGizmoScale * mRingHitRadius) continue;
 
 				if (eAxis == NONE || t < shortAxisLen) {
 					shortAxisLen = t;
@@ -190,7 +192,7 @@ struct FGizmo {
 				}
 			}
 		}
-		return eAxis != NONE;
+
 	}
 
 	void Reset()
@@ -219,13 +221,13 @@ struct FGizmo {
 		const float length = mAxisLength * mGizmoScale;
 		const float thickness = mAxisThickness * mGizmoScale;
 		const float ScaleBarthickness = mScaleBarThickness * mGizmoScale;
-
+	
 		const FRotator rotation = FRotator::FromDirection(AxisDirection(axis));
 		if (eType == ROTATE)
 		{
 			const EGIZMO_AXIS axis[3] = { X, Y, Z };
 			for (int i = 0;i < 3;i++) {
-				return FMatrix::Scale(FVector(mGizmoScale * 0.5))
+				return FMatrix::Scale(FVector(mGizmoScale)) 
 					* FMatrix::Rotate(rotation)
 					* FMatrix::Translation(mLocation);
 			}
@@ -282,12 +284,8 @@ struct FGizmo {
 
 		for (int i = 0; i < 3; ++i)
 		{
-			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
-
-
 			if (eType == EGIZMO_TYPE::SCALE)
 			{
-				renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
 				renderInfos.Add({ GetAxisPrimitive(), GetScaleHandleMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
 			}
 			renderInfos.Add({ GetAxisPrimitive(), GetAxisMatrix(axis[i]),FObjectID{},GetAxisColor(axis[i]) });
