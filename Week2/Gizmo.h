@@ -56,12 +56,13 @@ struct FGizmo {
 		{
 			const FMatrix Result_yaw = FMatrix::RotateZ(UpdateRotation.Yaw);
 			const FMatrix Result_pitch = FMatrix::RotateY(UpdateRotation.Pitch);
+			const FMatrix Result_roll = FMatrix::RotateX(UpdateRotation.Roll);
 
 			switch (axis)
 			{
 			case Z: return FVector(0.0f, 0.0f, 1.0f);
 			case Y: return Result_yaw.GetUnitAxis(EAxis::Y);
-			case X: return Result_pitch.GetUnitAxis(EAxis::X);
+			case X: return (Result_pitch*Result_yaw).GetUnitAxis(EAxis::X);
 			default: return FVector(0);
 			}
 		}
