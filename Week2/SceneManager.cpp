@@ -95,6 +95,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 			mCurrentWorld->AddActor(newActor);
 		}
 	}
+	ImGui::SameLine();
 	if (ImGui::InputInt("Number of spawn", &spawnCount))
 	{
 		if (spawnCount < 1)
@@ -103,6 +104,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		}
 		mGuiInputField.SpawnCount = spawnCount;
 	}
+	ImGui::Separator();
 
 	/* Scene Control */
 	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName));
@@ -122,10 +124,9 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		guiReference.ViewportClient->Reset();
 		LoadScene(mGuiInputField.SceneName, *guiReference.FileManager);
 	}
-
+	ImGui::Separator();
 
 	/* Camera Control */
-	ImGui::Separator();
 	//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 	{
@@ -214,6 +215,7 @@ void FSceneManager::NewScene()
 		delete mCurrentWorld;
 	}
 
+	UEngineStatics::SetNextUUID(0);
 	mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
 }
 
