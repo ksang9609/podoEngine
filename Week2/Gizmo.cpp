@@ -3,11 +3,11 @@
 #include "Actor.h"
 
 FVector FGizmo::AxisDirection(EGIZMO_AXIS axis) const {
-	if (eType == EGIZMO_TYPE::ROTATE)
-	{
 		const FMatrix Result_yaw = FMatrix::RotateZ(UpdateRotation.Yaw);
 		const FMatrix Result_pitch = FMatrix::RotateY(UpdateRotation.Pitch);
 		const FMatrix Result_roll = FMatrix::RotateX(UpdateRotation.Roll);
+	if (eType == EGIZMO_TYPE::ROTATE)
+	{
 
 		switch (axis)
 		{
@@ -18,8 +18,20 @@ FVector FGizmo::AxisDirection(EGIZMO_AXIS axis) const {
 		}
 	}
 
+	else if (eType == EGIZMO_TYPE::SCALE)
+	{
+		switch (axis)
+		{
+		case X:  return FMatrix::Rotate(UpdateRotation).GetUnitAxis(EAxis::X);
+		case Y:  return FMatrix::Rotate(UpdateRotation).GetUnitAxis(EAxis::Y);
+		case Z:  return FMatrix::Rotate(UpdateRotation).GetUnitAxis(EAxis::Z);
+		default: return FVector(0.0f, 0.0f, 0.0f);
+		
+		}
 
-	else {
+
+	}
+	else { //Translate
 		switch (axis)
 		{
 		case X:  return FVector(1.0f, 0.0f, 0.0f);
