@@ -8,6 +8,7 @@ void URenderer::Create(HWND hWindow)
 	CreateDepthStencilState();
 	CreateStencilMarkState();
 	CreateStencilOutlineState();
+	CreateNoColorWriteBlendState();
 	CreateRasterizerState();
 }
 
@@ -173,6 +174,7 @@ void URenderer::Release()
 
 	ReleaseDepthStencilBuffer();
 	ReleaseDepthStencilState();
+	ReleaseBlendState();
 	ReleaseFrameBuffer();
 	ReleaseDeviceAndSwapChain();
 }
@@ -307,12 +309,16 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices)
 
 void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix Outline, const FRenderInfo& RI)
 {
-	// (a) 스텐실에 1 마킹. 색은 원본과 같으니 화면 변화 없음
+	// (a) 스텐실에 1 마킹. 색은 쓰지 않으므로 화면 변화 없음.
+	//     다른 오브젝트에 가려진 부분도 반드시 마킹해야 한다. 여기서 빠지면
+	//     (b)의 != 1 조건을 통과해 버려서 겹친 영역 전체가 단색으로 칠해진다.
+	DeviceContext->OMSetBlendState(NoColorWriteBlendState, nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(StencilMarkState, 1);
 	UpdateConstant(RI.WorldTransformMatrix, mViewProjectionMatrix);
 	RenderPrimitive(pBuffer, Num);
 
 	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
+	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(StencilOutlineState, 1);
 	UpdateConstant(Outline, mViewProjectionMatrix, FVector4(1.f, 0.6f, 0.f, 1.f));
 	RenderPrimitive(pBuffer, Num);
@@ -380,18 +386,20 @@ void URenderer::CreateDepthStencilState()
 void URenderer::CreateStencilMarkState()
 {
 	D3D11_DEPTH_STENCIL_DESC desc = {};
-	desc.DepthEnable = TRUE;							// 깊이 테스트 켜기
-	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;  // 깊이는 읽기만
-	desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;		// 더 가깝거나(작거나) 같으면 통과
+	// 아웃라인 패스가 깊이를 무시하므로 마킹도 깊이를 무시해야 짝이 맞는다.
+	// 가려진 픽셀까지 전부 마킹해야 실루엣 내부가 비지 않는다.
+	desc.DepthEnable = FALSE;
+	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;  // 깊이는 건드리지 않는다
+	desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
 
 	desc.StencilEnable = TRUE;							// 스텐실 사용
 	desc.StencilReadMask = 0xFF;
 	desc.StencilWriteMask = 0xFF;
 
-	// 깊이 테스트를 통과한 픽셀에만 StencilRef를 기록
+	// 실루엣에 덮이는 모든 픽셀에 StencilRef를 기록
 	desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 	desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-	desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;   // 가려지면 안 씀
+	desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
 	desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
 	desc.BackFace = desc.FrontFace;
 
@@ -416,6 +424,21 @@ void URenderer::CreateStencilOutlineState()
 	desc.BackFace = desc.FrontFace;
 
 	Device->CreateDepthStencilState(&desc, &StencilOutlineState);
+}
+
+// 렌더타겟에 색을 전혀 쓰지 않는 상태. 스텐실 마킹 전용 패스에 쓴다
+void URenderer::CreateNoColorWriteBlendState()
+{
+	D3D11_BLEND_DESC desc = {};
+	desc.RenderTarget[0].BlendEnable = FALSE;
+	desc.RenderTarget[0].RenderTargetWriteMask = 0;
+
+	Device->CreateBlendState(&desc, &NoColorWriteBlendState);
+}
+
+void URenderer::ReleaseBlendState()
+{
+	if (NoColorWriteBlendState) { NoColorWriteBlendState->Release(); NoColorWriteBlendState = nullptr; }
 }
 
 void URenderer::ReleaseDepthStencilBuffer()

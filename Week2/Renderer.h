@@ -43,6 +43,7 @@ public:
 	ID3D11DepthStencilState* DepthStencilState = nullptr;	// 깊이 테스트용 상태
 	ID3D11DepthStencilState* StencilMarkState = nullptr;	// 스텐실에 1 마킹용 상태
 	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
+	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -72,7 +73,8 @@ public:
 	void CreateDepthStencilState();
 	void CreateStencilMarkState();
 	void CreateStencilOutlineState();
-	
+	void CreateNoColorWriteBlendState();
+
 	//release
 	void Release();
 	void ReleaseDeviceAndSwapChain();
@@ -84,6 +86,9 @@ public:
 	void ReleaseConstantBuffer();
 	void ReleaseDepthStencilBuffer();
 	void ReleaseDepthStencilState();
+	void ReleaseBlendState();
+
+	//Update
 	void RSUpdateState();
 
 	//Rendering
