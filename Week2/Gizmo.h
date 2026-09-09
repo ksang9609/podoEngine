@@ -42,6 +42,7 @@ struct FGizmo {
 	float mAxisThickness = mGizmoScale * 0.1f;
 	float mHitRadius= mAxisThickness*1.1f; // Translate 마우스 판정보정
 	float mRingHitRadius = 0.08f; // Rotate마우스 판정보정 (+0.08배)
+	float mRingRadiusRatio = 0.7f;
 	float mScaleBarThickness = mGizmoScale * 0.035f;
 	float mScaleHandleSize = mGizmoScale * 0.13;
 	float mGizmoSizeRatio = 0.3f;
@@ -275,6 +276,7 @@ struct FGizmo {
 
 		if (eType == ROTATE) //회전 기즈모의 충돌처리
 		{
+			const float ringRadius = mRingRadiusRatio * mGizmoScale;
 			float shortAxisLen = 0.0f;
 			for (int i = 0; i < 3; ++i)
 			{
@@ -290,7 +292,7 @@ struct FGizmo {
 				FVector H = (norm_ray * t) + nearPoint;
 				float r = (H-mLocation).Length(); //구 중심과 평면교점사이의 거리
 
-				if (FMath::Abs(r - mGizmoScale) > mGizmoScale * mRingHitRadius) continue;
+				if (FMath::Abs(r - ringRadius) > ringRadius * mRingHitRadius) continue;
 
 				if (eAxis == NONE || t < shortAxisLen) {
 					shortAxisLen = t;
@@ -375,7 +377,7 @@ struct FGizmo {
 		{
 			const EGIZMO_AXIS axis[3] = { X, Y, Z };
 			for (int i = 0;i < 3;i++) {
-				return FMatrix::Scale(FVector(mGizmoScale)) 
+				return FMatrix::Scale(FVector(mGizmoScale*mRingRadiusRatio)) 
 					* FMatrix::Rotate(rotation)
 					* FMatrix::Translation(mLocation);
 			}
