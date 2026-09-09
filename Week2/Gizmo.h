@@ -97,6 +97,7 @@ struct FGizmo {
 		const FVector& cameraLocation,
 		const FVector& cameraForward,
 		float fovDegree,
-		bool bPerspectiveProjection);
+		float perspectiveRatio,
+		float orthoDistance);
 
 };

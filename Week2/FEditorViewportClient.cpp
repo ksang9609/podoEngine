@@ -43,22 +43,24 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 	return false;
 }
 
-void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, bool bPerspectiveProjection)
+void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, float perspectiveRatio)
 {
 	bMouseHit = false;
 
 	// 투영 방식에 따라 광선을 만드는 법만 다르다. 두 점을 구하고 나면 이후 판정은 완전히 같다
 	FVector NearPoint, FarPoint;
-	if (bPerspectiveProjection)
-	{
-		DeprojectScreenToWorld(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
-			ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
-	}
-	else
-	{
-		DeprojectScreenToWorldForOrtho(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
-			ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
-	}
+	//if (bPerspectiveProjection)
+	//{
+	//	DeprojectScreenToWorld(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
+	//		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
+	//}
+	//else
+	//{
+	//	DeprojectScreenToWorldForOrtho(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
+	//		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
+	//}
+	DeprojectScreenToWorldForUnified(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
+		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, mCamera.mOrthoDistance, perspectiveRatio, NearPoint, FarPoint);
 
 	mRayNear = NearPoint;
 	mRayFar = FarPoint;
@@ -123,7 +125,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, 
 	}
 }
 
-void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, bool bPerspectiveProjection)
+void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, float perspectiveRatio)
 {
 	const FInputState& Input = WindowApplication.Input;
 	ImGuiIO& io = ImGui::GetIO();
@@ -164,13 +166,14 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		//키 입력이 없으면 마우스 휠은 줌인/줌아웃
 		if (!bMoveKeyDown)
 		{
-			if (bPerspectiveProjection)
+			if (perspectiveRatio < 1.0f)
 			{
-				mCamera.Transform.Location += mCamera.GetForwardVector() * 1.0f * Input.MouseWheelDelta;
+				mCamera.mOrthoDistance *= FMath::Pow(1.2f, -Input.MouseWheelDelta);
+				mCamera.mOrthoDistance = FMath::Clamp(mCamera.mOrthoDistance, 0.1f, 100.0f);
 			}
 			else
 			{
-				mCamera.mOrthoHeight -= 1.2f * Input.MouseWheelDelta;
+				mCamera.Transform.Location += mCamera.GetForwardVector() * 1.0f * Input.MouseWheelDelta;
 			}
 		}
 		//입력이 있으면 마우스 휠은 카메라 이동속도 조절
@@ -199,7 +202,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	}
 
 
-	RayCast(ViewportInfo, sceneManager->GetCurrentWorld(), bPerspectiveProjection);
+	RayCast(ViewportInfo, sceneManager->GetCurrentWorld(), perspectiveRatio);
 
 	//RayCast
 
@@ -302,7 +305,13 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	}
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
-	mGizmo.Update(sceneManager->GetSelectedActor(), mCamera.Transform.Location, mCamera.GetForwardVector(), mCamera.mFovDegree, bPerspectiveProjection);
+	mGizmo.Update(
+		sceneManager->GetSelectedActor(),
+		mCamera.Transform.Location,
+		mCamera.GetForwardVector(),
+		mCamera.mFovDegree,
+		perspectiveRatio,
+		mCamera.mOrthoDistance);
 
 }
 
@@ -387,6 +396,39 @@ void FEditorViewportClient::DeprojectScreenToWorldForOrtho(int32 MouseX, int32 M
 
 	OutNearPoint = RayOrigin + Forward * NearZ;
 	OutFarPoint = RayOrigin + Forward * FarZ;
+}
+
+void FEditorViewportClient::DeprojectScreenToWorldForUnified(
+	int32 MouseX, int32 MouseY,
+	float ScreenW, float ScreenH, float NearZ, float FarZ,
+	float orthoDistance, float perspectiveRatio,
+	FVector& OutNearPoint, FVector& OutFarPoint
+)
+{
+	const float ndcX = (2.0f * (MouseX + 0.5f) / ScreenW) - 1.0f;
+	const float ndcY = 1.0f - (2.0f * (MouseY + 0.5f) / ScreenH);
+
+	const FMatrix invProjection = mCamera.GetInverseUnifiedProjectionMatrix(
+		ScreenW / ScreenH, mCamera.mFovDegree, orthoDistance, NearZ, FarZ, perspectiveRatio
+	);
+
+	const FMatrix invViewProj = invProjection * mCamera.GetViewMatrix().Inverse();
+
+	const auto Unproject = [&](float ndcZ) -> FVector
+		{
+			const FVector xyz = invViewProj.TransformPosition(FVector(ndcX, ndcY, ndcZ));
+
+			const float w =
+				ndcX * invViewProj.M[0][3] +
+				ndcY * invViewProj.M[1][3] +
+				ndcZ * invViewProj.M[2][3] +
+				invViewProj.M[3][3];
+
+			return xyz * (1.0f / w);
+		};
+
+	OutNearPoint = Unproject(0.0f);
+	OutFarPoint = Unproject(1.0f);
 }
 
 void FEditorViewportClient::Reset()

@@ -111,7 +111,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 		}
 
-		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->IsPerspectiveProjection());
+		mGraphicsManager->UpdateProjectionTransition(deltaTime);
+		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->GetPerspectiveRatio());
 	}
 
 	//Physics Threads

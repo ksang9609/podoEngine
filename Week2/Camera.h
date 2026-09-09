@@ -34,7 +34,7 @@ public:
 	{
 		//fov 단위는 라디안
 		FMatrix result = FMatrix::Zero; //영벡터
-		float yScale = 1.0f / tanf((fovDegree / 2)*PI/180); //xScale
+		float yScale = 1.0f / tanf((fovDegree / 2) * PI / 180); //xScale
 		float xScale = yScale / Aspect;
 
 		result.M[0][0] = xScale; //xScale
@@ -42,6 +42,108 @@ public:
 		result.M[2][2] = f / (f - n); //A 임시
 		result.M[3][2] = -n * f / (f - n); //B 임시
 		result.M[2][3] = 1;
+
+		return result;
+	}
+
+	// Transpose matrix for perspective projection.
+	FMatrix GetProjectionT_pMatrix(float n, float f) const
+	{
+		FMatrix result = FMatrix::Zero;
+
+		result.M[0][0] = 1.0f;
+		result.M[1][1] = 1.0f;
+		result.M[2][2] = f / (f - n);
+		result.M[2][3] = 1.0f;
+		result.M[3][2] = -n * f / (f - n);
+
+		return result;
+	}
+
+	// Transpose matrix for orthographic projection.
+	FMatrix GetProjectionT_oMatrix(float d, float n, float f) const
+	{
+		FMatrix result = FMatrix::Zero;
+
+		result.M[0][0] = 1.0f / d;
+		result.M[1][1] = 1.0f / d;
+		result.M[2][2] = 1.0f / (f - n);
+		result.M[3][2] = -n / (f - n);
+		result.M[3][3] = 1.0f;
+
+		return result;
+	}
+
+	// Transpose matrix for both perspective and orthographic projection.
+	// T_unified = (1 - t) * T_orthographic + t * T_perspective / d
+	FMatrix GetProjectionT_uMatrix(float d, float n, float f, float t) const
+	{
+		FMatrix result = FMatrix::Zero;
+
+		result.M[0][0] = 1.0f / d;
+		result.M[1][1] = 1.0f / d;
+		result.M[2][2] = ((1 - t) + t * f / d) / (f - n);
+		result.M[2][3] = t / d;
+		result.M[3][2] = -n * ((1 - t) + t * f / d) / (f - n);
+		result.M[3][3] = 1.0f - t;
+
+		return result;
+	}
+
+	// Scale matrix for projection
+	FMatrix GetProjectionSMatrix(float aspect, float fovDegree, float n, float f) const
+	{
+		float yScale = 1.0f / tanf((fovDegree / 2) * PI / 180); //yScale
+		float xScale = yScale / aspect; //xScale
+
+		FMatrix result = FMatrix::Zero;
+
+		result.M[0][0] = xScale;
+		result.M[1][1] = yScale;
+		result.M[2][2] = 1;
+		result.M[3][3] = 1;
+
+		return result;
+	}
+
+	// Unified matrix for projection
+	FMatrix GetUnifiedProjectionMatrix(float aspect, float fovDegree, float d, float n, float f, float t) const
+	{
+		const float sy = 1.0f / tanf((fovDegree / 2) * PI / 180); //yScale
+		const float sx = sy / aspect;
+
+		const float A = ((1.0f - t) + t * f / d) / (f - n);
+
+		FMatrix result = FMatrix::Zero;
+		result.M[0][0] = sx / d;
+		result.M[1][1] = sy / d;
+		result.M[2][2] = A;
+		result.M[2][3] = t / d;
+		result.M[3][2] = -n * A;
+		result.M[3][3] = 1.0f - t;
+
+		return result;
+	}
+
+	// Inverse matrix for unified projection matrix
+	FMatrix GetInverseUnifiedProjectionMatrix(float aspect, float fovDegree, float d, float n, float f, float t) const
+	{
+		const FMatrix P = GetUnifiedProjectionMatrix(aspect, fovDegree, d, n, f, t);
+
+		const float A = P.M[2][2];
+		const float B = P.M[2][3];
+		const float C = P.M[3][2];
+		const float D = P.M[3][3];
+
+		const float degt = A * D - B * C;
+
+		FMatrix result = FMatrix::Zero;
+		result.M[0][0] = 1.0f / P.M[0][0];
+		result.M[1][1] = 1.0f / P.M[1][1];
+		result.M[2][2] = D / degt;
+		result.M[2][3] = -B / degt;
+		result.M[3][2] = -C / degt;
+		result.M[3][3] = A / degt;
 
 		return result;
 	}
@@ -83,6 +185,9 @@ public:
 
 	//카메라 시야각
 	float mFovDegree = 60.f;
+
+	// 직교 투영에서 카메라와 화면 사이의 거리
+	float mOrthoDistance = 5.0f;
 
 	// 직교 투영에서 화면이 담는 월드 높이. 폭은 여기에 Aspect를 곱해서 얻는다.
 	// 렌더와 피킹이 같은 값을 봐야 하므로 카메라가 들고 있는다

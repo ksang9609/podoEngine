@@ -13,9 +13,9 @@ class FSceneManager;
 struct FEditorViewportClient
 {
 public:
-	void RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, bool bPerspectiveProjection);
+	void RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, float perspectiveRatio);
 	float GetFov() const { return mCamera.mFovDegree; }
-	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, bool bPerspectiveProjection);
+	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, float perspectiveRatio);
 	bool IsMouseHit() const { return bMouseHit; }
 
 	void Reset();
@@ -50,6 +50,12 @@ private:
 	void DeprojectScreenToWorldForOrtho(int32 MouseX, int32 MouseY,
 		float ScreenW, float ScreenH, float NearZ, float FarZ,
 		FVector& OutNearPoint, FVector& OutFarPoint);
+
+	void DeprojectScreenToWorldForUnified(int32 MouseX, int32 MouseY,
+		float ScreenW, float ScreenH, float NearZ, float FarZ,
+		float orthoDistance, float perspectiveRatio,
+		FVector& OutNearPoint, FVector& OutFarPoint
+	);
 
 
 

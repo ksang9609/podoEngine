@@ -3,9 +3,9 @@
 #include "Actor.h"
 
 FVector FGizmo::AxisDirection(EGIZMO_AXIS axis) const {
-		const FMatrix Result_yaw = FMatrix::RotateZ(UpdateRotation.Yaw);
-		const FMatrix Result_pitch = FMatrix::RotateY(UpdateRotation.Pitch);
-		const FMatrix Result_roll = FMatrix::RotateX(UpdateRotation.Roll);
+	const FMatrix Result_yaw = FMatrix::RotateZ(UpdateRotation.Yaw);
+	const FMatrix Result_pitch = FMatrix::RotateY(UpdateRotation.Pitch);
+	const FMatrix Result_roll = FMatrix::RotateX(UpdateRotation.Roll);
 	if (eType == EGIZMO_TYPE::ROTATE)
 	{
 
@@ -26,7 +26,7 @@ FVector FGizmo::AxisDirection(EGIZMO_AXIS axis) const {
 		case Y:  return FMatrix::Rotate(UpdateRotation).GetUnitAxis(EAxis::Y);
 		case Z:  return FMatrix::Rotate(UpdateRotation).GetUnitAxis(EAxis::Z);
 		default: return FVector(0.0f, 0.0f, 0.0f);
-		
+
 		}
 
 
@@ -399,7 +399,8 @@ void FGizmo::Update(
 	const FVector& cameraLocation,
 	const FVector& cameraForward,
 	float fovDegree,
-	bool bPerspectiveProjection) // Gizmo 깊이에따른 원근크기 보정
+	float perspectiveRatio,
+	float orthoDistance) // Gizmo 깊이에따른 원근크기 보정
 {
 	if (!targetActor)
 	{
@@ -412,10 +413,10 @@ void FGizmo::Update(
 	UpdateRotation = targetActor->GetTransform().Rotation;
 
 
-	if (bPerspectiveProjection)
-	{
-		float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
-		const float tanHalfFov = tanf(FMath::DegreesToRadians(fovDegree * 0.5f));
-		mGizmoScale = depth * tanHalfFov * mGizmoSizeRatio;
-	}
+	float depth = FVector::dot(mLocation - cameraLocation, cameraForward);
+	const float tanHalfFov = tanf(FMath::DegreesToRadians(fovDegree * 0.5f));
+
+	float effectiveDepth = (1.0f - perspectiveRatio) * orthoDistance + perspectiveRatio * depth; // 원근보정
+	mGizmoScale = effectiveDepth * tanHalfFov * mGizmoSizeRatio;
+
 }
