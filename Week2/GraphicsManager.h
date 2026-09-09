@@ -24,6 +24,7 @@ public:
 
 	//void Prepare(const Camera* mCamera);
 	void Prepare(const FCamera* mCamera);
+	void GizmoPrepare();
 
 	//void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive); // FRenderInfo
 	//void Render(const TArray<FRenderInfo> renderInfos);

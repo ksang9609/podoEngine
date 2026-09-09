@@ -84,6 +84,7 @@ public:
 	void ReleaseConstantBuffer();
 	void ReleaseDepthStencilBuffer();
 	void ReleaseDepthStencilState();
+	void RSUpdateState();
 
 	//Rendering
 	void Prepare(bool bWireFrame);

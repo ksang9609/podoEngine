@@ -164,6 +164,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		}
 
 		// Gizmo
+		mGraphicsManager->GizmoPrepare();
 		mGraphicsManager->RenderOverlay(ViewportClient->mGizmo.GetGizmoRenderInfo());
 
 		//ImGui

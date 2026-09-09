@@ -58,7 +58,11 @@ void GraphicsManager::Prepare(const FCamera *mCamera)
 	// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
 	//mRenderer->UpdateConstantViewProjection(viewProjection);
 }
-
+void GraphicsManager::GizmoPrepare()
+{
+	mRenderer->RSUpdateState();
+	
+}
 void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 {
 	FMatrix viewProjection;

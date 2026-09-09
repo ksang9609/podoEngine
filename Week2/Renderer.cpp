@@ -250,6 +250,10 @@ void URenderer::Prepare(bool bWireFrame)
 	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
+void URenderer::RSUpdateState()
+{
+	DeviceContext->RSSetState(RasterizerState[0]);
+}
 
 void URenderer::PrepareShader()
 {
