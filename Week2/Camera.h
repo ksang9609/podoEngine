@@ -72,12 +72,21 @@ public:
 	FVector GetRightVector()   const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::Y); }
 	FVector GetUpVector()      const { return FMatrix::Rotate(Transform.Rotation).GetUnitAxis(EAxis::Z); }
 
+	//속력
 	float Speed = 5.f;
+
+	//속도
 	FVector Velocity = FVector(0);
+
+	//카메라 이동 민감도
 	float Sensitivity = 0.1f;
+
+	//카메라 시야각
 	float mFovDegree = 60.f;
 
-	// 직교 투영에서 화면이 담는 월드 높이. 폭은 여기에 Aspect를 곱해서 얻는다.
-	// 렌더와 피킹이 같은 값을 봐야 하므로 카메라가 들고 있는다
+	// 직교 투영에서 화면이 담는 월드 높이.
 	float mOrthoHeight = 5.f;
+
+	//감속 계수(1/초). 클수록 빨리 멈춘다
+	float Damping = 6.f;
 };

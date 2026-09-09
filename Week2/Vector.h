@@ -46,6 +46,7 @@ typedef struct FVector
 	}
 
 	float Length() const { return FMath::Sqrt(x * x + y * y + z * z); }
+	float LengthSquared() const { return x * x + y * y + z * z; }
 
 	void Normalize()
 	{
@@ -53,6 +54,11 @@ typedef struct FVector
 		x /= len;
 		y /= len;
 		z /= len;
+	}
+
+	inline bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const
+	{
+		return LengthSquared() < Tolerance;
 	}
 	
 } FVector3;

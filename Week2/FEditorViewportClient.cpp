@@ -9,6 +9,8 @@
 #include "ImGui/imgui.h"
 #include "Console.h"
 #include "SceneManager.h"
+#include "MathUtility.h"
+#include "GraphicsManager.h"
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
 // 포인터로 받으면 배열 크기 정보가 사라지므로 여기서 개수를 같이 넘긴다.
@@ -122,40 +124,70 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	const FInputState& Input = WindowApplication.Input;
 	ImGuiIO& io = ImGui::GetIO();
 
-	// Camera Transform
-	// 회전을 이동보다 먼저 — 이번 프레임에 돌린 방향으로 바로 움직이게
+	// Camera Rotate
+	// 회전을 이동보다 먼저, 이번 프레임에 돌린 방향으로 바로 움직이게
 	if (!io.WantCaptureMouse && Input.IsDown(VK_RBUTTON))
 	{
 		mCamera.Rotate(Input.MouseDX, Input.MouseDY);
 	}
 
-	if (!io.WantCaptureMouse && Input.MouseWheelDelta != 0.0f)
-	{
-		mCamera.Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
-		mCamera.Speed = FMath::Clamp(mCamera.Speed, 0.1f, 100.0f);
-	}
-
+	// Camera Velocity
+	FVector MoveDir(0.f, 0.f, 0.f);
 	if (!io.WantCaptureKeyboard)
 	{
 		const FMatrix R = FMatrix::Rotate(mCamera.Transform.Rotation);
 		const FVector Forward = R.GetUnitAxis(EAxis::X);
 		const FVector Right = R.GetUnitAxis(EAxis::Y);
 
-		FVector MoveInput(0.f, 0.f, 0.f);
-		if (Input.IsDown('W')) MoveInput += Forward;
-		if (Input.IsDown('S')) MoveInput -= Forward;
-		if (Input.IsDown('D')) MoveInput += Right;
-		if (Input.IsDown('A')) MoveInput -= Right;
-		if (Input.IsDown('E')) MoveInput += FVector(0.f, 0.f, 1.f);
-		if (Input.IsDown('Q')) MoveInput -= FVector(0.f, 0.f, 1.f);
+		if (Input.IsDown('W')) MoveDir += Forward;
+		if (Input.IsDown('S')) MoveDir -= Forward;
+		if (Input.IsDown('D')) MoveDir += Right;
+		if (Input.IsDown('A')) MoveDir -= Right;
+		if (Input.IsDown('E')) MoveDir += FVector(0.f, 0.f, 1.f);
+		if (Input.IsDown('Q')) MoveDir -= FVector(0.f, 0.f, 1.f);
+	}
 
-		if (MoveInput.Length() > SMALL_NUMBER)
+	const bool bMoveKeyDown = !MoveDir.IsNearlyZero();
+	if (bMoveKeyDown)
+	{
+		MoveDir.Normalize();
+	}
+
+
+	//Camera Translate
+	if (!io.WantCaptureMouse && Input.MouseWheelDelta != 0.0f)
+	{
+		//키 입력이 없으면 마우스 휠은 줌인/줌아웃
+		if (!bMoveKeyDown)
 		{
-			MoveInput.Normalize();
-			mCamera.Velocity = MoveInput * mCamera.Speed;
-			mCamera.Transform.Location += mCamera.Velocity * deltaTime;
+			if (bPerspectiveProjection)
+			{
+				mCamera.Transform.Location += mCamera.GetForwardVector() * 1.0f * Input.MouseWheelDelta;
+			}
+			else
+			{
+				mCamera.mOrthoHeight -= 1.2f * Input.MouseWheelDelta;
+			}
+		}
+		//입력이 있으면 마우스 휠은 카메라 이동속도 조절
+		else
+		{
+			mCamera.Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
+			mCamera.Speed = FMath::Clamp(mCamera.Speed, 0.1f, 100.0f);
 		}
 	}
+
+	const FVector TargetVelocity = MoveDir * mCamera.Speed;
+
+	// 지수 감쇠만큼 카메라 속도가 서서히 줄어듬
+	const float Alpha = FMath::Exp(-mCamera.Damping * deltaTime);
+	mCamera.Velocity = TargetVelocity + (mCamera.Velocity - TargetVelocity) * Alpha;
+	if (mCamera.Velocity.IsNearlyZero())
+	{
+		mCamera.Velocity = FVector(0.f);
+	}
+
+	mCamera.Transform.Location += mCamera.Velocity * deltaTime;
 
 	if (!io.WantCaptureKeyboard && Input.WasPressed(VK_SPACE))
 	{

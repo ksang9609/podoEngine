@@ -6,6 +6,7 @@
 constexpr float PI = 3.1415926535897932f;
 constexpr double DOUBLE_PI = 3.1415926535897932;
 constexpr float SMALL_NUMBER = 1.e-8f;
+constexpr float KINDA_SMALL_NUMBER = 1.e-4f;
 
 // [[nodiscard]] -> 반환값을 버리면 경고 표시
 // FORCEINLINE -> 인라인 강제(한줄짜리 함수에 사용)
@@ -71,6 +72,8 @@ struct FMath : FPlatformMath
 	[[nodiscard]] static constexpr FORCEINLINE float Clamp(const float X, const float Min, const float Max) { return Clamp<float>(X, Min, Max); }
 	[[nodiscard]] static constexpr FORCEINLINE double Clamp(const double X, const double Min, const double Max) { return Clamp<double>(X, Min, Max); }
 	[[nodiscard]] static constexpr FORCEINLINE int64 Clamp(const int64 X, const int32 Min, const int32 Max) { return Clamp<int64>(X, Min, Max); }
+
+	[[nodiscard]] static FORCEINLINE float Exp(float Value) { return expf(Value); }
 
 	static constexpr FORCEINLINE float RadiansToDegrees(float const& RadVal) { return RadVal * (180.f / PI); }
 	static constexpr FORCEINLINE double RadiansToDegrees(double const& RadVal) { return RadVal * (180.0 / DOUBLE_PI); }

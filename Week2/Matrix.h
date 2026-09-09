@@ -22,7 +22,7 @@ struct FMatrix {
 		return R;
 	}
 
-	FMatrix operator* (const FMatrix& Other) const  // 4 x 4 행렬곱
+	FMatrix operator* (const FMatrix& Other) const
 	{
 		FMatrix result = {};
 
@@ -36,7 +36,7 @@ struct FMatrix {
 		return result;
 	}
 
-	FMatrix operator*(float Scalar) const  // M x 상수(Sclalar) ,Scaling 아님
+	FMatrix operator*(float Scalar) const
 	{ 
 		FMatrix result;
 		for (int row = 0; row < 4; ++row) {
@@ -49,7 +49,7 @@ struct FMatrix {
 	}
 
 
-	FMatrix operator+ (const FMatrix& Other) const   // M + M , 행렬끼리의 합
+	FMatrix operator+ (const FMatrix& Other) const
 	{ 
 		FMatrix result = {};
 
@@ -63,7 +63,7 @@ struct FMatrix {
 
 
 
-	FMatrix operator- (const FMatrix& Other) const  // M - M , 행렬끼리의 차
+	FMatrix operator- (const FMatrix& Other) const
 	{ 
 		FMatrix result = {};
 
@@ -76,8 +76,8 @@ struct FMatrix {
 	}
 
 
-	FMatrix operator+(float f) const // M + f : 각원소 덧셈(f)
-	{ 
+	FMatrix operator+(float f) const
+	{
 		FMatrix result = {};
 		for (int row = 0; row < 4; ++row) {
 			for (int col = 0; col < 4; ++col) {
@@ -87,7 +87,7 @@ struct FMatrix {
 		return result;
 	}
 
-	FMatrix operator-(float f) const // M - f : 각원소 뺄셈(f)
+	FMatrix operator-(float f) const
 	{ 
 		FMatrix result={};
 		for (int row = 0; row < 4; ++row) {
@@ -100,7 +100,7 @@ struct FMatrix {
 
 
 
-	FMatrix Transpose() const // 전치행렬
+	FMatrix Transpose() const
 	{ 
 		FMatrix result = {};
 		for (int row = 0; row < 4; ++row) {
@@ -111,7 +111,7 @@ struct FMatrix {
 		return result;
 	}
 
-	static FMatrix Scale(float n) // scaling, 상수배
+	static FMatrix Scale(float n)
 	  {
 		FMatrix result = Identity;
 		result.M[0][0] = n;
@@ -121,7 +121,7 @@ struct FMatrix {
 		return result;
 	}
 
-	static FMatrix Scale(const FVector v) // scaling, xyz배율만큼
+	static FMatrix Scale(const FVector v)
 	{
 		FMatrix result = Identity;
 		result.M[0][0] = v.x;
@@ -131,7 +131,7 @@ struct FMatrix {
 		return result;
 	}
 
-	static FMatrix RotateX(float degree) // Roll : X축 회전, yz평면
+	static FMatrix RotateX(float degree) // Roll : X축 회전
 	{
 		FMatrix result = Identity;
 		float s, c;
@@ -145,7 +145,7 @@ struct FMatrix {
 		return result;
 	}
 
-	static FMatrix RotateY(float degree) // Pitch : Y축 회전, zx평면
+	static FMatrix RotateY(float degree) // Pitch : Y축 회전
 	{
 		FMatrix result = Identity;
 		float s, c;
@@ -159,7 +159,7 @@ struct FMatrix {
 		return result;
 	}
 
-	static FMatrix RotateZ(float degree) // Yaw : Z축 회전, xy평면
+	static FMatrix RotateZ(float degree) // Yaw : Z축 회전
 	{
 		FMatrix result = Identity;
 		float s, c;
@@ -198,7 +198,7 @@ struct FMatrix {
 		return Matrix;
 	}
 
-	static FMatrix Translation(const FVector v) // translate
+	static FMatrix Translation(const FVector v)
 	{
 		FMatrix result = Identity;
 		result.M[3][0] = v.x;
@@ -259,6 +259,7 @@ struct FMatrix {
 		const float Inv = 1.0f / Det;
 
 		FMatrix R = FMatrix::Identity;
+
 		// 수반행렬 = 여인수 행렬의 전치
 		R.M[0][0] = C00 * Inv;  R.M[0][1] = C10 * Inv;  R.M[0][2] = C20 * Inv;
 		R.M[1][0] = C01 * Inv;  R.M[1][1] = C11 * Inv;  R.M[1][2] = C21 * Inv;
@@ -291,10 +292,9 @@ inline const FMatrix FMatrix::Zero = { {
 } };
 
 
-//축 교환 행렬
 inline const FMatrix FMatrix::UEToDX = { {
-	{0, 0, 1, 0},   // UE X(전방) -> DX Z(화면 안쪽)
-	{1, 0, 0, 0},   // UE Y(우측) -> DX X(우측)
-	{0, 1, 0, 0},   // UE Z(상방) -> DX Y(위)
+	{0, 0, 1, 0},
+	{1, 0, 0, 0},
+	{0, 1, 0, 0},
 	{0, 0, 0, 1}
 } };
