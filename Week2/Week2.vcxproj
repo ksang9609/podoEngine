@@ -132,6 +132,7 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="FileManager.cpp" />
+    <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="JsonUtil.cpp" />
     <ClCompile Include="ObjectFactory.cpp" />
     <ClCompile Include="FEditorViewportClient.cpp" />
