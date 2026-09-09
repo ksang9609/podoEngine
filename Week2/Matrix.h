@@ -98,6 +98,37 @@ struct FMatrix {
 		return result;
 	}
 
+	bool operator==(const FMatrix& m) const
+	{
+		for (int row = 0; row < 4; ++row) {
+			for (int col = 0; col < 4; ++col) {
+				if (M[row][col] != m.M[row][col]) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	bool operator!=(const FMatrix& m) const
+	{
+		return !(*this == m);
+	}
+
+	// 부동소수 오차를 감안한 비교.
+	// 곱셈이나 역행렬로 만들어낸 행렬끼리는 == 대신 이쪽을 써야 한다
+	bool Equals(const FMatrix& m, float Tolerance = KINDA_SMALL_NUMBER) const
+	{
+		for (int row = 0; row < 4; ++row) {
+			for (int col = 0; col < 4; ++col) {
+				if (FMath::Abs(M[row][col] - m.M[row][col]) > Tolerance) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 
 
 	FMatrix Transpose() const
@@ -246,7 +277,7 @@ struct FMatrix {
 		const float Det = M[0][0] * C00 + M[0][1] * C01 + M[0][2] * C02;
 		if (FMath::Abs(Det) < SMALL_NUMBER)
 		{
-			return FMatrix::Identity;   // 스케일 0 등 역행렬이 없는 경우
+			return FMatrix::Zero;   // 스케일 0 등 역행렬이 없는 경우
 		}
 
 		const float C10 = -(M[0][1] * M[2][2] - M[0][2] * M[2][1]);
