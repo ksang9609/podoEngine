@@ -7,7 +7,7 @@
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 
-GraphicsManager::GraphicsManager(HWND hWindow)
+FGraphicsManager::FGraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
 	, mbPerspectiveProjection(true)
 {
@@ -20,7 +20,7 @@ GraphicsManager::GraphicsManager(HWND hWindow)
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 }
 
-GraphicsManager::~GraphicsManager()
+FGraphicsManager::~FGraphicsManager()
 {
 	for (auto& buffer : mBufferMap)
 	{
@@ -35,7 +35,7 @@ GraphicsManager::~GraphicsManager()
 	delete mRenderer;
 }
 
-void GraphicsManager::Prepare(const FCamera *mCamera)
+void FGraphicsManager::Prepare(const FCamera *mCamera)
 {
 	mRenderer->Prepare(mbWireFrame);
 	mRenderer->PrepareShader();
@@ -58,12 +58,12 @@ void GraphicsManager::Prepare(const FCamera *mCamera)
 	// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
 	//mRenderer->UpdateConstantViewProjection(viewProjection);
 }
-void GraphicsManager::GizmoPrepare()
+void FGraphicsManager::GizmoPrepare()
 {
 	mRenderer->RSUpdateState();
 	
 }
-void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
+void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 {
 	FMatrix viewProjection;
 	if (mbPerspectiveProjection)
@@ -89,14 +89,14 @@ void GraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
 }
-void GraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
+void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
 {
 	// 월드 좌표 그대로 넣는다. 그래서 그릴 때 World 행렬이 단위행렬이다
 	mLineVertices.Add({ start.x, start.y, start.z, color.x, color.y, color.z, color.w });
 	mLineVertices.Add({ end.x,   end.y,   end.z,   color.x, color.y, color.z, color.w });
 }
 
-void GraphicsManager::DrawWorldAxis()
+void FGraphicsManager::DrawWorldAxis()
 {
 	if (!mbShowWorldAxis) return;
 
@@ -135,7 +135,7 @@ void GraphicsManager::DrawWorldAxis()
 	}
 }
 
-void GraphicsManager::FlushLines()
+void FGraphicsManager::FlushLines()
 {
 	if (mLineVertices.Num() == 0) return;
 
@@ -155,7 +155,7 @@ void GraphicsManager::FlushLines()
 	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
 }
 
-void GraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos) //깊이버퍼 초기화
+void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos) //깊이버퍼 초기화
 {
 	mRenderer->ClearDepth();
 	Render(renderInfos);
@@ -170,27 +170,27 @@ void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimit
 }
 */
 
-void GraphicsManager::Display()
+void FGraphicsManager::Display()
 {
 	mRenderer->SwapBuffer();
 }
 
-void GraphicsManager::Update(float deltaTime)
+void FGraphicsManager::Update(float deltaTime)
 {
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 }
 
-bool GraphicsManager::IsPerspectiveProjection() const
+bool FGraphicsManager::IsPerspectiveProjection() const
 {
 	return mbPerspectiveProjection;
 }
 
-void GraphicsManager::SetPerspectiveProjection(bool bPerspectiveProjection)
+void FGraphicsManager::SetPerspectiveProjection(bool bPerspectiveProjection)
 {
 	mbPerspectiveProjection = bPerspectiveProjection;
 }
 
-void GraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize)
+void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize)
 {
 	assert(vertices != nullptr);
 
@@ -201,14 +201,14 @@ void GraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertice
 	mBufferMap.Add(ePrimitive, buffer);
 }
 
-URenderer* GraphicsManager::GetRenderer() const
+URenderer* FGraphicsManager::GetRenderer() const
 {
 	assert(mRenderer != nullptr);
 
 	return mRenderer;
 }
 
-FVector GraphicsManager::GetPrimitiveCenter(EPrimitive type)
+FVector FGraphicsManager::GetPrimitiveCenter(EPrimitive type)
 {
 	switch (type)
 	{
@@ -232,7 +232,7 @@ static float GetOutlineAxisScale(float worldHalfExtent, float worldThickness)
 	return 1.0f + worldThickness / worldHalfExtent;
 }
 
-FVector GraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
+FVector FGraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
 {
 	switch (type)
 	{
@@ -242,7 +242,7 @@ FVector GraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
 	}
 }
 
-void GraphicsManager::RenderHighLight(const FRenderInfo& RI)
+void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 {
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);

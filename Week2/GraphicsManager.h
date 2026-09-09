@@ -16,11 +16,11 @@ struct FBuffer
 	uint32 SourceNum;
 };
 
-class GraphicsManager
+class FGraphicsManager
 {
 public:
-	GraphicsManager(HWND hWindow);
-	~GraphicsManager();
+	FGraphicsManager(HWND hWindow);
+	~FGraphicsManager();
 
 	//void Prepare(const Camera* mCamera);
 	void Prepare(const FCamera* mCamera);

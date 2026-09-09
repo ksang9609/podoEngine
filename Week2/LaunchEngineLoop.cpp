@@ -54,7 +54,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	rid.hwndTarget = hWnd;
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
-	mGraphicsManager = new GraphicsManager(hWnd);
+	mGraphicsManager = new FGraphicsManager(hWnd);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

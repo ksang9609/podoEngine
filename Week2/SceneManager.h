@@ -13,13 +13,13 @@ inline constexpr std::string_view kSceneDataSuffix = ".Scene";
 class FFileManager;
 class FFrameTimer;
 class FEditorViewportClient;
-class GraphicsManager;
+class FGraphicsManager;
 class UWorld;
 
 struct FGuiReference
 {
 	const FFrameTimer& FrameTimer;
-	GraphicsManager* GraphicsManager;
+	FGraphicsManager* GraphicsManager;
 	FEditorViewportClient* ViewportClient;
 	const FFileManager* FileManager;
 };

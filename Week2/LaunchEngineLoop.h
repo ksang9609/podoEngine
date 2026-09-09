@@ -12,7 +12,7 @@
 #include <d3d11.h>
 
 class Sphere;
-class GraphicsManager;
+class FGraphicsManager;
 class FEngineLoop
 {
 public:
@@ -30,7 +30,7 @@ private:
 	bool GInTick = false;
 	FEditorViewportClient* ViewportClient;
 
-	GraphicsManager* mGraphicsManager;
+	FGraphicsManager* mGraphicsManager;
 	FSceneManager* mSceneManager;
 	FFileManager* mFileManager;
 };
