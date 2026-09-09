@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "Core.h"
+#include "TArray.h"
 
 template<typename T>
 class TSparseArray

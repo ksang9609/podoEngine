@@ -140,6 +140,7 @@ namespace AActorTest
 			"ClassName": "AMockActor",
 			"Properties": {
 				"UUID": 12345,
+				"mRootComponentUUID": 13579,
 				"mComponents": [
 					{
 						"ClassName": "USceneComponent",

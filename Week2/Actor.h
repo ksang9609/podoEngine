@@ -26,7 +26,7 @@ public:
 
 	FTransform GetTransform() const;
 
-	void Update(TArray<FRenderInfo>* outRenderInfos);
+	virtual void Update(TArray<FRenderInfo>* outRenderInfos);
 	//void Render();
 
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const;

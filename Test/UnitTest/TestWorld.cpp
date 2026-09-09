@@ -14,10 +14,10 @@ namespace UWorldTest
 	{
 		REFLECT_CLASS(AMockActor, AActor)
 
-		//virtual void Update() override
-		//{
-		//	++gUpdateCounter;
-		//}
+		virtual void Update(TArray<FRenderInfo>* outRenderInfos) override
+		{
+			++gUpdateCounter;
+		}
 	};
 
 
@@ -109,6 +109,7 @@ namespace UWorldTest
 					{
 						"ClassName": "AMockActor",
 						"Properties": {
+							"mRootComponentUUID": -1,
 							"UUID": 123,
 							"mComponents": []
 						}
@@ -116,6 +117,7 @@ namespace UWorldTest
 					{
 						"ClassName": "AMockActor",
 						"Properties": {
+							"mRootComponentUUID": -1,
 							"UUID": 456,
 							"mComponents": []
 						}
