@@ -43,5 +43,6 @@ TObject* FObjectFactory::LoadObject(const json::JSON& inJson)
 	{
 		instance->DeserializeClass(inJson);
 	}
+
 	return instance;
 }

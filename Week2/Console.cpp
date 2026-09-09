@@ -46,7 +46,7 @@ void ConsoleWindow::Draw(float panelWidth)
 		ImGuiCond_Always
 	);
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
 
 	ImGui::Begin(mTitle.CStr(), nullptr, flags);
 	// Draw console buffer
