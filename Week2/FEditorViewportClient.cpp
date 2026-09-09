@@ -51,12 +51,12 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, 
 	FVector NearPoint, FarPoint;
 	if (bPerspectiveProjection)
 	{
-		DeprojectScreenToWorld(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
+		DeprojectScreenToWorld(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
 			ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
 	}
 	else
 	{
-		DeprojectScreenToWorldForOrtho(WindowApplication.Input.CursorX, WindowApplication.Input.CursorY,
+		DeprojectScreenToWorldForOrtho(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
 			ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
 	}
 
