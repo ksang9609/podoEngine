@@ -67,8 +67,6 @@ public:
 		requires std::derived_from<TObject, UObject>
 	TObject* Cast();
 
-	static TSparseArray<UObject*> GUObjectArray;
-
 	static UObject* GetObjectByUUID(int32 uuid);
 	static UObject* GetObjectByInternalIndex(uint32 internalIndex);
 
@@ -82,6 +80,9 @@ public:
 
 	static TSparseArray<UObject*>& GetGObjectArray() { return GUObjectArray; }
 	inline static uint64 GetGObjectRevision() { return GUObjectRevision; }
+
+public:
+	static TSparseArray<UObject*> GUObjectArray;
 
 protected:
 	UObject();

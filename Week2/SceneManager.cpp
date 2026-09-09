@@ -21,6 +21,7 @@
 
 #include "FrameTimer.h"
 #include "CubeComponent.h"
+#include "ActorComponent.h"
 
 FSceneManager::FSceneManager()
 {
@@ -331,15 +332,21 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 				? mSelectedActor->UUID
 				: -1;
 
-			for (UObject* object : mGuiInputField.SortedObjectLists)
-			{
-				ImGui::PushID(object->UUID); // Ensure unique ID for each child
+			// Todo: rbegin()
+			//for (UObject* object : mGuiInputField.SortedObjectLists)
 
-				//bool bDeleted = false;
+			UObject* bDeleteActorOrNull = nullptr;
+			for (unsigned int objectsIndex = 0; objectsIndex < mGuiInputField.SortedObjectLists.Num(); ++objectsIndex)
+			{
+				UObject* object = mGuiInputField.SortedObjectLists[objectsIndex];
+
+				bool bSelected = false;
+				ImGui::PushID(object->UUID); // Ensure unique ID for each child
 
 				// Highlight the frame if this object is the clicked actor
 				if (object->UUID == selectedActorUUID)
 				{
+					bSelected = true;
 					ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
 				}
 
@@ -349,37 +356,50 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 					ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
 					ImGui::Text("UUID: %d", object->UUID);
 
+					// TODO: Move implement delete to where?
 					if (object->IsA<AActor>())
 					{
+						AActor* actor = object->Cast<AActor>();
+
 						if (ImGui::Button("Select"))
 						{
-							SetSelectedActor(object->Cast<AActor>());
+							SetSelectedActor(actor);
 						}
-						// TODO: Implement delete functionality for actors
-						//ImGui::SameLine();
-						//if (ImGui::Button("Delete"))
-						//{
-						//	bDeleted = true;
-						//}
+						else
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Delete"))
+							{
+								bDeleteActorOrNull = object;
+							}
+						}
 					}
 				}
-
-
 				ImGui::EndChild();
 
-				if (object->UUID == selectedActorUUID)
+				if (bSelected)
 				{
 					ImGui::PopStyleColor(); // Pop the border color if it was pushed
 				}
 
-				//if (bDeleted)
-				//{
-				//	delete object;
-				//}
 
 				ImGui::PopID();
 			}
 
+			if (bDeleteActorOrNull != nullptr)
+			{
+				AActor* deleteActor = bDeleteActorOrNull->Cast<AActor>();
+
+				if (mSelectedActor != nullptr && mSelectedActor->UUID == deleteActor->UUID)
+				{
+					mSelectedActor = nullptr;
+				}
+
+				assert(mCurrentWorld != nullptr);
+				mCurrentWorld->RemoveActor(deleteActor->UUID);
+
+				delete deleteActor;
+			}
 		}
 		ImGui::EndChild();
 	}

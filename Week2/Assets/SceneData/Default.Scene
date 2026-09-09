@@ -1,5 +1,5 @@
 {
-  "NextUUID" : 8,
+  "NextUUID" : 16,
   "Version" : 0,
   "World" : {
     "ClassName" : "UWorld",
@@ -14,7 +14,7 @@
                 "Properties" : {
                   "UUID" : 2,
                   "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeRotation" : [113.147766, -100.767624, 1395.484375],
+                  "mRelativeRotation" : [30.000000, 1.000000, 0.000000],
                   "mRelativeScale3D" : [2.000000, 1.000000, 1.000000],
                   "mePrimitiveType" : "Cube"
                 }
@@ -45,13 +45,45 @@
                 "ClassName" : "UPrimitiveComponent",
                 "Properties" : {
                   "UUID" : 7,
-                  "mRelativeLocation" : [-2.596874, 1.136276, 0.000000],
-                  "mRelativeRotation" : [124.421402, 0.000000, 0.000000],
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Sphere"
+                  "mePrimitiveType" : "Cube"
                 }
               }],
             "mRootComponentUUID" : 7
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "UUID" : 12,
+            "mComponents" : [{
+                "ClassName" : "UPrimitiveComponent",
+                "Properties" : {
+                  "UUID" : 13,
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mePrimitiveType" : "Cube"
+                }
+              }],
+            "mRootComponentUUID" : 13
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "UUID" : 14,
+            "mComponents" : [{
+                "ClassName" : "UPrimitiveComponent",
+                "Properties" : {
+                  "UUID" : 15,
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mePrimitiveType" : "Cube"
+                }
+              }],
+            "mRootComponentUUID" : 15
           }
         }]
     }

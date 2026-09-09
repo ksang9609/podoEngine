@@ -75,7 +75,8 @@ bool UWorld::RemoveActor(uint32 componentUUID)
 		return false;
 	}
 
-	mActors.RemoveAt(componentIndex, 1);
+	//mActors.RemoveAt(componentIndex, 1);
+	mActors.RemoveAtSwap(componentIndex);
 
 	return true;
 }

@@ -115,7 +115,8 @@ bool AActor::RemoveComponent(uint32 componentUUID)
 		return false;
 	}
 
-	mComponents.RemoveAt(componentIndex, 1);
+	//mComponents.RemoveAt(componentIndex, 1);
+	mComponents.RemoveAtSwap(componentIndex);
 
 	return true;
 }

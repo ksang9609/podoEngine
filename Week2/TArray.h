@@ -22,6 +22,12 @@ public:
 	std::vector<T>::const_iterator begin() const;
 	std::vector<T>::const_iterator end() const;
 
+	std::vector<T>::reverse_iterator rbegin();
+	std::vector<T>::reverse_iterator rend();
+
+	std::vector<T>::const_reverse_iterator rbegin() const;
+	std::vector<T>::const_reverse_iterator rend() const;
+
 	// Todo: Delete, Memory leak if use pointer type
 	void Init(const T& data, uint32 count);
 
@@ -98,6 +104,31 @@ inline std::vector<T>::const_iterator TArray<T>::end() const
 {
 	return mDatas.cend();
 }
+
+template<typename T>
+inline std::vector<T>::reverse_iterator TArray<T>::rbegin()
+{
+	return mDatas.rbegin();
+}
+
+template<typename T>
+inline std::vector<T>::reverse_iterator TArray<T>::rend()
+{
+	return mDatas.rend();
+}
+
+template<typename T>
+inline std::vector<T>::const_reverse_iterator TArray<T>::rbegin() const
+{
+	return mDatas.crbegin();
+}
+
+template<typename T>
+inline std::vector<T>::const_reverse_iterator TArray<T>::rend() const
+{
+	return mDatas.crend();
+}
+
 
 // Todo: Need to fix code
 template<typename T>
