@@ -27,13 +27,13 @@ struct FGizmo {
 	bool mbVisible = false;
 	bool mbHovered = false;
 	float mGizmoScale=1.0f;
-	float mAxisLength = mGizmoScale * 1.0f;
+	float mAxisLength = mGizmoScale * 0.5f;
 	float mAxisThickness = mGizmoScale * 0.1f;
 	float mHitRadius= mAxisThickness*1.1f; // Translate 마우스 판정보정
 	float mRingHitRadius = 0.08f; // Rotate마우스 판정보정 (+0.08배)
-	float mRingRadiusRatio = 0.7f;
-	float mScaleBarThickness = mGizmoScale * 0.035f;
-	float mScaleHandleSize = mGizmoScale * 0.13;
+	float mRingRadiusRatio = 0.4f;
+	float mScaleBarThickness = mAxisLength * 0.035f;
+	float mScaleHandleSize = mAxisLength * 0.13;
 	float mGizmoSizeRatio = 0.3f;
 	FRotator UpdateRotation = {};
 	
