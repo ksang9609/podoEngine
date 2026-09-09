@@ -80,7 +80,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
 
-	//mSceneManager->NewScene();
+	mSceneManager->NewScene();
 	mSceneManager->LoadScene("TestScene", *mFileManager);
 
 	//test code

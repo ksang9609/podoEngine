@@ -22,6 +22,7 @@ void ConsoleWindow::Init(std::string_view title, int maxLines)
 {
 	mTitle = title;
 	mMaxLines = maxLines;
+	mConsoleBuffer.reserve(maxLines);
 }
 
 void ConsoleWindow::Draw(float panelWidth)

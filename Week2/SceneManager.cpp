@@ -482,35 +482,38 @@ void FSceneManager::LoadScene(
 	fileName += sceneName;
 	fileName += kSceneDataSuffix;
 
+	FString jsonString;
+
 	try
 	{
-		FString jsonString = fileManager.ReadFileToString(fileName);
-
-		json::JSON readSceneJson = json::JSON::Load(jsonString);
-
-		if (!readSceneJson.hasKey("NextUUID") || readSceneJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
-		{
-			throw std::runtime_error(std::format("Scene file {} does not contain a valid NextUUID field.", fileName));
-		}
-		uint32 nextUUID = readSceneJson.at("NextUUID").ToInt();
-		json::JSON worldJson = readSceneJson.at("World");
-
-		UWorld* newWorld = FObjectFactory::LoadObject<UWorld>(worldJson);
-		if (!newWorld)
-		{
-			throw std::runtime_error(std::format("Failed to load world from scene: {}", sceneName));
-		}
-		UEngineStatics::SetNextUUID(nextUUID);
-
-		// Replace the contents of mCurrentWorld with newWorld
-		delete mCurrentWorld;
-		mCurrentWorld = newWorld;
+		jsonString = fileManager.ReadFileToString(fileName);
 	}
 	catch (const std::exception& e)
 	{
-		NewScene();
-		UE_LOG_F("Failed to load scene {}", sceneName);
+		UE_LOG_F("Failed to load scene {}: file not found.", sceneName);
+		return;
 	}
+
+	json::JSON readSceneJson = json::JSON::Load(jsonString);
+
+	if (!readSceneJson.hasKey("NextUUID") || readSceneJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
+	{
+		throw std::runtime_error(std::format("Scene file {} does not contain a valid NextUUID field.", fileName));
+	}
+	uint32 nextUUID = readSceneJson.at("NextUUID").ToInt();
+	json::JSON worldJson = readSceneJson.at("World");
+
+	UWorld* newWorld = FObjectFactory::LoadObject<UWorld>(worldJson);
+	if (!newWorld)
+	{
+		throw std::runtime_error(std::format("Failed to load world from scene: {}", sceneName));
+	}
+	UEngineStatics::SetNextUUID(nextUUID);
+
+	// Replace the contents of mCurrentWorld with newWorld
+	delete mCurrentWorld;
+	mCurrentWorld = newWorld;
+
 	ResetSelectedActor();
 }
 
