@@ -4,7 +4,8 @@ void URenderer::Create(HWND hWindow)
 {
 	CreateDeviceAndSwapChain(hWindow);
 	CreateFrameBuffer();
-	CreateDepthStencilBuffer();
+	//CreateDepthStencilBuffer();
+
 	CreateDepthStencilState();
 	CreateStencilMarkState();
 	CreateStencilOutlineState();
@@ -145,14 +146,12 @@ void URenderer::CreateRasterizerState()
 	rasterizerdesc[0].CullMode = D3D11_CULL_BACK;
 	rasterizerdesc[0].DepthClipEnable = TRUE;
 
-
 	rasterizerdesc[1].FillMode = D3D11_FILL_WIREFRAME;
 	rasterizerdesc[1].CullMode = D3D11_CULL_NONE;
 	rasterizerdesc[1].DepthClipEnable = TRUE;
 
 	Device->CreateRasterizerState(&rasterizerdesc[0], &RasterizerState[0]);
 	Device->CreateRasterizerState(&rasterizerdesc[1], &RasterizerState[1]);
-
 }
 
 void URenderer::ReleaseRasterizerState()
@@ -350,11 +349,13 @@ void URenderer::ReleaseConstantBuffer()
 	}
 }
 
-void URenderer::CreateDepthStencilBuffer()
+void URenderer::CreateDepthStencilBuffer(UINT width, UINT height)
 {
 	D3D11_TEXTURE2D_DESC desc = {};
-	desc.Width = (UINT)ViewportInfo.Width;   // 백버퍼와 크기가 정확히 같아야 함
-	desc.Height = (UINT)ViewportInfo.Height;
+
+	desc.Width = width;   // 백버퍼와 크기가 정확히 같아야 함
+	desc.Height = height;
+
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
 	desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;  // 깊이 24비트 + 스텐실 8비트
@@ -471,28 +472,27 @@ void URenderer::UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 t
 	}
 }
 
-
-void URenderer::OnResize(UINT Width, UINT Height)
+void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight)
 {
-	if (!SwapChain || Width == 0 || Height == 0) return;
-	if ((UINT)ViewportInfo.Width == Width && (UINT)ViewportInfo.Height == Height) return;
+	if (!SwapChain || width == 0 || height == 0) return;
+	if (ViewportInfo.Width == viewportWidth && ViewportInfo.Height == viewportHeight) return;
 
 	//해상도에 의존하는 프레임 버퍼와 뎁스 스텐실 버퍼를 재생성한다.
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 	ReleaseFrameBuffer();
 	ReleaseDepthStencilBuffer();
 
-	HRESULT hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
+	HRESULT hr = SwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
 	if (FAILED(hr)) return;
 
 	DXGI_SWAP_CHAIN_DESC desc;
 	SwapChain->GetDesc(&desc);
 
-	ViewportInfo = { 0.0f, 0.0f, (float)desc.BufferDesc.Width, (float)desc.BufferDesc.Height, 0.0f, 1.0f };
+	ViewportInfo = { viewportWidth, 0.0f, static_cast<float>(width) - viewportWidth, viewportHeight, 0.0f, 1.0f };
 
 	//상태는 이전에 생성한 걸 그대로 재사용
 	CreateFrameBuffer();
-	CreateDepthStencilBuffer();
+	CreateDepthStencilBuffer(width, height);
 }
 
 void URenderer::ClearDepth()

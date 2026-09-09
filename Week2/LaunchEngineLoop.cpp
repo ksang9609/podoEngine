@@ -130,10 +130,12 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	{
 		if (WindowApplication.bPendingResize)
 		{
-			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
+			float viewportWidth = mSceneManager->GetPanelWidth();
+			float viewportHeight = (1.f - ConsoleWindow::HEIGHT_RATIO) * WindowApplication.PendingHeight;
+
+			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight, viewportWidth, viewportHeight);
 			WindowApplication.bPendingResize = false;
 		}
-		//mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight);
 
 		mGraphicsManager->Update(deltaTime);
 		mGraphicsManager->Prepare(&ViewportClient->mCamera);

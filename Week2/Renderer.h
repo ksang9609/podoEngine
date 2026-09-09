@@ -69,7 +69,9 @@ public:
 	void CreateLineVertexBuffer(uint32 maxVertices);
 	void CreateRasterizerState();
 	void CreateConstantBuffer();
-	void CreateDepthStencilBuffer();
+	//void CreateDepthStencilBuffer();
+	void CreateDepthStencilBuffer(UINT width, UINT height);
+
 	void CreateDepthStencilState();
 	void CreateStencilMarkState();
 	void CreateStencilOutlineState();
@@ -100,9 +102,11 @@ public:
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix Outline, const FRenderInfo& RI);
 	void SwapBuffer();
 
+
 	//Initialize
 	void ClearDepth();
     //=============================================
 	//해상도 변경 시 호출
-	void OnResize(UINT Width, UINT Height);
+	//void OnResize(UINT Width, UINT Height);
+	void OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight);
 };

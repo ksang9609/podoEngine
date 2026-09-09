@@ -44,9 +44,6 @@ public:
 	static constexpr float HEIGHT_RATIO = 0.3f;
 
 private:
-	static constexpr float MARGIN_WIDTH = 10.f;
-	static constexpr float MARGIN_BOTTOM = 10.f;
-
 	bool mbFirstFrame;
 
 	// Configs
