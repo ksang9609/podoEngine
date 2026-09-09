@@ -156,12 +156,22 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 	{
 		bool bWireFrame = guiReference.GraphicsManager->GetWireFrame();
-		ImGui::Checkbox("Wire frame", &bWireFrame);
-		guiReference.GraphicsManager->SetWireFrame(bWireFrame);
+		if (ImGui::Checkbox("Wire frame", &bWireFrame))
+		{
+			guiReference.GraphicsManager->SetWireFrame(bWireFrame);
+		}
 
 		bool bShowWorldAxis = guiReference.GraphicsManager->GetShowWorldAxis();
-		ImGui::Checkbox("World axis", &bShowWorldAxis);
-		guiReference.GraphicsManager->SetShowWorldAxis(bShowWorldAxis);
+		if (ImGui::Checkbox("World axis", &bShowWorldAxis))
+		{
+			guiReference.GraphicsManager->SetShowWorldAxis(bShowWorldAxis);
+		}
+
+		bool bOrthographic = !guiReference.GraphicsManager->IsPerspectiveProjection();
+		if (ImGui::Checkbox("Orthogonal", &bOrthographic))
+		{
+			guiReference.GraphicsManager->SetPerspectiveProjection(!bOrthographic);
+		}
 
 		ImGui::EndCombo();
 	}

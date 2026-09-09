@@ -20,8 +20,6 @@
 #include "Actor.h"
 #include "World.h"
 
-bool gbPerspectiveProjection = false;
-
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
 	// Initialize window infos
@@ -111,15 +109,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		//ImGui Input
 		{
 			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
-
-			//Todo: Test
-			{
-				ImGui::Begin("Jungle Property Window");
-				ImGui::Checkbox("Perspective Projection", &gbPerspectiveProjection);
-				ImGui::End();
-
-				mGraphicsManager->SetPerspectiveProjection(gbPerspectiveProjection);
-			}
 		}
 
 		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->IsPerspectiveProjection());
