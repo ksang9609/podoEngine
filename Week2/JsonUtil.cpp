@@ -78,6 +78,14 @@ EPrimitive EPrimitiveFromJson(const json::JSON& json)
 	{
 		return EPrimitive::EP_Triangle;
 	}
+	else if (primitiveStr == "GizmoArrow")
+	{
+		return EPrimitive::EP_GizmoArrow;
+	}
+	else if (primitiveStr == "Circle")
+	{
+		return EPrimitive::EP_Circle;
+	}
 	else
 	{
 		throw std::runtime_error("Unknown EPrimitive value in JSON");

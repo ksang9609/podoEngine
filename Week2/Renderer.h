@@ -69,7 +69,6 @@ public:
 	void CreateLineVertexBuffer(uint32 maxVertices);
 	void CreateRasterizerState();
 	void CreateConstantBuffer();
-	//void CreateDepthStencilBuffer();
 	void CreateDepthStencilBuffer(UINT width, UINT height);
 
 	void CreateDepthStencilState();

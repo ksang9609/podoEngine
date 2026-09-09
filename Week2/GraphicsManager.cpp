@@ -9,7 +9,7 @@ static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 
 GraphicsManager::GraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
-	, mbPerspectiveProjection(false)
+	, mbPerspectiveProjection(true)
 {
 	mRenderer = new URenderer;
 	mRenderer->Create(hWindow);
@@ -252,34 +252,21 @@ void GraphicsManager::RenderHighLight(const FRenderInfo& RI)
 	const FVector ObjectLocation = RI.WorldTransformMatrix.TransformPosition(Center);
 	const float Depth = FMath::Max(FVector::dot(ObjectLocation - mCameraLocation, mCameraForward), 0.01f);
 	const float TanHalfFov = tanf(FMath::DegreesToRadians(mCameraFovDegree * 0.5f));
-	const float WorldPerPixel = 2.0f * Depth * TanHalfFov / mRenderer->ViewportInfo.Height;
-	const float WorldPerPixelForOrtho = 2.0f * 5.0f * TanHalfFov / mRenderer->ViewportInfo.Height;
-	const float WorldThickness = OUTLINE_PIXELS * WorldPerPixel;
-	const float WorldThicknessForOrtho = OUTLINE_PIXELS * WorldPerPixelForOrtho;
+	const float H = mbPerspectiveProjection ? 2.0f * Depth * TanHalfFov : 5.774f;
+	const float WorldThickness = OUTLINE_PIXELS * H / mRenderer->ViewportInfo.Height;
 
 
-	// 1.02배처럼 비율로 키우면 테두리 두께가 물체 크기에 그대로 비례한다.
 	// 축마다 월드 공간에서 WorldThickness 만큼만 자라도록 배율을 따로 구한다.
 	const FVector WorldScale(
 		RI.WorldTransformMatrix.GetUnitAxis(EAxis::X).Length(),
 		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
 		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Z).Length());
 
-	FVector OutlineScale;
-	if (mbPerspectiveProjection)
-	{
-		OutlineScale = {
+	FVector OutlineScale = {
 		GetOutlineAxisScale(HalfExtent.x * WorldScale.x, WorldThickness),
 		GetOutlineAxisScale(HalfExtent.y * WorldScale.y, WorldThickness),
 		GetOutlineAxisScale(HalfExtent.z * WorldScale.z, WorldThickness) };
-	}
-	else
-	{
-		OutlineScale = {
-		GetOutlineAxisScale(HalfExtent.x * WorldScale.x, WorldThicknessForOrtho),
-		GetOutlineAxisScale(HalfExtent.y * WorldScale.y, WorldThicknessForOrtho),
-		GetOutlineAxisScale(HalfExtent.z * WorldScale.z, WorldThicknessForOrtho) };
-	}
+
 
 	const FMatrix Outline = FMatrix::Translation(FVector(-Center.x, -Center.y, -Center.z))
 		* FMatrix::Scale(OutlineScale)
