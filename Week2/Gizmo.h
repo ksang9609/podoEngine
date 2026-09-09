@@ -4,26 +4,11 @@
 #include "RenderInfo.h"
 #include "TArray.h"
 #include "Transform.h"
+#include "enum.h"
 
 class AActor;
 
 struct FGizmo {
-
-	enum EGIZMO_AXIS //어떤축이 선택되었는지
-	{
-		NONE,
-		X,
-		Y,
-		Z
-	};
-	
-	enum EGIZMO_TYPE {
-		TRANSLATE,
-		ROTATE,
-		SCALE,
-	};
-
-
 	FVector mLocation; // 기즈모의 위치
 
 	// 드래그 기준값. 기즈모는 액터를 따라 움직이므로, 기준선을 시작 시점에 고정해 두지 않으면
@@ -102,6 +87,9 @@ struct FGizmo {
 	FMatrix GetScaleHandleMatrix(EGIZMO_AXIS axis) const;
 
 	TArray<FRenderInfo> GetGizmoRenderInfo() const; // Gizmo 모형 렌더정보
+
+	void SetGizmoType(EGIZMO_TYPE type) { eType = type; }
+	void CycleGizmoType() { eType = static_cast<EGIZMO_TYPE>((static_cast<int>(eType) + 1) % 3); }
 
 	// Gizmo 깊이에따른 원근크기 보정
 	void Update(

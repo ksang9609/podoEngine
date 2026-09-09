@@ -10,3 +10,17 @@ enum class EPrimitive
 	EP_GizmoArrow,
 	EP_Circle,
 };
+
+enum EGIZMO_AXIS //어떤축이 선택되었는지
+{
+	NONE,
+	X,
+	Y,
+	Z
+};
+
+enum EGIZMO_TYPE {
+	TRANSLATE,
+	ROTATE,
+	SCALE,
+};

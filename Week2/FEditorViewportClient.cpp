@@ -65,7 +65,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, 
 
 	// 드래그 중에는 히트 판정을 하지 않는다.
 	// 빠르게 끌면 커서가 축 캡슐을 벗어나는데, 그때 eAxis가 NONE이 되면 드래그가 끊긴다.
-	if (mGizmo.mDraggingAxis != FGizmo::EGIZMO_AXIS::NONE)
+	if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE)
 	{
 		bMouseHit = true;
 		mGizmo.mbHovered = true;
@@ -159,7 +159,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 
 	if (!io.WantCaptureKeyboard && Input.WasPressed(VK_SPACE))
 	{
-		mGizmo.eType = static_cast<FGizmo::EGIZMO_TYPE>((mGizmo.eType + 1) % 3);
+		mGizmo.CycleGizmoType();
 	}
 
 
@@ -181,9 +181,9 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		if (IsMouseHit())
 		{
 			//Gizmo라면 드래그 기준값을 저장
-			if (mGizmo.eAxis != FGizmo::EGIZMO_AXIS::NONE &&
+			if (mGizmo.eAxis != EGIZMO_AXIS::NONE &&
 				sceneManager->IsActorSelected() &&
-				mGizmo.mDraggingAxis == FGizmo::EGIZMO_AXIS::NONE)
+				mGizmo.mDraggingAxis == EGIZMO_AXIS::NONE)
 			{
 				mGizmo.BeginDrag(mRayNear, mRayFar, sceneManager->GetSelectedActor()->GetTransform());
 			}
@@ -228,9 +228,9 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	}
 
 	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
-	if (mGizmo.mDraggingAxis != FGizmo::EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
+	if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
 	{
-		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::TRANSLATE)
+		if (mGizmo.eType == EGIZMO_TYPE::TRANSLATE)
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다
 			FVector newLocation;
@@ -239,7 +239,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 				sceneManager->GetSelectedActor()->SetLocation(newLocation);
 			}
 		}
-		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::ROTATE)
+		if (mGizmo.eType == EGIZMO_TYPE::ROTATE)
 		{
 			// 링 평면 위에서 잰 각도. 시작 회전에 누적각을 한 번만 얹는다
 			FRotator newRotation;
@@ -250,7 +250,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 				sceneManager->GetSelectedActor()->SetRotation(newRotation);
 			}
 		}
-		if (mGizmo.eType == FGizmo::EGIZMO_TYPE::SCALE)
+		if (mGizmo.eType == EGIZMO_TYPE::SCALE)
 		{
 			FVector newScale;
 			if (mGizmo.GetDragScale(mRayNear, mRayFar, newScale))
@@ -262,7 +262,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 
 	if (!ImGui::GetIO().WantCaptureMouse && Input.WasReleased(VK_LBUTTON))
 	{
-		mGizmo.mDraggingAxis = FGizmo::EGIZMO_AXIS::NONE;
+		mGizmo.mDraggingAxis = EGIZMO_AXIS::NONE;
 	}
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.

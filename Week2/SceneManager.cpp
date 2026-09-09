@@ -217,6 +217,22 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::Text("Total allocated memory count: %d", UEngineStatics::sTotalAllocationCount);
 	ImGui::Text("Total allocated memory size: %d bytes", UEngineStatics::sTotalAllocationBytes);
 
+	/* Gizmo Control */
+	ImGui::SeparatorText("Gizmo Control");
+
+	// Display the current gizmo mode dropdown
+	const char* gizmoModeNames[] = { "Translate", "Rotate", "Scale" };
+	int32 gizmoModeIndex = static_cast<int32>(guiReference.ViewportClient->mGizmo.eType);
+	if (ImGui::Combo("Gizmo Mode", &gizmoModeIndex, gizmoModeNames, IM_ARRAYSIZE(gizmoModeNames)))
+	{
+		guiReference.ViewportClient->mGizmo.SetGizmoType(static_cast<EGIZMO_TYPE>(gizmoModeIndex));
+	}
+	if (ImGui::Button("Next Gizmo Mode"))
+	{
+		guiReference.ViewportClient->mGizmo.CycleGizmoType();
+	}
+
+
 	ImGui::End();
 }
 
