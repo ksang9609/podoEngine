@@ -6,6 +6,7 @@
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
+static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
 
 FGraphicsManager::FGraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
@@ -17,6 +18,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mRenderer->CreateShader();
 	mRenderer->CreateConstantBuffer();
 	mRenderer->CreateLineVertexBuffer(LINE_VERTEX_CAPACITY);
+	mRenderer->CreateLineIndexBuffer(LINE_INDEX_CAPACITY);
 
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 }
@@ -116,8 +118,6 @@ void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const 
 	// Index Buffer 업데이트
 	mLineIndices.Add(mStartOffset);
 	mLineIndices.Add(mStartOffset+1);
-
-	
 }
 
 void FGraphicsManager::DrawWorldAxis()
@@ -191,10 +191,11 @@ void FGraphicsManager::FlushLines()
 	//	mRenderer->UpdateConstant(FMatrix::Identity, mViewOrthogonalProjectionMatrix, FVector4(0, 0, 0, 0));
 	//}
 	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
-	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num());
+	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(),&mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
 	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
+	mLineIndices.Reset(LINE_INDEX_CAPACITY);
 }
 
 void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos) //깊이버퍼 초기화
