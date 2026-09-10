@@ -23,6 +23,8 @@
 #include "CubeComponent.h"
 #include "ActorComponent.h"
 
+#include "GraphicsManager.h"
+
 FSceneManager::FSceneManager()
 {
 	ImGuiIO& io = ImGui::GetIO();

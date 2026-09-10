@@ -153,14 +153,19 @@ void FGraphicsManager::DrawWorldAxis()
 
 void FGraphicsManager::DrawGrid()
 {
-	int LineCount = mgridExtent / mgridSpacing;
+	int LineCount = mgridExtent / mgridSpacing; 
 	float currentGrid = -mgridExtent/2.0f;
 	for (int32 i = 0; i < LineCount;i++)
 	{
-		DrawLine(FVector3(currentGrid,-mgridExtent/2.0f,0), FVector3(currentGrid, mgridExtent/ 2.0f,0),FVector4(1.0f,1.0f,1.0f,1.0f));
-		DrawLine(FVector3(- mgridExtent / 2.0f, currentGrid, 0), FVector3(mgridExtent / 2.0f,currentGrid,0), FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(FVector3(currentGrid,-mgridExtent/2.0f,0), FVector3(currentGrid, mgridExtent/ 2.0f,0),FVector4(1.0f,1.0f,1.0f,1.0f));  // X축 기준 Grid
+		DrawLine(FVector3(- mgridExtent / 2.0f, currentGrid, 0), FVector3(mgridExtent / 2.0f,currentGrid,0), FVector4(1.0f, 1.0f, 1.0f, 1.0f)); // Y축 기준 Grid
 		currentGrid += mgridSpacing;
 	}
+}
+
+void FGraphicsManager::DrawAABB()
+{
+
 }
 
 void FGraphicsManager::FlushLines()
