@@ -135,6 +135,7 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="FileManager.cpp" />
+    <ClCompile Include="FName.cpp" />
     <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="JsonUtil.cpp" />
     <ClCompile Include="ObjectFactory.cpp" />
@@ -158,6 +159,7 @@
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="SphereComponent.cpp" />
     <ClInclude Include="Circle.h" />
+    <ClInclude Include="FName.h" />
     <ClInclude Include="GizmoArrow.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="TSparseArray.inl">
