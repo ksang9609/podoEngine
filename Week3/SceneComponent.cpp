@@ -12,6 +12,7 @@ void USceneComponent::Initialize(FVector location, FRotator rotation, FVector sc
 	mRelativeLocation = location;
 	mRelativeRotation = rotation;
 	mRelativeScale3D = scale3D;
+	mComponentToWorld = FTransform(mRelativeLocation, mRelativeRotation, mRelativeScale3D);
 }
 
 USceneComponent::~USceneComponent()
@@ -56,6 +57,8 @@ void USceneComponent::DeserializeClass(const json::JSON& inJson)
 	mRelativeLocation = FVectorFromJson(propertiesJson.at("mRelativeLocation"));
 	mRelativeRotation = FRotatorFromJson(propertiesJson.at("mRelativeRotation"));
 	mRelativeScale3D = FVectorFromJson(propertiesJson.at("mRelativeScale3D"));
+
+	mComponentToWorld = FTransform(mRelativeLocation, mRelativeRotation, mRelativeScale3D);
 }
 
 FVector USceneComponent::GetRelativeLocation() const
