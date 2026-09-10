@@ -46,9 +46,13 @@ struct FRotator
 
 	FQuat Quaternion() const
 	{
-		FQuat qx = { std::sin(FMath::DegreesToRadians(Roll) / 2), 0, 0, std::cos(FMath::DegreesToRadians(Roll) / 2) };
-		FQuat qy = { std::sin(FMath::DegreesToRadians(Pitch) / 2), 0, 0, std::cos(FMath::DegreesToRadians(Pitch) / 2) };
-		FQuat qz = { std::sin(FMath::DegreesToRadians(Yaw) / 2), 0, 0, std::cos(FMath::DegreesToRadians(Yaw) / 2) };
+		const float halfRoll = FMath::DegreesToRadians(Roll) * 0.5f;
+		const float halfPitch = FMath::DegreesToRadians(Pitch) * 0.5f;
+		const float halfYaw = FMath::DegreesToRadians(Yaw) * 0.5f;
+
+		FQuat qx = { std::sin(halfRoll), 0, 0, std::cos(halfRoll) };
+		FQuat qy = { 0, std::sin(halfPitch), 0, std::cos(halfPitch) };
+		FQuat qz = { 0, 0, std::sin(halfYaw), std::cos(halfYaw) };
 
 		return qz * qy * qx;
 	}

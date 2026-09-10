@@ -141,7 +141,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	FVector MoveDir(0.f, 0.f, 0.f);
 	if (!io.WantCaptureKeyboard)
 	{
-		const FMatrix R = FMatrix::Rotate(mCamera.Transform.Rotation);
+		const FMatrix R = FMatrix::Rotate(mCamera.Rotation);
 		const FVector Forward = R.GetUnitAxis(EAxis::X);
 		const FVector Right = R.GetUnitAxis(EAxis::Y);
 
@@ -173,7 +173,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			}
 			else
 			{
-				mCamera.Transform.Location += mCamera.GetForwardVector() * 1.0f * Input.MouseWheelDelta;
+				mCamera.Location += mCamera.GetForwardVector() * 1.0f * Input.MouseWheelDelta;
 			}
 		}
 		//입력이 있으면 마우스 휠은 카메라 이동속도 조절
@@ -194,7 +194,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		mCamera.Velocity = FVector(0.f);
 	}
 
-	mCamera.Transform.Location += mCamera.Velocity * deltaTime;
+	mCamera.Location += mCamera.Velocity * deltaTime;
 
 	if (!io.WantCaptureKeyboard && Input.WasPressed(VK_SPACE))
 	{
@@ -281,7 +281,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		if (mGizmo.eType == EGIZMO_TYPE::ROTATE)
 		{
 			// 링 평면 위에서 잰 각도. 시작 회전에 누적각을 한 번만 얹는다
-			FRotator newRotation;
+			FQuat newRotation;
 			if (mGizmo.GetDragRotation(mRayNear, mRayFar, newRotation))
 			{
 				//ClickedActor->SetRotation(newRotation);
@@ -307,7 +307,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
 	mGizmo.Update(
 		sceneManager->GetSelectedActor(),
-		mCamera.Transform.Location,
+		mCamera.Location,
 		mCamera.GetForwardVector(),
 		mCamera.mFovDegree,
 		perspectiveRatio,
@@ -361,14 +361,14 @@ void FEditorViewportClient::DeprojectScreenToWorld(int32 MouseX, int32 MouseY, f
 	const float xScale = yScale / Aspect;
 
 	// 3) 카메라 기저로 월드 방향 합성. 전방 성분이 1 이므로 정규화하면 안 된다
-	const FMatrix R = FMatrix::Rotate(mCamera.Transform.Rotation);
+	const FMatrix R = FMatrix::Rotate(mCamera.Rotation);
 	FVector V = R.GetUnitAxis(EAxis::X);                    // 전방 (성분 1)
 	V += R.GetUnitAxis(EAxis::Y) * (ndcX / xScale);         // 우측
 	V += R.GetUnitAxis(EAxis::Z) * (ndcY / yScale);         // 상방
 
 	// 4) 곱하면 그대로 각 평면 위의 점
-	OutNearPoint = mCamera.Transform.Location + V * NearZ;
-	OutFarPoint = mCamera.Transform.Location + V * FarZ;
+	OutNearPoint = mCamera.Location + V * NearZ;
+	OutFarPoint = mCamera.Location + V * FarZ;
 }
 
 void FEditorViewportClient::DeprojectScreenToWorldForOrtho(int32 MouseX, int32 MouseY, float ScreenW, float ScreenH, float NearZ, float FarZ, FVector& OutNearPoint, FVector& OutFarPoint)
@@ -383,14 +383,14 @@ void FEditorViewportClient::DeprojectScreenToWorldForOrtho(int32 MouseX, int32 M
 	const float orthoHeight = mCamera.mOrthoHeight;
 	const float orthoWidth = orthoHeight * Aspect;
 
-	const FMatrix R = FMatrix::Rotate(mCamera.Transform.Rotation);
+	const FMatrix R = FMatrix::Rotate(mCamera.Rotation);
 	const FVector Forward = R.GetUnitAxis(EAxis::X);
 	const FVector Right = R.GetUnitAxis(EAxis::Y);
 	const FVector Up = R.GetUnitAxis(EAxis::Z);
 
 	// 3) 원근과 결정적으로 다른 점: 방향이 아니라 시작점이 픽셀마다 달라진다.
 	//    모든 광선이 전방과 나란하고, 카메라 평면 위에서 평행이동한 자리에서 출발한다
-	const FVector RayOrigin = mCamera.Transform.Location
+	const FVector RayOrigin = mCamera.Location
 		+ Right * (ndcX * orthoWidth * 0.5f)
 		+ Up * (ndcY * orthoHeight * 0.5f);
 

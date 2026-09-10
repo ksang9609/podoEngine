@@ -3,17 +3,19 @@
 #include "Actor.h"
 
 FVector FGizmo::AxisDirection(EGIZMO_AXIS axis) const {
-	const FMatrix Result_yaw = FMatrix::RotateZ(UpdateRotation.Yaw);
-	const FMatrix Result_pitch = FMatrix::RotateY(UpdateRotation.Pitch);
-	const FMatrix Result_roll = FMatrix::RotateX(UpdateRotation.Roll);
+	//const FMatrix Result_yaw = FMatrix::RotateZ(UpdateRotation.Yaw);
+	//const FMatrix Result_pitch = FMatrix::RotateY(UpdateRotation.Pitch);
+	//const FMatrix Result_roll = FMatrix::RotateX(UpdateRotation.Roll);
+
+	// TODO: Support local space rotation gizmo
 	if (eType == EGIZMO_TYPE::ROTATE)
 	{
 
 		switch (axis)
 		{
-		case Z: return FVector(0.0f, 0.0f, 1.0f);
-		case Y: return Result_yaw.GetUnitAxis(EAxis::Y);
-		case X: return (Result_pitch * Result_yaw).GetUnitAxis(EAxis::X);
+		case X: return FVector::Forward();
+		case Y: return FVector::Right();
+		case Z: return FVector::Up();
 		default: return FVector(0);
 		}
 	}
@@ -34,9 +36,9 @@ FVector FGizmo::AxisDirection(EGIZMO_AXIS axis) const {
 	else { //Translate
 		switch (axis)
 		{
-		case X:  return FVector(1.0f, 0.0f, 0.0f);
-		case Y:  return FVector(0.0f, 1.0f, 0.0f);
-		case Z:  return FVector(0.0f, 0.0f, 1.0f);
+		case X:  return FVector::Forward();
+		case Y:  return FVector::Right();
+		case Z:  return FVector::Up();
 		default: return FVector(0.0f, 0.0f, 0.0f);
 		}
 	}
@@ -193,15 +195,54 @@ bool FGizmo::GetDragRotation(const FVector& nearPoint, const FVector& farPoint, 
 
 	// FMatrix::Rotate를 미소각으로 전개해 보면 Yaw만 오른손이고 Pitch/Roll은 왼손이다.
 	// 위에서 구한 각도는 오른손 기준이라 축에 따라 부호를 뒤집는다
-	outRotation = mDragStartTransform.Rotation;
+	outRotation = mDragStartTransform.GetRotator();
 	switch (mDraggingAxis)
 	{
-	case X: outRotation.Roll = mDragStartTransform.Rotation.Roll - mDragAccumAngle; break;
-	case Y: outRotation.Pitch = mDragStartTransform.Rotation.Pitch - mDragAccumAngle; break;
-	case Z: outRotation.Yaw = mDragStartTransform.Rotation.Yaw + mDragAccumAngle; break;
+	case X: outRotation.Roll = outRotation.Roll - mDragAccumAngle; break;
+	case Y: outRotation.Pitch = outRotation.Pitch - mDragAccumAngle; break;
+	case Z: outRotation.Yaw = outRotation.Yaw + mDragAccumAngle; break;
 	default: return false;
 	}
 
+	return true;
+}
+
+// New GetDragRotation function that returns a quaternion instead of a rotator
+bool FGizmo::GetDragRotation(const FVector& nearPoint, const FVector& farPoint, FQuat& outRotation)
+{
+	if (mDraggingAxis == NONE) return false;
+	if (mDragStartRingDir.Length() <= SMALL_NUMBER) return false;   // 잡을 때 평면을 못 맞췄다
+
+	FVector ringHit;
+	if (!GetRingPlaneHit(nearPoint, farPoint, mDragStartGizmoLocation, mDraggingAxis, ringHit))
+	{
+		return false;
+	}
+
+	const FVector v = ringHit - mDragStartGizmoLocation;
+	if (v.Length() <= SMALL_NUMBER) return false;   // 중심을 정확히 지나면 각도가 정의되지 않는다
+
+	// 시작 시점에 박아둔 2D 기저. u가 0도, w가 90도 방향이다
+	const FVector u = mDragStartRingDir;
+	const FVector w = FVector::cross(AxisDirection(mDraggingAxis), u);   // 오른손 기준
+
+	const float angle = FMath::RadiansToDegrees(atan2f(FVector::dot(v, w), FVector::dot(v, u)));
+
+	// atan2는 -180~180이라 한 바퀴 넘길 때 부호가 튄다.
+	// 절대각을 그대로 쓰지 않고 프레임 간 차이를 접어서 누적한다
+	mDragAccumAngle += WrapAngle180(angle - mDragLastAngle);
+	mDragLastAngle = angle;
+
+	const FVector axis = AxisDirection(mDraggingAxis);
+
+	const float halfAngle = FMath::DegreesToRadians(mDragAccumAngle * 0.5f);
+
+	const float s = std::sin(halfAngle);
+	const float c = std::cos(halfAngle);
+
+	const FQuat delta(axis.x * s, axis.y * s, axis.z * s, c);
+
+	outRotation = delta * mDragStartTransform.Rotation;
 	return true;
 }
 

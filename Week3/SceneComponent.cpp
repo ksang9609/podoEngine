@@ -66,6 +66,7 @@ FVector USceneComponent::GetRelativeLocation() const
 void USceneComponent::SetRelativeLocation(FVector location)
 {
 	mRelativeLocation = location;
+	mComponentToWorld.SetLocation(location);
 }
 
 FRotator USceneComponent::GetRelativeRotation() const
@@ -76,6 +77,13 @@ FRotator USceneComponent::GetRelativeRotation() const
 void USceneComponent::SetRelativeRotation(FRotator rotation)
 {
 	mRelativeRotation = rotation;
+	mComponentToWorld.SetRotation(rotation);
+}
+
+void USceneComponent::SetRelativeRotation(FQuat rotation)
+{
+	mRelativeRotation = rotation.Rotator();
+	mComponentToWorld.SetRotation(rotation);
 }
 
 FVector USceneComponent::GetRelativeScale3D() const
@@ -86,9 +94,10 @@ FVector USceneComponent::GetRelativeScale3D() const
 void USceneComponent::SetRelativeScale3D(FVector scale)
 {
 	mRelativeScale3D = scale;
+	mComponentToWorld.SetScale(mRelativeScale3D);
 }
 
 FTransform USceneComponent::GetTransformMatrix() const
 {
-	return FTransform(mRelativeLocation, mRelativeRotation, mRelativeScale3D);
+	return mComponentToWorld;
 }
