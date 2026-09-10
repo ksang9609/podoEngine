@@ -3,28 +3,30 @@
 #include "Vector.h"
 #include "MathUtility.h"
 
-struct TRotator
+#include "Quat.h"
+
+struct FRotator
 {
 	float Pitch, Yaw, Roll;
 
-	TRotator() = default;
+	FRotator() = default;
 
-	TRotator(float InPitch, float InYaw, float InRoll)
+	FRotator(float InPitch, float InYaw, float InRoll)
 		: Pitch(InPitch), Yaw(InYaw), Roll(InRoll) {}
 
-	//static const TRotator ZeroRotator = { 0, 0, 0 };
+	//static const FRotator ZeroRotator = { 0, 0, 0 };
 
-	static TRotator FromDirection(const FVector& Direction)
+	static FRotator FromDirection(const FVector& Direction)
 	{
 		float Yaw = std::atan2(Direction.y, Direction.x);
 		float Pitch = std::atan2(Direction.z, std::sqrt(Direction.x * Direction.x
 													  + Direction.y * Direction.y));
 
-		return TRotator(Pitch * 180 / PI, Yaw * 180 / PI, 0.0f);
+		return FRotator(Pitch * 180 / PI, Yaw * 180 / PI, 0.0f);
 	}
 
 	// From 위치에서 To 위치를 바라보는 회전값.
-	static TRotator LookAt(const FVector& From, const FVector& To)
+	static FRotator LookAt(const FVector& From, const FVector& To)
 	{
 		return FromDirection(To - From);
 	}
@@ -41,6 +43,13 @@ struct TRotator
 
 		return V;
 	}
-};
 
-using FRotator = TRotator;
+	FQuat Quaternion() const
+	{
+		FQuat qx = { std::sin(FMath::DegreesToRadians(Roll) / 2), 0, 0, std::cos(FMath::DegreesToRadians(Roll) / 2) };
+		FQuat qy = { std::sin(FMath::DegreesToRadians(Pitch) / 2), 0, 0, std::cos(FMath::DegreesToRadians(Pitch) / 2) };
+		FQuat qz = { std::sin(FMath::DegreesToRadians(Yaw) / 2), 0, 0, std::cos(FMath::DegreesToRadians(Yaw) / 2) };
+
+		return qz * qy * qx;
+	}
+};
