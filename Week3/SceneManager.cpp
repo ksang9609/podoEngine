@@ -23,8 +23,6 @@
 #include "CubeComponent.h"
 #include "ActorComponent.h"
 
-#include "GraphicsManager.h"
-
 FSceneManager::FSceneManager()
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -240,8 +238,12 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
-	//	: "OFF: blue (far, drawn last) overwrites");
-
+	//	: "OFF: blue (far, drawn last) overwrites"); 
+	float gridWidth = guiReference.GraphicsManager->GetGridWidth();
+	if (ImGui::DragFloat("GridWidth", &gridWidth, 0.1f, 10.0f))
+	{
+		guiReference.GraphicsManager->SetGridWidth(gridWidth);
+	}
 	/* Memory Info */
 	ImGui::SeparatorText("Memory Info");
 

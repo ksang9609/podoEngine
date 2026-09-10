@@ -49,6 +49,9 @@ public:
 	float GetCameraOrthoDistance() const { return mCameraOrthoDistance; }
 	void SetCameraOrthoDistance(float distance) { mCameraOrthoDistance = distance; }
 
+	float GetGridWidth();
+	void SetGridWidth(float width);
+
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
 	URenderer* GetRenderer() const;
@@ -91,6 +94,7 @@ private:
 	// Graphics config
 	// 이번 프레임에 쌓인 선분. 정점 2개가 선분 하나
 	TArray<FVertexSimple> mLineVertices;
+	TArray<uint32> mLineIndices;
 
 	bool mbWireFrame;
 	bool mbPerspectiveProjection;

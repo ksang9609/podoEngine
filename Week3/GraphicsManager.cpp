@@ -108,8 +108,16 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
 {
 	// 월드 좌표 그대로 넣는다. 그래서 그릴 때 World 행렬이 단위행렬이다
+	uint32 mStartOffset = mLineVertices.Num();
+
 	mLineVertices.Add({ start.x, start.y, start.z, color.x, color.y, color.z, color.w });
 	mLineVertices.Add({ end.x,   end.y,   end.z,   color.x, color.y, color.z, color.w });
+
+	// Index Buffer 업데이트
+	mLineIndices.Add(mStartOffset);
+	mLineIndices.Add(mStartOffset+1);
+
+	
 }
 
 void FGraphicsManager::DrawWorldAxis()
@@ -153,13 +161,13 @@ void FGraphicsManager::DrawWorldAxis()
 
 void FGraphicsManager::DrawGrid()
 {
-	int LineCount = mgridExtent / mgridSpacing; 
+	int LineCount = (mgridExtent/2) / mgridSpacing; 
 	float currentGrid = -mgridExtent/2.0f;
-	for (int32 i = 0; i < LineCount;i++)
+	for (int32 i = -LineCount; i < LineCount;i++)
 	{
-		DrawLine(FVector3(currentGrid,-mgridExtent/2.0f,0), FVector3(currentGrid, mgridExtent/ 2.0f,0),FVector4(1.0f,1.0f,1.0f,1.0f));  // X축 기준 Grid
-		DrawLine(FVector3(- mgridExtent / 2.0f, currentGrid, 0), FVector3(mgridExtent / 2.0f,currentGrid,0), FVector4(1.0f, 1.0f, 1.0f, 1.0f)); // Y축 기준 Grid
-		currentGrid += mgridSpacing;
+		float Spaceline = i * mgridSpacing;
+		DrawLine(FVector3(Spaceline,-mgridExtent/2.0f,0), FVector3(Spaceline, mgridExtent/ 2.0f,0),FVector4(1.0f,1.0f,1.0f,1.0f));  // X축 기준 Grid
+		DrawLine(FVector3(- mgridExtent / 2.0f, Spaceline, 0), FVector3(mgridExtent / 2.0f, Spaceline,0), FVector4(1.0f, 1.0f, 1.0f, 1.0f)); // Y축 기준 Grid
 	}
 }
 
@@ -275,6 +283,17 @@ FVector FGraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
 	default:					return FVector(0.5f, 0.5f, 0.5f);
 	}
 }
+
+float FGraphicsManager::GetGridWidth()
+{
+	return mgridSpacing;
+}
+
+void  FGraphicsManager::SetGridWidth(float width)
+{
+	mgridSpacing = width;
+}
+
 
 void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 {
