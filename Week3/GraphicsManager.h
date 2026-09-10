@@ -58,6 +58,7 @@ public:
 	// 호출 즉시 그리지 않고 배열에 쌓는다. FlushLines()에서 한 번에 그린다.
 	void DrawLine(const FVector& start, const FVector& end, const FVector4& color);
 	void DrawWorldAxis();
+	void DrawGrid();
 	void FlushLines();
 
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
@@ -102,4 +103,8 @@ private:
 	float mProjectionElapsed = 0.0f;
 	float mProjectionDuration = 1.0f;
 	bool mbProjectionTransitioning = false;
+
+	// Grid 간격, 최대 한계선
+	float mgridExtent = 1000.0f;
+	float mgridSpacing = 1.0f;
 };

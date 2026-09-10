@@ -151,6 +151,18 @@ void FGraphicsManager::DrawWorldAxis()
 	}
 }
 
+void FGraphicsManager::DrawGrid()
+{
+	int LineCount = mgridExtent / mgridSpacing;
+	float currentGrid = -mgridExtent/2.0f;
+	for (int32 i = 0; i < LineCount;i++)
+	{
+		DrawLine(FVector3(currentGrid,-mgridExtent/2.0f,0), FVector3(currentGrid, mgridExtent/ 2.0f,0),FVector4(1.0f,1.0f,1.0f,1.0f));
+		DrawLine(FVector3(- mgridExtent / 2.0f, currentGrid, 0), FVector3(mgridExtent / 2.0f,currentGrid,0), FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		currentGrid += mgridSpacing;
+	}
+}
+
 void FGraphicsManager::FlushLines()
 {
 	if (mLineVertices.Num() == 0) return;
