@@ -22,7 +22,6 @@
 #include "FrameTimer.h"
 #include "CubeComponent.h"
 #include "ActorComponent.h"
-#include "iniParser.h"
 
 FSceneManager::FSceneManager()
 {
