@@ -183,10 +183,11 @@ void FGraphicsManager::DrawGrid()
 	}
 }
 
-void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
+void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos, FRotator& cameraRotation)
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
+		FMatrix worldTransform = renderInfo.GetBillboardTransformMatrix(cameraRotation);
 		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo.ePrimitive);
 		if (LocalminmaxBuffer==nullptr)
 		{
@@ -206,7 +207,7 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
 		TArray<FVector3> WorldArray;
 		for (int i = 0;i < LocalArray.Num();i++)
 		{
-			FVector3 Worlddot = renderInfo.WorldTransformMatrix.TransformPosition(LocalArray[i]);
+			FVector3 Worlddot = worldTransform.TransformPosition(LocalArray[i]);
 			WorldArray.Add(Worlddot);
 		}
 		FVector3 WorldMin = WorldArray[0];

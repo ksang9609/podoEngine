@@ -64,7 +64,7 @@ public:
 	void DrawLine(const FVector& start, const FVector& end, const FVector4& color);
 	void DrawWorldAxis();
 	void DrawGrid();
-	void DrawAABB(const TArray<FRenderInfo> renderInfos);
+	void DrawAABB(const TArray<FRenderInfo> renderInfos, FRotator& cameraRotation);
 	void FlushLines();
 
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
