@@ -22,6 +22,7 @@
 #include "FrameTimer.h"
 #include "CubeComponent.h"
 #include "ActorComponent.h"
+#include "iniParser.h"
 
 FSceneManager::FSceneManager()
 {
@@ -243,6 +244,12 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	if (ImGui::DragFloat("GridWidth", &gridWidth, 0.1f, 10.0f))
 	{
 		guiReference.GraphicsManager->SetGridWidth(gridWidth);
+	}
+	if (ImGui::Button("Load Grid Width"))
+	{
+		IniParser iniPar;
+		float LoadgridWidth = iniPar.LoadSetting("editor.ini", "Grid","Spacing");
+		guiReference.GraphicsManager->SetGridWidth(LoadgridWidth);
 	}
 	/* Memory Info */
 	ImGui::SeparatorText("Memory Info");

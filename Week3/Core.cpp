@@ -309,6 +309,12 @@ bool FString::ToBool() const
 	return std::stoi(*mData) != 0;
 }
 
+// Core.h의 FString 내부에 추가
+float FString::ToFloat() const
+{
+	return std::stof(*mData);
+}
+
 FString FString::ToLower() const
 {
 	FString result(*mData);
