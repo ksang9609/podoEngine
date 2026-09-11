@@ -6,6 +6,7 @@
 #include "TArray.h"
 #include "RenderInfo.h"
 #include "enum.h"
+#include "FEditorSetting.h"
 
 inline constexpr std::string_view kSceneDataDir = "SceneData\\";
 inline constexpr std::string_view kSceneDataSuffix = ".Scene";
@@ -66,6 +67,8 @@ public:
 
 	float GetPanelWidth() const;
 
+	void Initialize(FEditorViewportClient& ViewportClient);
+
 private:
 	static constexpr float MIN_WIDTH_RATIO = 0.2f;
 	static constexpr float MAX_WIDTH_RATIO = 0.6f;
@@ -80,6 +83,8 @@ private:
 	FGuiInputField mGuiInputField;
 
 	FString mOpenSceneFileDialog() const;
+
+	FEditorSetting mEditorSetting;
 
 	void updateControlPanelGUI(const FGuiReference& guiReference);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference);

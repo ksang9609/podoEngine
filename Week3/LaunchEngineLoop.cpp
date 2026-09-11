@@ -20,6 +20,7 @@
 #include "Actor.h"
 #include "World.h"
 #include "FName.h"
+#include "SceneManager.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -80,6 +81,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
+
+	mSceneManager->Initialize(*ViewportClient);
 
 	mSceneManager->NewScene();
 	// mSceneManager->LoadScene("TestScene", *mFileManager);
