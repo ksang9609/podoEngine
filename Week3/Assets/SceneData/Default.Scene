@@ -1,5 +1,5 @@
 {
-  "NextUUID" : 13,
+  "NextUUID" : 5,
   "Version" : 0,
   "World" : {
     "ClassName" : "UWorld",
@@ -16,7 +16,7 @@
                 "Properties" : {
                   "Name" : "UPrimitiveComponent",
                   "UUID" : 2,
-                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeLocation" : [4.464537, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
                   "mePrimitiveType" : "Cube"
@@ -27,92 +27,20 @@
         }, {
           "ClassName" : "AActor",
           "Properties" : {
-            "Name" : "Triangle",
+            "Name" : "Cube",
             "UUID" : 3,
             "mComponents" : [{
                 "ClassName" : "UPrimitiveComponent",
                 "Properties" : {
                   "Name" : "UPrimitiveComponent",
                   "UUID" : 4,
-                  "mRelativeLocation" : [8.053159, 0.000000, 0.000000],
+                  "mRelativeLocation" : [0.000000, -5.713292, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Triangle"
+                  "mePrimitiveType" : "Cube"
                 }
               }],
             "mRootComponentUUID" : 4
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "Triangle",
-            "UUID" : 5,
-            "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
-                "Properties" : {
-                  "Name" : "UPrimitiveComponent",
-                  "UUID" : 6,
-                  "mRelativeLocation" : [5.784463, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Triangle"
-                }
-              }],
-            "mRootComponentUUID" : 6
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "Triangle",
-            "UUID" : 7,
-            "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
-                "Properties" : {
-                  "Name" : "UPrimitiveComponent",
-                  "UUID" : 8,
-                  "mRelativeLocation" : [3.278789, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Triangle"
-                }
-              }],
-            "mRootComponentUUID" : 8
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "Triangle",
-            "UUID" : 9,
-            "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
-                "Properties" : {
-                  "Name" : "UPrimitiveComponent",
-                  "UUID" : 10,
-                  "mRelativeLocation" : [1.722635, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Triangle"
-                }
-              }],
-            "mRootComponentUUID" : 10
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "Triangle",
-            "UUID" : 11,
-            "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
-                "Properties" : {
-                  "Name" : "UPrimitiveComponent",
-                  "UUID" : 12,
-                  "mRelativeLocation" : [-1.272490, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Triangle"
-                }
-              }],
-            "mRootComponentUUID" : 12
           }
         }]
     }

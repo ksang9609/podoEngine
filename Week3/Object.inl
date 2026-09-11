@@ -1,19 +1,5 @@
-﻿//
-//#define REFLECT_CLASS(className, superClassName)									\
-//public:																				\
-//	static const FClassInfo* GetClass()												\
-//	{																				\
-//		static FClassInfo classInstance = FClassInfo(								\
-//			#className,																\
-//			superClassName::GetClass(),												\
-//			[]() -> UObject* {														\
-//				UObject* instance = new className();								\
-//				return instance;													\
-//			}																		\
-//		);																			\
-//		return &classInstance;														\
-//	}																				\
-//private:
+﻿#define CONCAT_IMPL(a, b) a##b    // 타입 확장
+#define CONCAT(a, b) CONCAT_IMPL(a, b)
 
 #define DECLARE_OBJECT(ClassName, ParentName) \
 public: \
@@ -25,6 +11,7 @@ public: \
 private:
 
 #define IMPLEMENT_CLASS(className, superClassName) \
+[[maybe_unused]] static constexpr int CONCAT(RTTI_Tag_, ClassName) = 0; \
 FClassInfo className::ClassInfo( \
     #className, \
     superClassName::GetClass(), \
