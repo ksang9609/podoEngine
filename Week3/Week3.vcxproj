@@ -160,6 +160,7 @@
     <ClCompile Include="SphereComponent.cpp" />
     <ClInclude Include="Circle.h" />
     <ClInclude Include="GizmoArrow.h" />
+    <ClInclude Include="Primitives.h" />
     <ClInclude Include="Quat.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="TSparseArray.inl">
@@ -215,6 +216,7 @@
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="CubeComponent.h" />
     <ClInclude Include="TSparseArray.h" />
+    <ClInclude Include="UBillboardCompoent.h" />
     <ClInclude Include="Vector.h" />
     <ClInclude Include="World.h" />
     <ClInclude Include="Transform.h" />

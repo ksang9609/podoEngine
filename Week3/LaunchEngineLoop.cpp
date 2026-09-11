@@ -8,10 +8,6 @@
 #include "GraphicsManager.h"
 #include "CubeComponent.h"
 #include "ObjectFactory.h"
-#include "Cube.h"
-#include "Sphere.h"
-#include "Circle.h"
-#include "Triangle.h"
 #include "Object.h"
 #include "GizmoArrow.h"
 #include "ImGui/imgui.h"
@@ -19,6 +15,13 @@
 #include "imGui/imgui_impl_win32.h"
 #include "Actor.h"
 #include "World.h"
+
+// Primitive vertices definitions
+#include "Cube.h"
+#include "Sphere.h"
+#include "Circle.h"
+#include "Triangle.h"
+#include "Primitives.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -70,6 +73,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Circle, Circle_vertices, sizeof(Circle_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
+	mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
 
 	FrameTimer = new FFrameTimer(120);
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
