@@ -72,7 +72,7 @@ public:
 
 	static FVector GetPrimitiveCenter(EPrimitive type);
 	static FVector GetPrimitiveHalfExtent(EPrimitive type);
-	void RenderHighLight(const FRenderInfo& RI);
+	void RenderHighLight(const FRenderInfo& RI, const FCamera& camera);
 
 	// Projection ratio smoothing
 	void StartProjectionTransition(bool orthographic);

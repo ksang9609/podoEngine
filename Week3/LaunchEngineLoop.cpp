@@ -82,7 +82,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
-	mSceneManager = new FSceneManager();
+	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
 	mFileManager = new FFileManager();
 
 	mSceneManager->NewScene();
@@ -161,7 +161,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		{
 			FRenderInfo clickedRenderInfo;
 			mSceneManager->GetSelectedActor()->GetFirstRenderInfo(clickedRenderInfo);
-			mGraphicsManager->RenderHighLight(clickedRenderInfo);
+			mGraphicsManager->RenderHighLight(clickedRenderInfo, ViewportClient->mCamera);
 		}
 
 		// Gizmo
