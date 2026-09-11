@@ -107,6 +107,7 @@ public:
 	bool StartsWith(const FString& prefix) const;
 
 	bool ToBool() const;
+	float ToFloat() const;
 
 	FString ToLower() const;
 	FString ToUpper() const;

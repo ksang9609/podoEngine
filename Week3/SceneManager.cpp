@@ -22,6 +22,7 @@
 #include "FrameTimer.h"
 #include "CubeComponent.h"
 #include "ActorComponent.h"
+#include "iniParser.h"
 
 FSceneManager::FSceneManager()
 {
@@ -253,13 +254,14 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
 	//	: "OFF: blue (far, drawn last) overwrites");
-
 	ImGui::Text("GridWidth");
 	ImGui::SameLine();
 	float gridWidth = guiReference.GraphicsManager->GetGridWidth();
-	if (ImGui::DragFloat("##GridWidth", &gridWidth, 0.1f, 10.0f))
+	if (ImGui::SliderFloat("GridWidth", &camera.Sensitivity, 0.0f, 1.0f))
 	{
 		guiReference.GraphicsManager->SetGridWidth(gridWidth);
+		mEditorSetting.GridSpacing = gridWidth; 
+		mEditorSetting.Save();
 	}
 
 	ImGui::Text("Sensitivity");
