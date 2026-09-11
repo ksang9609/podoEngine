@@ -60,6 +60,21 @@ typedef struct FVector
 	{
 		return LengthSquared() < Tolerance;
 	}
+
+	inline static FVector Up()
+	{
+		return FVector(0, 0, 1);
+	}
+
+	inline static FVector Right()
+	{
+		return FVector(0, 1, 0);
+	}
+
+	inline static FVector Forward()
+	{
+		return FVector(1, 0, 0);
+	}
 	
 } FVector3;
 

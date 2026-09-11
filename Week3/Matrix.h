@@ -229,6 +229,40 @@ struct FMatrix {
 		return Matrix;
 	}
 
+	// Rotate matrix from quaternion.
+	// NOTE: Row vector convention. v' = v * M
+	//	|	1 - 2 (y^2 + z^2)	2xy + 2wz			2xz - 2wy			|
+	//	|	2xy - 2wz			1 - 2 (x^2 + z^2)	2yz + 2wx			|
+	//	|	2xz + 2wy			2yz - 2wx			1 - 2 (x^2 + y^2)	|
+	//
+	static FMatrix Rotate(const FQuat q)
+	{
+		FMatrix result = Identity;
+		const float x2 = q.x + q.x;
+		const float y2 = q.y + q.y;
+		const float z2 = q.z + q.z;
+		const float xx2 = q.x * x2;
+		const float yy2 = q.y * y2;
+		const float zz2 = q.z * z2;
+		result.M[0][0] = 1.0f - (yy2 + zz2);
+		result.M[1][1] = 1.0f - (xx2 + zz2);
+		result.M[2][2] = 1.0f - (xx2 + yy2);
+		const float yz2 = q.y * z2;
+		const float wx2 = q.w * x2;
+		result.M[1][2] = yz2 + wx2;
+		result.M[2][1] = yz2 - wx2;
+		const float xy2 = q.x * y2;
+		const float wz2 = q.w * z2;
+		result.M[0][1] = xy2 + wz2;
+		result.M[1][0] = xy2 - wz2;
+		const float xz2 = q.x * z2;
+		const float wy2 = q.w * y2;
+		result.M[0][2] = xz2 - wy2;
+		result.M[2][0] = xz2 + wy2;
+
+		return result;
+	}
+
 	static FMatrix Translation(const FVector v)
 	{
 		FMatrix result = Identity;

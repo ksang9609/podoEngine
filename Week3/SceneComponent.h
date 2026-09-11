@@ -24,6 +24,7 @@ public:
 
 	FRotator GetRelativeRotation() const;
 	void SetRelativeRotation(FRotator rotation);
+	void SetRelativeRotation(FQuat rotation);
 
 	FVector GetRelativeScale3D() const;
 	void SetRelativeScale3D(FVector scale);
@@ -34,5 +35,7 @@ private:
 	FVector mRelativeLocation;
 	FRotator mRelativeRotation;
 	FVector mRelativeScale3D;
+
+	FTransform mComponentToWorld;
 };
 

@@ -35,7 +35,7 @@ struct FGizmo {
 	float mScaleBarThickness = mAxisLength * 0.035f;
 	float mScaleHandleSize = mAxisLength * 0.13;
 	float mGizmoSizeRatio = 0.3f;
-	FRotator UpdateRotation = {};
+	FQuat UpdateRotation = {};
 	
 	EGIZMO_AXIS eAxis = NONE; // 축위에 있는지
 	EGIZMO_AXIS mDraggingAxis = NONE; // Drag중인 축
@@ -75,6 +75,7 @@ struct FGizmo {
 	// 드래그 중인 링을 따라 액터가 가져야 할 회전.
 	// 누적각을 갱신하므로 const가 아니다.
 	bool GetDragRotation(const FVector& nearPoint, const FVector& farPoint, FRotator& outRotation);
+	bool GetDragRotation(const FVector& nearPoint, const FVector& farPoint, FQuat& outRotation);
 	bool IsRayInGizmo(FVector nearPoint, FVector farPoint);
 	void Reset();
 
