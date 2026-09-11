@@ -51,7 +51,7 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 	return false;
 }
 
-void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, float perspectiveRatio)
+void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FRenderInfo>& renderInfos, float perspectiveRatio)
 {
 	bMouseHit = false;
 
@@ -95,8 +95,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, 
 	}
 
 	// Object 탐색
-	const TArray<FRenderInfo> RenderInfos = World->GetRenderInfos();
-	for (const FRenderInfo& RI : RenderInfos)
+	for (const FRenderInfo& RI : renderInfos)
 	{
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
@@ -105,7 +104,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, 
 			continue;   // 모르는 프리미티브는 건너뛴다
 		}
 
-		const FMatrix WorldToLocal = RI.WorldTransformMatrix.Inverse();
+		const FMatrix WorldToLocal = RI.GetBillboardTransformMatrix(mCamera.Rotation).Inverse();
 
 		//역행렬이 존재하지 않으면(스케일이 작아 det이 0에 가까운 경우) Racast 대상에서 제외
 		if (WorldToLocal == FMatrix::Zero) continue;
@@ -210,7 +209,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	}
 
 
-	RayCast(ViewportInfo, sceneManager->GetCurrentWorld(), perspectiveRatio);
+	RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio);
 
 	//RayCast
 

@@ -86,27 +86,6 @@ void FGraphicsManager::GizmoPrepare()
 
 
 
-// Update world matrix for billboard quads to face the camera
-// Get FRotator input because current camera rotation is stored in FRotator.
-// If camear stores rotation in FQuat, we can use FQuat to calculate billboard matrix.
-const FMatrix GetBillboardTransformMatrix(const FRenderInfo& renderInfo, const FRotator& cameraRotation)
-{
-	if (renderInfo.ePrimitive != EPrimitive::EP_BillboardQuad)
-	{
-		return renderInfo.WorldTransformMatrix;
-	}
-
-	const FMatrix& world = renderInfo.WorldTransformMatrix;
-	const FVector location = FVector(world.M[3][0], world.M[3][1], world.M[3][2]);
-
-	const FVector scale = {
-		world.GetUnitAxis(EAxis::X).Length(),
-		world.GetUnitAxis(EAxis::Y).Length(),
-		world.GetUnitAxis(EAxis::Z).Length(),
-	};
-
-	return FMatrix::Scale(scale) * FMatrix::Rotate(cameraRotation) * FMatrix::Translation(location);
-}
 
 void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCamera& camera)
 {
@@ -116,7 +95,7 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCame
 
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
-		FMatrix worldTransform = GetBillboardTransformMatrix(renderInfo, camera.Rotation);
+		FMatrix worldTransform = renderInfo.GetBillboardTransformMatrix(camera.Rotation);
 
 		// 빌보드 텍스쳐 렌더링
 		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
@@ -407,11 +386,11 @@ void  FGraphicsManager::SetGridWidth(float width)
 }
 
 
-void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
+void FGraphicsManager::RenderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
-	FMatrix worldTransformMatrix = RI.WorldTransformMatrix;
+	FMatrix worldTransformMatrix = RI.GetBillboardTransformMatrix(camera.Rotation);
 
 	// 화면에서 OUTLINE_PIXELS 만큼 보이려면 이 깊이에서 월드로 얼마여야 하는지 환산한다.
 	// 깊이 d에서 뷰포트가 담는 월드 높이가 2*d*tan(fov/2) 이므로, 그걸 픽셀 수로 나누면 픽셀당 월드 크기다.
@@ -452,7 +431,7 @@ void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 	//{
 	//	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewOrthogonalProjectionMatrix, Outline, RI);
 	//}
-	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewUnifiedProjectionMatrix, Outline, RI);
+	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewUnifiedProjectionMatrix, Outline, worldTransformMatrix);
 }
 
 

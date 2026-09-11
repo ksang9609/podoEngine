@@ -23,7 +23,8 @@
 #include "CubeComponent.h"
 #include "ActorComponent.h"
 
-FSceneManager::FSceneManager()
+FSceneManager::FSceneManager(const FCamera& viewportCameraRef)
+	: mViewportCameraRef(viewportCameraRef)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	mPanelWidth = io.DisplaySize.x * MIN_WIDTH_RATIO;
