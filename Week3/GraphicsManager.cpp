@@ -100,9 +100,7 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCame
 		// 빌보드 텍스쳐 렌더링
 		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
 		{
-			FMatrix billboardWorld = GetBillboardTransformMatrix(renderInfo, camera.Rotation);
-
-			mRenderer->RenderTexture(billboardWorld, mViewUnifiedProjectionMatrix);
+			mRenderer->RenderTexture(worldTransform, mViewUnifiedProjectionMatrix);
 
 			continue;
 		}
