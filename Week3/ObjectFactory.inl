@@ -52,9 +52,7 @@ TObject* FObjectFactory::ConstructObjectWithName(const FName& Name, Args&&... ar
 
 	if (instance)
 	{
-		instance->Initialize(
-			std::forward<Args>(args)...
-		);
+		instance->Initialize(std::forward<Args>(args)...);
 	}
 
 	return instance;

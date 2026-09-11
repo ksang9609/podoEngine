@@ -67,7 +67,7 @@ public:
 
 	float GetPanelWidth() const;
 
-	void Initialize(FEditorViewportClient& ViewportClient);
+	void Initialize(FEditorViewportClient& ViewportClient, FGraphicsManager* GraphicsManager);
 
 private:
 	static constexpr float MIN_WIDTH_RATIO = 0.2f;

@@ -44,13 +44,15 @@ FSceneManager::FSceneManager()
 	//}
 }
 
-void FSceneManager::Initialize(FEditorViewportClient& ViewportClient)
+void FSceneManager::Initialize(FEditorViewportClient& ViewportClient, FGraphicsManager* GraphicsManager)
 {
 	mEditorSetting.Load();
 
 	FCamera& camera = ViewportClient.GetCamera();
 
 	camera.SetCameraSensitivity(mEditorSetting.CameraSensitivity);
+
+	GraphicsManager->SetGridWidth(mEditorSetting.GridSpacing);
 }
 
 FSceneManager::~FSceneManager()
@@ -249,10 +251,12 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamRotZ", &camera.Rotation.Yaw, 0.1f, 180.0f);
+
 	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
 	//	: "OFF: blue (far, drawn last) overwrites");
+
 	ImGui::Text("GridWidth");
 	ImGui::SameLine();
 	float gridWidth = guiReference.GraphicsManager->GetGridWidth();

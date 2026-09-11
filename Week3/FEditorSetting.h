@@ -25,7 +25,7 @@ struct FEditorSetting
 			{
 				File >> CameraSensitivity;
 			}
-			else if (Key == "GridSpacing")
+			if (Key == "GridSpacing")
 			{
 				File >> GridSpacing;
 			}

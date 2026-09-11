@@ -82,7 +82,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
 
-	mSceneManager->Initialize(*ViewportClient);
+	mSceneManager->Initialize(*ViewportClient, mGraphicsManager);
 
 	mSceneManager->NewScene();
 	// mSceneManager->LoadScene("TestScene", *mFileManager);
