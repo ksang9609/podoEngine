@@ -1,4 +1,6 @@
 ﻿#include "Core.h"
+#include "TArray.h"
+#include "TMap.h"
 #include "Name.h"
 
 #include <vector>
@@ -7,11 +9,11 @@
 
 namespace
 {
-	std::vector<FString> GDisplayNamePool;
-	std::vector<FString> GComparisonNamePool;
+	TArray<FString> GDisplayNamePool;
+	TArray<FString> GComparisonNamePool;
 
-	std::unordered_map<FString, int32> GDisplayNamePoolLookup;
-	std::unordered_map<FString, int32> GComparisonNamePoolLookup;
+	TMap<FString, int32> GDisplayNamePoolLookup;
+	TMap<FString, int32> GComparisonNamePoolLookup;
 
 	static FString ToLower(FString str)
 	{
@@ -24,18 +26,18 @@ namespace
 		return str;
 	}
 
-	static int32 FindOrAdd(std::vector<FString>& Pool, std::unordered_map<FString, int32>& Lookup, const FString& Name)
+	static int32 FindOrAdd(TArray<FString>& Pool, TMap<FString, int32>& Lookup, const FString& Name)
 	{
-		auto It = Lookup.find(Name);
+		int32* FoundIndex = Lookup.Find(Name);
 
-		if (It != Lookup.end())
+		if (FoundIndex)
 		{
-			return It->second;
+			return *FoundIndex;
 		}
 
-		const int32 NewIndex = static_cast<int32>(Pool.size());
-		Pool.push_back(Name);
-		Lookup.emplace(Name, NewIndex);
+		const int32 NewIndex = static_cast<int32>(Pool.Num());
+		Pool.Add(Name);
+		Lookup.Add(Name, NewIndex);
 
 		return NewIndex;
 	}
@@ -64,7 +66,7 @@ FName::FName(const FString& str)
 
 FString FName::ToString() const
 {
-	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(GDisplayNamePool.size()))
+	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(GDisplayNamePool.Num()))
 	{
 		return FString("None");
 	}
@@ -83,15 +85,18 @@ int32 FName::Compare(const FName& Other) const
 	const FString& A = GComparisonNamePool[ComparisonIndex];
 	const FString& B = GComparisonNamePool[Other.ComparisonIndex];
 
-	if (A < B)
+	int Result = std::strcmp(A.CStr(), B.CStr());
+
+	if (Result < 0)
 	{
 		return -1;
 	}
 
-	if (A > B)
+	if (Result > 0)
 	{
 		return 1;
 	}
+
 	return 0;
 }
 
