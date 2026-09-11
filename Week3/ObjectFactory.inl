@@ -12,6 +12,7 @@ TObject* FObjectFactory::ConstructUnInitializedObject()
 	if (instance)
 	{
 		instance->mClassInfo = classInfo;
+		// instance->mName = FName(classInfo->Name);
 		instance->mName = FName(classInfo->Name);
 	}
 	return instance;
@@ -28,6 +29,7 @@ TObject* FObjectFactory::ConstructObject(Args&& ...args)
 	}, "TObject must have an Initialize method that accepts the provided arguments.");
 
 	TObject* instance = ConstructUnInitializedObject<TObject>();
+
 	if (instance)
 	{
 		instance->Initialize(std::forward<Args>(args)...);
@@ -43,6 +45,24 @@ TObject* FObjectFactory::LoadObject(const json::JSON& inJson)
 	if (instance)
 	{
 		instance->DeserializeClass(inJson);
+	}
+
+	return instance;
+}
+
+template<typename TObject, typename... Args>
+	requires std::derived_from<TObject, UObject>
+TObject* FObjectFactory::ConstructObjectWithName(const FName& Name, Args&&... args)
+{
+	TObject* instance = ConstructUnInitializedObject<TObject>();
+
+	if (instance)
+	{
+		instance->SetName(Name);
+
+		instance->Initialize(
+			std::forward<Args>(args)...
+		);
 	}
 
 	return instance;
