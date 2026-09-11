@@ -163,6 +163,7 @@
     <ClInclude Include="FBoundingBox.h" />
     <ClInclude Include="FName.h" />
     <ClInclude Include="GizmoArrow.h" />
+    <ClInclude Include="NameComponent.h" />
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="Quat.h" />
     <ClInclude Include="Triangle.h" />
