@@ -218,6 +218,8 @@ void URenderer::CreateShader()
 {
 	ID3DBlob* vertexshaderCSO;
 	ID3DBlob* pixelshaderCSO;
+	ID3DBlob* LinevertexshaderCSO;
+	ID3DBlob* LinepixelshaderCSO;
 
 	D3DCompileFromFile(L"ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vertexshaderCSO, nullptr);
 
@@ -227,18 +229,35 @@ void URenderer::CreateShader()
 
 	Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(), pixelshaderCSO->GetBufferSize(), nullptr, &SimplePixelShader);
 
+	D3DCompileFromFile(L"ShaderLine.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &LinevertexshaderCSO, nullptr);
+
+	Device->CreateVertexShader(LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), nullptr, &LineSimpleVertexShader);
+
+	D3DCompileFromFile(L"ShaderLine.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &LinepixelshaderCSO, nullptr);
+
+	Device->CreatePixelShader(LinepixelshaderCSO->GetBufferPointer(), LinepixelshaderCSO->GetBufferSize(), nullptr, &LineSimplePixelShader);
+
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
+	D3D11_INPUT_ELEMENT_DESC Linelayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
 	Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
+	Device->CreateInputLayout(Linelayout, ARRAYSIZE(Linelayout), LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), &LineSimpleInputLayout);
 
 	Stride = sizeof(FVertexSimple);
 
 	vertexshaderCSO->Release();
 	pixelshaderCSO->Release();
+	LinevertexshaderCSO->Release();
+	LinepixelshaderCSO->Release();
 }
 
 void URenderer::ReleaseShader()
@@ -259,6 +278,24 @@ void URenderer::ReleaseShader()
 	{
 		SimpleVertexShader->Release();
 		SimpleVertexShader = nullptr;
+	}
+
+	if (LineSimpleInputLayout)
+	{
+		LineSimpleInputLayout->Release();
+		LineSimpleInputLayout = nullptr;
+	}
+
+	if (LineSimplePixelShader)
+	{
+		LineSimplePixelShader->Release();
+		LineSimplePixelShader = nullptr;
+	}
+
+	if (LineSimpleVertexShader)
+	{
+		LineSimpleVertexShader->Release();
+		LineSimpleVertexShader = nullptr;
 	}
 }
 
@@ -292,6 +329,18 @@ void URenderer::PrepareShader()
 	DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
 	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(SimpleInputLayout);
+
+	if (ConstantBuffer)
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+	}
+}
+
+void URenderer::PrepareLineShader()
+{
+	DeviceContext->VSSetShader(LineSimpleVertexShader, nullptr, 0);
+	DeviceContext->PSSetShader(LineSimplePixelShader, nullptr, 0);
+	DeviceContext->IASetInputLayout(LineSimpleInputLayout);
 
 	if (ConstantBuffer)
 	{
@@ -349,8 +398,10 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, c
 	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &Stride, &offset);
 	DeviceContext->IASetIndexBuffer(LineIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	PrepareLineShader();
 	DeviceContext->DrawIndexed(numindices, 0, 0);
 
+	PrepareShader();
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
