@@ -77,24 +77,44 @@ void FGraphicsManager::GizmoPrepare()
 	mRenderer->RSUpdateState();
 
 }
-void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
+
+
+
+
+
+// Update world matrix for billboard quads to face the camera
+// Get FRotator input because current camera rotation is stored in FRotator.
+// If camear stores rotation in FQuat, we can use FQuat to calculate billboard matrix.
+const FMatrix GetBillboardTransformMatrix(const FRenderInfo& renderInfo, const FRotator& cameraRotation)
+{
+	if (renderInfo.ePrimitive != EPrimitive::EP_BillboardQuad)
+	{
+		return renderInfo.WorldTransformMatrix;
+	}
+
+	const FMatrix& world = renderInfo.WorldTransformMatrix;
+	const FVector location = FVector(world.M[3][0], world.M[3][1], world.M[3][2]);
+
+	const FVector scale = {
+		world.GetUnitAxis(EAxis::X).Length(),
+		world.GetUnitAxis(EAxis::Y).Length(),
+		world.GetUnitAxis(EAxis::Z).Length(),
+	};
+
+	return FMatrix::Scale(scale) * FMatrix::Rotate(cameraRotation) * FMatrix::Translation(location);
+}
+
+void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCamera& camera)
 {
 	FMatrix viewProjection;
-	//if (mbPerspectiveProjection)
-	//{
-	//	viewProjection = mViewProjectionMatrix;
-	//}
-	//else
-	//{
-	//	viewProjection = mViewOrthogonalProjectionMatrix;
-	//}
 
 	viewProjection = mViewUnifiedProjectionMatrix;
 
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
-		//mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix, renderInfo.Color);
-		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, viewProjection, renderInfo.Color);
+		FMatrix worldTransform = GetBillboardTransformMatrix(renderInfo, camera.Rotation);
+
+		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo.Color);
 
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
 		if (vertexBuffer == nullptr)
@@ -172,10 +192,10 @@ void FGraphicsManager::FlushLines()
 	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
 }
 
-void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos) //깊이버퍼 초기화
+void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera) //깊이버퍼 초기화
 {
 	mRenderer->ClearDepth();
-	Render(renderInfos);
+	Render(renderInfos, camera);
 }
 /*
 void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimitive)
@@ -263,10 +283,11 @@ void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 {
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
+	FMatrix worldTransformMatrix = RI.WorldTransformMatrix;
 
 	// 화면에서 OUTLINE_PIXELS 만큼 보이려면 이 깊이에서 월드로 얼마여야 하는지 환산한다.
 	// 깊이 d에서 뷰포트가 담는 월드 높이가 2*d*tan(fov/2) 이므로, 그걸 픽셀 수로 나누면 픽셀당 월드 크기다.
-	const FVector ObjectLocation = RI.WorldTransformMatrix.TransformPosition(Center);
+	const FVector ObjectLocation = worldTransformMatrix.TransformPosition(Center);
 	const float Depth = FVector::dot(ObjectLocation - mCameraLocation, mCameraForward);
 	const float TanHalfFov = tanf(FMath::DegreesToRadians(mCameraFovDegree * 0.5f));
 	const float effectiveDepth = FMath::Max(
@@ -279,9 +300,9 @@ void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 
 	// 축마다 월드 공간에서 WorldThickness 만큼만 자라도록 배율을 따로 구한다.
 	const FVector WorldScale(
-		RI.WorldTransformMatrix.GetUnitAxis(EAxis::X).Length(),
-		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
-		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Z).Length());
+		worldTransformMatrix.GetUnitAxis(EAxis::X).Length(),
+		worldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
+		worldTransformMatrix.GetUnitAxis(EAxis::Z).Length());
 
 	FVector OutlineScale = {
 		GetOutlineAxisScale(HalfExtent.x * WorldScale.x, WorldThickness),
@@ -292,7 +313,7 @@ void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 	const FMatrix Outline = FMatrix::Translation(FVector(-Center.x, -Center.y, -Center.z))
 		* FMatrix::Scale(OutlineScale)
 		* FMatrix::Translation(Center)
-		* RI.WorldTransformMatrix;
+		* worldTransformMatrix;
 
 	FBuffer vertexBuffer = mBufferMap[RI.ePrimitive];
 	//if (mbPerspectiveProjection)
