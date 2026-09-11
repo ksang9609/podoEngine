@@ -45,6 +45,17 @@ FSceneManager::FSceneManager(const FCamera& viewportCameraRef)
 	//}
 }
 
+void FSceneManager::Initialize(FEditorViewportClient& ViewportClient, FGraphicsManager* GraphicsManager)
+{
+	mEditorSetting.Load();
+
+	FCamera& camera = ViewportClient.GetCamera();
+
+	camera.SetCameraSensitivity(mEditorSetting.CameraSensitivity);
+
+	GraphicsManager->SetGridWidth(mEditorSetting.GridSpacing);
+}
+
 FSceneManager::~FSceneManager()
 {
 	delete mCurrentWorld;
@@ -131,17 +142,25 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	/* Scene Control */
 	ImGui::SeparatorText("Scene Control");
 
-	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName));
+	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName), ImGuiInputTextFlags_ReadOnly);
 	if (ImGui::Button("New scene"))
 	{
 		// TODO: add clear depth buffer function in renderer
 		//guiReference.GraphicsManager->GetRenderer()->ClearDepthBuffer();
 		guiReference.ViewportClient->Reset();
 		NewScene();
+		strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), "Default");
 	}
 	if (ImGui::Button("Save scene"))
 	{
-		SaveScene(mGuiInputField.SceneName, *guiReference.FileManager);
+		const FString selectedFile = mSaveSceneFileDialog();
+
+		if (selectedFile.Len() > 0)
+		{
+			std::filesystem::path p(selectedFile.CStr());
+			SaveScene(p.stem().string(), *guiReference.FileManager);
+			guiReference.ViewportClient->Reset();
+		}
 	}
 	if (ImGui::Button("Load scene"))
 	{
@@ -150,7 +169,9 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		if (selectedFile.Len() > 0)
 		{
 			LoadScene(selectedFile, *guiReference.FileManager);
-
+			std::filesystem::path p(selectedFile.CStr());
+			std::string LoadScenename = p.stem().string();
+			strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), LoadScenename.c_str());
 			guiReference.ViewportClient->Reset();
 		}
 	}
@@ -188,11 +209,9 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 
 			guiReference.GraphicsManager->StartProjectionTransition(bOrthographic);
 		}
-
 		ImGui::EndCombo();
 	}
 	// Debug perspective ratio slider
-
 	//float perspectiveRatio = guiReference.GraphicsManager->GetPerspectiveRatio();
 	//const float previousPerspectiveRatio = perspectiveRatio;
 	//if (ImGui::SliderFloat("Perspective Ratio", &perspectiveRatio, 0.0f, 1.0f))
@@ -212,12 +231,12 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	//}
 	//ImGui::Text("Camera Ortho Distance: %.2f", guiReference.ViewportClient->GetCamera().mOrthoDistance);
 
-	ImGui::Text("FOV     ");
+	ImGui::Text("FOV      ");
 	ImGui::SameLine();
 	ImGui::SliderFloat("##FOV", &camera.mFovDegree, 0.0f, 180.0f);
 
 	// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
-	ImGui::Text("Location");
+	ImGui::Text("Location ");
 	ImGui::SameLine();
 
 	// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
@@ -233,7 +252,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamLocZ", &camera.Location.z, 0.1f, 10.0f);
 
-	ImGui::Text("Rotation");
+	ImGui::Text("Rotation ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamRotX", &camera.Rotation.Roll, 0.1f, 180.0f);
@@ -243,15 +262,30 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamRotZ", &camera.Rotation.Yaw, 0.1f, 180.0f);
+
 	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
-	//	: "OFF: blue (far, drawn last) overwrites"); 
+	//	: "OFF: blue (far, drawn last) overwrites");
+
+	ImGui::Text("GridWidth");
+	ImGui::SameLine();
 	float gridWidth = guiReference.GraphicsManager->GetGridWidth();
-	if (ImGui::DragFloat("GridWidth", &gridWidth, 0.1f, 10.0f))
+	if (ImGui::SliderFloat("##GridWidth", &gridWidth, 0.1f, 10.0f))
 	{
 		guiReference.GraphicsManager->SetGridWidth(gridWidth);
+		mEditorSetting.GridSpacing = gridWidth; 
+		mEditorSetting.Save();
 	}
+
+	ImGui::Text("Sensitivity");
+	ImGui::SameLine();
+	if (ImGui::SliderFloat("##Sensitivity", &camera.Sensitivity, 0.0f, 1.0f))
+	{
+		mEditorSetting.CameraSensitivity = camera.Sensitivity;
+		mEditorSetting.Save();
+	}
+
 	/* Memory Info */
 	ImGui::SeparatorText("Memory Info");
 
@@ -453,7 +487,6 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 				{
 					ImGui::PopStyleColor(); // Pop the border color if it was pushed
 				}
-
 
 				ImGui::PopID();
 			}
@@ -670,6 +703,39 @@ FString FSceneManager::mOpenSceneFileDialog() const
 	return FString("");
 }
 
+FString FSceneManager::mSaveSceneFileDialog() const
+{
+	char fileName[MAX_PATH] = {};
+	OPENFILENAMEA openFileName = {};
+
+	openFileName.lStructSize = sizeof(OPENFILENAMEA);
+	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
+
+	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
+	openFileName.lpstrFile = fileName;
+	openFileName.nMaxFile = MAX_PATH;
+
+	openFileName.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+	openFileName.lpstrDefExt = "Scene";
+
+	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
+
+	if (!std::filesystem::exists(initialDirectory))
+	{
+		std::filesystem::create_directories(initialDirectory);
+	}
+
+	const std::string initialDirectoryString = initialDirectory.string();
+
+	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
+
+	if (GetSaveFileNameA(&openFileName))
+	{
+		return FString(fileName);
+	}
+
+	return FString("");
+}
 
 //
 //FSceneData FSceneManager::ReadSceneData(

@@ -1,6 +1,8 @@
 ﻿
 #include "CubeComponent.h"
 
+IMPLEMENT_CLASS(UCubeComponent, UPrimitiveComponent);
+
 UCubeComponent::UCubeComponent()
 {
 }

@@ -8,7 +8,7 @@
 
 class UWorld final : public UObject
 {
-	REFLECT_CLASS(UWorld, UObject)
+	DECLARE_OBJECT(UWorld, UObject)
 public:
 	UWorld() = default;
 	virtual ~UWorld();

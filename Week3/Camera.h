@@ -185,6 +185,11 @@ public:
 	//카메라 이동 민감도
 	float Sensitivity = 0.1f;
 
+	void SetCameraSensitivity(float InSensitivity)
+	{
+		Sensitivity = InSensitivity;
+	}
+
 	//카메라 시야각
 	float mFovDegree = 60.f;
 

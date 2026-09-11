@@ -16,6 +16,7 @@
 #include "Actor.h"
 #include "World.h"
 #include "FName.h"
+#include "SceneManager.h"
 
 // Primitive vertices definitions
 #include "Cube.h"
@@ -84,6 +85,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
 	mFileManager = new FFileManager();
+
+	mSceneManager->Initialize(*ViewportClient, mGraphicsManager);
 
 	mSceneManager->NewScene();
 	// mSceneManager->LoadScene("TestScene", *mFileManager);
