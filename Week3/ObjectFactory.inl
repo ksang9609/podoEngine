@@ -12,6 +12,7 @@ TObject* FObjectFactory::ConstructUnInitializedObject()
 	if (instance)
 	{
 		instance->mClassInfo = classInfo;
+		instance->mName = FName(classInfo->Name);
 	}
 	return instance;
 }

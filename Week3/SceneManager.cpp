@@ -390,6 +390,8 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 				{
 					ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
 					ImGui::Text("UUID: %d", object->UUID);
+					FString ObjectName = object->GetName().ToString();
+					ImGui::Text("Name: %s", ObjectName.CStr());
 
 					// TODO: Move implement delete to where?
 					if (object->IsA<AActor>())

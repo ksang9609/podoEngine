@@ -4,6 +4,7 @@
 
 #include "Actor.h"
 #include "PrimitiveComponent.h"
+#include "Object.h"
 
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
@@ -13,9 +14,11 @@ UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInf
 	}
 
 	UObject* instance = classInfo->CreateInstance();
+
 	if (instance)
 	{
 		instance->mClassInfo = classInfo;
+		instance->mName = FName(classInfo->Name);
 	}
 	return instance;
 }
@@ -67,7 +70,6 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 }
 
 #include "SceneComponent.h"
-#include "PrimitiveComponent.h"
 #include "CubeComponent.h"
 #include "SphereComponent.h"
 #include "World.h"

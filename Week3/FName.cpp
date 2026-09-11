@@ -11,7 +11,7 @@ namespace
 	std::vector<std::string> GComparisonNamePool;
 
 	std::unordered_map<std::string, int32> GDisplayNamePoolLookup;
-	std::unordered_map<std::string, int32> GComparisonNamePoolLoookup;
+	std::unordered_map<std::string, int32> GComparisonNamePoolLookup;
 
 	static std::string ToLower(std::string str)
 	{
@@ -47,18 +47,29 @@ FName::FName()
 {
 }
 
+
 FName::FName(const char* pStr)
 {
-	std::string DIsplayName = pStr;
-	std::string ComparisonName = ToLower(DIsplayName);
+	std::string DisplayName = pStr;
+	std::string ComparisonName = ToLower(DisplayName);
 
-	DisplayIndex = FindOrAdd(GDisplayNamePool, GDisplayNamePoolLookup, DIsplayName);
-	ComparisonIndex = FindOrAdd(GComparisonNamePool, GComparisonNamePoolLoookup, ComparisonName);
+	DisplayIndex = FindOrAdd(GDisplayNamePool, GDisplayNamePoolLookup, DisplayName);
+	ComparisonIndex = FindOrAdd(GComparisonNamePool, GComparisonNamePoolLookup, ComparisonName);
 }
 
 FName::FName(const FString& str)
 	: FName(str.CStr())
 {
+}
+
+FString FName::ToString() const
+{
+	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(GDisplayNamePool.size()))
+	{
+		return FString("None");
+	}
+
+	return FString(GDisplayNamePool[DisplayIndex]);
 }
 
 
