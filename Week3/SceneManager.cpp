@@ -144,9 +144,16 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	}
 	if (ImGui::Button("Load scene"))
 	{
-		guiReference.ViewportClient->Reset();
-		LoadScene(mGuiInputField.SceneName, *guiReference.FileManager);
+		const FString selectedFile = mOpenSceneFileDialog();
+
+		if (selectedFile.Len() > 0)
+		{
+			LoadScene(selectedFile, *guiReference.FileManager);
+
+			guiReference.ViewportClient->Reset();
+		}
 	}
+
 	/* Camera Control */
 	ImGui::SeparatorText("Camera Control");
 
@@ -369,6 +376,10 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 			//for (UObject* object : mGuiInputField.SortedObjectLists)
 
 			UObject* bDeleteActorOrNull = nullptr;
+
+			static char NameBuffer[128] = {};
+			static int32 CachedSelectedUUID = -1;
+
 			for (unsigned int objectsIndex = 0; objectsIndex < mGuiInputField.SortedObjectLists.Num(); ++objectsIndex)
 			{
 				UObject* object = mGuiInputField.SortedObjectLists[objectsIndex];
@@ -376,18 +387,17 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 				bool bSelected = false;
 				ImGui::PushID(object->UUID); // Ensure unique ID for each child
 
-				// Highlight the frame if this object is the clicked actor
-				if (object->UUID == selectedActorUUID)
-				{
-					bSelected = true;
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
-				}
-
 				if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
 					ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
 				{
 					ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
 					ImGui::Text("UUID: %d", object->UUID);
+					FString ObjectName = object->GetName().ToString();
+					ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
+						ObjectName.CStr(),
+						object->GetName().DisplayIndex,
+						object->GetName().ComparisonIndex
+					);
 
 					// TODO: Move implement delete to where?
 					if (object->IsA<AActor>())
@@ -408,6 +418,34 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 						}
 					}
 				}
+
+				// Highlight the frame if this object is the clicked actor
+				if (object->UUID == selectedActorUUID)
+				{
+					bSelected = true;
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
+
+					if (CachedSelectedUUID != object->UUID)
+					{
+						CachedSelectedUUID = object->UUID;
+
+						FString CurrentName = object->GetName().ToString();
+
+						strcpy_s(NameBuffer, sizeof(NameBuffer), CurrentName.CStr());
+					}
+
+					ImGui::Text("Edit Name");
+					ImGui::SameLine();
+					bool bEnterPressed = ImGui::InputText("##Edit Name", NameBuffer, sizeof(NameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+					ImGui::SameLine();
+					bool bApplyPressed = ImGui::Button("Apply");
+
+					if (bEnterPressed || bApplyPressed)
+					{
+						object->SetName(FName(NameBuffer));
+					}
+				}
+				
 				ImGui::EndChild();
 
 				if (bSelected)
@@ -506,49 +544,57 @@ void FSceneManager::SaveScene(
 	fileManager.WriteStringToFile(fileName, jsonString);
 }
 
-void FSceneManager::LoadScene(
-	std::string_view sceneName,
-	const FFileManager& fileManager)
+void FSceneManager::LoadScene(std::string_view filePath, const FFileManager& fileManager)
 {
-	FString fileName = kSceneDataDir;
-	fileName += FString("/");
-	fileName += sceneName;
-	fileName += kSceneDataSuffix;
-
 	FString jsonString;
 
 	try
 	{
-		jsonString = fileManager.ReadFileToString(fileName);
+		jsonString = fileManager.ReadFileToString(filePath);
 	}
 	catch (const std::exception& e)
 	{
-		UE_LOG_F("Failed to load scene {}: file not found.", sceneName);
+		UE_LOG_F("Failed to read scene file {}: {}", filePath, e.what());
 		return;
 	}
 
-	json::JSON readSceneJson = json::JSON::Load(jsonString);
-
-	if (!readSceneJson.hasKey("NextUUID") || readSceneJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
+	try
 	{
-		throw std::runtime_error(std::format("Scene file {} does not contain a valid NextUUID field.", fileName));
-	}
-	uint32 nextUUID = readSceneJson.at("NextUUID").ToInt();
-	json::JSON worldJson = readSceneJson.at("World");
+		json::JSON readSceneJson = json::JSON::Load(jsonString);
 
-	UWorld* newWorld = FObjectFactory::LoadObject<UWorld>(worldJson);
-	if (!newWorld)
+		if (!readSceneJson.hasKey("NextUUID") || readSceneJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
+		{
+			throw std::runtime_error("Scene file does not contain a valid NextUUID.");
+		}
+
+		if (!readSceneJson.hasKey("World") || readSceneJson.at("World").JSONType() != json::JSON::Class::Object)
+		{
+			throw std::runtime_error("Scene file does not contain a valid World.");
+		}
+
+		const uint32 nextUUID = readSceneJson.at("NextUUID").ToInt();
+		const json::JSON& worldJson = readSceneJson.at("World");
+
+		UWorld* newWorld = FObjectFactory::LoadObject<UWorld>(worldJson);
+
+		if (!newWorld)
+		{
+			throw std::runtime_error("Failed to load world.");
+		}
+
+		delete mCurrentWorld;
+		mCurrentWorld = newWorld;
+
+		UEngineStatics::SetNextUUID(nextUUID);
+		ResetSelectedActor();
+	}
+	catch (const std::exception& e)
 	{
-		throw std::runtime_error(std::format("Failed to load world from scene: {}", sceneName));
+		UE_LOG_F("Failed to load scene file {}: {}", filePath, e.what());
 	}
-	UEngineStatics::SetNextUUID(nextUUID);
-
-	// Replace the contents of mCurrentWorld with newWorld
-	delete mCurrentWorld;
-	mCurrentWorld = newWorld;
-
-	ResetSelectedActor();
 }
+
+
 
 void  FSceneManager::SetSelectedActor(AActor* actor)
 {
@@ -587,6 +633,40 @@ const TArray<FRenderInfo> FSceneManager::GetAxisRenderInfos()
 {
 	// TODO: Implement axis render info retrieval logic
 	return TArray<FRenderInfo>();
+}
+
+FString FSceneManager::mOpenSceneFileDialog() const
+{
+	char fileName[MAX_PATH] = {};
+	OPENFILENAMEA openFileName = {};
+
+	openFileName.lStructSize = sizeof(OPENFILENAMEA);
+	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
+
+	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
+	openFileName.lpstrFile = fileName;
+	openFileName.nMaxFile = MAX_PATH;
+
+	openFileName.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+	openFileName.lpstrDefExt = "Scene";
+
+	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
+
+	if (!std::filesystem::exists(initialDirectory))
+	{
+		std::filesystem::create_directories(initialDirectory);
+	}
+
+	const std::string initialDirectoryString = initialDirectory.string();
+
+	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
+
+	if (GetOpenFileNameA(&openFileName))
+	{
+		return FString(fileName);
+	}
+
+	return FString("");
 }
 
 

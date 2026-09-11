@@ -55,7 +55,7 @@ public:
 	void DeleteScene();
 
 	void SaveScene(std::string_view sceneName, const FFileManager& fileManager);
-	void LoadScene(std::string_view sceneName, const FFileManager& fileManager);
+	void LoadScene(std::string_view filePath, const FFileManager& fileManager);
 
 	UWorld* GetCurrentWorld() const { return mCurrentWorld; }
 
@@ -78,6 +78,8 @@ private:
 	UWorld* mCurrentWorld = nullptr;
 	AActor* mSelectedActor = nullptr;
 	FGuiInputField mGuiInputField;
+
+	FString mOpenSceneFileDialog() const;
 
 	void updateControlPanelGUI(const FGuiReference& guiReference);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference);

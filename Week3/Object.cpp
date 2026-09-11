@@ -2,6 +2,7 @@
 #include "Object.h"
 #include "EngineStatics.h"
 #include "Json/json.hpp"
+#include "FName.h"
 
 TSparseArray<UObject*> UObject::GUObjectArray;
 
@@ -62,6 +63,7 @@ void UObject::SerializeClass(json::JSON& outJson) const
 
 	json::JSON propertiesJson = json::JSON::Make(json::JSON::Class::Object);
 	propertiesJson["UUID"] = UUID;
+	propertiesJson["Name"] = mName.ToString();
 	outJson["Properties"] = propertiesJson;
 }
 
@@ -79,6 +81,12 @@ void UObject::DeserializeClass(const json::JSON& inJson)
 	}
 
 	UUID = propertiesJson.at("UUID").ToInt();
+	if (propertiesJson.hasKey("Name") && propertiesJson.at("Name").JSONType() == json::JSON::Class::String)
+	{
+		const FString loadedName(propertiesJson.at("Name").ToString());
+
+		mName = FName(loadedName);
+	}
 }
 
 bool UObject::IsA(const FClassInfo* classInfo) const

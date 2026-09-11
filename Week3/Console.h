@@ -26,9 +26,7 @@ public:
 	template<typename... Args>
 	void AddLogFormat(std::string_view fmt, Args&&... args)
 	{
-		addLog(
-			std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...))
-		);
+		addLog(std::vformat(fmt, std::make_format_args(args...)));
 	}
 
 	template<typename... Args>
