@@ -25,6 +25,8 @@ public:
 	bool RemoveComponent(uint32 componentUUID);
 
 	FTransform GetTransform() const;
+	FRotator GetRotator() const;
+	FQuat GetRotation() const;
 
 	virtual void Update(TArray<FRenderInfo>* outRenderInfos);
 	//void Render();
@@ -34,6 +36,7 @@ public:
 
 	void SetLocation(FVector location);
 	void SetRotation(FRotator rotation);
+	void SetRotation(FQuat rotation);
 	void SetScale(FVector scale);
 
 private:

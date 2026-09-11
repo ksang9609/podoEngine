@@ -133,6 +133,30 @@ FTransform AActor::GetTransform() const
 	}
 }
 
+FRotator AActor::GetRotator() const
+{
+	if (mRootComponent)
+	{
+		return mRootComponent->GetRelativeRotation();
+	}
+	else
+	{
+		return FRotator();
+	}
+}
+
+FQuat AActor::GetRotation() const
+{
+	if (mRootComponent)
+	{
+		return mRootComponent->GetRelativeRotation().Quaternion();
+	}
+	else
+	{
+		return FQuat();
+	}
+}
+
 
 void AActor::Update(TArray<FRenderInfo>* outRenderInfos)
 {
@@ -176,6 +200,14 @@ void AActor::SetLocation(FVector location)
 }
 
 void AActor::SetRotation(FRotator rotation)
+{
+	if (mRootComponent)
+	{
+		mRootComponent->SetRelativeRotation(rotation);
+	}
+}
+
+void AActor::SetRotation(FQuat rotation)
 {
 	if (mRootComponent)
 	{

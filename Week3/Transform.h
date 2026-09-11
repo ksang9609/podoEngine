@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Vector.h"
 #include "Rotator.h"
+#include "Quat.h"
 #include "Matrix.h"
 #include <cassert>
 
@@ -12,12 +13,24 @@ constexpr float MIN_SCALE = 0.001f;
 struct FTransform
 {
 	FTransform(){ }
-	FTransform(FVector _Location, FRotator _Rotation, FVector _Scale) : Location(_Location), Rotation(_Rotation), Scale(_Scale)
+	FTransform(FVector _Location, FRotator _Rotation, FVector _Scale) : Location(_Location), Rotation(_Rotation.Quaternion()), Scale(_Scale)
+	{
+	}
+	FTransform(FVector _Location, FQuat _Rotation, FVector _Scale) : Location(_Location), Rotation(_Rotation), Scale(_Scale)
 	{
 	}
 	FVector Location = FVector(0);
-	FRotator Rotation = FRotator(0, 0, 0);
+	FQuat Rotation = FQuat(0, 0, 0, 1);
 	FVector Scale = FVector(1);
+
+	FVector GetLocation() const { return Location; }
+	void SetLocation(const FVector& InLocation) { Location = InLocation; }
+	FQuat GetRotation() const { return Rotation; }
+	FRotator GetRotator() const { return Rotation.Rotator(); }
+	void SetRotation(const FQuat& InRotation) { Rotation = InRotation; }
+	void SetRotation(const FRotator& InRotator) { Rotation = InRotator.Quaternion(); }
+	FVector GetScale() const { return Scale; }
+	void SetScale(const FVector& InScale) { Scale = InScale; }
 
 	FMatrix MakeMatrix() const
 	{

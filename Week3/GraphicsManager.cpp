@@ -65,7 +65,7 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 	mViewUnifiedProjectionMatrix = view * projection_u;
 
 	// 하이라이트 두께를 화면 픽셀 기준으로 환산할 때 쓴다
-	mCameraLocation = mCamera->Transform.Location;
+	mCameraLocation = mCamera->Location;
 	mCameraForward = mCamera->GetForwardVector();
 	mCameraFovDegree = mCamera->mFovDegree;
 	mCameraOrthoDistance = mCamera->mOrthoDistance;
