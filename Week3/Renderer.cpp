@@ -186,7 +186,7 @@ bool URenderer::CreateFontAtlasTexture()
 
 	HRESULT hr = DirectX::CreateDDSTextureFromFile(
 		Device,
-		L"EnglishFontAtlas.dds",
+		L"EnglishBigFontAtlas.dds",
 		nullptr,
 		&FontAtlasSRV
 	);
@@ -738,7 +738,11 @@ bool URenderer::CreateTestQuad()
 	const float charWidth = 0.1f;
 	const float charHeight = 0.2f;
 
-	const float textWidth = static_cast<float>(text.size()) * charWidth;
+	//글자 사이 간격
+	const float charAdvance = charWidth * 0.7f;
+
+	const float textWidth =
+		text.empty() ? 0.0f : static_cast<float>(text.size() - 1) * charAdvance + charWidth;
 
 	// 문자 가운데 정렬
 	const float startX = -textWidth * 0.5f;
@@ -767,13 +771,14 @@ bool URenderer::CreateTestQuad()
 
 		const int fontAtlasIndex = charCode - firstCharacter;
 
+
 		const float u0 = (fontAtlasIndex % columns) * cellWidth;
 		const float v0 = (fontAtlasIndex / columns) * cellHeight;
 		const float u1 = u0 + cellWidth;
 		const float v1 = v0 + cellHeight;
 
 		// 화면에서 해당 문자의 사각형 위치
-		const float left = startX + static_cast<float>(i) * charWidth;
+		const float left = startX + static_cast<float>(i) * charAdvance;
 		const float right = left + charWidth;
 		const float top = startY;
 		const float bottom = top - charHeight;
@@ -860,9 +865,9 @@ bool URenderer::CreateTestQuad()
 		if (FAILED(hr))
 			break;
 
-		// 픽셀 경계가 선명하도록 POINT 샘플링
+		
 		D3D11_SAMPLER_DESC samplerDesc = {};
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; // 
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -872,6 +877,23 @@ bool URenderer::CreateTestQuad()
 
 		hr = Device->CreateSamplerState(&samplerDesc,	&TextureSamplerState);
 
+		if (FAILED(hr))
+			break;
+
+		D3D11_BLEND_DESC desc = {};
+		auto& rt = desc.RenderTarget[0];
+
+		rt.BlendEnable = TRUE;
+		rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		rt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		rt.BlendOp = D3D11_BLEND_OP_ADD;
+
+		rt.SrcBlendAlpha = D3D11_BLEND_ONE;
+		rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		hr = Device->CreateBlendState(&desc, &FontBlendState);
 		if (FAILED(hr))
 			break;
 
@@ -917,8 +939,8 @@ void URenderer::RenderTexture(const FMatrix& world, const FMatrix& viewProjectio
 	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 
 	DeviceContext->RSSetState(RasterizerState[0]);
-	DeviceContext->OMSetBlendState(
-		nullptr, nullptr, 0xffffffff);
+	//DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(FontBlendState, nullptr, 0xffffffff);
 
 	const UINT stride = sizeof(FVertexTextured);
 	const UINT offset = 0;
@@ -1002,5 +1024,11 @@ void URenderer::ReleaseTexture()
 	{
 		TextureSamplerState->Release();
 		TextureSamplerState = nullptr;
+	}
+
+	if (FontBlendState)
+	{
+		FontBlendState->Release();
+		FontBlendState = nullptr;
 	}
 }
