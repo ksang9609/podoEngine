@@ -145,6 +145,31 @@ void URenderer::ReleaseLineVertexBuffer()
 	LineVertexCapacity = 0;
 }
 
+void URenderer::CreateLineIndexBuffer(uint32 maxIndices)
+{
+	D3D11_BUFFER_DESC indexbufferdesc = {};
+	indexbufferdesc.ByteWidth = maxIndices * sizeof(uint32);
+	indexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	if (SUCCEEDED(Device->CreateBuffer(&indexbufferdesc, nullptr, &LineIndexBuffer)))
+	{
+		LineIndexCapacity = maxIndices;
+	}
+}
+
+void URenderer::ReleaseLineIndexBuffer()
+{
+	if (LineIndexBuffer)
+	{
+		LineIndexBuffer->Release();
+		LineIndexBuffer = nullptr;
+	}
+
+	LineIndexCapacity = 0;
+}
+
 void URenderer::CreateRasterizerState()
 {
 	D3D11_RASTERIZER_DESC rasterizerdesc[2] = {};
@@ -193,6 +218,8 @@ void URenderer::CreateShader()
 {
 	ID3DBlob* vertexshaderCSO;
 	ID3DBlob* pixelshaderCSO;
+	ID3DBlob* LinevertexshaderCSO;
+	ID3DBlob* LinepixelshaderCSO;
 
 	D3DCompileFromFile(L"ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vertexshaderCSO, nullptr);
 
@@ -202,18 +229,35 @@ void URenderer::CreateShader()
 
 	Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(), pixelshaderCSO->GetBufferSize(), nullptr, &SimplePixelShader);
 
+	D3DCompileFromFile(L"ShaderLine.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &LinevertexshaderCSO, nullptr);
+
+	Device->CreateVertexShader(LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), nullptr, &LineSimpleVertexShader);
+
+	D3DCompileFromFile(L"ShaderLine.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &LinepixelshaderCSO, nullptr);
+
+	Device->CreatePixelShader(LinepixelshaderCSO->GetBufferPointer(), LinepixelshaderCSO->GetBufferSize(), nullptr, &LineSimplePixelShader);
+
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
+	D3D11_INPUT_ELEMENT_DESC Linelayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
 	Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
+	Device->CreateInputLayout(Linelayout, ARRAYSIZE(Linelayout), LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), &LineSimpleInputLayout);
 
 	Stride = sizeof(FVertexSimple);
 
 	vertexshaderCSO->Release();
 	pixelshaderCSO->Release();
+	LinevertexshaderCSO->Release();
+	LinepixelshaderCSO->Release();
 }
 
 void URenderer::ReleaseShader()
@@ -234,6 +278,24 @@ void URenderer::ReleaseShader()
 	{
 		SimpleVertexShader->Release();
 		SimpleVertexShader = nullptr;
+	}
+
+	if (LineSimpleInputLayout)
+	{
+		LineSimpleInputLayout->Release();
+		LineSimpleInputLayout = nullptr;
+	}
+
+	if (LineSimplePixelShader)
+	{
+		LineSimplePixelShader->Release();
+		LineSimplePixelShader = nullptr;
+	}
+
+	if (LineSimpleVertexShader)
+	{
+		LineSimpleVertexShader->Release();
+		LineSimpleVertexShader = nullptr;
 	}
 }
 
@@ -274,6 +336,18 @@ void URenderer::PrepareShader()
 	}
 }
 
+void URenderer::PrepareLineShader()
+{
+	DeviceContext->VSSetShader(LineSimpleVertexShader, nullptr, 0);
+	DeviceContext->PSSetShader(LineSimplePixelShader, nullptr, 0);
+	DeviceContext->IASetInputLayout(LineSimpleInputLayout);
+
+	if (ConstantBuffer)
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+	}
+}
+
 void URenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 {
 	UINT offset = 0;
@@ -283,7 +357,7 @@ void URenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 
 // 쌓아둔 선분 전체를 한 번의 Draw로 그린다.
 // 토폴로지를 바꾸므로 반드시 이 함수 안에서 되돌린다. 안 그러면 뒤에 그리는 것들이 전부 깨진다.
-void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices)
+void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices)
 {
 	if (!LineVertexBuffer || vertices == nullptr || numVertices == 0) return;
 
@@ -302,13 +376,32 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices)
 	memcpy(lineBufferMSR.pData, vertices, numVertices * sizeof(FVertexSimple));
 	DeviceContext->Unmap(LineVertexBuffer, 0);
 
+	if (!LineIndexBuffer || indices == nullptr || numindices == 0) return;
+
+	if (numindices > LineIndexCapacity)
+	{
+		numindices = LineIndexCapacity;   // 넘치면 자른다. 늘리려면 CreateLineIndexBuffer의 인자를 키운다
+	}
+
+	// WRITE_DISCARD: 이전 내용을 버리고 새 메모리를 받는다.
+	// GPU가 지난 프레임 데이터를 아직 읽고 있어도 CPU가 기다리지 않는다.
+	D3D11_MAPPED_SUBRESOURCE lineBufferMSRI;
+	if (FAILED(DeviceContext->Map(LineIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lineBufferMSRI)))
+	{
+		return;
+	}
+	memcpy(lineBufferMSRI.pData, indices, numindices * sizeof(uint32));
+	DeviceContext->Unmap(LineIndexBuffer, 0);
+
 	// 직전에 메시 버퍼가 물려 있으므로 갈아끼워야 한다
 	UINT offset = 0;
 	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &Stride, &offset);
+	DeviceContext->IASetIndexBuffer(LineIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	PrepareLineShader();
+	DeviceContext->DrawIndexed(numindices, 0, 0);
 
-	DeviceContext->Draw(numVertices, 0);
-
+	PrepareShader();
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 

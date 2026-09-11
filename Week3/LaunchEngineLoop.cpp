@@ -148,6 +148,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
 		mGraphicsManager->DrawWorldAxis();
+		mGraphicsManager->DrawGrid();
+		mGraphicsManager->DrawAABB(mSceneManager->GetRenderInfos());
 		mGraphicsManager->FlushLines();
 
 		//강조
