@@ -256,7 +256,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::Text("GridWidth");
 	ImGui::SameLine();
 	float gridWidth = guiReference.GraphicsManager->GetGridWidth();
-	if (ImGui::SliderFloat("GridWidth", &camera.Sensitivity, 0.0f, 1.0f))
+	if (ImGui::SliderFloat("##GridWidth", &gridWidth, 0.1f, 10.0f))
 	{
 		guiReference.GraphicsManager->SetGridWidth(gridWidth);
 		mEditorSetting.GridSpacing = gridWidth; 
