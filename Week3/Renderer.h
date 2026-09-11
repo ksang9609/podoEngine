@@ -26,6 +26,13 @@ struct FConstants
 	FVector4 Tint;          // rgb = 색, a = 섞는 비율
 };
 
+struct FVertexTextured
+{
+	float x, y, z;
+	float u, v;
+};
+
+
 
 class URenderer
 {
@@ -44,6 +51,15 @@ public:
 	ID3D11DepthStencilState* StencilMarkState = nullptr;	// 스텐실에 1 마킹용 상태
 	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
 	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
+
+	ID3D11ShaderResourceView* TestTextureSRV = nullptr;
+	// 테스트용
+	ID3D11Buffer* TestQuadBuffer = nullptr;
+	ID3D11VertexShader* TestQuadVS = nullptr;
+	ID3D11PixelShader* TestQuadPS = nullptr;
+	ID3D11InputLayout* TestQuadLayout = nullptr;
+	ID3D11SamplerState* TestQuadSampler = nullptr;
+	
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -75,6 +91,12 @@ public:
 	void CreateStencilMarkState();
 	void CreateStencilOutlineState();
 	void CreateNoColorWriteBlendState();
+	bool CreateTestTexture();
+
+	// test
+	bool CreateTestQuad();
+	void RenderTestQuad();
+	void ReleaseTestQuad();
 
 	//release
 	void Release();
@@ -88,6 +110,8 @@ public:
 	void ReleaseDepthStencilBuffer();
 	void ReleaseDepthStencilState();
 	void ReleaseBlendState();
+	void ReleaseTestTexture();
+
 
 	//Update
 	void RSUpdateState();

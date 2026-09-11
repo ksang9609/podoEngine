@@ -1,10 +1,24 @@
 ﻿#include "Renderer.h"
 
+#include <fstream>
+#include <filesystem>
+#include <vector>
+
 void URenderer::Create(HWND hWindow)
 {
 	CreateDeviceAndSwapChain(hWindow);
 	CreateFrameBuffer();
 	//CreateDepthStencilBuffer();
+
+	if (!CreateTestTexture())
+	{
+		OutputDebugStringA("CreateTestTexture failed.\n");
+	}
+
+	if (!CreateTestQuad())
+    {
+        OutputDebugStringA("CreateTestTexture failed.\n");
+    }
 
 	CreateDepthStencilState();
 	CreateStencilMarkState();
@@ -96,6 +110,79 @@ void URenderer::ReleaseFrameBuffer()
 	}
 }
 
+bool URenderer::CreateTestTexture()
+{
+	if (!Device)
+	{
+		return false;
+	}
+
+	// RGBA 순서. 위쪽 행부터 왼쪽 오른쪽으로 저장한다.
+	const unsigned char pixels[] =
+	{
+		255,   0,   0, 255, // 좌상단: 빨강
+		  0, 255,   0, 255, // 우상단: 초록
+
+		  0,   0, 255, 255, // 좌하단: 파랑
+		255, 255, 255, 255, // 우하단: 흰색
+	};
+
+	// GPU에 만들 이미지의 구조
+	D3D11_TEXTURE2D_DESC desc = {};
+
+	desc.Width = 2;
+	desc.Height = 2;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_IMMUTABLE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	// 생성할 때 전달할 픽셀 데이터
+	D3D11_SUBRESOURCE_DATA initialData = {};
+
+	initialData.pSysMem = pixels;
+	initialData.SysMemPitch = 2 * 4; // 한 행: 2픽셀 × 4바이트
+
+	ID3D11Texture2D* texture = nullptr;
+
+	HRESULT hr = Device->CreateTexture2D(&desc,	&initialData, &texture);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// 텍스처를 셰이더에서 읽을 수 있는 뷰 생성
+	ID3D11ShaderResourceView* srv = nullptr;
+
+	hr = Device->CreateShaderResourceView(texture, nullptr,	&srv);
+
+	// SRV가 텍스처 참조를 유지하므로 지역 참조는 해제
+	texture->Release();
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// 성공한 경우에만 기존 텍스처 교체
+	ReleaseTestTexture();
+	TestTextureSRV = srv;
+
+	return true;
+}
+
+void URenderer::ReleaseTestTexture()
+{
+	if (TestTextureSRV)
+	{
+		TestTextureSRV->Release();
+		TestTextureSRV = nullptr;
+	}
+}
+
 ID3D11Buffer* URenderer::CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth)
 {
 	UINT numVertices = ByteWidth / sizeof(FVertexSimple);
@@ -145,6 +232,7 @@ void URenderer::ReleaseLineVertexBuffer()
 	LineVertexCapacity = 0;
 }
 
+
 void URenderer::CreateRasterizerState()
 {
 	D3D11_RASTERIZER_DESC rasterizerdesc[2] = {};
@@ -181,6 +269,11 @@ void URenderer::Release()
 	ReleaseDepthStencilState();
 	ReleaseBlendState();
 	ReleaseFrameBuffer();
+
+	// 테스트
+	ReleaseTestQuad();
+	ReleaseTestTexture();
+
 	ReleaseDeviceAndSwapChain();
 }
 
@@ -504,4 +597,231 @@ void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float vie
 void URenderer::ClearDepth()
 {
 	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
+
+
+// 테스트용 나중에 지울 예정
+
+bool URenderer::CreateTestQuad()
+{
+	if (!Device)
+		return false;
+
+	ReleaseTestQuad();
+
+	// 시계 방향 삼각형 두 개.
+	const FVertexTextured vertices[] =
+	{
+		// 위치                 UV
+		{ -0.5f,  0.5f, 0.5f,  0, 0 }, // 좌상
+		{ 0.5f,  0.5f, 0.5f,  1, 0 }, // 우상
+		{ -0.5f, -0.5f, 0.5f,  0, 1 }, // 좌하
+
+		{ -0.5f, -0.5f, 0.5f,  0, 1 }, // 좌하
+		{ 0.5f,  0.5f, 0.5f,  1, 0 }, // 우상
+		{ 0.5f, -0.5f, 0.5f,  1, 1 }, // 우하
+	};
+
+	ID3DBlob* vsCode = nullptr;
+	ID3DBlob* psCode = nullptr;
+
+	bool success = false;
+
+	do
+	{
+		// HLSL 컴파일
+		HRESULT hr = D3DCompileFromFile(L"ShaderTexture.hlsl",	nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vsCode, nullptr);
+
+		if (FAILED(hr))
+			break;
+
+		hr = D3DCompileFromFile(L"ShaderTexture.hlsl",	nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &psCode, nullptr);
+
+		if (FAILED(hr))
+			break;
+
+		// GPU 셰이더 생성
+		hr = Device->CreateVertexShader(vsCode->GetBufferPointer(),	vsCode->GetBufferSize(), nullptr, &TestQuadVS);
+
+		if (FAILED(hr))
+			break;
+
+		hr = Device->CreatePixelShader(psCode->GetBufferPointer(),	psCode->GetBufferSize(), nullptr, &TestQuadPS);
+
+		if (FAILED(hr))
+			break;
+
+		// 정점 메모리 구조를 셰이더 입력과 연결
+		const D3D11_INPUT_ELEMENT_DESC layout[] =
+		{
+			{
+				"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
+				0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
+			},
+			{
+				"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,
+				0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0
+			},
+		};
+
+		hr = Device->CreateInputLayout(layout,	ARRAYSIZE(layout),	vsCode->GetBufferPointer(),	vsCode->GetBufferSize(),
+			&TestQuadLayout);
+
+		if (FAILED(hr))
+			break;
+
+		// 고정된 정점 6개를 GPU에 저장
+		D3D11_BUFFER_DESC bufferDesc = {};
+		bufferDesc.ByteWidth = sizeof(vertices);
+		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+		D3D11_SUBRESOURCE_DATA initialData = {};
+		initialData.pSysMem = vertices;
+
+		hr = Device->CreateBuffer(&bufferDesc,	&initialData, &TestQuadBuffer);
+
+		if (FAILED(hr))
+			break;
+
+		// 픽셀 경계가 선명하도록 POINT 샘플링
+		D3D11_SAMPLER_DESC samplerDesc = {};
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; // 
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		samplerDesc.MaxAnisotropy = 1;
+		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+		hr = Device->CreateSamplerState(&samplerDesc,	&TestQuadSampler);
+
+		if (FAILED(hr))
+			break;
+
+		success = true;
+	} while (false);
+
+	if (vsCode) vsCode->Release();
+	if (psCode) psCode->Release();
+
+	if (!success)
+		ReleaseTestQuad();
+
+	return success;
+}
+
+void URenderer::RenderTestQuad()
+{
+	if (!TestTextureSRV ||
+		!TestQuadBuffer ||
+		!TestQuadVS ||
+		!TestQuadPS ||
+		!TestQuadLayout ||
+		!TestQuadSampler)
+	{
+		return;
+	}
+
+	// 이 테스트에서 바꿀 렌더 상태를 보관한다.
+	ID3D11RasterizerState* previousRasterizer = nullptr;
+	ID3D11DepthStencilState* previousDepth = nullptr;
+	ID3D11BlendState* previousBlend = nullptr;
+
+	UINT previousStencilRef = 0;
+	FLOAT previousBlendFactor[4] = {};
+	UINT previousSampleMask = 0;
+
+	DeviceContext->RSGetState(&previousRasterizer);
+	DeviceContext->OMGetDepthStencilState(
+		&previousDepth, &previousStencilRef);
+	DeviceContext->OMGetBlendState(
+		&previousBlend,
+		previousBlendFactor,
+		&previousSampleMask);
+
+	// 화면 테스트이므로 깊이 버퍼를 연결하지 않는다.
+	DeviceContext->OMSetRenderTargets(
+		1, &FrameBufferRTV, nullptr);
+
+	DeviceContext->RSSetState(RasterizerState[0]);
+	DeviceContext->OMSetBlendState(
+		nullptr, nullptr, 0xffffffff);
+
+	const UINT stride = sizeof(FVertexTextured);
+	const UINT offset = 0;
+
+	DeviceContext->IASetVertexBuffers(
+		0, 1, &TestQuadBuffer, &stride, &offset);
+
+	DeviceContext->IASetInputLayout(TestQuadLayout);
+	DeviceContext->IASetPrimitiveTopology(
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	DeviceContext->VSSetShader(TestQuadVS, nullptr, 0);
+	DeviceContext->PSSetShader(TestQuadPS, nullptr, 0);
+
+	// HLSL의 t0, s0에 각각 연결한다.
+	DeviceContext->PSSetShaderResources(0, 1, &TestTextureSRV);
+	DeviceContext->PSSetSamplers(0, 1, &TestQuadSampler);
+
+	DeviceContext->Draw(6, 0);
+
+	// 테스트 바인딩 해제
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	ID3D11SamplerState* nullSampler = nullptr;
+
+	DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
+	DeviceContext->PSSetSamplers(0, 1, &nullSampler);
+
+	// 기존 엔진의 출력 대상과 상태 복원
+	DeviceContext->OMSetRenderTargets(
+		1, &FrameBufferRTV, DepthStencilView);
+
+	DeviceContext->RSSetState(previousRasterizer);
+	DeviceContext->OMSetDepthStencilState(
+		previousDepth, previousStencilRef);
+	DeviceContext->OMSetBlendState(
+		previousBlend,
+		previousBlendFactor,
+		previousSampleMask);
+
+	if (previousRasterizer) previousRasterizer->Release();
+	if (previousDepth) previousDepth->Release();
+	if (previousBlend) previousBlend->Release();
+
+	PrepareShader();
+}
+
+void URenderer::ReleaseTestQuad()
+{
+	if (TestQuadBuffer)
+	{
+		TestQuadBuffer->Release();
+		TestQuadBuffer = nullptr;
+	}
+
+	if (TestQuadVS)
+	{
+		TestQuadVS->Release();
+		TestQuadVS = nullptr;
+	}
+
+	if (TestQuadPS)
+	{
+		TestQuadPS->Release();
+		TestQuadPS = nullptr;
+	}
+
+	if (TestQuadLayout)
+	{
+		TestQuadLayout->Release();
+		TestQuadLayout = nullptr;
+	}
+
+	if (TestQuadSampler)
+	{
+		TestQuadSampler->Release();
+		TestQuadSampler = nullptr;
+	}
 }

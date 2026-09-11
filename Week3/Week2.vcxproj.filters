@@ -274,6 +274,10 @@
     <FxCompile Include="ShaderW0.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="ShaderFont.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderTexture.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Object.inl">

@@ -165,6 +165,9 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		}
 
+		// 테스트용
+		mGraphicsManager->GetRenderer()->RenderTestQuad();
+
 		mGraphicsManager->Display();
 	}
 

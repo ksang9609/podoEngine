@@ -31,7 +31,7 @@ PS_INPUT mainVS(VS_INPUT input)
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     const float4 atlasColor = FontAtlas.Sample(FontSampler, input.texCoord);
-      // Alpha 값이 거의 0인 픽셀은 렌더링하지 않는다.
+    // Alpha 값이 거의 0인 픽셀은 렌더링하지 않는다
     clip(atlasColor.a - 0.01f);
     return float4(Tint.rgb * atlasColor.rgb, Tint.a * atlasColor.a);
 }
