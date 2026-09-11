@@ -720,7 +720,7 @@ void URenderer::ClearDepth()
 }
 
 
-// 테스트용 나중에 지울 예정
+// 테스트용 쿼드 출력 나중에 지울 예정
 
 bool URenderer::CreateTestQuad()
 {
@@ -729,31 +729,74 @@ bool URenderer::CreateTestQuad()
 
 	ReleaseTexture();
 
-/*	// 시계 방향 삼각형 두 개.
-	const FVertexTextured vertices[] =
+	mTextVertexCount = 0;
+
+	std::vector<FVertexTextured> verticesList;
+	const std::string  text = "Hello Jungle!"; // 예시 문자열
+
+	// 화면에 표시할 문자 한 개의 크기
+	const float charWidth = 0.1f;
+	const float charHeight = 0.2f;
+
+	const float textWidth = static_cast<float>(text.size()) * charWidth;
+
+	// 문자 가운데 정렬
+	const float startX = -textWidth * 0.5f;
+	const float startY = charHeight * 0.5f;
+
+
+	// dds의 배치
+	const int columns = 16;
+	const int rows = 16;
+
+	// 한 칸의 크기
+	const float cellWidth = 1.0f / columns;
+	const float cellHeight = 1.0f / rows;
+
+	verticesList.reserve(text.size() * 6);
+	
+	const int firstCharacter = 0;
+
+
+	for (size_t i = 0; i < text.size(); ++i)
 	{
-		// 위치                 UV
-		{ -0.5f,  0.5f, 0.0f,  0, 0 }, // 좌상
-		{ 0.5f,  0.5f, 0.0f,  1, 0 }, // 우상
-		{ -0.5f, -0.5f, 0.0f,  0, 1 }, // 좌하
+		const unsigned char character = static_cast<unsigned char>(text[i]);
 
-		{ -0.5f, -0.5f, 0.0f,  0, 1 }, // 좌하
-		{ 0.5f,  0.5f, 0.0f,  1, 0 }, // 우상
-		{ 0.5f, -0.5f, 0.0f,  1, 1 }, // 우하
-	};*/
+		int charCode = (int)character; // 아스키 코드 값
 
-	const FVertexTextured vertices[] =
-	{
-		// Position             UV
-		{ 0.0f, -0.5f, +0.5f,  0.0f, 0.0f }, // 좌상
-		{ 0.0f, +0.5f, +0.5f,  1.0f, 0.0f }, // 우상
-		{ 0.0f, -0.5f, -0.5f,  0.0f, 1.0f }, // 좌하
 
-		{ 0.0f, +0.5f, -0.5f,  1.0f, 1.0f }, // 우하
-		{ 0.0f, -0.5f, -0.5f,  0.0f, 1.0f }, // 좌하
-		{ 0.0f, +0.5f, +0.5f,  1.0f, 0.0f }, // 우상
-	};
+		const int fontAtlasIndex = charCode - firstCharacter;
 
+		const float u0 = (fontAtlasIndex % columns) * cellWidth;
+		const float v0 = (fontAtlasIndex / columns) * cellHeight;
+		const float u1 = u0 + cellWidth;
+		const float v1 = v0 + cellHeight;
+
+		// 화면에서 해당 문자의 사각형 위치
+		const float left = startX + static_cast<float>(i) * charWidth;
+		const float right = left + charWidth;
+		const float top = startY;
+		const float bottom = top - charHeight;
+
+		// 삼각형
+		
+		// Billboard local plane: X = 0, horizontal = Y, vertical = Z.
+		verticesList.push_back({ 0.0f, left, top, u0, v0 });
+		verticesList.push_back({ 0.0f, right, top, u1, v0 });
+		verticesList.push_back({ 0.0f, left, bottom, u0, v1 });
+
+		verticesList.push_back({ 0.0f, right, bottom, u1, v1 });
+		verticesList.push_back({ 0.0f, left, bottom, u0, v1 });
+		verticesList.push_back({ 0.0f, right, top, u1, v0 });
+
+
+	}
+
+	mTextVertexCount = static_cast<UINT>(verticesList.size());
+
+	// 문자열이 비어있다
+	if (mTextVertexCount == 0)
+		return false;
 
 	ID3DBlob* vsCode = nullptr;
 	ID3DBlob* psCode = nullptr;
@@ -803,14 +846,14 @@ bool URenderer::CreateTestQuad()
 		if (FAILED(hr))
 			break;
 
-		// 고정된 정점 6개를 GPU에 저장
+		// 문자별 정점과 UV를 GPU에 저장
 		D3D11_BUFFER_DESC bufferDesc = {};
-		bufferDesc.ByteWidth = sizeof(vertices);
+		bufferDesc.ByteWidth = mTextVertexCount * sizeof(FVertexTextured);
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
 		D3D11_SUBRESOURCE_DATA initialData = {};
-		initialData.pSysMem = vertices;
+		initialData.pSysMem = verticesList.data();
 
 		hr = Device->CreateBuffer(&bufferDesc,	&initialData, &TestQuadBuffer);
 
@@ -899,7 +942,9 @@ void URenderer::RenderTexture(const FMatrix& world, const FMatrix& viewProjectio
 
 	UpdateConstant(world, viewProjection, FVector4(1, 1, 1, 1));
 
-	DeviceContext->Draw(6, 0);
+	//
+	DeviceContext->Draw(mTextVertexCount, 0);
+	//DeviceContext->Draw(6, 0);
 
 	// 테스트 바인딩 해제
 	ID3D11ShaderResourceView* nullSRV = nullptr;

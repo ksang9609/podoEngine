@@ -141,4 +141,8 @@ public:
 	//해상도 변경 시 호출
 	//void OnResize(UINT Width, UINT Height);
 	void OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight);
+
+private:
+	UINT mTextVertexCount = 0;
 };
+
