@@ -22,21 +22,7 @@ json::JSON FRotatorToJson(const FRotator& Rotator)
 
 json::JSON EPrimitiveToJson(const EPrimitive& Primitive)
 {
-	switch (Primitive)
-	{
-	case EPrimitive::EP_Sphere:
-		return json::JSON("Sphere");
-	case EPrimitive::EP_Cube:
-		return json::JSON("Cube");
-	case EPrimitive::EP_Triangle:
-		return json::JSON("Triangle");
-	case EPrimitive::EP_GizmoArrow:
-		return json::JSON("GizmoArrow");
-	case EPrimitive::EP_Circle:
-		return json::JSON("Circle");
-	default:
-		throw std::runtime_error("Unknown EPrimitive value");
-	}
+	return json::JSON(PrimitiveToString(Primitive));
 }
 
 FVector FVectorFromJson(const json::JSON& json)
@@ -66,28 +52,5 @@ EPrimitive EPrimitiveFromJson(const json::JSON& json)
 		throw std::runtime_error("Json String expected for EPrimitive");
 	}
 	std::string primitiveStr = json.ToString();
-	if (primitiveStr == "Sphere")
-	{
-		return EPrimitive::EP_Sphere;
-	}
-	else if (primitiveStr == "Cube")
-	{
-		return EPrimitive::EP_Cube;
-	}
-	else if (primitiveStr == "Triangle")
-	{
-		return EPrimitive::EP_Triangle;
-	}
-	else if (primitiveStr == "GizmoArrow")
-	{
-		return EPrimitive::EP_GizmoArrow;
-	}
-	else if (primitiveStr == "Circle")
-	{
-		return EPrimitive::EP_Circle;
-	}
-	else
-	{
-		throw std::runtime_error("Unknown EPrimitive value in JSON");
-	}
+	return StringToEPrimitive(primitiveStr.c_str());
 }
