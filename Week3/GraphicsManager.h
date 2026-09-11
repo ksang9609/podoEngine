@@ -14,6 +14,8 @@ struct FBuffer
 {
 	ID3D11Buffer* Buffer;
 	uint32 SourceNum;
+	FVector3 LocalMin;
+	FVector3 LocalMax;
 };
 
 class FGraphicsManager
@@ -62,7 +64,7 @@ public:
 	void DrawLine(const FVector& start, const FVector& end, const FVector4& color);
 	void DrawWorldAxis();
 	void DrawGrid();
-	void DrawAABB();
+	void DrawAABB(const TArray<FRenderInfo> renderInfos);
 	void FlushLines();
 
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }

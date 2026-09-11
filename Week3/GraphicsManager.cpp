@@ -172,10 +172,6 @@ void FGraphicsManager::DrawGrid()
 	}
 }
 
-void FGraphicsManager::DrawAABB()
-{
-
-}
 
 void FGraphicsManager::FlushLines()
 {
@@ -240,8 +236,18 @@ void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertic
 
 	UINT numVertices = static_cast<UINT>(verticesSize / sizeof(FVertexSimple));
 	ID3D11Buffer* vertexBuffer = mRenderer->CreateVertexBuffer(vertices, verticesSize);
-
-	FBuffer buffer = { vertexBuffer, numVertices };
+	FVector3 LocalMin = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
+	FVector3 LocalMax = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
+	for (int i = 0;i < numVertices;i++)
+	{
+		LocalMin.x = min(LocalMin.x, vertices[i].x);
+		LocalMin.y = min(LocalMin.y, vertices[i].y);
+		LocalMin.z = min(LocalMin.z, vertices[i].z);
+		LocalMax.x = max(LocalMax.x, vertices[i].x);
+		LocalMax.y = max(LocalMax.y, vertices[i].y);
+		LocalMax.z = max(LocalMax.z, vertices[i].z);
+	}
+	FBuffer buffer = { vertexBuffer, numVertices,LocalMin,LocalMax };
 	mBufferMap.Add(ePrimitive, buffer);
 }
 
