@@ -6,6 +6,7 @@
 #include "TArray.h"
 #include "RenderInfo.h"
 #include "enum.h"
+#include "FEditorSetting.h"
 
 inline constexpr std::string_view kSceneDataDir = "SceneData\\";
 inline constexpr std::string_view kSceneDataSuffix = ".Scene";
@@ -55,7 +56,7 @@ public:
 	void DeleteScene();
 
 	void SaveScene(std::string_view sceneName, const FFileManager& fileManager);
-	void LoadScene(std::string_view sceneName, const FFileManager& fileManager);
+	void LoadScene(std::string_view filePath, const FFileManager& fileManager);
 
 	UWorld* GetCurrentWorld() const { return mCurrentWorld; }
 
@@ -65,6 +66,8 @@ public:
 	void ResetSelectedActor() { mSelectedActor = nullptr; }
 
 	float GetPanelWidth() const;
+
+	void Initialize(FEditorViewportClient& ViewportClient);
 
 private:
 	static constexpr float MIN_WIDTH_RATIO = 0.2f;
@@ -78,6 +81,10 @@ private:
 	UWorld* mCurrentWorld = nullptr;
 	AActor* mSelectedActor = nullptr;
 	FGuiInputField mGuiInputField;
+
+	FString mOpenSceneFileDialog() const;
+
+	FEditorSetting mEditorSetting;
 
 	void updateControlPanelGUI(const FGuiReference& guiReference);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference);

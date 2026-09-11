@@ -19,6 +19,8 @@
 #include "imGui/imgui_impl_win32.h"
 #include "Actor.h"
 #include "World.h"
+#include "FName.h"
+#include "SceneManager.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -80,8 +82,10 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
 
+	mSceneManager->Initialize(*ViewportClient);
+
 	mSceneManager->NewScene();
-	mSceneManager->LoadScene("TestScene", *mFileManager);
+	// mSceneManager->LoadScene("TestScene", *mFileManager);
 
 	//test code
 	//{
@@ -90,6 +94,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	//	cubeActor->AddComponent(cubeComonent);
 	//	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
 	//}
+
+
 	
 }
 
