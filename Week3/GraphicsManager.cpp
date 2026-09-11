@@ -31,6 +31,7 @@ FGraphicsManager::~FGraphicsManager()
 	}
 
 	mRenderer->ReleaseLineVertexBuffer();
+	mRenderer->ReleaseLineIndexBuffer();
 	mRenderer->ReleaseConstantBuffer();
 	mRenderer->ReleaseShader();
 	mRenderer->Release();
@@ -163,7 +164,7 @@ void FGraphicsManager::DrawGrid()
 {
 	int LineCount = (mgridExtent/2) / mgridSpacing; 
 	float currentGrid = -mgridExtent/2.0f;
-	for (int32 i = -LineCount; i < LineCount;i++)
+	for (int32 i = -LineCount; i <= LineCount;i++)
 	{
 		float Spaceline = i * mgridSpacing;
 		DrawLine(FVector3(Spaceline,-mgridExtent/2.0f,0), FVector3(Spaceline, mgridExtent/ 2.0f,0),FVector4(1.0f,1.0f,1.0f,1.0f));  // X축 기준 Grid

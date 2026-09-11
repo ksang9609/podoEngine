@@ -331,7 +331,7 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, c
 
 	if (numindices > LineIndexCapacity)
 	{
-		numindices = LineIndexCapacity;   // 넘치면 자른다. 늘리려면 CreateLineVertexBuffer의 인자를 키운다
+		numindices = LineIndexCapacity;   // 넘치면 자른다. 늘리려면 CreateLineIndexBuffer의 인자를 키운다
 	}
 
 	// WRITE_DISCARD: 이전 내용을 버리고 새 메모리를 받는다.
@@ -347,8 +347,8 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, c
 	// 직전에 메시 버퍼가 물려 있으므로 갈아끼워야 한다
 	UINT offset = 0;
 	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &Stride, &offset);
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	DeviceContext->IASetIndexBuffer(LineIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	DeviceContext->DrawIndexed(numindices, 0, 0);
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
