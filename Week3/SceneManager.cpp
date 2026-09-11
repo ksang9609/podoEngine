@@ -44,6 +44,15 @@ FSceneManager::FSceneManager()
 	//}
 }
 
+void FSceneManager::Initialize(FEditorViewportClient& ViewportClient)
+{
+	mEditorSetting.Load();
+
+	FCamera& camera = ViewportClient.GetCamera();
+
+	camera.SetCameraSensitivity(mEditorSetting.CameraSensitivity);
+}
+
 FSceneManager::~FSceneManager()
 {
 	delete mCurrentWorld;
@@ -187,11 +196,9 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 
 			guiReference.GraphicsManager->StartProjectionTransition(bOrthographic);
 		}
-
 		ImGui::EndCombo();
 	}
 	// Debug perspective ratio slider
-
 	//float perspectiveRatio = guiReference.GraphicsManager->GetPerspectiveRatio();
 	//const float previousPerspectiveRatio = perspectiveRatio;
 	//if (ImGui::SliderFloat("Perspective Ratio", &perspectiveRatio, 0.0f, 1.0f))
@@ -211,12 +218,12 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	//}
 	//ImGui::Text("Camera Ortho Distance: %.2f", guiReference.ViewportClient->GetCamera().mOrthoDistance);
 
-	ImGui::Text("FOV     ");
+	ImGui::Text("FOV      ");
 	ImGui::SameLine();
 	ImGui::SliderFloat("##FOV", &camera.mFovDegree, 0.0f, 180.0f);
 
 	// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
-	ImGui::Text("Location");
+	ImGui::Text("Location ");
 	ImGui::SameLine();
 
 	// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
@@ -232,7 +239,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamLocZ", &camera.Location.z, 0.1f, 10.0f);
 
-	ImGui::Text("Rotation");
+	ImGui::Text("Rotation ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
 	ImGui::DragFloat("##CamRotX", &camera.Rotation.Roll, 0.1f, 180.0f);
@@ -245,12 +252,24 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
-	//	: "OFF: blue (far, drawn last) overwrites"); 
+	//	: "OFF: blue (far, drawn last) overwrites");
+
+	ImGui::Text("GridWidth");
+	ImGui::SameLine();
 	float gridWidth = guiReference.GraphicsManager->GetGridWidth();
-	if (ImGui::DragFloat("GridWidth", &gridWidth, 0.1f, 10.0f))
+	if (ImGui::DragFloat("##GridWidth", &gridWidth, 0.1f, 10.0f))
 	{
 		guiReference.GraphicsManager->SetGridWidth(gridWidth);
 	}
+
+	ImGui::Text("Sensitivity");
+	ImGui::SameLine();
+	if (ImGui::SliderFloat("##Sensitivity", &camera.Sensitivity, 0.0f, 1.0f))
+	{
+		mEditorSetting.CameraSensitivity = camera.Sensitivity;
+		mEditorSetting.Save();
+	}
+
 	/* Memory Info */
 	ImGui::SeparatorText("Memory Info");
 
@@ -452,7 +471,6 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 				{
 					ImGui::PopStyleColor(); // Pop the border color if it was pushed
 				}
-
 
 				ImGui::PopID();
 			}
