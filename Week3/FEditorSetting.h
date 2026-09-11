@@ -6,6 +6,7 @@
 struct FEditorSetting
 {
 	float CameraSensitivity = 0.1f;
+	float GridSpacing = 1.0f;
 
 	void Load(const std::string& FilePath = "editor.ini")
 	{
@@ -24,7 +25,12 @@ struct FEditorSetting
 			{
 				File >> CameraSensitivity;
 			}
+			else if (Key == "GridSpacing")
+			{
+				File >> GridSpacing;
+			}
 		}
+		
 	}
 
 	void Save(const std::string& FilePath = "editor.ini") const
@@ -37,5 +43,6 @@ struct FEditorSetting
 		}
 
 		File << "CameraSensitivity " << CameraSensitivity << '\n';
+		File << "GridSpacing " << GridSpacing << '\n';
 	}
 };
