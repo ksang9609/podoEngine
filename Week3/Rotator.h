@@ -44,8 +44,16 @@ struct FRotator
 		return V;
 	}
 
+	// Convert this rotator to a quaternion.
+	// v' = q * v * q^-1
+	// q = qz * qy * qx
+	// qx = (sin(roll/2), 0, 0, cos(roll/2))
+	// qy = (0, sin(pitch/2), 0, cos(pitch/2))
+	// qz = (0, 0, sin(yaw/2), cos(yaw/2))
 	FQuat Quaternion() const
 	{
+		// Convert sign of pitch and roll to match Unreal Engine's coordinate system
+		// Roll and pitch are turning clockwise, while yaw is turning counter-clockwise.
 		const float halfRoll = FMath::DegreesToRadians(-Roll) * 0.5f;
 		const float halfPitch = FMath::DegreesToRadians(-Pitch) * 0.5f;
 		const float halfYaw = FMath::DegreesToRadians(Yaw) * 0.5f;
