@@ -116,6 +116,7 @@
     <ClCompile Include="TestExample.cpp" />
     <ClCompile Include="TestFileManager.cpp" />
     <ClCompile Include="TestObject.cpp" />
+    <ClCompile Include="TestSceneComponent.cpp" />
     <ClCompile Include="TestSceneData.cpp" />
     <ClCompile Include="TestSparseArray.cpp" />
     <ClCompile Include="TestsTArray.cpp" />

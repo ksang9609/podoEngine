@@ -4,6 +4,7 @@
 
 #include "Transform.h"
 #include "JsonUtil.h"
+#include "Actor.h"
 
 IMPLEMENT_CLASS(USceneComponent, UActorComponent);
 
@@ -14,7 +15,7 @@ void USceneComponent::Initialize(FVector location, FRotator rotation, FVector sc
 	mRelativeLocation = location;
 	mRelativeRotation = rotation;
 	mRelativeScale3D = scale3D;
-	mComponentToWorld = FTransform(mRelativeLocation, mRelativeRotation, mRelativeScale3D);
+	updateComponentToWorld(FMatrix::Identity);
 }
 
 USceneComponent::~USceneComponent()
@@ -60,7 +61,26 @@ void USceneComponent::DeserializeClass(const json::JSON& inJson)
 	mRelativeRotation = FRotatorFromJson(propertiesJson.at("mRelativeRotation"));
 	mRelativeScale3D = FVectorFromJson(propertiesJson.at("mRelativeScale3D"));
 
-	mComponentToWorld = FTransform(mRelativeLocation, mRelativeRotation, mRelativeScale3D);
+	updateComponentToWorld(FMatrix::Identity);
+}
+
+// Attach this component to a parent scene component
+bool USceneComponent::AttachTo(USceneComponent& parent)
+{
+	parent.mChildren.Add(this);
+
+	updateComponentToWorld(parent.GetTransformMatrix());
+
+	// Add this component to the owner actor's component list
+	parent.GetOwner()->AddComponent(this);
+
+	return true;
+}
+
+bool USceneComponent::RemoveChild(USceneComponent& child)
+{
+	mChildren.Remove(&child);
+	return true;
 }
 
 FVector USceneComponent::GetRelativeLocation() const
@@ -71,7 +91,7 @@ FVector USceneComponent::GetRelativeLocation() const
 void USceneComponent::SetRelativeLocation(FVector location)
 {
 	mRelativeLocation = location;
-	mComponentToWorld.SetLocation(location);
+	updateComponentToWorld(FMatrix::Identity);
 }
 
 FRotator USceneComponent::GetRelativeRotation() const
@@ -82,13 +102,13 @@ FRotator USceneComponent::GetRelativeRotation() const
 void USceneComponent::SetRelativeRotation(FRotator rotation)
 {
 	mRelativeRotation = rotation;
-	mComponentToWorld.SetRotation(rotation);
+	updateComponentToWorld(FMatrix::Identity);
 }
 
 void USceneComponent::SetRelativeRotation(FQuat rotation)
 {
 	mRelativeRotation = rotation.Rotator();
-	mComponentToWorld.SetRotation(rotation);
+	updateComponentToWorld(FMatrix::Identity);
 }
 
 FVector USceneComponent::GetRelativeScale3D() const
@@ -99,10 +119,33 @@ FVector USceneComponent::GetRelativeScale3D() const
 void USceneComponent::SetRelativeScale3D(FVector scale)
 {
 	mRelativeScale3D = scale;
-	mComponentToWorld.SetScale(mRelativeScale3D);
+	updateComponentToWorld(FMatrix::Identity);
 }
 
-FTransform USceneComponent::GetTransformMatrix() const
+FMatrix USceneComponent::GetTransformMatrix() const
 {
 	return mComponentToWorld;
+}
+
+FTransform USceneComponent::GetRelativeTransform() const
+{
+	return FTransform(mRelativeLocation, mRelativeRotation, mRelativeScale3D);
+}
+
+void USceneComponent::SetRelativeTransform(const FTransform& transform)
+{
+	mRelativeLocation = transform.GetLocation();
+	mRelativeRotation = transform.GetRotator();
+	mRelativeScale3D = transform.GetScale();
+	updateComponentToWorld(FMatrix::Identity);
+}
+
+void USceneComponent::updateComponentToWorld(const FMatrix& parentTransform)
+{
+	mComponentToWorld = FTransform(mRelativeLocation, mRelativeRotation, mRelativeScale3D).MakeMatrix() * parentTransform;
+
+	for (USceneComponent* child : mChildren)
+	{
+		child->updateComponentToWorld(mComponentToWorld);
+	}
 }

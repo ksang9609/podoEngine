@@ -12,7 +12,10 @@ AActor::~AActor()
 {
 	for (UActorComponent* removeComponent : mComponents)
 	{
-		delete removeComponent;
+		if (removeComponent)
+		{
+			removeComponent->Destroy();
+		}
 	}
 }
 
@@ -127,7 +130,12 @@ FTransform AActor::GetTransform() const
 {
 	if (mRootComponent)
 	{
-		return mRootComponent->GetTransformMatrix();
+		// Return the transform of the root component
+		return {
+			mRootComponent->GetRelativeLocation(),
+			mRootComponent->GetRelativeRotation().Quaternion(),
+			mRootComponent->GetRelativeScale3D(),
+		};
 	}
 	else
 	{

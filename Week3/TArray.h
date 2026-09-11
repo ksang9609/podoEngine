@@ -45,9 +45,11 @@ public:
 	bool IsEmpty() const;
 
 	void Reset(int32 newSize);
+	void Remove(const T& data);
 	void RemoveAt(uint32 index, int32 count);
 	void RemoveAtSwap(uint32 index);
 	void RemoveLast();
+
 
 	/*
 	int32 Find(const ElementType& Item) const;
@@ -198,6 +200,12 @@ inline void TArray<T>::Reset(int32 newSize)
 }
 
 template<typename T>
+inline void TArray<T>::Remove(const T& data)
+{
+	std::erase(mDatas, data);
+}
+
+template<typename T>
 inline void TArray<T>::RemoveAt(uint32 index, int32 count)
 {
 	assert(mDatas.empty() == false);
@@ -228,9 +236,6 @@ inline void TArray<T>::RemoveLast()
 	mDatas.erase(mDatas.begin() + mDatas.size() - 1);
 
 }
-
-
-
 
 
 
