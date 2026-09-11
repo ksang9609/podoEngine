@@ -48,7 +48,7 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 	actor->AddRootSceneComponent(component);
 
 	/* DEBUG */
-	UPrimitiveComponent& billboardComponent = actor->CreateAndAddComponent<UPrimitiveComponent>(EPrimitive::EP_BillboardQuad, FVector3{ 0, 0, 2 }, FRotator{ 0, 0, 0 }, FVector3{ 0, 0, 0 });
+	UPrimitiveComponent& billboardComponent = actor->CreateAndAddComponent<UPrimitiveComponent>(EPrimitive::EP_BillboardQuad, FVector3{ 0, 0, 2 }, FRotator{ 0, 0, 0 }, FVector3{ 1, 1, 1 });
 	billboardComponent.AttachTo(*component);
 	return actor;
 }
