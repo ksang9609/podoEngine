@@ -14,6 +14,7 @@
 #include "FEditorViewportClient.h"
 #include "Camera.h"
 #include "Console.h"
+#include "enum.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -175,26 +176,29 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		}
 	}
 
-	/* Camera Control */
-	ImGui::SeparatorText("Camera Control");
-
 	FCamera& camera = guiReference.ViewportClient->GetCamera();
 	URenderer* renderer = guiReference.GraphicsManager->GetRenderer();
 
-	//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
+	ImGui::SeparatorText("View Mode");
+	static EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
+	const char* ViewModeNames[] = { "Lit", "Unlit", "Wireframe" };
+
+	int32 ViewModeIndex = static_cast<int32>(ViewMode);
+
+	if (ImGui::Combo("View Mode", &ViewModeIndex, ViewModeNames, IM_ARRAYSIZE(ViewModeNames)))
+	{
+		ViewMode = static_cast<EViewModeIndex>(ViewModeIndex);
+		guiReference.GraphicsManager->SetViewMode(ViewMode);
+	}
+
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 	{
-		bool bWireFrame = guiReference.GraphicsManager->GetWireFrame();
-		if (ImGui::Checkbox("Wire frame", &bWireFrame))
-		{
-			guiReference.GraphicsManager->SetWireFrame(bWireFrame);
-		}
+		// 구현 필요
+		bool bPrimitives = true;
+		ImGui::Checkbox("Primitives", &bPrimitives);
 
-		bool bShowWorldAxis = guiReference.GraphicsManager->GetShowWorldAxis();
-		if (ImGui::Checkbox("World axis", &bShowWorldAxis))
-		{
-			guiReference.GraphicsManager->SetShowWorldAxis(bShowWorldAxis);
-		}
+		bool bBillboardText = true;
+		ImGui::Checkbox("Billboard Text", &bBillboardText);
 
 		bool bOrthographic = guiReference.GraphicsManager->IsOrthographicTarget();
 		if (ImGui::Checkbox("Orthogonal", &bOrthographic))
@@ -205,11 +209,21 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 				const float depth = FVector::dot(offset, camera.GetForwardVector());
 				camera.mOrthoDistance = FMath::Max(depth, 0.1f);
 			}
-
 			guiReference.GraphicsManager->StartProjectionTransition(bOrthographic);
 		}
+
+		bool bShowWorldAxis = guiReference.GraphicsManager->GetShowWorldAxis();
+		if (ImGui::Checkbox("World axis", &bShowWorldAxis))
+		{
+			guiReference.GraphicsManager->SetShowWorldAxis(bShowWorldAxis);
+		}
+
 		ImGui::EndCombo();
 	}
+
+	ImGui::SeparatorText("Camera Control");
+
+
 	// Debug perspective ratio slider
 	//float perspectiveRatio = guiReference.GraphicsManager->GetPerspectiveRatio();
 	//const float previousPerspectiveRatio = perspectiveRatio;

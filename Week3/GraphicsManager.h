@@ -10,6 +10,7 @@
 #include "RenderInfo.h"
 #include "Vector.h"
 #include "FBoundingBox.h"
+#include "enum.h"
 
 struct FBuffer
 {
@@ -70,6 +71,9 @@ public:
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
 	void SetShowWorldAxis(bool bShow) { mbShowWorldAxis = bShow; }
 
+	void SetViewMode(EViewModeIndex InViewMode);
+	EViewModeIndex GetViewMode() const { return mViewMode; }
+
 	static FVector GetPrimitiveCenter(EPrimitive type);
 	static FVector GetPrimitiveHalfExtent(EPrimitive type);
 	void RenderHighLight(const FRenderInfo& RI);
@@ -114,4 +118,7 @@ private:
 	// Grid 간격, 최대 한계선
 	float mgridExtent = 1000.0f;
 	float mgridSpacing = 1.0f;
+
+	EViewModeIndex mViewMode = EViewModeIndex::VMI_Lit;
+
 };

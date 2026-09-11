@@ -235,10 +235,7 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
 		DrawLine(w2, w6, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 		DrawLine(w3, w7, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 	}
-
-
 }
-
 
 void FGraphicsManager::FlushLines()
 {
@@ -457,5 +454,27 @@ void FGraphicsManager::UpdateProjectionTransition(float deltaTime)
 	{
 		mProjectionRatio = mProjectionTargetRatio;
 		mbProjectionTransitioning = false;
+	}
+}
+
+void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
+{
+	mViewMode = InViewMode;
+
+	switch (mViewMode)
+	{
+	case EViewModeIndex::VMI_Lit:
+		SetWireFrame(false);
+		// Lit 렌더링 상태 설정
+		break;
+
+	case EViewModeIndex::VMI_Unlit:
+		SetWireFrame(false);
+		// Unlit 렌더링 상태 설정
+		break;
+
+	case EViewModeIndex::VMI_Wireframe:
+		SetWireFrame(true);
+		break;
 	}
 }
