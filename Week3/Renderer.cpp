@@ -4,13 +4,21 @@
 #include <filesystem>
 #include <vector>
 
+//#include "WICTextureLoader.h"
+#include <directxtk/DDSTextureLoader.h>
+
+#pragma comment(lib, "DirectXTK.lib")
+#pragma comment(lib, "dxguid.lib")
+//#pragma comment(lib, "windowscodecs.lib")
+//#pragma comment(lib, "ole32.lib")
+
 void URenderer::Create(HWND hWindow)
 {
 	CreateDeviceAndSwapChain(hWindow);
 	CreateFrameBuffer();
 	//CreateDepthStencilBuffer();
 
-	if (!CreateTestTexture())
+	/*if (!CreateTestTexture())
 	{
 		OutputDebugStringA("CreateTestTexture failed.\n");
 	}
@@ -18,7 +26,27 @@ void URenderer::Create(HWND hWindow)
 	if (!CreateTestQuad())
     {
         OutputDebugStringA("CreateTestTexture failed.\n");
-    }
+    }*/
+
+	// Device가 만들어진 이후에 호출해야 한다.
+	if (!CreateFontAtlasTexture())
+	{
+		MessageBox(hWindow,
+			L"파일을 불러오지 못했습니다.",
+			L"Font atlas load error",
+			MB_OK | MB_ICONERROR
+		);
+	}
+
+	if (!CreateTestQuad())
+	{
+		MessageBox(
+			hWindow,
+			L"폰트 Quad 생성에 실패했습니다.",
+			L"Font quad error",
+			MB_OK | MB_ICONERROR
+		);
+	}
 
 	CreateDepthStencilState();
 	CreateStencilMarkState();
@@ -110,79 +138,77 @@ void URenderer::ReleaseFrameBuffer()
 	}
 }
 
-bool URenderer::CreateTestTexture()
+///
+/*bool URenderer::CreateTestTexture()
 {
 	if (!Device)
 	{
 		return false;
 	}
 
-	// RGBA 순서. 위쪽 행부터 왼쪽 오른쪽으로 저장한다.
-	const unsigned char pixels[] =
-	{
-		255,   0,   0, 255, // 좌상단: 빨강
-		  0, 255,   0, 255, // 우상단: 초록
-
-		  0,   0, 255, 255, // 좌하단: 파랑
-		255, 255, 255, 255, // 우하단: 흰색
-	};
-
-	// GPU에 만들 이미지의 구조
-	D3D11_TEXTURE2D_DESC desc = {};
-
-	desc.Width = 2;
-	desc.Height = 2;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D11_USAGE_IMMUTABLE;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-	// 생성할 때 전달할 픽셀 데이터
-	D3D11_SUBRESOURCE_DATA initialData = {};
-
-	initialData.pSysMem = pixels;
-	initialData.SysMemPitch = 2 * 4; // 한 행: 2픽셀 × 4바이트
-
-	ID3D11Texture2D* texture = nullptr;
-
-	HRESULT hr = Device->CreateTexture2D(&desc,	&initialData, &texture);
-
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	// 텍스처를 셰이더에서 읽을 수 있는 뷰 생성
 	ID3D11ShaderResourceView* srv = nullptr;
 
-	hr = Device->CreateShaderResourceView(texture, nullptr,	&srv);
-
-	// SRV가 텍스처 참조를 유지하므로 지역 참조는 해제
-	texture->Release();
+	HRESULT hr = CreateWICTextureFromFile(
+		Device,
+		nullptr,                    // 자동 mipmap 생성 없이 로드
+		L"EnglishFont.png",
+		nullptr,                    // Texture 포인터는 따로 받지 않음
+		&srv);                      // SRV만 받음
 
 	if (FAILED(hr))
-	{
 		return false;
-	}
 
-	// 성공한 경우에만 기존 텍스처 교체
 	ReleaseTestTexture();
 	TestTextureSRV = srv;
 
 	return true;
-}
 
-void URenderer::ReleaseTestTexture()
+}*/
+
+/*void URenderer::ReleaseTestTexture()
 {
 	if (TestTextureSRV)
 	{
 		TestTextureSRV->Release();
 		TestTextureSRV = nullptr;
 	}
+}*/
+
+bool URenderer::CreateFontAtlasTexture()
+{
+	if (Device == nullptr)
+	{
+		return false;
+	}
+
+	// 함수가 다시 호출되는 경우 기존 텍스처 해제
+	ReleaseFontAtlasTexture();
+
+	HRESULT hr = DirectX::CreateDDSTextureFromFile(
+		Device,
+		L"EnglishFontAtlas.dds",
+		nullptr,
+		&FontAtlasSRV
+	);
+
+	if (FAILED(hr))
+	{
+		FontAtlasSRV = nullptr;
+		return false;
+	}
+
+	return true;
 }
 
+void URenderer::ReleaseFontAtlasTexture()
+{
+	if (FontAtlasSRV != nullptr)
+	{
+		FontAtlasSRV->Release();
+		FontAtlasSRV = nullptr;
+	}
+}
+/// 
 ID3D11Buffer* URenderer::CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth)
 {
 	UINT numVertices = ByteWidth / sizeof(FVertexSimple);
@@ -271,8 +297,10 @@ void URenderer::Release()
 	ReleaseFrameBuffer();
 
 	// 테스트
+
+	ReleaseFontAtlasTexture();
 	ReleaseTestQuad();
-	ReleaseTestTexture();
+	//ReleaseTestTexture();
 
 	ReleaseDeviceAndSwapChain();
 }
@@ -613,6 +641,19 @@ bool URenderer::CreateTestQuad()
 	const FVertexTextured vertices[] =
 	{
 		// 위치                 UV
+		{ -0.5f,  0.5f, 0.0f,  0, 0 }, // 좌상
+		{ 0.5f,  0.5f, 0.0f,  1, 0 }, // 우상
+		{ -0.5f, -0.5f, 0.0f,  0, 1 }, // 좌하
+
+		{ -0.5f, -0.5f, 0.0f,  0, 1 }, // 좌하
+		{ 0.5f,  0.5f, 0.0f,  1, 0 }, // 우상
+		{ 0.5f, -0.5f, 0.0f,  1, 1 }, // 우하
+	};
+
+/*	// 시계 방향 삼각형 두 개.
+	const FVertexTextured vertices[] =
+	{
+		// 위치                 UV
 		{ -0.5f,  0.5f, 0.5f,  0, 0 }, // 좌상
 		{ 0.5f,  0.5f, 0.5f,  1, 0 }, // 우상
 		{ -0.5f, -0.5f, 0.5f,  0, 1 }, // 좌하
@@ -620,7 +661,9 @@ bool URenderer::CreateTestQuad()
 		{ -0.5f, -0.5f, 0.5f,  0, 1 }, // 좌하
 		{ 0.5f,  0.5f, 0.5f,  1, 0 }, // 우상
 		{ 0.5f, -0.5f, 0.5f,  1, 1 }, // 우하
-	};
+	};*/
+
+
 
 	ID3DBlob* vsCode = nullptr;
 	ID3DBlob* psCode = nullptr;
@@ -630,12 +673,12 @@ bool URenderer::CreateTestQuad()
 	do
 	{
 		// HLSL 컴파일
-		HRESULT hr = D3DCompileFromFile(L"ShaderTexture.hlsl",	nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vsCode, nullptr);
+		HRESULT hr = D3DCompileFromFile(L"ShaderFont.hlsl",	nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vsCode, nullptr);
 
 		if (FAILED(hr))
 			break;
 
-		hr = D3DCompileFromFile(L"ShaderTexture.hlsl",	nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &psCode, nullptr);
+		hr = D3DCompileFromFile(L"ShaderFont.hlsl",	nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &psCode, nullptr);
 
 		if (FAILED(hr))
 			break;
@@ -711,9 +754,9 @@ bool URenderer::CreateTestQuad()
 	return success;
 }
 
-void URenderer::RenderTestQuad()
+void URenderer::RenderTestQuad(const FMatrix& world, const FMatrix& viewProjection)
 {
-	if (!TestTextureSRV ||
+	if (!FontAtlasSRV ||
 		!TestQuadBuffer ||
 		!TestQuadVS ||
 		!TestQuadPS ||
@@ -742,7 +785,8 @@ void URenderer::RenderTestQuad()
 
 	// 화면 테스트이므로 깊이 버퍼를 연결하지 않는다.
 	DeviceContext->OMSetRenderTargets(
-		1, &FrameBufferRTV, nullptr);
+		1, &FrameBufferRTV, DepthStencilView);
+	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 
 	DeviceContext->RSSetState(RasterizerState[0]);
 	DeviceContext->OMSetBlendState(
@@ -761,9 +805,14 @@ void URenderer::RenderTestQuad()
 	DeviceContext->VSSetShader(TestQuadVS, nullptr, 0);
 	DeviceContext->PSSetShader(TestQuadPS, nullptr, 0);
 
+	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+	DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
+
 	// HLSL의 t0, s0에 각각 연결한다.
-	DeviceContext->PSSetShaderResources(0, 1, &TestTextureSRV);
+	DeviceContext->PSSetShaderResources(0, 1, &FontAtlasSRV);
 	DeviceContext->PSSetSamplers(0, 1, &TestQuadSampler);
+
+	UpdateConstant(world, viewProjection, FVector4(1, 1, 1, 1));
 
 	DeviceContext->Draw(6, 0);
 
@@ -775,12 +824,12 @@ void URenderer::RenderTestQuad()
 	DeviceContext->PSSetSamplers(0, 1, &nullSampler);
 
 	// 기존 엔진의 출력 대상과 상태 복원
-	DeviceContext->OMSetRenderTargets(
-		1, &FrameBufferRTV, DepthStencilView);
+	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 
 	DeviceContext->RSSetState(previousRasterizer);
-	DeviceContext->OMSetDepthStencilState(
-		previousDepth, previousStencilRef);
+	DeviceContext->OMSetDepthStencilState(previousDepth, previousStencilRef);
 	DeviceContext->OMSetBlendState(
 		previousBlend,
 		previousBlendFactor,

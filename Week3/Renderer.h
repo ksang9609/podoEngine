@@ -52,7 +52,8 @@ public:
 	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
 	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
 
-	ID3D11ShaderResourceView* TestTextureSRV = nullptr;
+	//ID3D11ShaderResourceView* TestTextureSRV = nullptr;
+	ID3D11ShaderResourceView* FontAtlasSRV = nullptr;
 	// 테스트용
 	ID3D11Buffer* TestQuadBuffer = nullptr;
 	ID3D11VertexShader* TestQuadVS = nullptr;
@@ -92,10 +93,11 @@ public:
 	void CreateStencilOutlineState();
 	void CreateNoColorWriteBlendState();
 	bool CreateTestTexture();
+	bool CreateFontAtlasTexture();
 
 	// test
 	bool CreateTestQuad();
-	void RenderTestQuad();
+	void RenderTestQuad(const FMatrix& world, const FMatrix& viewProjection);
 	void ReleaseTestQuad();
 
 	//release
@@ -111,7 +113,7 @@ public:
 	void ReleaseDepthStencilState();
 	void ReleaseBlendState();
 	void ReleaseTestTexture();
-
+	void ReleaseFontAtlasTexture();
 
 	//Update
 	void RSUpdateState();

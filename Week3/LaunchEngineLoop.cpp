@@ -141,7 +141,54 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		mGraphicsManager->Update(deltaTime);
 		mGraphicsManager->Prepare(&ViewportClient->mCamera);
 		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
-		
+
+/*		// 테스트용
+		const FCamera& camera = ViewportClient->mCamera;
+
+		// 테스트 설정: 중심 위치와 월드 단위 크기
+		const FVector position(0.0f, 0.0f, 2.0f);
+		const float width = 2.0f;
+		const float height = 1.0f;
+
+		const FVector right = camera.GetRightVector();
+		const FVector up = camera.GetUpVector();
+		const FVector forward = camera.GetForwardVector();
+
+		// Billboard World 행렬
+		FMatrix world = FMatrix::Identity;
+
+		world.M[0][0] = right.x * width;
+		world.M[0][1] = right.y * width;
+		world.M[0][2] = right.z * width;
+
+		world.M[1][0] = up.x * height;
+		world.M[1][1] = up.y * height;
+		world.M[1][2] = up.z * height;
+
+		world.M[2][0] = forward.x;
+		world.M[2][1] = forward.y;
+		world.M[2][2] = forward.z;
+
+		world.M[3][0] = position.x;
+		world.M[3][1] = position.y;
+		world.M[3][2] = position.z;
+
+		// 테스트에서는 원근 투영을 명시적으로 사용
+		const FMatrix view = camera.GetViewMatrix();
+
+		const FMatrix projection = camera.GetUnifiedProjectionMatrix(
+			mGraphicsManager->GetAspect(),
+			camera.mFovDegree,
+			camera.mOrthoDistance,
+			0.1f,
+			100.0f,
+			1.0f); // 1 = 원근 투영
+
+		mGraphicsManager->GetRenderer()->RenderTestQuad(
+			world,
+			view * projection);*/
+		//
+
 
 		//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
 		mGraphicsManager->DrawWorldAxis();
@@ -165,9 +212,11 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		}
 
-		// 테스트용
-		mGraphicsManager->GetRenderer()->RenderTestQuad();
+		// 테스트용 쿼드 그리기
+		//mGraphicsManager->GetRenderer()->RenderTestQuad();
 
+
+		///
 		mGraphicsManager->Display();
 	}
 

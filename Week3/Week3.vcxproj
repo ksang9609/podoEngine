@@ -165,6 +165,7 @@
     <ClInclude Include="TSparseArray.inl">
       <FileType>Document</FileType>
     </ClInclude>
+    <ClCompile Include="WICTextureLoader.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -215,6 +216,7 @@
     <ClInclude Include="CubeComponent.h" />
     <ClInclude Include="TSparseArray.h" />
     <ClInclude Include="Vector.h" />
+    <ClInclude Include="WICTextureLoader.h" />
     <ClInclude Include="World.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Renderer.h" />
@@ -235,6 +237,9 @@
   <ItemGroup>
     <None Include="Object.inl" />
     <None Include="ObjectFactory.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="FontEnglish.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

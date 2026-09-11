@@ -189,6 +189,10 @@ void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimit
 
 void FGraphicsManager::Display()
 {
+	mRenderer->RenderTestQuad(
+		FMatrix::Identity,
+		FMatrix::Identity
+	);
 	mRenderer->SwapBuffer();
 }
 

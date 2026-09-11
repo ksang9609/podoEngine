@@ -117,6 +117,9 @@
     <ClCompile Include="Quat.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="WICTextureLoader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h">
@@ -275,6 +278,9 @@
     <ClInclude Include="Quat.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="WICTextureLoader.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
@@ -292,5 +298,8 @@
     <None Include="ObjectFactory.inl">
       <Filter>헤더 파일</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="FontEnglish.dds" />
   </ItemGroup>
 </Project>
