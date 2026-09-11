@@ -123,6 +123,21 @@ void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const 
 	mLineIndices.Add(mStartOffset+1);
 }
 
+void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVector4& color)
+{
+	int32 baseVertex = mLineVertices.Num();
+	for (int32 i = 0;i < worArray.Num();i++)
+	{
+		mLineVertices.Add({ worArray[i].x, worArray[i].y, worArray[i].z, color.x, color.y, color.z, color.w });
+	}
+	// Index Buffer 업데이트
+	TArray<int32> indicelist = { 0, 1, 1, 3, 3, 2, 2, 0, 4, 5, 5, 7, 7, 6, 6, 4, 0, 4, 1, 5, 2, 6, 3, 7 };
+	for (int32 j = 0;j < indicelist.Num();j++)
+	{
+		mLineIndices.Add(baseVertex+indicelist[j]);
+	}
+}
+
 void FGraphicsManager::DrawWorldAxis()
 {
 	if (!mbShowWorldAxis) return;
@@ -165,13 +180,12 @@ void FGraphicsManager::DrawWorldAxis()
 void FGraphicsManager::DrawGrid()
 {
 	int LineCount = (mgridExtent/2) / mgridSpacing; 
-	float currentGrid = -mgridExtent/2.0f;
 	for (int32 i = -LineCount; i <= LineCount;i++)
 	{
 		float Spaceline = i * mgridSpacing;
 		if (Spaceline == 0) continue;
-		DrawLine(FVector3(Spaceline,-mgridExtent/2.0f,0), FVector3(Spaceline, mgridExtent/ 2.0f,0),FVector4(1.0f,1.0f,1.0f,1.0f));  // X축 기준 Grid
-		DrawLine(FVector3(- mgridExtent / 2.0f, Spaceline, 0), FVector3(mgridExtent / 2.0f, Spaceline,0), FVector4(1.0f, 1.0f, 1.0f, 1.0f)); // Y축 기준 Grid
+		DrawLine(FVector3(Spaceline,-mgridExtent/2.0f,0), FVector3(Spaceline, mgridExtent/ 2.0f,0),FVector4(0.3f, 0.3f, 0.3f, 1.0f));  // Y축 기준 Grid
+		DrawLine(FVector3(- mgridExtent / 2.0f, Spaceline, 0), FVector3(mgridExtent / 2.0f, Spaceline,0), FVector4(0.3f, 0.3f, 0.3f, 1.0f)); // X축 기준 Grid
 	}
 }
 
@@ -221,19 +235,8 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
 		FVector3 w5 = FVector3(WorldMax.x, WorldMin.y, WorldMax.z);
 		FVector3 w6 = FVector3(WorldMin.x, WorldMax.y, WorldMax.z);
 		FVector3 w7 = WorldMax;
-
-		DrawLine(w0, w1, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w1, w3, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w2, w3, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w2, w0, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w4, w5, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w7, w5, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w6, w7, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w4, w6, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w0, w4, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w5, w1, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w2, w6, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		DrawLine(w3, w7, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		TArray<FVector3> WorldBoxArray = { w0,w1,w2,w3,w4,w5,w6,w7 };
+		DrawAABBLine(WorldBoxArray,FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 	}
 
 
