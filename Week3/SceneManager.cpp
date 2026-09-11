@@ -372,19 +372,16 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 			//for (UObject* object : mGuiInputField.SortedObjectLists)
 
 			UObject* bDeleteActorOrNull = nullptr;
+
+			static char NameBuffer[128] = {};
+			static int32 CachedSelectedUUID = -1;
+
 			for (unsigned int objectsIndex = 0; objectsIndex < mGuiInputField.SortedObjectLists.Num(); ++objectsIndex)
 			{
 				UObject* object = mGuiInputField.SortedObjectLists[objectsIndex];
 
 				bool bSelected = false;
 				ImGui::PushID(object->UUID); // Ensure unique ID for each child
-
-				// Highlight the frame if this object is the clicked actor
-				if (object->UUID == selectedActorUUID)
-				{
-					bSelected = true;
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
-				}
 
 				if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
 					ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
@@ -417,6 +414,34 @@ void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
 						}
 					}
 				}
+
+				// Highlight the frame if this object is the clicked actor
+				if (object->UUID == selectedActorUUID)
+				{
+					bSelected = true;
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
+
+					if (CachedSelectedUUID != object->UUID)
+					{
+						CachedSelectedUUID = object->UUID;
+
+						FString CurrentName = object->GetName().ToString();
+
+						strcpy_s(NameBuffer, sizeof(NameBuffer), CurrentName.CStr());
+					}
+
+					ImGui::Text("Edit Name");
+					ImGui::SameLine();
+					bool bEnterPressed = ImGui::InputText("##Edit Name", NameBuffer, sizeof(NameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+					ImGui::SameLine();
+					bool bApplyPressed = ImGui::Button("Apply");
+
+					if (bEnterPressed || bApplyPressed)
+					{
+						object->SetName(FName(NameBuffer));
+					}
+				}
+				
 				ImGui::EndChild();
 
 				if (bSelected)

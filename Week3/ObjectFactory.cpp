@@ -38,34 +38,7 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 	EPrimitive primitiveType,
 	FVector3 Location, FRotator Rotation, FVector3 Scale)
 {
-	FName PrimitiveName;
-
-	switch (primitiveType)
-	{
-	case EPrimitive::EP_Cube:
-		PrimitiveName = FName("Cube");
-		break;
-
-	case EPrimitive::EP_Sphere:
-		PrimitiveName = FName("Sphere");
-		break;
-
-	case EPrimitive::EP_Triangle:
-		PrimitiveName = FName("Triangle");
-		break;
-
-	case EPrimitive::EP_GizmoArrow:
-		PrimitiveName = FName("GizmoArrow");
-		break;
-
-	case EPrimitive::EP_Circle:
-		PrimitiveName = FName("Circle");
-		break;
-
-	default:
-		PrimitiveName = FName("Unknown");
-		break;
-	}
+	FName PrimitiveName(PrimitiveToString(primitiveType));
 
 	AActor* actor = ConstructObjectWithName<AActor>(PrimitiveName);
 
