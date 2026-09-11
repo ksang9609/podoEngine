@@ -91,6 +91,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	//	cubeActor->AddComponent(cubeComonent);
 	//	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
 	//}
+
+
 	
 }
 

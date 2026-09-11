@@ -67,8 +67,7 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 		break;
 	}
 
-	AActor* actor = ConstructObject<AActor>();
-	actor->SetName(PrimitiveName);
+	AActor* actor = ConstructObjectWithName<AActor>(PrimitiveName);
 
 	UPrimitiveComponent* component = ConstructObject<UPrimitiveComponent>(
 		primitiveType, Location, Rotation, Scale);
