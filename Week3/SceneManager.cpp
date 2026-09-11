@@ -50,7 +50,6 @@ void FSceneManager::Initialize(FEditorViewportClient& ViewportClient, FGraphicsM
 	mEditorSetting.Load();
 
 	FCamera& camera = ViewportClient.GetCamera();
-
 	camera.SetCameraSensitivity(mEditorSetting.CameraSensitivity);
 
 	GraphicsManager->SetGridWidth(mEditorSetting.GridSpacing);
@@ -201,6 +200,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		ImGui::Checkbox("Billboard Text", &bBillboardText);
 
 		bool bOrthographic = guiReference.GraphicsManager->IsOrthographicTarget();
+		//bool bOrthographic = guiReference.GraphicsManager->HasShowFlag(EEngineShowFlags::SF_Primitives);
 		if (ImGui::Checkbox("Orthogonal", &bOrthographic))
 		{
 			if (mSelectedActor && bOrthographic && guiReference.GraphicsManager->GetPerspectiveRatio() == 1.0f)

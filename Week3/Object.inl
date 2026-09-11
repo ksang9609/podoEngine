@@ -1,24 +1,24 @@
-﻿#define CONCAT_IMPL(a, b) a##b    // 타입 확장
+﻿#define CONCAT_IMPL(a, b) a##b    // 매크로 확장
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
-#define DECLARE_OBJECT(ClassName, ParentName) \
-public: \
-    static FClassInfo ClassInfo; \
-    static const FClassInfo* GetClass() \
-    { \
-        return &ClassInfo; \
-    }\
+#define DECLARE_OBJECT(ClassName, ParentName)                                    \
+public:                                                                          \
+    static FClassInfo ClassInfo;                                                 \
+    static const FClassInfo* GetClass()                                          \
+    {                                                                            \
+        return &ClassInfo;                                                       \
+    }                                                                            \
 private:
 
-#define IMPLEMENT_CLASS(className, superClassName) \
-[[maybe_unused]] static constexpr int CONCAT(RTTI_Tag_, ClassName) = 0; \
-FClassInfo className::ClassInfo( \
-    #className, \
-    superClassName::GetClass(), \
-    []() -> UObject* \
-    { \
-        return new className(); \
-    } \
+#define IMPLEMENT_CLASS(className, superClassName)                               \
+[[maybe_unused]] static constexpr int CONCAT(RTTI_Tag_, ClassName) = 0;          \
+FClassInfo className::ClassInfo(                                                 \
+    #className,                                                                  \
+    superClassName::GetClass(),                                                  \
+    []() -> UObject*                                                             \
+    {                                                                            \
+        return new className();                                                  \
+    }                                                                            \
 );
 
 template<typename TObject>

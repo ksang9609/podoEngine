@@ -83,6 +83,9 @@ public:
 	bool IsOrthographicTarget() const;
 	void UpdateProjectionTransition(float deltaTime);
 
+	bool HasShowFlag(EEngineShowFlags Flag) const;
+	void SetShowFlag(EEngineShowFlags Flag, bool bEnable);
+
 private:
 	URenderer* mRenderer;
 	FMatrix mViewProjectionMatrix;
@@ -121,4 +124,6 @@ private:
 
 	EViewModeIndex mViewMode = EViewModeIndex::VMI_Lit;
 
+	uint32 mShowFlags = static_cast<uint32>(EEngineShowFlags::SF_Primitives) |
+		static_cast<uint32>(EEngineShowFlags::SF_BillboardText);
 };

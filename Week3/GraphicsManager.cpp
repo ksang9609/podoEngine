@@ -457,6 +457,26 @@ void FGraphicsManager::UpdateProjectionTransition(float deltaTime)
 	}
 }
 
+bool FGraphicsManager::HasShowFlag(EEngineShowFlags Flag) const
+{
+	const uint32 FlagValue = static_cast<uint32>(Flag);
+	return (mShowFlags & FlagValue) != 0;
+}
+
+void FGraphicsManager::SetShowFlag(EEngineShowFlags Flag, bool bEnable)
+{
+	const uint32 FlagValue = static_cast<uint32>(Flag);
+
+	if (bEnable)
+	{
+		mShowFlags |= FlagValue;
+	}
+	else
+	{
+		mShowFlags &= ~FlagValue;
+	}
+}
+
 void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
 {
 	mViewMode = InViewMode;

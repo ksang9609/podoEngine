@@ -1,5 +1,5 @@
 ﻿#include "Core.h"
-#include "FName.h"
+#include "Name.h"
 
 #include <vector>
 #include <algorithm>
@@ -7,13 +7,13 @@
 
 namespace
 {
-	std::vector<std::string> GDisplayNamePool;
-	std::vector<std::string> GComparisonNamePool;
+	std::vector<FString> GDisplayNamePool;
+	std::vector<FString> GComparisonNamePool;
 
-	std::unordered_map<std::string, int32> GDisplayNamePoolLookup;
-	std::unordered_map<std::string, int32> GComparisonNamePoolLookup;
+	std::unordered_map<FString, int32> GDisplayNamePoolLookup;
+	std::unordered_map<FString, int32> GComparisonNamePoolLookup;
 
-	static std::string ToLower(std::string str)
+	static FString ToLower(FString str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c)
 			{
@@ -24,7 +24,7 @@ namespace
 		return str;
 	}
 
-	static int32 FindOrAdd(std::vector<std::string>& Pool, std::unordered_map<std::string, int32>& Lookup, const std::string& Name)
+	static int32 FindOrAdd(std::vector<FString>& Pool, std::unordered_map<FString, int32>& Lookup, const FString& Name)
 	{
 		auto It = Lookup.find(Name);
 
@@ -50,8 +50,8 @@ FName::FName()
 
 FName::FName(const char* pStr)
 {
-	std::string DisplayName = pStr;
-	std::string ComparisonName = ToLower(DisplayName);
+	FString DisplayName = pStr;
+	FString ComparisonName = ToLower(DisplayName);
 
 	DisplayIndex = FindOrAdd(GDisplayNamePool, GDisplayNamePoolLookup, DisplayName);
 	ComparisonIndex = FindOrAdd(GComparisonNamePool, GComparisonNamePoolLookup, ComparisonName);
@@ -80,8 +80,8 @@ bool FName::operator==(const FName& Other) const
 
 int32 FName::Compare(const FName& Other) const
 {
-	const std::string& A = GComparisonNamePool[ComparisonIndex];
-	const std::string& B = GComparisonNamePool[Other.ComparisonIndex];
+	const FString& A = GComparisonNamePool[ComparisonIndex];
+	const FString& B = GComparisonNamePool[Other.ComparisonIndex];
 
 	if (A < B)
 	{
@@ -92,6 +92,6 @@ int32 FName::Compare(const FName& Other) const
 	{
 		return 1;
 	}
-
 	return 0;
 }
+
