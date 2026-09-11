@@ -13,6 +13,7 @@ public:
 
 	void Initialize(EPrimitive ePrimitive);
 	void Initialize(EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D);
+	void Initialize(EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D, bool bUseTexture);
 
 	virtual ~UPrimitiveComponent();
 
@@ -22,10 +23,13 @@ public:
 	//virtual void Render();
 	void Update(TArray<FRenderInfo>* outRenderInfos) override final;
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const override final;
+	void SetUseTexture(bool value) { mbUseTexture = value; }
+	bool GetUseTexture() const { return mbUseTexture; }
 
 protected:
 	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
+	bool mbUseTexture = false;
 };
 
 

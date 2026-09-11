@@ -1,5 +1,13 @@
-Texture2D TestTexture : register(t0);
-SamplerState TestSampler : register(s0);
+Texture2D Texture : register(t0);
+SamplerState TextureSampler : register(s0);
+
+cbuffer constants : register(b0)
+{
+    row_major float4x4 World;
+    row_major float4x4 ViewProjection;
+    float4 Tint; // rgb = 덧입힐 색, a = 섞는 비율(0 이면 정점 색 그대로)
+}
+
 
 struct VS_INPUT
 {
@@ -17,8 +25,7 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
 
-    // 첫 테스트는 행렬 변환 없이 화면에 직접 출력한다.
-    output.position = float4(input.position, 1.0f);
+    output.position = mul(mul(float4(input.position.xyz, 1.0f), World), ViewProjection);
     output.uv = input.uv;
 
     return output;
@@ -26,5 +33,6 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    return TestTexture.Sample(TestSampler, input.uv);
+    
+    return Texture.Sample(TextureSampler, input.uv);
 }

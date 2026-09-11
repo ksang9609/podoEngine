@@ -28,4 +28,6 @@ struct FRenderInfo
 		};
 		return FMatrix::Scale(scale) * FMatrix::Rotate(cameraRotation) * FMatrix::Translation(location);
 	}
+
+	bool bUseTexture = false;
 };
