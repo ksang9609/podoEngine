@@ -163,7 +163,6 @@
     <ClInclude Include="FBoundingBox.h" />
     <ClInclude Include="FName.h" />
     <ClInclude Include="GizmoArrow.h" />
-    <ClInclude Include="IniParser.h" />
     <ClInclude Include="Quat.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="TSparseArray.inl">
