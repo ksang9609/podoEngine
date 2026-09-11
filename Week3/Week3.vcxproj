@@ -153,6 +153,7 @@
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="PrimitiveComponent.cpp" />
+    <ClCompile Include="Quat.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="CubeComponent.cpp" />
     <ClCompile Include="SceneData.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="Circle.h" />
     <ClInclude Include="FName.h" />
     <ClInclude Include="GizmoArrow.h" />
+    <ClInclude Include="Quat.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="TSparseArray.inl">
       <FileType>Document</FileType>

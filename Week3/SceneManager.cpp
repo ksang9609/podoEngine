@@ -180,7 +180,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		{
 			if (mSelectedActor && bOrthographic && guiReference.GraphicsManager->GetPerspectiveRatio() == 1.0f)
 			{
-				const FVector offset = mSelectedActor->GetTransform().Location - camera.Transform.Location;
+				const FVector offset = mSelectedActor->GetTransform().Location - camera.Location;
 				const float depth = FVector::dot(offset, camera.GetForwardVector());
 				camera.mOrthoDistance = FMath::Max(depth, 0.1f);
 			}
@@ -224,24 +224,24 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
 
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocX", &camera.Transform.Location.x, 0.1f, 10.0f);
+	ImGui::DragFloat("##CamLocX", &camera.Location.x, 0.1f, 10.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocY", &camera.Transform.Location.y, 0.1f, 10.0f);
+	ImGui::DragFloat("##CamLocY", &camera.Location.y, 0.1f, 10.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocZ", &camera.Transform.Location.z, 0.1f, 10.0f);
+	ImGui::DragFloat("##CamLocZ", &camera.Location.z, 0.1f, 10.0f);
 
 	ImGui::Text("Rotation");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotX", &camera.Transform.Rotation.Roll, 0.1f, 180.0f);
+	ImGui::DragFloat("##CamRotX", &camera.Rotation.Roll, 0.1f, 180.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotY", &camera.Transform.Rotation.Pitch, 0.1f, 180.0f);
+	ImGui::DragFloat("##CamRotY", &camera.Rotation.Pitch, 0.1f, 180.0f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotZ", &camera.Transform.Rotation.Yaw, 0.1f, 180.0f);
+	ImGui::DragFloat("##CamRotZ", &camera.Rotation.Yaw, 0.1f, 180.0f);
 	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
 	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
 	//	? "ON : orange (near) stays in front"
@@ -300,10 +300,11 @@ void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 
 		// Get the current transform of the clicked actor
 		FVector translationInput = originalTransform.Location;
-		FVector rotationInput = {
-			originalTransform.Rotation.Roll,
-			originalTransform.Rotation.Pitch,
-			originalTransform.Rotation.Yaw
+		FRotator originalRotator = mSelectedActor->GetRotator();
+		float rotationInput[3] = {
+			originalRotator.Roll,
+			originalRotator.Pitch,
+			originalRotator.Yaw
 		};
 		FVector scaleInput = originalTransform.Scale;
 
@@ -312,12 +313,12 @@ void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
 		{
 			mSelectedActor->SetLocation(translationInput);
 		}
-		if (ImGui::DragFloat3("Rotation", &rotationInput.x, 0.1f))
+		if (ImGui::DragFloat3("Rotation", &rotationInput[0], 0.1f))
 		{
-			mSelectedActor->SetRotation({
-				rotationInput.y, // Pitch
-				rotationInput.z, // Yaw
-				rotationInput.x  // Roll
+			mSelectedActor->SetRotation(FRotator{
+				rotationInput[1], // Pitch
+				rotationInput[2], // Yaw
+				rotationInput[0]  // Roll
 				});
 
 		}
