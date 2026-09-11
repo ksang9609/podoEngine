@@ -1,0 +1,48 @@
+{
+  "NextUUID" : 5,
+  "Version" : 0,
+  "World" : {
+    "ClassName" : "UWorld",
+    "Properties" : {
+      "Name" : "UWorld",
+      "UUID" : 0,
+      "mActors" : [{
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "Cube",
+            "UUID" : 1,
+            "mComponents" : [{
+                "ClassName" : "UPrimitiveComponent",
+                "Properties" : {
+                  "Name" : "UPrimitiveComponent",
+                  "UUID" : 2,
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mePrimitiveType" : "Cube"
+                }
+              }],
+            "mRootComponentUUID" : 2
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "Sphere",
+            "UUID" : 3,
+            "mComponents" : [{
+                "ClassName" : "UPrimitiveComponent",
+                "Properties" : {
+                  "Name" : "UPrimitiveComponent",
+                  "UUID" : 4,
+                  "mRelativeLocation" : [0.000000, -4.929878, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mePrimitiveType" : "Sphere"
+                }
+              }],
+            "mRootComponentUUID" : 4
+          }
+        }]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "NextUUID" : 1,
+  "Version" : 0,
+  "World" : {
+    "ClassName" : "UWorld",
+    "Properties" : {
+      "Name" : "UWorld",
+      "UUID" : 0,
+      "mActors" : []
+    }
+  }
+}
