@@ -14,7 +14,7 @@ struct FBuffer
 {
 	ID3D11Buffer* Buffer;
 	uint32 SourceNum;
-	FVector3 LocalMin;
+	FVector3 LocalMin; //AABB 박스 렌더링에 필요한 LocalMax,Min 점 저장
 	FVector3 LocalMax;
 };
 

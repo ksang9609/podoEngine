@@ -11,6 +11,7 @@ class TArray
 {
 public:
 	TArray() = default;
+	TArray(std::initializer_list<T> initList) : mDatas(initList) {};
 	~TArray() = default;
 
 	T& operator[](uint32 index);
