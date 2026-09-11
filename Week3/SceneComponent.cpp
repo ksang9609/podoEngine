@@ -5,6 +5,8 @@
 #include "Transform.h"
 #include "JsonUtil.h"
 
+IMPLEMENT_CLASS(USceneComponent, UActorComponent);
+
 void USceneComponent::Initialize(FVector location, FRotator rotation, FVector scale3D)
 {
 	UActorComponent::Initialize();

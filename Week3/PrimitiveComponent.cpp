@@ -9,6 +9,8 @@
 #include "Console.h"
 #include "Actor.h"
 
+IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent);
+
 UPrimitiveComponent::UPrimitiveComponent()
 {
 }

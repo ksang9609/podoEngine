@@ -4,7 +4,7 @@
 
 class USphereComponent : public UPrimitiveComponent
 {
-	REFLECT_CLASS(USphereComponent, UPrimitiveComponent)
+	DECLARE_OBJECT(USphereComponent, UPrimitiveComponent)
 public:
 	USphereComponent();
 	virtual ~USphereComponent();

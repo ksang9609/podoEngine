@@ -1,21 +1,24 @@
 {
-  "NextUUID" : 16,
+  "NextUUID" : 5,
   "Version" : 0,
   "World" : {
     "ClassName" : "UWorld",
     "Properties" : {
-      "UUID" : 1,
+      "Name" : "UWorld",
+      "UUID" : 0,
       "mActors" : [{
           "ClassName" : "AActor",
           "Properties" : {
-            "UUID" : 3,
+            "Name" : "Cube",
+            "UUID" : 1,
             "mComponents" : [{
-                "ClassName" : "UCubeComponent",
+                "ClassName" : "UPrimitiveComponent",
                 "Properties" : {
+                  "Name" : "UPrimitiveComponent",
                   "UUID" : 2,
-                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeRotation" : [30.000000, 1.000000, 0.000000],
-                  "mRelativeScale3D" : [2.000000, 1.000000, 1.000000],
+                  "mRelativeLocation" : [4.464537, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
                   "mePrimitiveType" : "Cube"
                 }
               }],
@@ -24,66 +27,20 @@
         }, {
           "ClassName" : "AActor",
           "Properties" : {
-            "UUID" : 5,
+            "Name" : "Cube",
+            "UUID" : 3,
             "mComponents" : [{
-                "ClassName" : "UCubeComponent",
+                "ClassName" : "UPrimitiveComponent",
                 "Properties" : {
+                  "Name" : "UPrimitiveComponent",
                   "UUID" : 4,
-                  "mRelativeLocation" : [2.200000, 0.900000, 1.000000],
+                  "mRelativeLocation" : [0.000000, -5.713292, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [0.500000, 0.500000, 0.500000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
                   "mePrimitiveType" : "Cube"
                 }
               }],
             "mRootComponentUUID" : 4
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "UUID" : 6,
-            "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
-                "Properties" : {
-                  "UUID" : 7,
-                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Cube"
-                }
-              }],
-            "mRootComponentUUID" : 7
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "UUID" : 12,
-            "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
-                "Properties" : {
-                  "UUID" : 13,
-                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Cube"
-                }
-              }],
-            "mRootComponentUUID" : 13
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "UUID" : 14,
-            "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
-                "Properties" : {
-                  "UUID" : 15,
-                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Cube"
-                }
-              }],
-            "mRootComponentUUID" : 15
           }
         }]
     }

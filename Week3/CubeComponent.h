@@ -4,7 +4,7 @@
 
 class UCubeComponent : public UPrimitiveComponent
 {
-	REFLECT_CLASS(UCubeComponent, UPrimitiveComponent)
+	DECLARE_OBJECT(UCubeComponent, UPrimitiveComponent)
 public:
 	UCubeComponent();
 
