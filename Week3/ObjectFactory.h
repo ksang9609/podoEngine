@@ -6,6 +6,7 @@
 #include "Vector.h"
 #include "Rotator.h"
 #include "TMap.h"
+#include "FName.h"
 
 namespace json { class JSON; }
 
@@ -25,6 +26,14 @@ struct FObjectFactory
 	template<typename TObject>
 		requires std::derived_from<TObject, UObject>
 	static TObject* ConstructUnInitializedObject();
+
+	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
+	static TObject* ConstructUnInitializedObject(const FName& Name);
+
+	template<typename TObject, typename... Args>
+		requires std::derived_from<TObject, UObject>
+	static TObject* ConstructObjectWithName(const FName& Name, Args&&... args);
 
 	template<typename TObject>
 		requires std::derived_from<TObject, UObject>

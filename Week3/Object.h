@@ -6,6 +6,7 @@
 #include "TArray.h"
 #include "TSparseArray.h"
 #include "ObjectFactory.h"
+#include "FName.h"
 
 
 namespace json { class JSON; }
@@ -41,6 +42,16 @@ public:
 	// Todo: Fix
 	int32 UUID;
 	uint32 InternalIndex;
+
+	const FName& GetName() const
+	{
+		return mName;
+	}
+
+	void SetName(const FName& name)
+	{
+		mName = name;
+	}
 
 	virtual ~UObject();
 	virtual void Destroy();
@@ -89,9 +100,10 @@ protected:
 	inline static uint64 GUObjectRevision = 0;
 
 private:
-
 	friend struct FObjectFactory;
-	const FClassInfo* mClassInfo;
+
+	FName mName;
+	const FClassInfo* mClassInfo = nullptr;
 };
 
 

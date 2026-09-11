@@ -67,10 +67,16 @@ public:
     ID3D11VertexShader* SimpleVertexShader;
     ID3D11PixelShader* SimplePixelShader;
     ID3D11InputLayout* SimpleInputLayout;
+	ID3D11VertexShader* LineSimpleVertexShader;
+	ID3D11PixelShader* LineSimplePixelShader;
+	ID3D11InputLayout* LineSimpleInputLayout;
 
 	// 매 프레임 내용이 바뀌는 선분용. 메시 버퍼와 달리 IMMUTABLE이 아니라 DYNAMIC이다
 	ID3D11Buffer* LineVertexBuffer = nullptr;
 	uint32 LineVertexCapacity = 0;
+
+	ID3D11Buffer* LineIndexBuffer = nullptr;
+	uint32 LineIndexCapacity = 0;
 
     unsigned int Stride;
 
@@ -83,6 +89,7 @@ public:
 	void CreateFrameBuffer();
 	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
 	void CreateLineVertexBuffer(uint32 maxVertices);
+	void CreateLineIndexBuffer(uint32 maxIndices);
 	void CreateRasterizerState();
 	void CreateConstantBuffer();
 	void CreateDepthStencilBuffer(UINT width, UINT height);
@@ -105,6 +112,7 @@ public:
 	void ReleaseFrameBuffer();
 	void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer);
 	void ReleaseLineVertexBuffer();
+	void ReleaseLineIndexBuffer();
 	void ReleaseRasterizerState();
 	void ReleaseConstantBuffer();
 	void ReleaseDepthStencilBuffer();
@@ -119,9 +127,10 @@ public:
 	//Rendering
 	void Prepare(bool bWireFrame);
 	void PrepareShader();
+	void PrepareLineShader();
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
 	void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
-	void RenderLines(const FVertexSimple* vertices, uint32 numVertices);
+	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix Outline, const FRenderInfo& RI);
 	void SwapBuffer();
 

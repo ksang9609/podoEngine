@@ -117,6 +117,9 @@
     <ClCompile Include="Quat.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="FName.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="Vector.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -284,6 +287,12 @@
     <ClInclude Include="Primitives.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="FBoundingBox.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FName.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
@@ -292,7 +301,12 @@
     <FxCompile Include="ShaderFont.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="ShaderTexture.hlsl" />
+    <FxCompile Include="ShaderLine.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderTexture.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Object.inl">

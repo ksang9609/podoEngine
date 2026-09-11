@@ -25,3 +25,27 @@ enum EGIZMO_TYPE {
 	ROTATE,
 	SCALE,
 };
+
+inline const char* PrimitiveToString(EPrimitive primitiveType)
+{
+	switch (primitiveType)
+	{
+	case EPrimitive::EP_Cube:
+		return "Cube";
+
+	case EPrimitive::EP_Sphere:
+		return "Sphere";
+
+	case EPrimitive::EP_Triangle:
+		return "Triangle";
+
+	case EPrimitive::EP_GizmoArrow:
+		return "GizmoArrow";
+
+	case EPrimitive::EP_Circle:
+		return "Circle";
+
+	default:
+		return "Unknown";
+	}
+}

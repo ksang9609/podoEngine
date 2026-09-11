@@ -88,6 +88,23 @@
     <ClCompile Include="..\..\Week3\World.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\Quat.cpp" />
+    <ClCompile Include="..\..\Week3\FName.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Week3\UBillboardComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Week3\Vector.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
