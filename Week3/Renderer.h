@@ -60,7 +60,7 @@ public:
 	ID3D11PixelShader* TexturePixelShader = nullptr;
 	ID3D11InputLayout* TextureInputLayout = nullptr;
 	ID3D11SamplerState* TextureSamplerState = nullptr;
-	
+	ID3D11BlendState* FontBlendState = nullptr;
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -141,4 +141,8 @@ public:
 	//해상도 변경 시 호출
 	//void OnResize(UINT Width, UINT Height);
 	void OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight);
+
+private:
+	UINT mTextVertexCount = 0;
 };
+
