@@ -22,6 +22,8 @@ public:
 
 	bool AttachTo(USceneComponent& parent);
 	bool RemoveChild(USceneComponent& child);
+	void DetachFromParent();
+	void DetachAllChildren();
 
 	FVector GetRelativeLocation() const;
 	void SetRelativeLocation(FVector location);
@@ -45,10 +47,14 @@ protected:
 
 	FMatrix mComponentToWorld;
 
-	// References of child components.
+
+	// References of parent component and child components.
 	// The ownership of child components is managed by the actor, not by the parent component.
+	USceneComponent* mParent = nullptr;
 	TArray<USceneComponent*> mChildren;
 
 	void updateComponentToWorld(const FMatrix& parentTransform);
+	void updateComponentToWorld();
+	bool isChildOf(const USceneComponent& component) const;
 };
 

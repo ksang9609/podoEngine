@@ -15,7 +15,7 @@ void USceneComponent::Initialize(FVector location, FRotator rotation, FVector sc
 	mRelativeLocation = location;
 	mRelativeRotation = rotation;
 	mRelativeScale3D = scale3D;
-	updateComponentToWorld(FMatrix::Identity);
+	updateComponentToWorld();
 }
 
 USceneComponent::~USceneComponent()
@@ -61,26 +61,83 @@ void USceneComponent::DeserializeClass(const json::JSON& inJson)
 	mRelativeRotation = FRotatorFromJson(propertiesJson.at("mRelativeRotation"));
 	mRelativeScale3D = FVectorFromJson(propertiesJson.at("mRelativeScale3D"));
 
-	updateComponentToWorld(FMatrix::Identity);
+	updateComponentToWorld();
 }
 
 // Attach this component to a parent scene component
 bool USceneComponent::AttachTo(USceneComponent& parent)
 {
+	if (&parent == this)
+	{
+		return false;
+	}
+	if (mParent == &parent)
+	{
+		return true; // Already attached to the same parent
+	}
+	if (parent.isChildOf(*this))
+	{
+		return false; // Prevent circular attachment
+	}
+
+	if (mOwner && mOwner != parent.GetOwner())
+	{
+		mOwner->RemoveComponent(UUID);
+
+		// Add this component to the owner actor's component list
+		parent.GetOwner()->AddComponent(this);
+	}
+
+	if (mParent && mParent != &parent)
+	{
+		mParent->RemoveChild(*this);
+	}
+
+	mParent = &parent;
 	parent.mChildren.Add(this);
 
 	updateComponentToWorld(parent.GetTransformMatrix());
-
-	// Add this component to the owner actor's component list
-	parent.GetOwner()->AddComponent(this);
 
 	return true;
 }
 
 bool USceneComponent::RemoveChild(USceneComponent& child)
 {
-	mChildren.Remove(&child);
+	if (&child == this)
+	{
+		return false; // Cannot remove self
+	}
+	if (child.mParent != this)
+	{
+		return false; // The specified child is not a child of this component
+	}
+
+	if (!mChildren.Remove(&child))
+	{
+		return false;
+	}
+
+	child.mParent = nullptr;
+
+	// Reset the child's transform to world space
+	child.updateComponentToWorld();
 	return true;
+}
+
+void USceneComponent::DetachFromParent()
+{
+	if (mParent)
+	{
+		mParent->RemoveChild(*this);
+	}
+}
+
+void  USceneComponent::DetachAllChildren()
+{
+	while (mChildren.Num() > 0)
+	{
+		RemoveChild(*mChildren[0]);
+	}
 }
 
 FVector USceneComponent::GetRelativeLocation() const
@@ -91,7 +148,7 @@ FVector USceneComponent::GetRelativeLocation() const
 void USceneComponent::SetRelativeLocation(FVector location)
 {
 	mRelativeLocation = location;
-	updateComponentToWorld(FMatrix::Identity);
+	updateComponentToWorld();
 }
 
 FRotator USceneComponent::GetRelativeRotation() const
@@ -102,13 +159,13 @@ FRotator USceneComponent::GetRelativeRotation() const
 void USceneComponent::SetRelativeRotation(FRotator rotation)
 {
 	mRelativeRotation = rotation;
-	updateComponentToWorld(FMatrix::Identity);
+	updateComponentToWorld();
 }
 
 void USceneComponent::SetRelativeRotation(FQuat rotation)
 {
 	mRelativeRotation = rotation.Rotator();
-	updateComponentToWorld(FMatrix::Identity);
+	updateComponentToWorld();
 }
 
 FVector USceneComponent::GetRelativeScale3D() const
@@ -119,7 +176,7 @@ FVector USceneComponent::GetRelativeScale3D() const
 void USceneComponent::SetRelativeScale3D(FVector scale)
 {
 	mRelativeScale3D = scale;
-	updateComponentToWorld(FMatrix::Identity);
+	updateComponentToWorld();
 }
 
 FMatrix USceneComponent::GetTransformMatrix() const
@@ -137,7 +194,7 @@ void USceneComponent::SetRelativeTransform(const FTransform& transform)
 	mRelativeLocation = transform.GetLocation();
 	mRelativeRotation = transform.GetRotator();
 	mRelativeScale3D = transform.GetScale();
-	updateComponentToWorld(FMatrix::Identity);
+	updateComponentToWorld();
 }
 
 void USceneComponent::updateComponentToWorld(const FMatrix& parentTransform)
@@ -148,4 +205,24 @@ void USceneComponent::updateComponentToWorld(const FMatrix& parentTransform)
 	{
 		child->updateComponentToWorld(mComponentToWorld);
 	}
+}
+
+void USceneComponent::updateComponentToWorld()
+{
+	updateComponentToWorld(mParent ? mParent->GetTransformMatrix() : FMatrix::Identity);
+}
+
+
+bool USceneComponent::isChildOf(const USceneComponent& component) const
+{
+	const USceneComponent* current = mParent;
+	while (current)
+	{
+		if (current == &component)
+		{
+			return true;
+		}
+		current = current->mParent;
+	}
+	return false;
 }

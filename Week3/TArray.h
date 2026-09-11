@@ -45,7 +45,7 @@ public:
 	bool IsEmpty() const;
 
 	void Reset(int32 newSize);
-	void Remove(const T& data);
+	bool Remove(const T& data);
 	void RemoveAt(uint32 index, int32 count);
 	void RemoveAtSwap(uint32 index);
 	void RemoveLast();
@@ -200,9 +200,11 @@ inline void TArray<T>::Reset(int32 newSize)
 }
 
 template<typename T>
-inline void TArray<T>::Remove(const T& data)
+inline bool TArray<T>::Remove(const T& data)
 {
+	auto originalSize = mDatas.size();
 	std::erase(mDatas, data);
+	return mDatas.size() < originalSize;
 }
 
 template<typename T>

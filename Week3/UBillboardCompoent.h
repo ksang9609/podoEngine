@@ -5,7 +5,7 @@
 // Billboard rendered texture 2d quad component, always facing the **Viewport camera**.
 class UBillboardComponent : public UPrimitiveComponent
 {
-	REFLECT_CLASS(UBillboardComponent, UPrimitiveComponent)
+	DECLARE_OBJECT(UBillboardComponent, UPrimitiveComponent)
 public:
 	UBillboardComponent();
 
