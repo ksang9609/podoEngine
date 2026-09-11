@@ -275,6 +275,9 @@
     <ClInclude Include="Quat.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="FBoundingBox.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">

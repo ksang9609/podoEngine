@@ -159,6 +159,7 @@
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="SphereComponent.cpp" />
     <ClInclude Include="Circle.h" />
+    <ClInclude Include="FBoundingBox.h" />
     <ClInclude Include="GizmoArrow.h" />
     <ClInclude Include="Quat.h" />
     <ClInclude Include="Triangle.h" />
