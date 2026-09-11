@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "Console.h"
 
+
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
@@ -108,6 +109,7 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
 }
+
 void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
 {
 	// 월드 좌표 그대로 넣는다. 그래서 그릴 때 World 행렬이 단위행렬이다
@@ -181,8 +183,8 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
 		{
 			continue;
 		}
-		FVector3 LocalMin = LocalminmaxBuffer->LocalMin;
-		FVector3 LocalMax = LocalminmaxBuffer->LocalMax;
+		FVector3 LocalMin = LocalminmaxBuffer->LocalBounds.min;
+		FVector3 LocalMax = LocalminmaxBuffer->LocalBounds.max;
 		FVector3 p0 = LocalMin;
 		FVector3 p1 = FVector3(LocalMax.x, LocalMin.y, LocalMin.z);
 		FVector3 p2 = FVector3(LocalMin.x, LocalMax.y, LocalMin.z);
@@ -311,7 +313,10 @@ void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertic
 		LocalMax.y = max(LocalMax.y, vertices[i].y);
 		LocalMax.z = max(LocalMax.z, vertices[i].z);
 	} // AABB 렌더링에 필요한 LocalMin,Max 저장
-	FBuffer buffer = { vertexBuffer, numVertices,LocalMin,LocalMax }; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
+	FBoundingBox LocalBound;
+	LocalBound.min = LocalMin;
+	LocalBound.max = LocalMax;
+	FBuffer buffer = { vertexBuffer, numVertices, LocalBound}; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
 	mBufferMap.Add(ePrimitive, buffer);
 }
 
