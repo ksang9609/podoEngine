@@ -141,17 +141,25 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	/* Scene Control */
 	ImGui::SeparatorText("Scene Control");
 
-	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName));
+	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName), ImGuiInputTextFlags_ReadOnly);
 	if (ImGui::Button("New scene"))
 	{
 		// TODO: add clear depth buffer function in renderer
 		//guiReference.GraphicsManager->GetRenderer()->ClearDepthBuffer();
 		guiReference.ViewportClient->Reset();
 		NewScene();
+		strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), "Default");
 	}
 	if (ImGui::Button("Save scene"))
 	{
-		SaveScene(mGuiInputField.SceneName, *guiReference.FileManager);
+		const FString selectedFile = mSaveSceneFileDialog();
+
+		if (selectedFile.Len() > 0)
+		{
+			std::filesystem::path p(selectedFile.CStr());
+			SaveScene(p.stem().string(), *guiReference.FileManager);
+			guiReference.ViewportClient->Reset();
+		}
 	}
 	if (ImGui::Button("Load scene"))
 	{
@@ -160,7 +168,9 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		if (selectedFile.Len() > 0)
 		{
 			LoadScene(selectedFile, *guiReference.FileManager);
-
+			std::filesystem::path p(selectedFile.CStr());
+			std::string LoadScenename = p.stem().string();
+			strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), LoadScenename.c_str());
 			guiReference.ViewportClient->Reset();
 		}
 	}
@@ -692,6 +702,39 @@ FString FSceneManager::mOpenSceneFileDialog() const
 	return FString("");
 }
 
+FString FSceneManager::mSaveSceneFileDialog() const
+{
+	char fileName[MAX_PATH] = {};
+	OPENFILENAMEA openFileName = {};
+
+	openFileName.lStructSize = sizeof(OPENFILENAMEA);
+	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
+
+	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
+	openFileName.lpstrFile = fileName;
+	openFileName.nMaxFile = MAX_PATH;
+
+	openFileName.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+	openFileName.lpstrDefExt = "Scene";
+
+	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
+
+	if (!std::filesystem::exists(initialDirectory))
+	{
+		std::filesystem::create_directories(initialDirectory);
+	}
+
+	const std::string initialDirectoryString = initialDirectory.string();
+
+	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
+
+	if (GetSaveFileNameA(&openFileName))
+	{
+		return FString(fileName);
+	}
+
+	return FString("");
+}
 
 //
 //FSceneData FSceneManager::ReadSceneData(

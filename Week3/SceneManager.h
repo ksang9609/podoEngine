@@ -81,8 +81,11 @@ private:
 	UWorld* mCurrentWorld = nullptr;
 	AActor* mSelectedActor = nullptr;
 	FGuiInputField mGuiInputField;
+	std::string LoadScenename;
 
 	FString mOpenSceneFileDialog() const;
+	FString mSaveSceneFileDialog() const;
+
 
 	FEditorSetting mEditorSetting;
 
