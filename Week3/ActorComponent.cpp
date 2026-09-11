@@ -1,6 +1,8 @@
 ﻿
 #include "ActorComponent.h"
 
+IMPLEMENT_CLASS(UActorComponent, UObject);
+
 UActorComponent::UActorComponent()
 	: mOwner(nullptr)
 {

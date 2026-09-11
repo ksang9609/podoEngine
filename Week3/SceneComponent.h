@@ -9,7 +9,7 @@ class FTransform;
 
 class USceneComponent : public UActorComponent
 {
-	REFLECT_CLASS(USceneComponent, UActorComponent)
+	DECLARE_OBJECT(USceneComponent, UActorComponent)
 public:
 	USceneComponent() = default;
 

@@ -47,14 +47,18 @@ void UObject::Initialize()
 	UUID = UEngineStatics::GenerateUUID();
 }
 
+FClassInfo UObject::ClassInfo(
+	"UObject",
+	nullptr,
+	[]() -> UObject*
+	{
+		return new UObject();
+	}
+);
+
 const FClassInfo* UObject::GetClass()
 {
-	static FClassInfo classInstance = FClassInfo(
-		"UObject",
-		nullptr,
-		[]() -> UObject* { return new UObject(); }
-	);
-	return &classInstance;
+	return &ClassInfo;
 }
 
 void UObject::SerializeClass(json::JSON& outJson) const

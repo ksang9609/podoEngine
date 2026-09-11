@@ -10,7 +10,7 @@ class USceneComponent;
 
 class AActor : public UObject
 {
-	REFLECT_CLASS(AActor, UObject)
+	DECLARE_OBJECT(AActor, UObject)
 public:
 	AActor() = default;
 	virtual ~AActor();

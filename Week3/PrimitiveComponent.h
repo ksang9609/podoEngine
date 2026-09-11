@@ -4,7 +4,7 @@
 
 class UPrimitiveComponent : public USceneComponent
 {
-	REFLECT_CLASS(UPrimitiveComponent, USceneComponent)
+	DECLARE_OBJECT(UPrimitiveComponent, USceneComponent)
 public:
 	UPrimitiveComponent();
 

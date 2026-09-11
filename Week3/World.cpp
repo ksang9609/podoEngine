@@ -6,6 +6,8 @@
 #include "JsonUtil.h"
 #include "Console.h"
 
+IMPLEMENT_CLASS(UWorld, UObject);
+
 UWorld::~UWorld()
 {
 	for (AActor* removeActor : mActors)

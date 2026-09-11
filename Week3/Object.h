@@ -59,6 +59,7 @@ public:
 	void Initialize();
 
 	// StaticClass() in Unreal Engine
+	static FClassInfo ClassInfo;
 	static const FClassInfo* GetClass();
 
 	// GetClass() in Unreal Engine

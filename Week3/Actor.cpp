@@ -6,6 +6,8 @@
 #include "RenderInfo.h"
 #include "SceneComponent.h"
 
+IMPLEMENT_CLASS(AActor, UObject);
+
 AActor::~AActor()
 {
 	for (UActorComponent* removeComponent : mComponents)
