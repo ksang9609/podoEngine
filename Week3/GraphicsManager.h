@@ -9,11 +9,13 @@
 #include "Camera.h"
 #include "RenderInfo.h"
 #include "Vector.h"
+#include "FBoundingBox.h"
 
 struct FBuffer
 {
 	ID3D11Buffer* Buffer;
 	uint32 SourceNum;
+	FBoundingBox LocalBounds;
 };
 
 class FGraphicsManager
@@ -28,8 +30,8 @@ public:
 
 	//void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive); // FRenderInfo
 	//void Render(const TArray<FRenderInfo> renderInfos);
-	void Render(const TArray<FRenderInfo> renderInfos);
-	void RenderOverlay(const TArray<FRenderInfo> renderInfos);
+	void Render(const TArray<FRenderInfo> renderInfos, const FCamera& camera);
+	void RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera);
 	//void RenderOverlay(const TArray<FRenderInfo> renderInfos); //깊이버퍼 초기화
 	// FRenderInfo
 
@@ -49,6 +51,9 @@ public:
 	float GetCameraOrthoDistance() const { return mCameraOrthoDistance; }
 	void SetCameraOrthoDistance(float distance) { mCameraOrthoDistance = distance; }
 
+	float GetGridWidth();
+	void SetGridWidth(float width);
+
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
 	URenderer* GetRenderer() const;
@@ -58,6 +63,8 @@ public:
 	// 호출 즉시 그리지 않고 배열에 쌓는다. FlushLines()에서 한 번에 그린다.
 	void DrawLine(const FVector& start, const FVector& end, const FVector4& color);
 	void DrawWorldAxis();
+	void DrawGrid();
+	void DrawAABB(const TArray<FRenderInfo> renderInfos);
 	void FlushLines();
 
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
@@ -89,6 +96,7 @@ private:
 	// Graphics config
 	// 이번 프레임에 쌓인 선분. 정점 2개가 선분 하나
 	TArray<FVertexSimple> mLineVertices;
+	TArray<uint32> mLineIndices;
 
 	bool mbWireFrame;
 	bool mbPerspectiveProjection;
@@ -102,4 +110,8 @@ private:
 	float mProjectionElapsed = 0.0f;
 	float mProjectionDuration = 1.0f;
 	bool mbProjectionTransitioning = false;
+
+	// Grid 간격, 최대 한계선
+	float mgridExtent = 1000.0f;
+	float mgridSpacing = 1.0f;
 };

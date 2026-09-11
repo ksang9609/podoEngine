@@ -1,16 +1,20 @@
 ﻿#include "FEditorViewportClient.h"
 
-#include "Cube.h"
-#include "Sphere.h"
-#include "Triangle.h"
-#include "GizmoArrow.h"
-#include "Circle.h"
 #include "WindowApplication.h"
 #include "ImGui/imgui.h"
 #include "Console.h"
 #include "SceneManager.h"
 #include "MathUtility.h"
 #include "GraphicsManager.h"
+
+// Primitive vertices definitions
+#include "Cube.h"
+#include "Sphere.h"
+#include "Triangle.h"
+#include "GizmoArrow.h"
+#include "Circle.h"
+#include "Primitives.h"
+
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
 // 포인터로 받으면 배열 크기 정보가 사라지므로 여기서 개수를 같이 넘긴다.
@@ -37,6 +41,10 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 	case EPrimitive::EP_Circle:
 		OutVertices = Circle_vertices;
 		OutCount = static_cast<uint32>(sizeof(Circle_vertices) / sizeof(FVertexSimple));
+		return true;
+	case EPrimitive::EP_BillboardQuad:
+		OutVertices = Quad_vertices;
+		OutCount = static_cast<uint32>(sizeof(Quad_vertices) / sizeof(FVertexSimple));
 		return true;
 	}
 

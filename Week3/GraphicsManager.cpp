@@ -4,8 +4,10 @@
 #include "Camera.h"
 #include "Console.h"
 
+
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
+static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
 
 FGraphicsManager::FGraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
@@ -17,6 +19,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mRenderer->CreateShader();
 	mRenderer->CreateConstantBuffer();
 	mRenderer->CreateLineVertexBuffer(LINE_VERTEX_CAPACITY);
+	mRenderer->CreateLineIndexBuffer(LINE_INDEX_CAPACITY);
 
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 }
@@ -29,6 +32,7 @@ FGraphicsManager::~FGraphicsManager()
 	}
 
 	mRenderer->ReleaseLineVertexBuffer();
+	mRenderer->ReleaseLineIndexBuffer();
 	mRenderer->ReleaseConstantBuffer();
 	mRenderer->ReleaseShader();
 	mRenderer->Release();
@@ -77,24 +81,55 @@ void FGraphicsManager::GizmoPrepare()
 	mRenderer->RSUpdateState();
 
 }
-void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
+
+
+
+
+
+// Update world matrix for billboard quads to face the camera
+// Get FRotator input because current camera rotation is stored in FRotator.
+// If camear stores rotation in FQuat, we can use FQuat to calculate billboard matrix.
+const FMatrix GetBillboardTransformMatrix(const FRenderInfo& renderInfo, const FRotator& cameraRotation)
+{
+	if (renderInfo.ePrimitive != EPrimitive::EP_BillboardQuad)
+	{
+		return renderInfo.WorldTransformMatrix;
+	}
+
+	const FMatrix& world = renderInfo.WorldTransformMatrix;
+	const FVector location = FVector(world.M[3][0], world.M[3][1], world.M[3][2]);
+
+	const FVector scale = {
+		world.GetUnitAxis(EAxis::X).Length(),
+		world.GetUnitAxis(EAxis::Y).Length(),
+		world.GetUnitAxis(EAxis::Z).Length(),
+	};
+
+	return FMatrix::Scale(scale) * FMatrix::Rotate(cameraRotation) * FMatrix::Translation(location);
+}
+
+void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCamera& camera)
 {
 	FMatrix viewProjection;
-	//if (mbPerspectiveProjection)
-	//{
-	//	viewProjection = mViewProjectionMatrix;
-	//}
-	//else
-	//{
-	//	viewProjection = mViewOrthogonalProjectionMatrix;
-	//}
 
 	viewProjection = mViewUnifiedProjectionMatrix;
 
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
-		//mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix, renderInfo.Color);
-		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, viewProjection, renderInfo.Color);
+		FMatrix worldTransform = GetBillboardTransformMatrix(renderInfo, camera.Rotation);
+
+		// 빌보드 텍스쳐 렌더링
+		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
+		{
+			FMatrix billboardWorld = GetBillboardTransformMatrix(renderInfo, camera.Rotation);
+
+			mRenderer->RenderTexture(billboardWorld, mViewUnifiedProjectionMatrix);
+
+			continue;
+		}
+
+
+		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo.Color);
 
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
 		if (vertexBuffer == nullptr)
@@ -105,11 +140,18 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
 }
+
 void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
 {
 	// 월드 좌표 그대로 넣는다. 그래서 그릴 때 World 행렬이 단위행렬이다
+	uint32 mStartOffset = mLineVertices.Num();
+
 	mLineVertices.Add({ start.x, start.y, start.z, color.x, color.y, color.z, color.w });
 	mLineVertices.Add({ end.x,   end.y,   end.z,   color.x, color.y, color.z, color.w });
+
+	// Index Buffer 업데이트
+	mLineIndices.Add(mStartOffset);
+	mLineIndices.Add(mStartOffset+1);
 }
 
 void FGraphicsManager::DrawWorldAxis()
@@ -151,6 +193,83 @@ void FGraphicsManager::DrawWorldAxis()
 	}
 }
 
+void FGraphicsManager::DrawGrid()
+{
+	int LineCount = (mgridExtent/2) / mgridSpacing; 
+	float currentGrid = -mgridExtent/2.0f;
+	for (int32 i = -LineCount; i <= LineCount;i++)
+	{
+		float Spaceline = i * mgridSpacing;
+		DrawLine(FVector3(Spaceline,-mgridExtent/2.0f,0), FVector3(Spaceline, mgridExtent/ 2.0f,0),FVector4(1.0f,1.0f,1.0f,1.0f));  // X축 기준 Grid
+		DrawLine(FVector3(- mgridExtent / 2.0f, Spaceline, 0), FVector3(mgridExtent / 2.0f, Spaceline,0), FVector4(1.0f, 1.0f, 1.0f, 1.0f)); // Y축 기준 Grid
+	}
+}
+
+void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
+{
+	for (const FRenderInfo& renderInfo : renderInfos)
+	{
+		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo.ePrimitive);
+		if (LocalminmaxBuffer==nullptr)
+		{
+			continue;
+		}
+		FVector3 LocalMin = LocalminmaxBuffer->LocalBounds.min;
+		FVector3 LocalMax = LocalminmaxBuffer->LocalBounds.max;
+		FVector3 p0 = LocalMin;
+		FVector3 p1 = FVector3(LocalMax.x, LocalMin.y, LocalMin.z);
+		FVector3 p2 = FVector3(LocalMin.x, LocalMax.y, LocalMin.z);
+		FVector3 p3 = FVector3(LocalMax.x, LocalMax.y, LocalMin.z);
+		FVector3 p4 = FVector3(LocalMin.x, LocalMin.y, LocalMax.z);
+		FVector3 p5 = FVector3(LocalMax.x, LocalMin.y, LocalMax.z);
+		FVector3 p6 = FVector3(LocalMin.x, LocalMax.y, LocalMax.z);
+		FVector3 p7 = LocalMax;
+		TArray<FVector3> LocalArray = { p0,p1,p2,p3,p4,p5,p6,p7 };
+		TArray<FVector3> WorldArray;
+		for (int i = 0;i < LocalArray.Num();i++)
+		{
+			FVector3 Worlddot = renderInfo.WorldTransformMatrix.TransformPosition(LocalArray[i]);
+			WorldArray.Add(Worlddot);
+		}
+		FVector3 WorldMin = WorldArray[0];
+		FVector3 WorldMax = WorldArray[0];
+		for (int i = 0;i < WorldArray.Num();i++)
+		{
+			WorldMin.x = min(WorldMin.x, WorldArray[i].x);
+			WorldMin.y = min(WorldMin.y, WorldArray[i].y);
+			WorldMin.z = min(WorldMin.z, WorldArray[i].z);
+			WorldMax.x = max(WorldMax.x, WorldArray[i].x);
+			WorldMax.y = max(WorldMax.y, WorldArray[i].y);
+			WorldMax.z = max(WorldMax.z, WorldArray[i].z);
+		}
+
+		FVector3 w0 = WorldMin;
+		FVector3 w1 = FVector3(WorldMax.x, WorldMin.y, WorldMin.z);
+		FVector3 w2 = FVector3(WorldMin.x, WorldMax.y, WorldMin.z);
+		FVector3 w3 = FVector3(WorldMax.x, WorldMax.y, WorldMin.z);
+		FVector3 w4 = FVector3(WorldMin.x, WorldMin.y, WorldMax.z);
+		FVector3 w5 = FVector3(WorldMax.x, WorldMin.y, WorldMax.z);
+		FVector3 w6 = FVector3(WorldMin.x, WorldMax.y, WorldMax.z);
+		FVector3 w7 = WorldMax;
+
+		DrawLine(w0, w1, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w1, w3, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w2, w3, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w2, w0, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w4, w5, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w7, w5, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w6, w7, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w4, w6, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w0, w4, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w5, w1, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w2, w6, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawLine(w3, w7, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+	}
+
+
+}
+
+
 void FGraphicsManager::FlushLines()
 {
 	if (mLineVertices.Num() == 0) return;
@@ -166,16 +285,17 @@ void FGraphicsManager::FlushLines()
 	//	mRenderer->UpdateConstant(FMatrix::Identity, mViewOrthogonalProjectionMatrix, FVector4(0, 0, 0, 0));
 	//}
 	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
-	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num());
+	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(),&mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
 	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
+	mLineIndices.Reset(LINE_INDEX_CAPACITY);
 }
 
-void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos) //깊이버퍼 초기화
+void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera) //깊이버퍼 초기화
 {
 	mRenderer->ClearDepth();
-	Render(renderInfos);
+	Render(renderInfos, camera);
 }
 /*
 void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimitive)
@@ -189,7 +309,7 @@ void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimit
 
 void FGraphicsManager::Display()
 {
-	mRenderer->RenderTestQuad(
+	mRenderer->RenderTexture(
 		FMatrix::Identity,
 		FMatrix::Identity
 	);
@@ -217,8 +337,21 @@ void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertic
 
 	UINT numVertices = static_cast<UINT>(verticesSize / sizeof(FVertexSimple));
 	ID3D11Buffer* vertexBuffer = mRenderer->CreateVertexBuffer(vertices, verticesSize);
-
-	FBuffer buffer = { vertexBuffer, numVertices };
+	FVector3 LocalMin = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
+	FVector3 LocalMax = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
+	for (int i = 0;i < numVertices;i++)
+	{
+		LocalMin.x = min(LocalMin.x, vertices[i].x);
+		LocalMin.y = min(LocalMin.y, vertices[i].y);
+		LocalMin.z = min(LocalMin.z, vertices[i].z);
+		LocalMax.x = max(LocalMax.x, vertices[i].x);
+		LocalMax.y = max(LocalMax.y, vertices[i].y);
+		LocalMax.z = max(LocalMax.z, vertices[i].z);
+	} // AABB 렌더링에 필요한 LocalMin,Max 저장
+	FBoundingBox LocalBound;
+	LocalBound.min = LocalMin;
+	LocalBound.max = LocalMax;
+	FBuffer buffer = { vertexBuffer, numVertices, LocalBound}; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
 	mBufferMap.Add(ePrimitive, buffer);
 }
 
@@ -263,14 +396,26 @@ FVector FGraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
 	}
 }
 
+float FGraphicsManager::GetGridWidth()
+{
+	return mgridSpacing;
+}
+
+void  FGraphicsManager::SetGridWidth(float width)
+{
+	mgridSpacing = width;
+}
+
+
 void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 {
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
+	FMatrix worldTransformMatrix = RI.WorldTransformMatrix;
 
 	// 화면에서 OUTLINE_PIXELS 만큼 보이려면 이 깊이에서 월드로 얼마여야 하는지 환산한다.
 	// 깊이 d에서 뷰포트가 담는 월드 높이가 2*d*tan(fov/2) 이므로, 그걸 픽셀 수로 나누면 픽셀당 월드 크기다.
-	const FVector ObjectLocation = RI.WorldTransformMatrix.TransformPosition(Center);
+	const FVector ObjectLocation = worldTransformMatrix.TransformPosition(Center);
 	const float Depth = FVector::dot(ObjectLocation - mCameraLocation, mCameraForward);
 	const float TanHalfFov = tanf(FMath::DegreesToRadians(mCameraFovDegree * 0.5f));
 	const float effectiveDepth = FMath::Max(
@@ -283,9 +428,9 @@ void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 
 	// 축마다 월드 공간에서 WorldThickness 만큼만 자라도록 배율을 따로 구한다.
 	const FVector WorldScale(
-		RI.WorldTransformMatrix.GetUnitAxis(EAxis::X).Length(),
-		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
-		RI.WorldTransformMatrix.GetUnitAxis(EAxis::Z).Length());
+		worldTransformMatrix.GetUnitAxis(EAxis::X).Length(),
+		worldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
+		worldTransformMatrix.GetUnitAxis(EAxis::Z).Length());
 
 	FVector OutlineScale = {
 		GetOutlineAxisScale(HalfExtent.x * WorldScale.x, WorldThickness),
@@ -296,7 +441,7 @@ void FGraphicsManager::RenderHighLight(const FRenderInfo& RI)
 	const FMatrix Outline = FMatrix::Translation(FVector(-Center.x, -Center.y, -Center.z))
 		* FMatrix::Scale(OutlineScale)
 		* FMatrix::Translation(Center)
-		* RI.WorldTransformMatrix;
+		* worldTransformMatrix;
 
 	FBuffer vertexBuffer = mBufferMap[RI.ePrimitive];
 	//if (mbPerspectiveProjection)
