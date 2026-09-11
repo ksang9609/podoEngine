@@ -3,96 +3,42 @@
 
 typedef struct FVector
 {
-    float x, y, z;
-	FVector() : x(0), y(0), z(0) {}
+	float x, y, z;
 
-	FVector(float n) : x(n), y(n), z(n){}
-    FVector(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
+	FVector();
+	FVector(float n);
+	FVector(float _x, float _y, float _z);
 
-    const FVector operator-(const FVector& Others) const
-    {
-        return FVector(x - Others.x, y - Others.y, z - Others.z);
-    }
+	const FVector operator-(const FVector& other) const;
+	const FVector operator+(const FVector& other) const;
 
-    void operator+=(const FVector& Others)
-    {
-        x += Others.x;
-        y += Others.y;
-        z += Others.z;
-    }
+	void operator+=(const FVector& other);
+	void operator-=(const FVector& other);
 
-    void operator-=(const FVector& Others)
-    {
-        x -= Others.x;
-        y -= Others.y;
-        z -= Others.z;
-    }
-
-	FVector operator-() const
-	{
-		return FVector(-x, -y, -z);
-	}
+	// Return the negation of this vector.
+	FVector operator-() const;
 
 	//내적
-    inline static float dot(const FVector& A, const FVector& B)
-    {
-        return A.x * B.x + A.y * B.y + A.z * B.z;
-    }
+	static float dot(const FVector& A, const FVector& B);
 
 	//외적
-	inline static FVector cross(const FVector& A, const FVector& B)
-	{
-		return	FVector(A.y * B.z - A.z * B.y, A.z * B.x - A.x * B.z, A.x * B.y - A.y * B.x);
-	}
+	static FVector cross(const FVector& A, const FVector& B);
 
-	float Length() const { return FMath::Sqrt(x * x + y * y + z * z); }
-	float LengthSquared() const { return x * x + y * y + z * z; }
+	float Length() const;
+	float LengthSquared() const;
 
-	void Normalize()
-	{
-		float len = Length();
-		x /= len;
-		y /= len;
-		z /= len;
-	}
+	void Normalize();
+	FVector GetNormalized() const;
 
-	inline bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const
-	{
-		return LengthSquared() < Tolerance;
-	}
+	bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const;
 
-	inline static FVector Up()
-	{
-		return FVector(0, 0, 1);
-	}
-
-	inline static FVector Right()
-	{
-		return FVector(0, 1, 0);
-	}
-
-	inline static FVector Forward()
-	{
-		return FVector(1, 0, 0);
-	}
-	
+	static FVector Up();		// z-axis
+	static FVector Right();		// y-axis
+	static FVector Forward();	// x-axis
 } FVector3;
 
-inline const FVector operator*(const FVector& v, float f)
-{
-    return FVector(v.x * f, v.y * f, v.z * f);
-}
-
-inline const FVector operator*(float f, const FVector& v)
-{
-    return FVector(v.x * f, v.y * f, v.z * f);
-}
-
-inline FVector operator+(const FVector& A, const FVector& B)
-{
-	return FVector(A.x + B.x, A.y + B.y, A.z + B.z);
-}
-
+const FVector operator*(const FVector& v, float f);
+const FVector operator*(float f, const FVector& v);
 
 //Vector 4
 typedef struct FVector4
@@ -100,35 +46,41 @@ typedef struct FVector4
 	float x, y, z, w;
 	FVector4(float _x = 0, float _y = 0, float _z = 0, float _w = 0) : x(_x), y(_y), z(_z), w(_w) {}
 
-	const FVector4 operator-(const FVector4& Others) const
-	{
-		return FVector4(x - Others.x, y - Others.y, z - Others.z, w - Others.w);
-	}
+	const FVector4 operator-(const FVector4& other) const;
+	const FVector4 operator+(const FVector4& other) const;
 
-	void operator+=(const FVector4& Others)
-	{
-		x += Others.x;
-		y += Others.y;
-		z += Others.z;
-		w += Others.w;
-	}
-
-	void operator-=(const FVector4& Others)
-	{
-		x -= Others.x;
-		y -= Others.y;
-		z -= Others.z;
-		w -= Others.w;
-	}
+	void operator+=(const FVector4& other);
+	void operator-=(const FVector4& other);
 
 	//내적
-	inline static float dot(const FVector4& A, const FVector4& B)
-	{
-		return A.x * B.x + A.y * B.y + A.z * B.z + A.w * B.w;
-	}
+	inline static float dot(const FVector4& A, const FVector4& B);
 
 	//4차원에는 외적이 없다.
 
-	float Length() const { return FMath::Sqrt(x * x + y * y + z * z + w * w); }
+	float Length() const;
 
 } FVector4;
+
+const FVector4 operator*(const FVector4& v, float f);
+const FVector4 operator*(float f, const FVector4& v);
+
+// Vector 2
+struct FVector2
+{
+	float x, y;
+	FVector2(float _x = 0, float _y = 0);
+	const FVector2 operator-(const FVector2& other) const;
+	const FVector2 operator+(const FVector2& other) const;
+
+	void operator+=(const FVector2& other);
+	void operator-=(const FVector2& Others);
+
+	//내적
+	static float dot(const FVector2& A, const FVector2& B);
+
+	void Normalize();
+	FVector2 GetNormalized() const;
+
+	float Length() const;
+	float LengthSquared() const;
+};
