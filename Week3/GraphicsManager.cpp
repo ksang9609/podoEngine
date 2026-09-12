@@ -83,6 +83,11 @@ void FGraphicsManager::GizmoPrepare()
 }
 void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 {
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return;
+	}
+
 	FMatrix viewProjection;
 	//if (mbPerspectiveProjection)
 	//{
@@ -95,22 +100,20 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 
 	viewProjection = mViewUnifiedProjectionMatrix;
 
-	if (HasShowFlag(EEngineShowFlags::SF_Primitives))
+	for (const FRenderInfo& renderInfo : renderInfos)
 	{
-		for (const FRenderInfo& renderInfo : renderInfos)
-		{
-			//mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix, renderInfo.Color);
-			mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, viewProjection, renderInfo.Color);
+		//mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, mViewProjectionMatrix, renderInfo.Color);
+		mRenderer->UpdateConstant(renderInfo.WorldTransformMatrix, viewProjection, renderInfo.Color);
 
-			FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
-			if (vertexBuffer == nullptr)
-			{
-				UE_LOG("Error: Vertex buffer not found for primitive type.");
-				continue;
-			}
-			mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
+		if (vertexBuffer == nullptr)
+		{
+			UE_LOG("Error: Vertex buffer not found for primitive type.");
+			continue;
 		}
+		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
+	
 }
 
 void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
@@ -128,6 +131,11 @@ void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const 
 
 void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVector4& color)
 {
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return;
+	}
+
 	int32 baseVertex = mLineVertices.Num();
 	for (int32 i = 0;i < worArray.Num();i++)
 	{
@@ -194,55 +202,52 @@ void FGraphicsManager::DrawGrid()
 
 void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
 {
-	if (HasShowFlag(EEngineShowFlags::SF_Primitives))
+	for (const FRenderInfo& renderInfo : renderInfos)
 	{
-		for (const FRenderInfo& renderInfo : renderInfos)
+		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo.ePrimitive);
+		if (LocalminmaxBuffer == nullptr)
 		{
-			FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo.ePrimitive);
-			if (LocalminmaxBuffer == nullptr)
-			{
-				continue;
-			}
-			FVector3 LocalMin = LocalminmaxBuffer->LocalBounds.min;
-			FVector3 LocalMax = LocalminmaxBuffer->LocalBounds.max;
-			FVector3 p0 = LocalMin;
-			FVector3 p1 = FVector3(LocalMax.x, LocalMin.y, LocalMin.z);
-			FVector3 p2 = FVector3(LocalMin.x, LocalMax.y, LocalMin.z);
-			FVector3 p3 = FVector3(LocalMax.x, LocalMax.y, LocalMin.z);
-			FVector3 p4 = FVector3(LocalMin.x, LocalMin.y, LocalMax.z);
-			FVector3 p5 = FVector3(LocalMax.x, LocalMin.y, LocalMax.z);
-			FVector3 p6 = FVector3(LocalMin.x, LocalMax.y, LocalMax.z);
-			FVector3 p7 = LocalMax;
-			TArray<FVector3> LocalArray = { p0,p1,p2,p3,p4,p5,p6,p7 };
-			TArray<FVector3> WorldArray;
-			for (int i = 0;i < LocalArray.Num();i++)
-			{
-				FVector3 Worlddot = renderInfo.WorldTransformMatrix.TransformPosition(LocalArray[i]);
-				WorldArray.Add(Worlddot);
-			}
-			FVector3 WorldMin = WorldArray[0];
-			FVector3 WorldMax = WorldArray[0];
-			for (int i = 0;i < WorldArray.Num();i++)
-			{
-				WorldMin.x = min(WorldMin.x, WorldArray[i].x);
-				WorldMin.y = min(WorldMin.y, WorldArray[i].y);
-				WorldMin.z = min(WorldMin.z, WorldArray[i].z);
-				WorldMax.x = max(WorldMax.x, WorldArray[i].x);
-				WorldMax.y = max(WorldMax.y, WorldArray[i].y);
-				WorldMax.z = max(WorldMax.z, WorldArray[i].z);
-			}
-
-			FVector3 w0 = WorldMin;
-			FVector3 w1 = FVector3(WorldMax.x, WorldMin.y, WorldMin.z);
-			FVector3 w2 = FVector3(WorldMin.x, WorldMax.y, WorldMin.z);
-			FVector3 w3 = FVector3(WorldMax.x, WorldMax.y, WorldMin.z);
-			FVector3 w4 = FVector3(WorldMin.x, WorldMin.y, WorldMax.z);
-			FVector3 w5 = FVector3(WorldMax.x, WorldMin.y, WorldMax.z);
-			FVector3 w6 = FVector3(WorldMin.x, WorldMax.y, WorldMax.z);
-			FVector3 w7 = WorldMax;
-			TArray<FVector3> WorldBoxArray = { w0,w1,w2,w3,w4,w5,w6,w7 };
-			DrawAABBLine(WorldBoxArray, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+			continue;
 		}
+		FVector3 LocalMin = LocalminmaxBuffer->LocalBounds.min;
+		FVector3 LocalMax = LocalminmaxBuffer->LocalBounds.max;
+		FVector3 p0 = LocalMin;
+		FVector3 p1 = FVector3(LocalMax.x, LocalMin.y, LocalMin.z);
+		FVector3 p2 = FVector3(LocalMin.x, LocalMax.y, LocalMin.z);
+		FVector3 p3 = FVector3(LocalMax.x, LocalMax.y, LocalMin.z);
+		FVector3 p4 = FVector3(LocalMin.x, LocalMin.y, LocalMax.z);
+		FVector3 p5 = FVector3(LocalMax.x, LocalMin.y, LocalMax.z);
+		FVector3 p6 = FVector3(LocalMin.x, LocalMax.y, LocalMax.z);
+		FVector3 p7 = LocalMax;
+		TArray<FVector3> LocalArray = { p0,p1,p2,p3,p4,p5,p6,p7 };
+		TArray<FVector3> WorldArray;
+		for (int i = 0;i < LocalArray.Num();i++)
+		{
+			FVector3 Worlddot = renderInfo.WorldTransformMatrix.TransformPosition(LocalArray[i]);
+			WorldArray.Add(Worlddot);
+		}
+		FVector3 WorldMin = WorldArray[0];
+		FVector3 WorldMax = WorldArray[0];
+		for (int i = 0;i < WorldArray.Num();i++)
+		{
+			WorldMin.x = min(WorldMin.x, WorldArray[i].x);
+			WorldMin.y = min(WorldMin.y, WorldArray[i].y);
+			WorldMin.z = min(WorldMin.z, WorldArray[i].z);
+			WorldMax.x = max(WorldMax.x, WorldArray[i].x);
+			WorldMax.y = max(WorldMax.y, WorldArray[i].y);
+			WorldMax.z = max(WorldMax.z, WorldArray[i].z);
+		}
+
+		FVector3 w0 = WorldMin;
+		FVector3 w1 = FVector3(WorldMax.x, WorldMin.y, WorldMin.z);
+		FVector3 w2 = FVector3(WorldMin.x, WorldMax.y, WorldMin.z);
+		FVector3 w3 = FVector3(WorldMax.x, WorldMax.y, WorldMin.z);
+		FVector3 w4 = FVector3(WorldMin.x, WorldMin.y, WorldMax.z);
+		FVector3 w5 = FVector3(WorldMax.x, WorldMin.y, WorldMax.z);
+		FVector3 w6 = FVector3(WorldMin.x, WorldMax.y, WorldMax.z);
+		FVector3 w7 = WorldMax;
+		TArray<FVector3> WorldBoxArray = { w0,w1,w2,w3,w4,w5,w6,w7 };
+		DrawAABBLine(WorldBoxArray, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 	}
 }
 
@@ -483,11 +488,6 @@ void FGraphicsManager::SetShowFlag(EEngineShowFlags Flag, bool bEnable)
 	else
 	{
 		mShowFlags &= ~FlagValue;
-	}
-
-	if (HasShowFlag(EEngineShowFlags::SF_BillboardText))
-	{
-		//RenderBillboardText();
 	}
 }
 
