@@ -37,6 +37,13 @@ void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FR
 	mePrimitive = ePrimitive;
 }
 
+void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D, bool bUseTexture)
+{
+	USceneComponent::Initialize(location, rotation, scale3D);
+	mePrimitive = ePrimitive;
+	mbUseTexture = bUseTexture;
+}
+
 UPrimitiveComponent::~UPrimitiveComponent()
 {
 }
@@ -74,7 +81,7 @@ void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) co
 {
 	assert(outRenderInfos);
 
-	outRenderInfos->Add({ mePrimitive, GetTransformMatrix(), { mOwner->UUID, mOwner->InternalIndex }, FVector4(0, 0, 0, 0) });
+	outRenderInfos->Add({ mePrimitive, GetTransformMatrix(), { mOwner->UUID, mOwner->InternalIndex }, FVector4(0, 0, 0, 0), mbUseTexture });
 }
 
 /*

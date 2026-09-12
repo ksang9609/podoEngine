@@ -16,6 +16,8 @@ struct FBuffer
 	ID3D11Buffer* Buffer;
 	uint32 SourceNum;
 	FBoundingBox LocalBounds;
+
+	ID3D11Buffer* TexturedBuffer = nullptr;
 };
 
 class FGraphicsManager
@@ -56,6 +58,7 @@ public:
 
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
+	void CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize);
 	URenderer* GetRenderer() const;
 
 	//Highlight
@@ -93,6 +96,9 @@ private:
 	float mCameraOrthoDistance = 10.0f;
 
 	TMap<EPrimitive, FBuffer> mBufferMap;
+
+	// 텍스처 정점으로 만든 버퍼
+	TMap<EPrimitive, FBuffer> mTexturedBufferMap;
 
 	// Graphics config
 	// 이번 프레임에 쌓인 선분. 정점 2개가 선분 하나

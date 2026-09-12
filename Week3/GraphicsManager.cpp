@@ -31,6 +31,16 @@ FGraphicsManager::~FGraphicsManager()
 		buffer.second.Buffer->Release();
 	}
 
+	for (auto& entry : mTexturedBufferMap)
+	{
+		if (entry.second.Buffer)
+		{
+			entry.second.Buffer->Release();
+			entry.second.Buffer = nullptr;
+		}
+	}
+	mTexturedBufferMap.Empty();
+
 	mRenderer->ReleaseLineVertexBuffer();
 	mRenderer->ReleaseLineIndexBuffer();
 	mRenderer->ReleaseConstantBuffer();
@@ -100,21 +110,33 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCame
 		// 빌보드 텍스쳐 렌더링
 		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
 		{
-			mRenderer->RenderTexture(worldTransform, mViewUnifiedProjectionMatrix);
+			mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
 
 			continue;
 		}
 
-
 		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo.Color);
+		FBuffer* vertexBuffer= renderInfo.bUseTexture ? mTexturedBufferMap.Find(renderInfo.ePrimitive) : mBufferMap.Find(renderInfo.ePrimitive);
 
-		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
 			UE_LOG("Error: Vertex buffer not found for primitive type.");
 			continue;
 		}
-		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+
+		if (renderInfo.bUseTexture)
+		{
+			mRenderer->RenderTexturedPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+		}
+		else
+		{
+			mRenderer->PrepareShader();
+
+			mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+		}
+
+
+		
 	}
 }
 
@@ -291,7 +313,7 @@ void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimit
 
 void FGraphicsManager::Display()
 {
-	mRenderer->RenderTexture(
+	mRenderer->RenderFontTexture(
 		FMatrix::Identity,
 		FMatrix::Identity
 	);
@@ -335,6 +357,54 @@ void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertic
 	LocalBound.max = LocalMax;
 	FBuffer buffer = { vertexBuffer, numVertices, LocalBound}; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
 	mBufferMap.Add(ePrimitive, buffer);
+}
+
+void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize)
+{
+	if (!vertices || verticesSize == 0 ||
+		verticesSize % sizeof(FVertexTextured) != 0)
+	{
+		UE_LOG("Invalid textured vertex data.");
+		return;
+	}
+
+	ID3D11Buffer* vertexBuffer = mRenderer->CreateVertexBuffer(vertices, verticesSize);
+
+	if (!vertexBuffer)
+	{
+		UE_LOG("Failed to create textured vertex buffer.");
+		return;
+	}
+
+	FBuffer buffer = {};
+	buffer.Buffer = vertexBuffer;
+	buffer.SourceNum =	static_cast<uint32>(verticesSize / sizeof(FVertexTextured));
+
+	// 기존 색상용 버퍼처럼 로컬 AABB 계산
+	buffer.LocalBounds.min = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
+	buffer.LocalBounds.max = buffer.LocalBounds.min;
+
+	for (uint32 i = 1; i < buffer.SourceNum; ++i)
+	{
+		const auto& v = vertices[i];
+
+		buffer.LocalBounds.min.x = min(buffer.LocalBounds.min.x, v.x);
+		buffer.LocalBounds.min.y = min(buffer.LocalBounds.min.y, v.y);
+		buffer.LocalBounds.min.z = min(buffer.LocalBounds.min.z, v.z);
+
+		buffer.LocalBounds.max.x = max(buffer.LocalBounds.max.x, v.x);
+		buffer.LocalBounds.max.y = max(buffer.LocalBounds.max.y, v.y);
+		buffer.LocalBounds.max.z = max(buffer.LocalBounds.max.z, v.z);
+	}
+
+	// 동일한 종류를 다시 등록한다면 이전 버퍼 해제
+	if (FBuffer* previous = mTexturedBufferMap.Find(ePrimitive))
+	{
+		if (previous->Buffer)
+			previous->Buffer->Release();
+	}
+
+	mTexturedBufferMap.Add(ePrimitive, buffer);
 }
 
 URenderer* FGraphicsManager::GetRenderer() const

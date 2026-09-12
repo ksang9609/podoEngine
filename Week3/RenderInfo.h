@@ -29,4 +29,6 @@ struct FRenderInfo
 		const FVector scale = FVector(1); // Billboard quad should not be scaled by world matrix, keep it uniform scale
 		return FMatrix::Scale(scale) * FMatrix::Rotate(cameraRotation) * FMatrix::Translation(location);
 	}
+
+	bool bUseTexture = false;
 };

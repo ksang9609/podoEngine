@@ -170,6 +170,8 @@
     <ClInclude Include="NameComponent.h" />
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="Quat.h" />
+    <ClInclude Include="SurfaceSettings.h" />
+    <ClInclude Include="TexturedPrimitives.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="TSparseArray.inl">
       <FileType>Document</FileType>

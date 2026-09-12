@@ -24,6 +24,7 @@
 #include "Circle.h"
 #include "Triangle.h"
 #include "Primitives.h"
+#include "TexturedPrimitives.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -77,6 +78,11 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
 
+	// 큐브 텍스처 6개로 나눈 버전을 사용하려면
+	BuildCubeAtlasVertices(CubeTextureVertices);
+
+	mGraphicsManager->CreateTexturedBuffer(	EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
+
 	FrameTimer = new FFrameTimer(120);
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
 
@@ -90,7 +96,37 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager->NewScene();
 	// mSceneManager->LoadScene("TestScene", *mFileManager);
+	{
+		UCubeComponent* cube =
+			FObjectFactory::ConstructObject<UCubeComponent>(
+				FVector(0.0f, -1.5f, 0.0f),
+				FRotator(0.0f, 0.0f, 0.0f),
+				FVector(1.0f, 1.0f, 1.0f));
 
+		cube->SetUseTexture(true);
+
+		AActor* actor =
+			FObjectFactory::ConstructObject<AActor>();
+
+		actor->AddRootSceneComponent(cube);
+		mSceneManager->GetCurrentWorld()->AddActor(actor);
+	}
+
+	{
+		UCubeComponent* cube =
+			FObjectFactory::ConstructObject<UCubeComponent>(
+				FVector(0.0f, 1.5f, 0.0f),
+				FRotator(0.0f, 0.0f, 0.0f),
+				FVector(1.0f, 1.0f, 1.0f));
+
+		cube->SetUseTexture(false);
+
+		AActor* actor =
+			FObjectFactory::ConstructObject<AActor>();
+
+		actor->AddRootSceneComponent(cube);
+		mSceneManager->GetCurrentWorld()->AddActor(actor);
+	}
 	//test code
 	//{
 	//	UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
