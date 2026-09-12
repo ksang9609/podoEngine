@@ -62,5 +62,8 @@ struct FMatrix {
 	// 아핀 행렬(마지막 열이 0,0,0,1)의 역행렬.
 	[[nodiscard]] FMatrix Inverse() const;
 
+	FVector GetTranslation() const;
+	FVector GetScale() const;
+
 	// end Struct Matrix
 };
