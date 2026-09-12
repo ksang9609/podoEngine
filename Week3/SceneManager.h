@@ -89,7 +89,6 @@ private:
 	FString mOpenSceneFileDialog() const;
 	FString mSaveSceneFileDialog() const;
 
-
 	FEditorSetting mEditorSetting;
 
 	void updateControlPanelGUI(const FGuiReference& guiReference);

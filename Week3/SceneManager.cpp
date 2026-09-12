@@ -663,9 +663,17 @@ const TArray<FRenderInfo>& FSceneManager::GetRenderInfos() const
 
 const TArray<FRenderInfo>& FSceneManager::GetAxisRenderInfos() const
 {
-	// TODO: Implement axis render info retrieval logic
-	static TArray<FRenderInfo> emptyRenderInfos;
-	return emptyRenderInfos;
+	static TArray<FRenderInfo> axisRenderInfos;
+
+	if (axisRenderInfos.IsEmpty())
+	{
+		FRenderInfo renderInfo{};
+		renderInfo.eRenderFlags = ERenderFlags::RF_WorldAxis;
+
+		axisRenderInfos.Add(renderInfo);
+	}
+
+	return axisRenderInfos;
 }
 
 FString FSceneManager::mOpenSceneFileDialog() const

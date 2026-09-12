@@ -40,6 +40,7 @@ public:
 	void Render(
 		const TArray<FRenderInfo>& scenerRenderInfos,
 		const TArray<FRenderInfo>& gizmoRenderInfos,
+		const TArray<FRenderInfo>& axisRenderInfos,
 		const FCamera& camera,
 		const AActor* selectedActor);
 
