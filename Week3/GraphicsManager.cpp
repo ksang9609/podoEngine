@@ -83,6 +83,11 @@ void FGraphicsManager::GizmoPrepare()
 }
 void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 {
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return;
+	}
+
 	FMatrix viewProjection;
 	//if (mbPerspectiveProjection)
 	//{
@@ -108,6 +113,7 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 		}
 		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
+	
 }
 
 void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
@@ -125,6 +131,11 @@ void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const 
 
 void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVector4& color)
 {
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return;
+	}
+
 	int32 baseVertex = mLineVertices.Num();
 	for (int32 i = 0;i < worArray.Num();i++)
 	{
@@ -140,7 +151,7 @@ void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVect
 
 void FGraphicsManager::DrawWorldAxis()
 {
-	if (!mbShowWorldAxis) return;
+	if (!HasShowFlag(EEngineShowFlags::SF_WorldAxis)) return;
 
 	// far plane이 100이라 그 안쪽으로 잡아야 잘리지 않는다
 	constexpr float AXIS_LENGTH = 50.0f;
@@ -194,7 +205,7 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
 		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo.ePrimitive);
-		if (LocalminmaxBuffer==nullptr)
+		if (LocalminmaxBuffer == nullptr)
 		{
 			continue;
 		}
@@ -236,12 +247,9 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos)
 		FVector3 w6 = FVector3(WorldMin.x, WorldMax.y, WorldMax.z);
 		FVector3 w7 = WorldMax;
 		TArray<FVector3> WorldBoxArray = { w0,w1,w2,w3,w4,w5,w6,w7 };
-		DrawAABBLine(WorldBoxArray,FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawAABBLine(WorldBoxArray, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 	}
-
-
 }
-
 
 void FGraphicsManager::FlushLines()
 {
@@ -460,5 +468,47 @@ void FGraphicsManager::UpdateProjectionTransition(float deltaTime)
 	{
 		mProjectionRatio = mProjectionTargetRatio;
 		mbProjectionTransitioning = false;
+	}
+}
+
+bool FGraphicsManager::HasShowFlag(EEngineShowFlags Flag) const
+{
+	const uint32 FlagValue = static_cast<uint32>(Flag);
+	return (mShowFlags & FlagValue) != 0;
+}
+
+void FGraphicsManager::SetShowFlag(EEngineShowFlags Flag, bool bEnable)
+{
+	const uint32 FlagValue = static_cast<uint32>(Flag);
+
+	if (bEnable)
+	{
+		mShowFlags |= FlagValue;
+	}
+	else
+	{
+		mShowFlags &= ~FlagValue;
+	}
+}
+
+void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
+{
+	mViewMode = InViewMode;
+
+	switch (mViewMode)
+	{
+	case EViewModeIndex::VMI_Lit:
+		SetWireFrame(false);
+		// Lit 렌더링 상태 설정
+		break;
+
+	case EViewModeIndex::VMI_Unlit:
+		SetWireFrame(false);
+		// Unlit 렌더링 상태 설정
+		break;
+
+	case EViewModeIndex::VMI_Wireframe:
+		SetWireFrame(true);
+		break;
 	}
 }

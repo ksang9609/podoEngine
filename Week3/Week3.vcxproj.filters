@@ -117,7 +117,7 @@
     <ClCompile Include="Quat.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="FName.cpp">
+    <ClCompile Include="Name.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -281,7 +281,7 @@
     <ClInclude Include="FBoundingBox.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FName.h">
+    <ClInclude Include="Name.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

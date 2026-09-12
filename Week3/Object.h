@@ -6,7 +6,7 @@
 #include "TArray.h"
 #include "TSparseArray.h"
 #include "ObjectFactory.h"
-#include "FName.h"
+#include "Name.h"
 
 
 namespace json { class JSON; }
