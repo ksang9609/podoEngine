@@ -60,10 +60,12 @@ public:
 	ID3D11InputLayout* TextureInputLayout = nullptr;
 	ID3D11SamplerState* TextureSamplerState = nullptr;
 	ID3D11BlendState* FontBlendState = nullptr;
+	ID3D11Buffer* FontIndexBuffer = nullptr;
 
 	ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
+
 	//ID3D11ShaderResourceView* PrimitiveTextureSRV = nullptr;
 
 	//ID3D11SamplerState* PrimitiveTextureSampler = nullptr;
@@ -177,7 +179,10 @@ public:
 	void OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight);
 
 private:
+	bool ensureFontIndexBuffer(UINT fontCount);
 	UINT mTextVertexCount = 0;
 	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
+	UINT mTextIndexCount = 0;
+	UINT mTextIndexCapacity = 0;
 };
 

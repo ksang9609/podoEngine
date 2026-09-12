@@ -165,6 +165,17 @@ void URenderer::CreateDeviceAndSwapChain(HWND hWindow)
 
 void URenderer::ReleaseDeviceAndSwapChain()
 {
+
+	if (FontIndexBuffer)
+	{
+		FontIndexBuffer->Release();
+		FontIndexBuffer = nullptr;
+
+		mTextIndexCount = 0;
+		mTextIndexCapacity = 0;
+	}
+
+	
 	if (DeviceContext)
 	{
 		DeviceContext->Flush();
@@ -1366,6 +1377,11 @@ bool URenderer::CreateFontAtlasQuad(std::string* Text)
 
 	mTextVertexCount = 0;
 
+	// 인덱스는 Quad를 그릴때 마다 초기화
+	mTextIndexCount = 0;
+	
+	
+
 	// 화면에 표시할 문자 한 개의 크기
 	const float charWidth = 0.1f;
 	const float charHeight = 0.2f;
@@ -1389,7 +1405,10 @@ bool URenderer::CreateFontAtlasQuad(std::string* Text)
 	const float cellWidth = 1.0f / columns;
 	const float cellHeight = 1.0f / rows;
 
-	verticesList.reserve(Text->size() * 6);
+	// verticesList.reserve(Text->size() * 6);
+
+	// index buffer 사용시
+	verticesList.reserve(Text->size() * 4);
 
 	const int firstCharacter = 0;
 
@@ -1417,14 +1436,20 @@ bool URenderer::CreateFontAtlasQuad(std::string* Text)
 
 		// 삼각형
 
+		// 기존 방식
 		// Billboard local plane: X = 0, horizontal = Y, vertical = Z.
-		verticesList.push_back({ 0.0f, left, top, u0, v0 });
+		/*verticesList.push_back({ 0.0f, left, top, u0, v0 });
 		verticesList.push_back({ 0.0f, right, top, u1, v0 });
 		verticesList.push_back({ 0.0f, left, bottom, u0, v1 });
 
 		verticesList.push_back({ 0.0f, right, bottom, u1, v1 });
 		verticesList.push_back({ 0.0f, left, bottom, u0, v1 });
-		verticesList.push_back({ 0.0f, right, top, u1, v0 });
+		verticesList.push_back({ 0.0f, right, top, u1, v0 });*/
+
+		verticesList.push_back({ 0.0f, left,  top,    u0, v0 }); // 0: 좌상
+		verticesList.push_back({ 0.0f, right, top,    u1, v0 }); // 1: 우상
+		verticesList.push_back({ 0.0f, left,  bottom, u0, v1 }); // 2: 좌하
+		verticesList.push_back({ 0.0f, right, bottom, u1, v1 }); // 3: 우하
 
 
 	}
@@ -1468,6 +1493,8 @@ bool URenderer::CreateFontAtlasQuad(std::string* Text)
 
 /*	HRESULT hr = Device->CreateBuffer(&bufferDesc, &textFontData, &FontTextureBuffer);*/
 
+
+
 	if (FAILED(hr))
 	{
 		mTextVertexCount = 0;
@@ -1478,9 +1505,63 @@ bool URenderer::CreateFontAtlasQuad(std::string* Text)
 
 	DeviceContext->Unmap(FontTextureBuffer, 0);
 
+	const UINT fontCount = static_cast<UINT>(Text->size());
+
+	if (!ensureFontIndexBuffer(fontCount))
+		return false;
+
+	mTextIndexCount = fontCount * 6;
 	mTextVertexCount = requiredCount;
 	return true;
 
+}
+
+bool URenderer::ensureFontIndexBuffer(UINT fontCpunt)
+{
+	if (fontCpunt == 0)
+		return true;
+
+	if (FontIndexBuffer && fontCpunt <= mTextIndexCapacity)
+		return true;
+
+	const UINT newCapacity = (std::max)(fontCpunt, mTextIndexCapacity * 2);
+
+	std::vector<UINT> indices;
+	indices.reserve(static_cast<size_t>(newCapacity) * 6);
+
+	for (UINT i = 0; i < newCapacity; ++i)
+	{
+		const UINT base = i * 4; // 다음 문자의 시작 정점 번호로 이동
+
+		indices.push_back(base);
+		indices.push_back(base + 1);
+		indices.push_back(base + 2);
+
+		indices.push_back(base + 3);
+		indices.push_back(base + 2);
+		indices.push_back(base + 1);
+	}
+
+	D3D11_BUFFER_DESC desc = {};
+	desc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(UINT));
+	desc.Usage = D3D11_USAGE_IMMUTABLE; // 
+	desc.BindFlags = D3D11_BIND_INDEX_BUFFER; // 인덱스 버퍼라고 명시
+
+	D3D11_SUBRESOURCE_DATA data = {};
+	data.pSysMem = indices.data();
+
+	ID3D11Buffer* newBuffer = nullptr;
+	HRESULT hr = Device->CreateBuffer(&desc, &data, &newBuffer);
+
+	if (FAILED(hr))
+		return false;
+
+	if (FontIndexBuffer)
+		FontIndexBuffer->Release();
+
+	FontIndexBuffer = newBuffer;
+	mTextIndexCapacity = newCapacity;
+	return true;
 }
 
 void URenderer::RenderFontTexture(const FMatrix& world, const FMatrix& viewProjection)
@@ -1498,6 +1579,8 @@ void URenderer::RenderFontTexture(const FMatrix& world, const FMatrix& viewProje
 	{
 		return;
 	}
+	if (!FontIndexBuffer || mTextIndexCount == 0)
+		return;
 
 	// 이 테스트에서 바꿀 렌더 상태를 보관한다.
 	ID3D11RasterizerState* previousRasterizer = nullptr;
@@ -1524,6 +1607,7 @@ void URenderer::RenderFontTexture(const FMatrix& world, const FMatrix& viewProje
 	const UINT offset = 0;
 
 	DeviceContext->IASetVertexBuffers(0, 1, &FontTextureBuffer, &stride, &offset);
+	DeviceContext->IASetIndexBuffer(FontIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	DeviceContext->IASetInputLayout(TextureInputLayout);
 	DeviceContext->IASetPrimitiveTopology(
@@ -1541,8 +1625,10 @@ void URenderer::RenderFontTexture(const FMatrix& world, const FMatrix& viewProje
 
 	UpdateConstant(world, viewProjection, FVector4(1, 1, 1, 1));
 
-	//
-	DeviceContext->Draw(mTextVertexCount, 0);
+	// 기존 방식
+	//DeviceContext->Draw(mTextVertexCount, 0);
+	// 인덱스 버퍼 방식
+	DeviceContext->DrawIndexed(mTextIndexCount, 0, 0);
 	//DeviceContext->Draw(6, 0);
 
 	// 테스트 바인딩 해제
