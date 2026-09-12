@@ -39,8 +39,7 @@ enum class EEngineShowFlags : uint32
 {
 	SF_Primitives = 1 << 0,
 	SF_BillboardText = 1 << 1,
-	SF_Orthogonal = 1 << 2,
-	SF_WorldAxis = 1 << 3
+	SF_WorldAxis = 1 << 2
 };
 
 inline EPrimitive StringToEPrimitive(const char* str)

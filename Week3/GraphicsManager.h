@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Matrix.h"
-#include "Enum.h"
+#include "enum.h"
 
 #include "TArray.h"
 #include "TMap.h"
@@ -10,7 +10,6 @@
 #include "RenderInfo.h"
 #include "Vector.h"
 #include "FBoundingBox.h"
-#include "enum.h"
 
 struct FBuffer
 {
@@ -125,6 +124,11 @@ private:
 
 	EViewModeIndex mViewMode = EViewModeIndex::VMI_Lit;
 
-	uint32 mShowFlags = static_cast<uint32>(EEngineShowFlags::SF_Primitives) |
-		static_cast<uint32>(EEngineShowFlags::SF_BillboardText);
+	uint32 mShowFlags =
+		static_cast<uint32>(EEngineShowFlags::SF_Primitives) |
+		static_cast<uint32>(EEngineShowFlags::SF_BillboardText) |
+		static_cast<uint32>(EEngineShowFlags::SF_WorldAxis);
+
+	bool mbShowPrimitives = true;
+	//void RenderBillboardText();
 };

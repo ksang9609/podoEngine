@@ -193,32 +193,38 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 	{
 		// 구현 필요
-		bool bPrimitives = true;
-		ImGui::Checkbox("Primitives", &bPrimitives);
-
-		bool bBillboardText = true;
-		ImGui::Checkbox("Billboard Text", &bBillboardText);
-
-		bool bOrthographic = guiReference.GraphicsManager->IsOrthographicTarget();
-		//bool bOrthographic = guiReference.GraphicsManager->HasShowFlag(EEngineShowFlags::SF_Primitives);
-		if (ImGui::Checkbox("Orthogonal", &bOrthographic))
+		bool bPrimitives = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_Primitives));
+		if (ImGui::Checkbox("Primitives", &bPrimitives))
 		{
-			if (mSelectedActor && bOrthographic && guiReference.GraphicsManager->GetPerspectiveRatio() == 1.0f)
-			{
-				const FVector offset = mSelectedActor->GetTransform().Location - camera.Location;
-				const float depth = FVector::dot(offset, camera.GetForwardVector());
-				camera.mOrthoDistance = FMath::Max(depth, 0.1f);
-			}
-			guiReference.GraphicsManager->StartProjectionTransition(bOrthographic);
+			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_Primitives, bPrimitives);
 		}
 
-		bool bShowWorldAxis = guiReference.GraphicsManager->GetShowWorldAxis();
+		bool bBillboardText = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_BillboardText));
+		if (ImGui::Checkbox("Billboard Text", &bBillboardText))
+		{
+			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_BillboardText, bBillboardText);
+		}
+
+		bool bShowWorldAxis = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_WorldAxis));
 		if (ImGui::Checkbox("World axis", &bShowWorldAxis))
 		{
-			guiReference.GraphicsManager->SetShowWorldAxis(bShowWorldAxis);
+			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_WorldAxis, bShowWorldAxis);
 		}
 
 		ImGui::EndCombo();
+	}
+
+	bool bOrthographic = guiReference.GraphicsManager->IsOrthographicTarget();
+	//bool bOrthographic = guiReference.GraphicsManager->HasShowFlag(EEngineShowFlags::SF_Primitives);
+	if (ImGui::Checkbox("Orthogonal", &bOrthographic))
+	{
+		if (mSelectedActor && bOrthographic && guiReference.GraphicsManager->GetPerspectiveRatio() == 1.0f)
+		{
+			const FVector offset = mSelectedActor->GetTransform().Location - camera.Location;
+			const float depth = FVector::dot(offset, camera.GetForwardVector());
+			camera.mOrthoDistance = FMath::Max(depth, 0.1f);
+		}
+		guiReference.GraphicsManager->StartProjectionTransition(bOrthographic);
 	}
 
 	ImGui::SeparatorText("Camera Control");
