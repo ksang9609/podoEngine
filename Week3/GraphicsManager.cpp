@@ -165,13 +165,13 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCame
 		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
-			UE_LOG("Error: Textured vertex buffer not found for primitive type.");
+			UE_LOG(Error, Render, "Error: Textured vertex buffer not found for primitive type.");
 			continue;
 		}
 		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
 		if (texture == nullptr)
 		{
-			UE_LOG("Error: Primitive texture not found for primitive type.");
+			UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
 			continue;
 		}
 		mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
@@ -406,7 +406,7 @@ void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertex
 	if (!vertices || verticesSize == 0 ||
 		verticesSize % sizeof(FVertexTextured) != 0)
 	{
-		UE_LOG("Invalid textured vertex data.");
+		UE_LOG(Log, Core, "Invalid textured vertex data.");
 		return;
 	}
 
@@ -414,7 +414,7 @@ void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertex
 
 	if (!vertexBuffer)
 	{
-		UE_LOG("Failed to create textured vertex buffer.");
+		UE_LOG(Log, Core, "Failed to create textured vertex buffer.");
 		return;
 	}
 
@@ -458,7 +458,7 @@ void FGraphicsManager::CreatePrimitiveTexture(EPrimitive ePrimitive)
 	if (!mRenderer->CreatePrimitiveTextureResources(L"Dice.dds",
 		texture.SRV, texture.Sampler))
 	{
-		UE_LOG("Failed to create primitive texture resources.");
+		UE_LOG(Log, Core, "Failed to create primitive texture resources.");
 	}
 
 	mPrimitiveTextureMap.Add(ePrimitive, texture);
