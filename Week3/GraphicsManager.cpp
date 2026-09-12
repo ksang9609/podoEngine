@@ -53,7 +53,7 @@ FGraphicsManager::~FGraphicsManager()
 void FGraphicsManager::Prepare(const FCamera* mCamera)
 {
 	mRenderer->Prepare(mbWireFrame);
-	mRenderer->PrepareShader();
+	mRenderer->PrepareSimpleShader();
 
 	// Cache view and projection matrices for rendering
 	const float nearZ = 0.1f;
@@ -117,13 +117,14 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCame
 
 		if (renderInfo.bUseTexture)
 		{
-			mRenderer->RenderTexturedPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+			mRenderer->PrepareTextureShader();
+			mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
+				mRenderer->PrimitiveTextureSRV, mRenderer->PrimitiveTextureSampler);
 		}
 		else
 		{
-			mRenderer->PrepareShader();
-
-			mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+			mRenderer->PrepareSimpleShader();
+			mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 		}
 
 

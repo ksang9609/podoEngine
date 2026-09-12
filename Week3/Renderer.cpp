@@ -477,7 +477,8 @@ void URenderer::CreateShader()
 	Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
 	Device->CreateInputLayout(Linelayout, ARRAYSIZE(Linelayout), LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), &LineSimpleInputLayout);
 
-	Stride = sizeof(FVertexSimple);
+	StrideSimple = sizeof(FVertexSimple);
+	StrideTextured = sizeof(FVertexTextured);
 
 	vertexshaderCSO->Release();
 	pixelshaderCSO->Release();
@@ -816,11 +817,23 @@ void URenderer::RSUpdateState()
 	DeviceContext->RSSetState(RasterizerState[0]);
 }
 
-void URenderer::PrepareShader()
+void URenderer::PrepareSimpleShader()
 {
 	DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
 	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(SimpleInputLayout);
+
+	if (ConstantBuffer)
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+	}
+}
+
+void URenderer::PrepareTextureShader()
+{
+	DeviceContext->VSSetShader(PrimitiveTextureVertexShader, nullptr, 0);
+	DeviceContext->PSSetShader(PrimitiveTexturePixelShader, nullptr, 0);
+	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
 
 	if (ConstantBuffer)
 	{
@@ -840,73 +853,88 @@ void URenderer::PrepareLineShader()
 	}
 }
 
-void URenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
+void URenderer::RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 {
 	UINT offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &Stride, &offset);
+	// Bind the vertex buffer
+	DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &StrideSimple, &offset);
 	DeviceContext->Draw(numVertices, 0);
 }
 
-void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVertices)
+void URenderer::RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
+	ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState)
 {
-	if (!DeviceContext ||
-		!vertexBuffer ||
-		numVertices == 0 ||
-		!ConstantBuffer ||
-		!PrimitiveTextureVertexShader ||
-		!PrimitiveTexturePixelShader ||
-		!PrimitiveTextureLayout ||
-		!PrimitiveTextureSRV ||
-		!PrimitiveTextureSampler ||
-		!DepthStencilState)
-	{
-		return;
-	}
+	UINT offset = 0;
+	// Bind the vertex buffer
+	DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &StrideTextured, &offset);
 
-	// 위치 + UV 정점 버퍼 연결
-	const UINT stride = sizeof(FVertexTextured);
-	const UINT offset = 0;
+	// Bind the texture resource
+	DeviceContext->PSSetShaderResources(0, 1, &texture);
+	DeviceContext->PSSetSamplers(0, 1, &samplerState);
 
-	DeviceContext->IASetVertexBuffers(
-		0, 1, &vertexBuffer, &stride, &offset);
-
-	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
-
-	DeviceContext->IASetPrimitiveTopology(
-		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// 텍스처용 셰이더 연결
-	DeviceContext->VSSetShader(PrimitiveTextureVertexShader, nullptr, 0);
-
-	DeviceContext->PSSetShader(PrimitiveTexturePixelShader, nullptr, 0);
-
-	//  GraphicsManager에서 갱신한 변환 행렬 연결
-	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-
-	// HLSL의 t0에 텍스처, s0에 샘플러 연결
-	DeviceContext->PSSetShaderResources(0, 1, &PrimitiveTextureSRV);
-
-	DeviceContext->PSSetSamplers(0, 1, &PrimitiveTextureSampler);
-
-	// 일반 불투명 Primitive용 상태 설정
-	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-
-	DeviceContext->OMSetBlendState(	nullptr, nullptr, 0xffffffff);
-
-	// 그리기
 	DeviceContext->Draw(numVertices, 0);
-
-	//  사용한 텍스처와 샘플러 연결 해제
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	ID3D11SamplerState* nullSampler = nullptr;
-
-	DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
-
-	DeviceContext->PSSetSamplers(0, 1, &nullSampler);
-
-	// 기존 색상 셰이더로 돌아가기
-	PrepareShader();
 }
+
+//void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVertices)
+//{
+//	if (!DeviceContext ||
+//		!vertexBuffer ||
+//		numVertices == 0 ||
+//		!ConstantBuffer ||
+//		!PrimitiveTextureVertexShader ||
+//		!PrimitiveTexturePixelShader ||
+//		!PrimitiveTextureLayout ||
+//		!PrimitiveTextureSRV ||
+//		!PrimitiveTextureSampler ||
+//		!DepthStencilState)
+//	{
+//		return;
+//	}
+//
+//	// 위치 + UV 정점 버퍼 연결
+//	const UINT stride = sizeof(FVertexTextured);
+//	const UINT offset = 0;
+//
+//	DeviceContext->IASetVertexBuffers(
+//		0, 1, &vertexBuffer, &stride, &offset);
+//
+//	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
+//
+//	DeviceContext->IASetPrimitiveTopology(
+//		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//
+//	// 텍스처용 셰이더 연결
+//	DeviceContext->VSSetShader(PrimitiveTextureVertexShader, nullptr, 0);
+//
+//	DeviceContext->PSSetShader(PrimitiveTexturePixelShader, nullptr, 0);
+//
+//	//  GraphicsManager에서 갱신한 변환 행렬 연결
+//	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+//
+//	// HLSL의 t0에 텍스처, s0에 샘플러 연결
+//	DeviceContext->PSSetShaderResources(0, 1, &PrimitiveTextureSRV);
+//
+//	DeviceContext->PSSetSamplers(0, 1, &PrimitiveTextureSampler);
+//
+//	// 일반 불투명 Primitive용 상태 설정
+//	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+//
+//	DeviceContext->OMSetBlendState(	nullptr, nullptr, 0xffffffff);
+//
+//	// 그리기
+//	DeviceContext->Draw(numVertices, 0);
+//
+//	//  사용한 텍스처와 샘플러 연결 해제
+//	ID3D11ShaderResourceView* nullSRV = nullptr;
+//	ID3D11SamplerState* nullSampler = nullptr;
+//
+//	DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
+//
+//	DeviceContext->PSSetSamplers(0, 1, &nullSampler);
+//
+//	// 기존 색상 셰이더로 돌아가기
+//	PrepareSimpleShader();
+//}
 
 // 쌓아둔 선분 전체를 한 번의 Draw로 그린다.
 // 토폴로지를 바꾸므로 반드시 이 함수 안에서 되돌린다. 안 그러면 뒤에 그리는 것들이 전부 깨진다.
@@ -948,13 +976,13 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, c
 
 	// 직전에 메시 버퍼가 물려 있으므로 갈아끼워야 한다
 	UINT offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &Stride, &offset);
+	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &StrideSimple, &offset);
 	DeviceContext->IASetIndexBuffer(LineIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	PrepareLineShader();
 	DeviceContext->DrawIndexed(numindices, 0, 0);
 
-	PrepareShader();
+	PrepareSimpleShader();
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
@@ -966,13 +994,13 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 	DeviceContext->OMSetBlendState(NoColorWriteBlendState, nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(StencilMarkState, 1);
 	UpdateConstant(originalMatrix, mViewProjectionMatrix);
-	RenderPrimitive(pBuffer, Num);
+	RenderSimplePrimitive(pBuffer, Num);
 
 	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(StencilOutlineState, 1);
 	UpdateConstant(OutlineMatrix, mViewProjectionMatrix, FVector4(1.f, 0.6f, 0.f, 1.f));
-	RenderPrimitive(pBuffer, Num);
+	RenderSimplePrimitive(pBuffer, Num);
 
 	// (c) 원상복구
 	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
@@ -1528,7 +1556,7 @@ void URenderer::RenderFontTexture(const FMatrix& world, const FMatrix& viewProje
 	if (previousDepth) previousDepth->Release();
 	if (previousBlend) previousBlend->Release();
 
-	PrepareShader();
+	PrepareSimpleShader();
 }
 
 // 
