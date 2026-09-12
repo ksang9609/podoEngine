@@ -2,7 +2,7 @@
 #include "Object.h"
 #include "EngineStatics.h"
 #include "Json/json.hpp"
-#include "FName.h"
+#include "Name.h"
 
 TSparseArray<UObject*> UObject::GUObjectArray;
 

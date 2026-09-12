@@ -6,7 +6,7 @@
 #include "TArray.h"
 #include "RenderInfo.h"
 #include "enum.h"
-#include "FEditorSetting.h"
+#include "EditorSetting.h"
 
 inline constexpr std::string_view kSceneDataDir = "SceneData\\";
 inline constexpr std::string_view kSceneDataSuffix = ".Scene";

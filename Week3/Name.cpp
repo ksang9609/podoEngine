@@ -1,5 +1,7 @@
 ﻿#include "Core.h"
-#include "FName.h"
+#include "TArray.h"
+#include "TMap.h"
+#include "Name.h"
 
 #include <vector>
 #include <algorithm>
@@ -7,13 +9,13 @@
 
 namespace
 {
-	std::vector<std::string> GDisplayNamePool;
-	std::vector<std::string> GComparisonNamePool;
+	TArray<FString> GDisplayNamePool;
+	TArray<FString> GComparisonNamePool;
 
-	std::unordered_map<std::string, int32> GDisplayNamePoolLookup;
-	std::unordered_map<std::string, int32> GComparisonNamePoolLookup;
+	TMap<FString, int32> GDisplayNamePoolLookup;
+	TMap<FString, int32> GComparisonNamePoolLookup;
 
-	static std::string ToLower(std::string str)
+	static FString ToLower(FString str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c)
 			{
@@ -24,18 +26,18 @@ namespace
 		return str;
 	}
 
-	static int32 FindOrAdd(std::vector<std::string>& Pool, std::unordered_map<std::string, int32>& Lookup, const std::string& Name)
+	static int32 FindOrAdd(TArray<FString>& Pool, TMap<FString, int32>& Lookup, const FString& Name)
 	{
-		auto It = Lookup.find(Name);
+		int32* FoundIndex = Lookup.Find(Name);
 
-		if (It != Lookup.end())
+		if (FoundIndex)
 		{
-			return It->second;
+			return *FoundIndex;
 		}
 
-		const int32 NewIndex = static_cast<int32>(Pool.size());
-		Pool.push_back(Name);
-		Lookup.emplace(Name, NewIndex);
+		const int32 NewIndex = static_cast<int32>(Pool.Num());
+		Pool.Add(Name);
+		Lookup.Add(Name, NewIndex);
 
 		return NewIndex;
 	}
@@ -50,8 +52,8 @@ FName::FName()
 
 FName::FName(const char* pStr)
 {
-	std::string DisplayName = pStr;
-	std::string ComparisonName = ToLower(DisplayName);
+	FString DisplayName = pStr;
+	FString ComparisonName = ToLower(DisplayName);
 
 	DisplayIndex = FindOrAdd(GDisplayNamePool, GDisplayNamePoolLookup, DisplayName);
 	ComparisonIndex = FindOrAdd(GComparisonNamePool, GComparisonNamePoolLookup, ComparisonName);
@@ -64,7 +66,7 @@ FName::FName(const FString& str)
 
 FString FName::ToString() const
 {
-	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(GDisplayNamePool.size()))
+	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(GDisplayNamePool.Num()))
 	{
 		return FString("None");
 	}
@@ -80,18 +82,21 @@ bool FName::operator==(const FName& Other) const
 
 int32 FName::Compare(const FName& Other) const
 {
-	const std::string& A = GComparisonNamePool[ComparisonIndex];
-	const std::string& B = GComparisonNamePool[Other.ComparisonIndex];
+	const FString& A = GComparisonNamePool[ComparisonIndex];
+	const FString& B = GComparisonNamePool[Other.ComparisonIndex];
 
-	if (A < B)
+	int Result = std::strcmp(A.CStr(), B.CStr());
+
+	if (Result < 0)
 	{
 		return -1;
 	}
 
-	if (A > B)
+	if (Result > 0)
 	{
 		return 1;
 	}
 
 	return 0;
 }
+

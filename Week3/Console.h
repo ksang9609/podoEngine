@@ -2,11 +2,35 @@
 
 #include <vector>
 #include <format>
+#include <mutex>
 
 #include "Core.h"
+#include "TArray.h"
 
-#define UE_LOG(fmt, ...) ConsoleWindow::GetInstance().AddLogPrintf(fmt, ##__VA_ARGS__)
-#define UE_LOG_F(fmt, ...) ConsoleWindow::GetInstance().AddLogFormat(fmt, ##__VA_ARGS__)
+enum class ELogLevel { Log, Warning, Error, Fatal };
+enum class ELogCategory { Core, Render, Physics, Etc };
+
+struct FConsoleMessage
+{
+	FString Time;
+	ELogLevel Level = ELogLevel::Log;
+	ELogCategory Category = ELogCategory::Etc;
+	FString Text;
+};
+
+#define UE_LOG(Level, Category, fmt, ...)                                   \
+ConsoleWindow::GetInstance().AddLogPrintf(                                  \
+	ELogLevel::Level,                                                       \
+	ELogCategory::Category,                                                 \
+	fmt, ##__VA_ARGS__)                                                     
+
+
+#define UE_LOG_F(Level, Category, fmt, ...)                                 \
+ConsoleWindow::GetInstance().AddLogFormat(                                  \
+	ELogLevel::Level,                                                       \
+	ELogCategory::Category,                                                 \
+	fmt, ##__VA_ARGS__)
+
 
 class ConsoleWindow
 {
@@ -24,33 +48,47 @@ public:
 	void Init(std::string_view title, int maxLines);
 
 	template<typename... Args>
-	void AddLogFormat(std::string_view fmt, Args&&... args)
+	void AddLogFormat(ELogLevel Level, ELogCategory Category, std::string_view fmt, Args&&... args)
 	{
-		addLog(std::vformat(fmt, std::make_format_args(args...)));
+		AddLog(Level, Category, std::vformat(fmt, std::make_format_args(args...)));
 	}
 
 	template<typename... Args>
-	void AddLogPrintf(const char* fmt, Args&&... args)
+	void AddLogPrintf(ELogLevel Level, ELogCategory Category, const char* fmt, Args&&... args)
 	{
 		char buffer[512];
 		snprintf(buffer, sizeof(buffer), fmt, std::forward<Args>(args)...);
-		addLog(buffer);
+		AddLog(Level, Category, buffer);
 	}
 
+	void Clear();
 	void Draw(float panelWidth);
 
 	static constexpr float HEIGHT_RATIO = 0.3f;
 
 private:
-	bool mbFirstFrame;
-
-	// Configs
 	FString mTitle;
-	int mMaxLines;
 
-	// Runtime data
 	bool mbAutoScroll = true;
-	std::vector<FString> mConsoleBuffer;
 	
-	void addLog(std::string_view message);
+	void AddLog(ELogLevel Level, ELogCategory Category, std::string_view Text);
+
+	void PushHistory(FConsoleMessage Message);
+	void FlushPending();
+
+	const FConsoleMessage& GetMessage(size_t Index) const;
+	void ExecuteCommand(const char* Input);
+
+	size_t mCapacity = 1000;
+	size_t mFront = 0;
+	size_t mCount = 0;
+
+	TArray<FConsoleMessage> mPendingBuffers[2];
+	TArray<FConsoleMessage> mMessages;  // 최종 로그
+	char mInputBuffer[256] = {};
+
+	size_t mWriteBufferIndex = 0;
+	size_t mReadBufferIndex = 1;
+
+	std::mutex mPendingMutex;
 };
