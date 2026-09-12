@@ -67,16 +67,9 @@ public:
 	static constexpr float HEIGHT_RATIO = 0.3f;
 
 private:
-	bool mbFirstFrame;
-
-
-	// Configs
 	FString mTitle;
-	//int mMaxLines;
 
-	// Runtime data
 	bool mbAutoScroll = true;
-	//std::vector<FString> mConsoleBuffer;
 	
 	void AddLog(ELogLevel Level, ELogCategory Category, std::string_view Text);
 

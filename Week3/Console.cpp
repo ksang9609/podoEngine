@@ -114,11 +114,6 @@ void ConsoleWindow::Draw(float panelWidth)
 
 	float consolHeight = io.DisplaySize.y * HEIGHT_RATIO;
 
-	if (mbFirstFrame)
-	{
-		mbFirstFrame = false;
-	}
-
 	ImGui::SetNextWindowPos(
 		ImVec2(panelWidth, io.DisplaySize.y - consolHeight),
 		ImGuiCond_Always
