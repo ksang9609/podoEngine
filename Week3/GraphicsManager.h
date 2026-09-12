@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Matrix.h"
-#include "Enum.h"
+#include "enum.h"
 
 #include "TArray.h"
 #include "TMap.h"
@@ -18,6 +18,12 @@ struct FBuffer
 	FBoundingBox LocalBounds;
 
 	ID3D11Buffer* TexturedBuffer = nullptr;
+};
+
+struct FTexture
+{
+	ID3D11ShaderResourceView* SRV;
+	ID3D11SamplerState* Sampler;
 };
 
 class FGraphicsManager
@@ -59,6 +65,8 @@ public:
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
 	void CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize);
+	void CreatePrimitiveTexture(EPrimitive ePrimitive, const wchar_t* texturePath);
+
 	URenderer* GetRenderer() const;
 
 	//Highlight
@@ -74,6 +82,9 @@ public:
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
 	void SetShowWorldAxis(bool bShow) { mbShowWorldAxis = bShow; }
 
+	void SetViewMode(EViewModeIndex InViewMode);
+	EViewModeIndex GetViewMode() const { return mViewMode; }
+
 	static FVector GetPrimitiveCenter(EPrimitive type);
 	static FVector GetPrimitiveHalfExtent(EPrimitive type);
 	void RenderHighLight(const FRenderInfo& RI, const FCamera& camera);
@@ -83,10 +94,11 @@ public:
 	bool IsOrthographicTarget() const;
 	void UpdateProjectionTransition(float deltaTime);
 
+	bool HasShowFlag(EEngineShowFlags Flag) const;
+	void SetShowFlag(EEngineShowFlags Flag, bool bEnable);
+
 private:
 	URenderer* mRenderer;
-	FMatrix mViewProjectionMatrix;
-	FMatrix mViewOrthogonalProjectionMatrix;
 	FMatrix mViewUnifiedProjectionMatrix;
 
 	// Prepare에서 갱신. 하이라이트 두께의 픽셀 → 월드 환산에 쓴다
@@ -99,6 +111,9 @@ private:
 
 	// 텍스처 정점으로 만든 버퍼
 	TMap<EPrimitive, FBuffer> mTexturedBufferMap;
+
+	// Texture sub resource view and sampler for each primitive type
+	TMap<EPrimitive, FTexture> mPrimitiveTextureMap;
 
 	// Graphics config
 	// 이번 프레임에 쌓인 선분. 정점 2개가 선분 하나
@@ -121,4 +136,14 @@ private:
 	// Grid 간격, 최대 한계선
 	float mgridExtent = 1000.0f;
 	float mgridSpacing = 1.0f;
+
+	EViewModeIndex mViewMode = EViewModeIndex::VMI_Lit;
+
+	uint32 mShowFlags =
+		static_cast<uint32>(EEngineShowFlags::SF_Primitives) |
+		static_cast<uint32>(EEngineShowFlags::SF_BillboardText) |
+		static_cast<uint32>(EEngineShowFlags::SF_WorldAxis);
+
+	bool mbShowPrimitives = true;
+	//void RenderBillboardText();
 };

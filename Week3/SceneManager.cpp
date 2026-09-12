@@ -14,6 +14,7 @@
 #include "FEditorViewportClient.h"
 #include "Camera.h"
 #include "Console.h"
+#include "enum.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -50,7 +51,6 @@ void FSceneManager::Initialize(FEditorViewportClient& ViewportClient, FGraphicsM
 	mEditorSetting.Load();
 
 	FCamera& camera = ViewportClient.GetCamera();
-
 	camera.SetCameraSensitivity(mEditorSetting.CameraSensitivity);
 
 	GraphicsManager->SetGridWidth(mEditorSetting.GridSpacing);
@@ -176,41 +176,61 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 		}
 	}
 
-	/* Camera Control */
-	ImGui::SeparatorText("Camera Control");
-
 	FCamera& camera = guiReference.ViewportClient->GetCamera();
 	URenderer* renderer = guiReference.GraphicsManager->GetRenderer();
 
-	//ImGui::SliderFloat("Speed", &Camera.Speed, -10.0f, 10.0f);
+	ImGui::SeparatorText("View Mode");
+	static EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
+	const char* ViewModeNames[] = { "Lit", "Unlit", "Wireframe" };
+
+	int32 ViewModeIndex = static_cast<int32>(ViewMode);
+
+	if (ImGui::Combo("View Mode", &ViewModeIndex, ViewModeNames, IM_ARRAYSIZE(ViewModeNames)))
+	{
+		ViewMode = static_cast<EViewModeIndex>(ViewModeIndex);
+		guiReference.GraphicsManager->SetViewMode(ViewMode);
+	}
+
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 	{
-		bool bWireFrame = guiReference.GraphicsManager->GetWireFrame();
-		if (ImGui::Checkbox("Wire frame", &bWireFrame))
+		// 구현 필요
+		bool bPrimitives = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_Primitives));
+		if (ImGui::Checkbox("Primitives", &bPrimitives))
 		{
-			guiReference.GraphicsManager->SetWireFrame(bWireFrame);
+			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_Primitives, bPrimitives);
 		}
 
-		bool bShowWorldAxis = guiReference.GraphicsManager->GetShowWorldAxis();
+		bool bBillboardText = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_BillboardText));
+		if (ImGui::Checkbox("Billboard Text", &bBillboardText))
+		{
+			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_BillboardText, bBillboardText);
+		}
+
+		bool bShowWorldAxis = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_WorldAxis));
 		if (ImGui::Checkbox("World axis", &bShowWorldAxis))
 		{
-			guiReference.GraphicsManager->SetShowWorldAxis(bShowWorldAxis);
+			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_WorldAxis, bShowWorldAxis);
 		}
 
-		bool bOrthographic = guiReference.GraphicsManager->IsOrthographicTarget();
-		if (ImGui::Checkbox("Orthogonal", &bOrthographic))
-		{
-			if (mSelectedActor && bOrthographic && guiReference.GraphicsManager->GetPerspectiveRatio() == 1.0f)
-			{
-				const FVector offset = mSelectedActor->GetTransform().Location - camera.Location;
-				const float depth = FVector::dot(offset, camera.GetForwardVector());
-				camera.mOrthoDistance = FMath::Max(depth, 0.1f);
-			}
-
-			guiReference.GraphicsManager->StartProjectionTransition(bOrthographic);
-		}
 		ImGui::EndCombo();
 	}
+
+	bool bOrthographic = guiReference.GraphicsManager->IsOrthographicTarget();
+	//bool bOrthographic = guiReference.GraphicsManager->HasShowFlag(EEngineShowFlags::SF_Primitives);
+	if (ImGui::Checkbox("Orthogonal", &bOrthographic))
+	{
+		if (mSelectedActor && bOrthographic && guiReference.GraphicsManager->GetPerspectiveRatio() == 1.0f)
+		{
+			const FVector offset = mSelectedActor->GetTransform().Location - camera.Location;
+			const float depth = FVector::dot(offset, camera.GetForwardVector());
+			camera.mOrthoDistance = FMath::Max(depth, 0.1f);
+		}
+		guiReference.GraphicsManager->StartProjectionTransition(bOrthographic);
+	}
+
+	ImGui::SeparatorText("Camera Control");
+
+
 	// Debug perspective ratio slider
 	//float perspectiveRatio = guiReference.GraphicsManager->GetPerspectiveRatio();
 	//const float previousPerspectiveRatio = perspectiveRatio;
@@ -588,7 +608,7 @@ void FSceneManager::LoadScene(std::string_view filePath, const FFileManager& fil
 	}
 	catch (const std::exception& e)
 	{
-		UE_LOG_F("Failed to read scene file {}: {}", filePath, e.what());
+		UE_LOG_F(Error, Core, "Failed to read scene file {}: {}", filePath, e.what());
 		return;
 	}
 
@@ -624,7 +644,7 @@ void FSceneManager::LoadScene(std::string_view filePath, const FFileManager& fil
 	}
 	catch (const std::exception& e)
 	{
-		UE_LOG_F("Failed to load scene file {}: {}", filePath, e.what());
+		UE_LOG_F(Error, Core, "Failed to load scene file {}: {}", filePath, e.what());
 	}
 }
 
@@ -634,17 +654,17 @@ void  FSceneManager::SetSelectedActor(AActor* actor)
 {
 	if (actor == nullptr)
 	{
-		UE_LOG_F("SetSelectedActor: Attempted to set selected actor to nullptr.");
+		UE_LOG_F(Warning, Core, "SetSelectedActor: Attempted to set selected actor to nullptr.");
 		return;
 	}
 
 	if (actor == mSelectedActor)
 	{
-		UE_LOG_F("SetSelectedActor: Actor with UUID {} is already selected.", actor->UUID);
+		UE_LOG_F(Log, Core, "SetSelectedActor: Actor with UUID {} is already selected.", actor->UUID);
 		return; // No change
 	}
 
-	UE_LOG_F("SetSelectedActor: Actor with UUID {} is now selected.", actor->UUID);
+	UE_LOG_F(Log, Core, "SetSelectedActor: Actor with UUID {} is now selected.", actor->UUID);
 	mSelectedActor = actor;
 }
 

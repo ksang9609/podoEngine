@@ -137,7 +137,7 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="FileManager.cpp" />
-    <ClCompile Include="FName.cpp" />
+    <ClCompile Include="Name.cpp" />
     <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="JsonUtil.cpp" />
     <ClCompile Include="NameComponent.cpp" />
@@ -165,7 +165,7 @@
     <ClCompile Include="SphereComponent.cpp" />
     <ClInclude Include="Circle.h" />
     <ClInclude Include="FBoundingBox.h" />
-    <ClInclude Include="FName.h" />
+    <ClInclude Include="Name.h" />
     <ClInclude Include="GizmoArrow.h" />
     <ClInclude Include="NameComponent.h" />
     <ClInclude Include="Primitives.h" />

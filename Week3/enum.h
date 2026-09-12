@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Core.h"
 #include <stdexcept>
 
 enum class EAxis : int { X = 0, Y = 1, Z = 2 };
@@ -26,6 +27,20 @@ enum EGIZMO_TYPE {
 	TRANSLATE,
 	ROTATE,
 	SCALE,
+};
+
+enum class EViewModeIndex : uint32
+{
+	VMI_Lit,
+	VMI_Unlit,
+	VMI_Wireframe,
+};
+
+enum class EEngineShowFlags : uint32
+{
+	SF_Primitives = 1 << 0,
+	SF_BillboardText = 1 << 1,
+	SF_WorldAxis = 1 << 2
 };
 
 inline EPrimitive StringToEPrimitive(const char* str)

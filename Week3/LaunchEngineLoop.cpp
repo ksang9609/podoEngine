@@ -16,7 +16,7 @@
 #include "imGui/imgui_impl_win32.h"
 #include "Actor.h"
 #include "World.h"
-#include "FName.h"
+#include "Name.h"
 #include "SceneManager.h"
 
 // Primitive vertices definitions
@@ -102,6 +102,9 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	BuildSphereTextureVertices(Sphere_vertices,	sphereTextureVertices);
 	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices));
 
+	// mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"CubeTextureSample.dds");
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"EarthTexture.dds");
 
 
 	FrameTimer = new FFrameTimer(120);

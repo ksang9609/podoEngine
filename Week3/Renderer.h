@@ -65,10 +65,8 @@ public:
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
 	//ID3D11ShaderResourceView* PrimitiveTextureSRV = nullptr;
-	ID3D11SamplerState* PrimitiveTextureSampler = nullptr;
-	ID3D11ShaderResourceView* CubeTextureSRV = nullptr;
-	ID3D11ShaderResourceView* SphereTextureSRV = nullptr;
 
+	//ID3D11SamplerState* PrimitiveTextureSampler = nullptr;
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -87,7 +85,8 @@ public:
 	ID3D11Buffer* LineIndexBuffer = nullptr;
 	uint32 LineIndexCapacity = 0;
 
-    unsigned int Stride;
+    unsigned int StrideSimple;
+    unsigned int StrideTextured;
 
 public:
 
@@ -109,6 +108,7 @@ public:
 	void CreateStencilOutlineState();
 	void CreateNoColorWriteBlendState();
 	bool CreateFontAtlasTexture();
+	void CreateSamplerState(ID3D11SamplerState** outSamplerState);
 
 	// font용
 	bool CreateFontShader();
@@ -123,10 +123,14 @@ public:
 
 	// texturedPrimitive용
 	//void RenderTexture(const FMatrix& world, const FMatrix& viewProjection);
-	bool CreatePrimitiveTextureResources();
-	void ReleasePrimitiveTextureResources();
-	void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices, ID3D11ShaderResourceView* textureSRV);
+
+	
+	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices, ID3D11ShaderResourceView* textureSRV);
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
+	
+	void ReleasePrimitiveTextureResources(
+		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
+	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices);
 	
 
 	//release
@@ -150,12 +154,18 @@ public:
 
 	//Rendering
 	void Prepare(bool bWireFrame);
-	void PrepareShader();
+	void PrepareSimpleShader();
+	void PrepareTextureShader();
 	void PrepareLineShader();
+
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
-	void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
+
+	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
+	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
+		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
+
 	void SwapBuffer();
 
 

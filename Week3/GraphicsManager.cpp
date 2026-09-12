@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "Camera.h"
 #include "Console.h"
+#include "TQueue.h"
 
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
@@ -39,7 +40,14 @@ FGraphicsManager::~FGraphicsManager()
 			entry.second.Buffer = nullptr;
 		}
 	}
+
+	for (auto& [key, texture] : mPrimitiveTextureMap)
+	{
+		mRenderer->ReleasePrimitiveTextureResources(texture.SRV, texture.Sampler);
+	}
+
 	mTexturedBufferMap.Empty();
+	mPrimitiveTextureMap.Empty();
 
 	mRenderer->ReleaseLineVertexBuffer();
 	mRenderer->ReleaseLineIndexBuffer();
@@ -53,7 +61,7 @@ FGraphicsManager::~FGraphicsManager()
 void FGraphicsManager::Prepare(const FCamera* mCamera)
 {
 	mRenderer->Prepare(mbWireFrame);
-	mRenderer->PrepareShader();
+	mRenderer->PrepareSimpleShader();
 
 	// Cache view and projection matrices for rendering
 	const float nearZ = 0.1f;
@@ -62,17 +70,8 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 	float d = mCamera->mOrthoDistance;
 
 	FMatrix view = mCamera->GetViewMatrix();
-	FMatrix projection_u_p = mCamera->GetUnifiedProjectionMatrix(mAspect, mCamera->mFovDegree, d, nearZ, farZ, 1.0f);
-	FMatrix projection_u_o = mCamera->GetUnifiedProjectionMatrix(mAspect, mCamera->mFovDegree, d, nearZ, farZ, 0.0f);
 	FMatrix projection_u = mCamera->GetUnifiedProjectionMatrix(mAspect, mCamera->mFovDegree, d, nearZ, farZ, mProjectionRatio);
 
-	//mViewProjectionMatrix = view * mCamera->GetProjectionMatrix(mAspect, mCamera->mFovDegree, nearZ, farZ);
-	mViewProjectionMatrix = view * projection_u_p;
-
-	float orthoHeight = mCamera->mOrthoHeight;
-	float orthoWidth = orthoHeight * mAspect;
-	//mViewOrthogonalProjectionMatrix = view * mCamera->GetOrthographicMatrix(orthoWidth, orthoHeight, nearZ, farZ);
-	mViewOrthogonalProjectionMatrix = view * projection_u_o;
 	mViewUnifiedProjectionMatrix = view * projection_u;
 
 	// 하이라이트 두께를 화면 픽셀 기준으로 환산할 때 쓴다
@@ -92,68 +91,93 @@ void FGraphicsManager::GizmoPrepare()
 
 }
 
-
-
+// TODO: remove outBillboardRenderQueue
+void QueueRenderQueue(
+	const TArray<FRenderInfo>& renderInfos,
+	TArray<const FRenderInfo*>& outSimpleRenderQueue,
+	TArray<const FRenderInfo*>& outTextureRenderQueue,
+	TArray<const FRenderInfo*>& outBillboardRenderQueue)
+{
+	for (const FRenderInfo& renderInfo : renderInfos)
+	{
+		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
+		{
+			outBillboardRenderQueue.Add(&renderInfo);
+		}
+		else if (renderInfo.bUseTexture)
+		{
+			outTextureRenderQueue.Add(&renderInfo);
+		}
+		else
+		{
+			outSimpleRenderQueue.Add(&renderInfo);
+		}
+	}
+}
 
 
 
 void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCamera& camera)
 {
-	FMatrix viewProjection;
-
-	viewProjection = mViewUnifiedProjectionMatrix;
-
-	for (const FRenderInfo& renderInfo : renderInfos)
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
 	{
-		FMatrix worldTransform = renderInfo.GetBillboardTransformMatrix(camera.Rotation);
+		return;
+	}
 
-		// 빌보드 텍스쳐 렌더링
-		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
-		{
-			mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
+	FMatrix viewProjection = mViewUnifiedProjectionMatrix;
 
-			continue;
-		}
+	// Prepare RenderQueue
+	TArray<const FRenderInfo*> simpleRenderQueue;
+	TArray<const FRenderInfo*> textureRenderQueue;
+	TArray<const FRenderInfo*> billboardRenderQueue;
+	QueueRenderQueue(renderInfos, simpleRenderQueue, textureRenderQueue, billboardRenderQueue);
 
-		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo.Color);
-		FBuffer* vertexBuffer= renderInfo.bUseTexture ? mTexturedBufferMap.Find(renderInfo.ePrimitive) : mBufferMap.Find(renderInfo.ePrimitive);
+	// Render Billboard Quads
+	// TODO: Remove dedicated render path for billboard quads if possible
+	for (const FRenderInfo* renderInfo : billboardRenderQueue)
+	{
+		FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
+		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+		mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
+	}
 
+	// Render Simple Primitives
+	mRenderer->PrepareSimpleShader();
+	for (const FRenderInfo* renderInfo : simpleRenderQueue)
+	{
+		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
-			UE_LOG("Error: Vertex buffer not found for primitive type.");
+			UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
 			continue;
 		}
-
-		if (renderInfo.bUseTexture)
-		{
-			ID3D11ShaderResourceView* textureSRV = nullptr;
-
-			switch (renderInfo.ePrimitive)
-			{
-			case EPrimitive::EP_Cube:
-				textureSRV = mRenderer->CubeTextureSRV;
-				break;
-
-			case EPrimitive::EP_Sphere:
-				textureSRV = mRenderer->SphereTextureSRV;
-				break;
-
-			default:
-				break;
-			}
-
-			mRenderer->RenderTexturedPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum, textureSRV);
-		}
-		else
-		{
-			mRenderer->PrepareShader();
-
-			mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
-		}
-
-
-		
+		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 	}
+
+	// Render Textured Primitives
+	mRenderer->PrepareTextureShader();
+	for (const FRenderInfo* renderInfo : textureRenderQueue)
+	{
+		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
+		if (vertexBuffer == nullptr)
+		{
+			UE_LOG(Error, Render, "Error: Textured vertex buffer not found for primitive type.");
+			continue;
+		}
+		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
+		if (texture == nullptr)
+		{
+			UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
+			continue;
+		}
+		mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
+			texture->SRV, texture->Sampler);
+	}
+	
 }
 
 void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
@@ -166,11 +190,16 @@ void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const 
 
 	// Index Buffer 업데이트
 	mLineIndices.Add(mStartOffset);
-	mLineIndices.Add(mStartOffset+1);
+	mLineIndices.Add(mStartOffset + 1);
 }
 
 void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVector4& color)
 {
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return;
+	}
+
 	int32 baseVertex = mLineVertices.Num();
 	for (int32 i = 0;i < worArray.Num();i++)
 	{
@@ -180,13 +209,13 @@ void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVect
 	TArray<int32> indicelist = { 0, 1, 1, 3, 3, 2, 2, 0, 4, 5, 5, 7, 7, 6, 6, 4, 0, 4, 1, 5, 2, 6, 3, 7 };
 	for (int32 j = 0;j < indicelist.Num();j++)
 	{
-		mLineIndices.Add(baseVertex+indicelist[j]);
+		mLineIndices.Add(baseVertex + indicelist[j]);
 	}
 }
 
 void FGraphicsManager::DrawWorldAxis()
 {
-	if (!mbShowWorldAxis) return;
+	if (!HasShowFlag(EEngineShowFlags::SF_WorldAxis)) return;
 
 	// far plane이 100이라 그 안쪽으로 잡아야 잘리지 않는다
 	constexpr float AXIS_LENGTH = 50.0f;
@@ -225,13 +254,13 @@ void FGraphicsManager::DrawWorldAxis()
 
 void FGraphicsManager::DrawGrid()
 {
-	int LineCount = (mgridExtent/2) / mgridSpacing; 
+	int LineCount = (mgridExtent / 2) / mgridSpacing;
 	for (int32 i = -LineCount; i <= LineCount;i++)
 	{
 		float Spaceline = i * mgridSpacing;
 		if (Spaceline == 0) continue;
-		DrawLine(FVector3(Spaceline,-mgridExtent/2.0f,0), FVector3(Spaceline, mgridExtent/ 2.0f,0),FVector4(0.3f, 0.3f, 0.3f, 1.0f));  // Y축 기준 Grid
-		DrawLine(FVector3(- mgridExtent / 2.0f, Spaceline, 0), FVector3(mgridExtent / 2.0f, Spaceline,0), FVector4(0.3f, 0.3f, 0.3f, 1.0f)); // X축 기준 Grid
+		DrawLine(FVector3(Spaceline, -mgridExtent / 2.0f, 0), FVector3(Spaceline, mgridExtent / 2.0f, 0), FVector4(0.3f, 0.3f, 0.3f, 1.0f));  // Y축 기준 Grid
+		DrawLine(FVector3(-mgridExtent / 2.0f, Spaceline, 0), FVector3(mgridExtent / 2.0f, Spaceline, 0), FVector4(0.3f, 0.3f, 0.3f, 1.0f)); // X축 기준 Grid
 	}
 }
 
@@ -241,7 +270,7 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos, FRotator&
 	{
 		FMatrix worldTransform = renderInfo.GetBillboardTransformMatrix(cameraRotation);
 		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo.ePrimitive);
-		if (LocalminmaxBuffer==nullptr)
+		if (LocalminmaxBuffer == nullptr)
 		{
 			continue;
 		}
@@ -283,12 +312,9 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos, FRotator&
 		FVector3 w6 = FVector3(WorldMin.x, WorldMax.y, WorldMax.z);
 		FVector3 w7 = WorldMax;
 		TArray<FVector3> WorldBoxArray = { w0,w1,w2,w3,w4,w5,w6,w7 };
-		DrawAABBLine(WorldBoxArray,FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawAABBLine(WorldBoxArray, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 	}
-
-
 }
-
 
 void FGraphicsManager::FlushLines()
 {
@@ -305,7 +331,7 @@ void FGraphicsManager::FlushLines()
 	//	mRenderer->UpdateConstant(FMatrix::Identity, mViewOrthogonalProjectionMatrix, FVector4(0, 0, 0, 0));
 	//}
 	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
-	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(),&mLineIndices[0], mLineIndices.Num());
+	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
 	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
@@ -371,7 +397,7 @@ void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertic
 	FBoundingBox LocalBound;
 	LocalBound.min = LocalMin;
 	LocalBound.max = LocalMax;
-	FBuffer buffer = { vertexBuffer, numVertices, LocalBound}; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
+	FBuffer buffer = { vertexBuffer, numVertices, LocalBound }; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
 	mBufferMap.Add(ePrimitive, buffer);
 }
 
@@ -380,7 +406,7 @@ void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertex
 	if (!vertices || verticesSize == 0 ||
 		verticesSize % sizeof(FVertexTextured) != 0)
 	{
-		UE_LOG("Invalid textured vertex data.");
+		UE_LOG(Log, Core, "Invalid textured vertex data.");
 		return;
 	}
 
@@ -388,13 +414,13 @@ void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertex
 
 	if (!vertexBuffer)
 	{
-		UE_LOG("Failed to create textured vertex buffer.");
+		UE_LOG(Log, Core, "Failed to create textured vertex buffer.");
 		return;
 	}
 
 	FBuffer buffer = {};
 	buffer.Buffer = vertexBuffer;
-	buffer.SourceNum =	static_cast<uint32>(verticesSize / sizeof(FVertexTextured));
+	buffer.SourceNum = static_cast<uint32>(verticesSize / sizeof(FVertexTextured));
 
 	// 기존 색상용 버퍼처럼 로컬 AABB 계산
 	buffer.LocalBounds.min = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
@@ -421,6 +447,20 @@ void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertex
 	}
 
 	mTexturedBufferMap.Add(ePrimitive, buffer);
+}
+
+void FGraphicsManager::CreatePrimitiveTexture(EPrimitive ePrimitive, const wchar_t* texturePath)
+{
+	// TODO: Set string path to the texture later
+
+	FTexture texture{};
+
+	if (!mRenderer->LoadTexture(texturePath, &texture.SRV))
+	{
+		UE_LOG(Log, Core, "Failed to create primitive texture resources.");
+	}
+
+	mPrimitiveTextureMap.Add(ePrimitive, texture);
 }
 
 URenderer* FGraphicsManager::GetRenderer() const
@@ -560,5 +600,47 @@ void FGraphicsManager::UpdateProjectionTransition(float deltaTime)
 	{
 		mProjectionRatio = mProjectionTargetRatio;
 		mbProjectionTransitioning = false;
+	}
+}
+
+bool FGraphicsManager::HasShowFlag(EEngineShowFlags Flag) const
+{
+	const uint32 FlagValue = static_cast<uint32>(Flag);
+	return (mShowFlags & FlagValue) != 0;
+}
+
+void FGraphicsManager::SetShowFlag(EEngineShowFlags Flag, bool bEnable)
+{
+	const uint32 FlagValue = static_cast<uint32>(Flag);
+
+	if (bEnable)
+	{
+		mShowFlags |= FlagValue;
+	}
+	else
+	{
+		mShowFlags &= ~FlagValue;
+	}
+}
+
+void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
+{
+	mViewMode = InViewMode;
+
+	switch (mViewMode)
+	{
+	case EViewModeIndex::VMI_Lit:
+		SetWireFrame(false);
+		// Lit 렌더링 상태 설정
+		break;
+
+	case EViewModeIndex::VMI_Unlit:
+		SetWireFrame(false);
+		// Unlit 렌더링 상태 설정
+		break;
+
+	case EViewModeIndex::VMI_Wireframe:
+		SetWireFrame(true);
+		break;
 	}
 }
