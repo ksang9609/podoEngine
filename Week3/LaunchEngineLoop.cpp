@@ -81,7 +81,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	// 큐브 텍스처 6개로 나눈 버전을 사용하려면
 	BuildCubeAtlasVertices(CubeTextureVertices);
 
-	mGraphicsManager->CreateTexturedBuffer(	EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube);
 
 	FrameTimer = new FFrameTimer(120);
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class

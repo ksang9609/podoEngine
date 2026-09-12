@@ -20,6 +20,12 @@ struct FBuffer
 	ID3D11Buffer* TexturedBuffer = nullptr;
 };
 
+struct FTexture
+{
+	ID3D11ShaderResourceView* SRV;
+	ID3D11SamplerState* Sampler;
+};
+
 class FGraphicsManager
 {
 public:
@@ -59,6 +65,8 @@ public:
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
 	void CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize);
+	void CreatePrimitiveTexture(EPrimitive ePrimitive);
+
 	URenderer* GetRenderer() const;
 
 	//Highlight
@@ -97,6 +105,9 @@ private:
 
 	// 텍스처 정점으로 만든 버퍼
 	TMap<EPrimitive, FBuffer> mTexturedBufferMap;
+
+	// Texture sub resource view and sampler for each primitive type
+	TMap<EPrimitive, FTexture> mPrimitiveTextureMap;
 
 	// Graphics config
 	// 이번 프레임에 쌓인 선분. 정점 2개가 선분 하나

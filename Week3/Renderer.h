@@ -64,8 +64,8 @@ public:
 	ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
-	ID3D11ShaderResourceView* PrimitiveTextureSRV = nullptr;
-	ID3D11SamplerState* PrimitiveTextureSampler = nullptr;
+	//ID3D11ShaderResourceView* PrimitiveTextureSRV = nullptr;
+	//ID3D11SamplerState* PrimitiveTextureSampler = nullptr;
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -121,8 +121,10 @@ public:
 
 	// texturedPrimitive용
 	//void RenderTexture(const FMatrix& world, const FMatrix& viewProjection);
-	bool CreatePrimitiveTextureResources(const wchar_t* texturePath);
-	void ReleasePrimitiveTextureResources();
+	bool CreatePrimitiveTextureResources(const wchar_t* texturePath,
+		ID3D11ShaderResourceView*& outTextureSRV, ID3D11SamplerState*& outSamplerState);
+	void ReleasePrimitiveTextureResources(
+		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
 	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices);
 
 	

@@ -101,14 +101,14 @@ void URenderer::Create(HWND hWindow)
 
 	// 일반 Primitive용 텍스처 리소스 생성
 	// 경로는 실제 보유한 DDS 파일 경로로 변경
-	if (!CreatePrimitiveTextureResources(L"Dice.dds"))
-	{
-		MessageBox(
-			hWindow,
-			L"Primitive 텍스처 리소스 생성에 실패했습니다.",
-			L"Primitive texture initialization error",
-			MB_OK | MB_ICONERROR);
-	}
+	//if (!CreatePrimitiveTextureResources(L"Dice.dds"))
+	//{
+	//	MessageBox(
+	//		hWindow,
+	//		L"Primitive 텍스처 리소스 생성에 실패했습니다.",
+	//		L"Primitive texture initialization error",
+	//		MB_OK | MB_ICONERROR);
+	//}
 }
 
 void URenderer::CreateDeviceAndSwapChain(HWND hWindow)
@@ -428,9 +428,6 @@ void URenderer::Release()
 	ReleaseFontAtlasTexture();
 	ReleaseFontTexture();
 	//ReleaseTestTexture();
-	ReleasePrimitiveTextureResources();
-
-
 	ReleaseDeviceAndSwapChain();
 }
 
@@ -601,6 +598,7 @@ bool URenderer::CreateFontShader()
 
 void URenderer::ReleaseShader()
 {
+	/* Simple Shader */
 	if (SimpleInputLayout)
 	{
 		SimpleInputLayout->Release();
@@ -619,6 +617,7 @@ void URenderer::ReleaseShader()
 		SimpleVertexShader = nullptr;
 	}
 
+	/* Line Shader */
 	if (LineSimpleInputLayout)
 	{
 		LineSimpleInputLayout->Release();
@@ -636,15 +635,54 @@ void URenderer::ReleaseShader()
 		LineSimpleVertexShader->Release();
 		LineSimpleVertexShader = nullptr;
 	}
+
+	/* Texture Shader */
+	if (TextureInputLayout)
+	{
+		TextureInputLayout->Release();
+		TextureInputLayout = nullptr;
+	}
+
+	if (TexturePixelShader)
+	{
+		TexturePixelShader->Release();
+		TexturePixelShader = nullptr;
+	}
+
+	if (TextureVertexShader)
+	{
+		TextureVertexShader->Release();
+		TextureVertexShader = nullptr;
+	}
+
+	/* Primitive Texture Shader */
+	if (PrimitiveTextureLayout)
+	{
+		PrimitiveTextureLayout->Release();
+		PrimitiveTextureLayout = nullptr;
+	}
+
+	if (PrimitiveTexturePixelShader)
+	{
+		PrimitiveTexturePixelShader->Release();
+		PrimitiveTexturePixelShader = nullptr;
+	}
+
+	if (PrimitiveTextureVertexShader)
+	{
+		PrimitiveTextureVertexShader->Release();
+		PrimitiveTextureVertexShader = nullptr;
+	}
 }
 
-bool URenderer::CreatePrimitiveTextureResources(const wchar_t* texturePath)
+bool URenderer::CreatePrimitiveTextureResources(const wchar_t* texturePath,
+	ID3D11ShaderResourceView*& outTextureSRV, ID3D11SamplerState*& outSamplerState)
 {
 	if (!Device || !texturePath)
 		return false;
 
 	// 재초기화하는 경우 기존 리소스 정리
-	ReleasePrimitiveTextureResources();
+	ReleasePrimitiveTextureResources(outTextureSRV, outSamplerState);
 
 	ID3DBlob* vsCode = nullptr;
 	ID3DBlob* psCode = nullptr;
@@ -751,7 +789,7 @@ bool URenderer::CreatePrimitiveTextureResources(const wchar_t* texturePath)
 			Device,
 			texturePath,
 			nullptr,
-			&PrimitiveTextureSRV);
+			&outTextureSRV);
 
 		if (FAILED(hr))
 			break;
@@ -769,7 +807,7 @@ bool URenderer::CreatePrimitiveTextureResources(const wchar_t* texturePath)
 
 		hr = Device->CreateSamplerState(
 			&samplerDesc,
-			&PrimitiveTextureSampler);
+			&outSamplerState);
 
 		if (FAILED(hr))
 			break;
@@ -787,7 +825,7 @@ bool URenderer::CreatePrimitiveTextureResources(const wchar_t* texturePath)
 
 	// 중간에 실패했으면 생성된 멤버 리소스도 정리
 	if (!success)
-		ReleasePrimitiveTextureResources();
+		ReleasePrimitiveTextureResources(outTextureSRV, outSamplerState);
 
 	return success;
 }
@@ -1564,24 +1602,6 @@ void URenderer::ReleaseFontTexture()
 {
 	ReleaseFontAtlasQuad();
 
-	if (TextureVertexShader)
-	{
-		TextureVertexShader->Release();
-		TextureVertexShader = nullptr;
-	}
-
-	if (TexturePixelShader)
-	{
-		TexturePixelShader->Release();
-		TexturePixelShader = nullptr;
-	}
-
-	if (TextureInputLayout)
-	{
-		TextureInputLayout->Release();
-		TextureInputLayout = nullptr;
-	}
-
 	if (TextureSamplerState)
 	{
 		TextureSamplerState->Release();
@@ -1595,35 +1615,18 @@ void URenderer::ReleaseFontTexture()
 	}
 }
 
-void URenderer::ReleasePrimitiveTextureResources()
+void URenderer::ReleasePrimitiveTextureResources(
+	ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState)
 {
-	if (PrimitiveTextureVertexShader)
+	if (textureSRV)
 	{
-		PrimitiveTextureVertexShader->Release();
-		PrimitiveTextureVertexShader = nullptr;
+		textureSRV->Release();
+		textureSRV = nullptr;
 	}
 
-	if (PrimitiveTexturePixelShader)
+	if (samplerState)
 	{
-		PrimitiveTexturePixelShader->Release();
-		PrimitiveTexturePixelShader = nullptr;
-	}
-
-	if (PrimitiveTextureLayout)
-	{
-		PrimitiveTextureLayout->Release();
-		PrimitiveTextureLayout = nullptr;
-	}
-
-	if (PrimitiveTextureSRV)
-	{
-		PrimitiveTextureSRV->Release();
-		PrimitiveTextureSRV = nullptr;
-	}
-
-	if (PrimitiveTextureSampler)
-	{
-		PrimitiveTextureSampler->Release();
-		PrimitiveTextureSampler = nullptr;
+		samplerState->Release();
+		samplerState = nullptr;
 	}
 }
