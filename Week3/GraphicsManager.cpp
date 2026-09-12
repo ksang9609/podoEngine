@@ -204,7 +204,7 @@ void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVect
 		mLineVertices.Add({ worArray[i].x, worArray[i].y, worArray[i].z, color.x, color.y, color.z, color.w });
 	}
 	// Index Buffer 업데이트
-	TArray<int32> indicelist = { 0, 1, 1, 3, 3, 2, 2, 0, 4, 5, 5, 7, 7, 6, 6, 4, 0, 4, 1, 5, 2, 6, 3, 7 };
+	TArray<int32> indicelist = { 0, 1, 1, 3, 3, 2, 2, 0, 4, 5, 5, 7, 7, 6, 6, 4, 0, 4, 1, 5, 2, 6, 3, 7 }; // 밑면 -> 윗면 -> 기둥 순 
 	for (int32 j = 0;j < indicelist.Num();j++)
 	{
 		mLineIndices.Add(baseVertex + indicelist[j]);
@@ -256,7 +256,9 @@ void FGraphicsManager::DrawGrid()
 	for (int32 i = -LineCount; i <= LineCount;i++)
 	{
 		float Spaceline = i * mgridSpacing;
-		if (Spaceline == 0) continue;
+		if (HasShowFlag(EEngineShowFlags::SF_WorldAxis)) {
+			if (Spaceline == 0) continue;
+		}
 		DrawLine(FVector3(Spaceline, -mgridExtent / 2.0f, 0), FVector3(Spaceline, mgridExtent / 2.0f, 0), FVector4(0.3f, 0.3f, 0.3f, 1.0f));  // Y축 기준 Grid
 		DrawLine(FVector3(-mgridExtent / 2.0f, Spaceline, 0), FVector3(mgridExtent / 2.0f, Spaceline, 0), FVector4(0.3f, 0.3f, 0.3f, 1.0f)); // X축 기준 Grid
 	}
@@ -530,6 +532,11 @@ void  FGraphicsManager::SetGridWidth(float width)
 
 void FGraphicsManager::RenderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return;
+	}
+
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
 	FMatrix worldTransformMatrix = RI.GetBillboardTransformMatrix(camera.Rotation);
