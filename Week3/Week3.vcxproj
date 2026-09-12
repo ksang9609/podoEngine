@@ -131,6 +131,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="BillboardComponent.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
@@ -138,6 +140,7 @@
     <ClCompile Include="FName.cpp" />
     <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="JsonUtil.cpp" />
+    <ClCompile Include="NameComponent.cpp" />
     <ClCompile Include="ObjectFactory.cpp" />
     <ClCompile Include="FEditorViewportClient.cpp" />
     <ClCompile Include="GraphicsManager.cpp" />
@@ -154,6 +157,7 @@
     <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="PrimitiveComponent.cpp" />
     <ClCompile Include="Quat.cpp" />
+    <ClCompile Include="RenderInfo.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="CubeComponent.cpp" />
     <ClCompile Include="SceneData.cpp" />
@@ -176,6 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor.h" />
+    <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="MathUtility.cpp" />
     <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
@@ -221,7 +226,7 @@
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="CubeComponent.h" />
     <ClInclude Include="TSparseArray.h" />
-    <ClInclude Include="UBillboardCompoent.h" />
+    <ClInclude Include="BillboardComponent.h" />
     <ClInclude Include="Vector.h" />
     <ClInclude Include="WICTextureLoader.h" />
     <ClInclude Include="World.h" />

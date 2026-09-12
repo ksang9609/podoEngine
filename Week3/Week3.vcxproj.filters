@@ -39,8 +39,13 @@
     <ClCompile Include="WICTextureLoader.cpp" />
     <ClCompile Include="Vector.cpp" />
     <ClCompile Include="World.cpp" />
+    <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="MathUtility.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="BillboardComponent.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="NameComponent.cpp" />
+    <ClCompile Include="RenderInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circle.h" />
@@ -93,7 +98,7 @@
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="CubeComponent.h" />
     <ClInclude Include="TSparseArray.h" />
-    <ClInclude Include="UBillboardCompoent.h" />
+    <ClInclude Include="BillboardComponent.h" />
     <ClInclude Include="Vector.h" />
     <ClInclude Include="WICTextureLoader.h" />
     <ClInclude Include="World.h" />

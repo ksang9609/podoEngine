@@ -53,8 +53,8 @@ protected:
 	USceneComponent* mParent = nullptr;
 	TArray<USceneComponent*> mChildren;
 
-	void updateComponentToWorld(const FMatrix& parentTransform);
-	void updateComponentToWorld();
+	virtual void updateComponentToWorld(const FMatrix& parentTransform);
+	virtual void updateComponentToWorld();
 	bool isChildOf(const USceneComponent& component) const;
 };
 

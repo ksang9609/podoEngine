@@ -19,4 +19,9 @@ struct FQuat
 	}
 
 	FRotator Rotator() const;
+
+	FQuat static Identity()
+	{
+		return FQuat(0, 0, 0, 1);
+	}
 };
