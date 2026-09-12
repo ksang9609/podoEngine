@@ -108,7 +108,7 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos)
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo.ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
-			UE_LOG("Error: Vertex buffer not found for primitive type.");
+			UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
 			continue;
 		}
 		mRenderer->RenderPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
