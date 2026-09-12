@@ -60,10 +60,14 @@ public:
 	ID3D11InputLayout* TextureInputLayout = nullptr;
 	ID3D11SamplerState* TextureSamplerState = nullptr;
 	ID3D11BlendState* FontBlendState = nullptr;
+	ID3D11Buffer* FontIndexBuffer = nullptr;
 
 	ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
+	ID3D11Buffer* CubeIndexBuffer = nullptr;     // 큐브 인덱스 저장
+
+
 	//ID3D11ShaderResourceView* PrimitiveTextureSRV = nullptr;
 
 	//ID3D11SamplerState* PrimitiveTextureSampler = nullptr;
@@ -162,7 +166,7 @@ public:
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
-		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState);
+		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer = nullptr);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
 
@@ -177,6 +181,10 @@ public:
 	void OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight);
 
 private:
+	bool ensureFontIndexBuffer(UINT fontCount);
 	UINT mTextVertexCount = 0;
+	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
+	UINT mTextIndexCount = 0;
+	UINT mTextIndexCapacity = 0;
 };
 
