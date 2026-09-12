@@ -152,7 +152,7 @@ private:
 	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
-	void renderWorldAxis();
+	void renderWorldAxis(const TArray<const FRenderInfo*>& renderInfos);
 	void renderBoundingBox(const TArray<const FRenderInfo*>& renderInfos, const FRotator& cameraRotation);
 	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);

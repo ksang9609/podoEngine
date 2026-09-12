@@ -174,17 +174,20 @@ void FGraphicsManager::Render(
 	updateRenderQueue(scenerRenderInfos, renderQueueMap);
 	updateRenderQueue(gizmoRenderInfos, renderQueueMap);
 
+	FRenderInfo worldAxisRenderInfo{};
+	worldAxisRenderInfo.eRenderFlags = ERenderFlags::RF_WorldAxis;
+	TArray<FRenderInfo> editorRenderInfos;
+	editorRenderInfos.Add(worldAxisRenderInfo);
+	updateRenderQueue(editorRenderInfos, renderQueueMap);
+
 	Prepare(&camera);
 
 	renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
 	renderTexturedPrimitive(renderQueueMap[ERenderFlags::RF_TexturedPrimitive], camera);
 	renderBillboardText(renderQueueMap[ERenderFlags::RF_BillboardText], camera);
+	renderWorldAxis(renderQueueMap[ERenderFlags::RF_WorldAxis]);
 
 	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
-	if (HasShowFlag(EEngineShowFlags::SF_WorldAxis))
-	{
-		renderWorldAxis(); // TODO: FIX?
-	}
 	renderGrid();
 	renderBoundingBox(renderQueueMap[ERenderFlags::RF_BoundingBox], camera.GetRotation());
 	FlushLines();
@@ -252,14 +255,12 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 {
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
-	if (HasShowFlag(EEngineShowFlags::SF_BillboardText))
+	
+	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		for (const FRenderInfo* renderInfo : renderInfos)
-		{
-			FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
-			mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-			mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
-		}
+		FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
 	}
 }
 
@@ -291,10 +292,8 @@ void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVect
 	}
 }
 
-void FGraphicsManager::renderWorldAxis()
+void FGraphicsManager::renderWorldAxis(const TArray<const FRenderInfo*>& renderInfos)
 {
-	if (!HasShowFlag(EEngineShowFlags::SF_WorldAxis)) return;
-
 	// far plane이 100이라 그 안쪽으로 잡아야 잘리지 않는다
 	constexpr float AXIS_LENGTH = 50.0f;
 	// 세 축이 원점에서 정확히 겹치면 깊이 다툼이 생긴다. 눈에 안 띌 만큼만 띄운다
@@ -315,18 +314,21 @@ void FGraphicsManager::renderWorldAxis()
 		FVector4(0.0f, 0.4f, 1.0f, 1.0f),   // Z = 파랑
 	};
 
-	for (int32 i = 0; i < 3; ++i)
+	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		const FVector& direction = axisDirections[i];
-		const FVector4& color = axisColors[i];
-		const FVector4 dimColor(
-			color.x * NEGATIVE_DIM,
-			color.y * NEGATIVE_DIM,
-			color.z * NEGATIVE_DIM,
-			color.w);
+		for (int32 i = 0; i < 3; ++i)
+		{
+			const FVector& direction = axisDirections[i];
+			const FVector4& color = axisColors[i];
+			const FVector4 dimColor(
+				color.x * NEGATIVE_DIM,
+				color.y * NEGATIVE_DIM,
+				color.z * NEGATIVE_DIM,
+				color.w);
 
-		DrawLine(direction * AXIS_ORIGIN_GAP, direction * AXIS_LENGTH, color);
-		DrawLine(direction * -AXIS_ORIGIN_GAP, direction * -AXIS_LENGTH, dimColor);
+			DrawLine(direction * AXIS_ORIGIN_GAP, direction * AXIS_LENGTH, color);
+			DrawLine(direction * -AXIS_ORIGIN_GAP, direction * -AXIS_LENGTH, dimColor);
+		}
 	}
 }
 
@@ -612,11 +614,6 @@ void  FGraphicsManager::SetGridWidth(float width)
 
 void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
-	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
-	{
-		return;
-	}
-
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
 	FMatrix worldTransformMatrix = RI.GetBillboardTransformMatrix(camera.Rotation);
