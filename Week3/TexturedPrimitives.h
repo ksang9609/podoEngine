@@ -277,7 +277,7 @@ inline void BuildSphereTextureVertices(const FVertexSimple(&source)[N],	FVertexT
 			// 극점의 u는 아래에서 따로 계산
 			dst.u = isPole[j] ? 0.0f : 0.5f + std::atan2(nz, nx) / (2.0f * pi);
 
-			// acos의 범우: 0~ pi
+			// acos의 범위: 0~ pi
 			dst.v = std::acos(ny) / pi;
 		}
 

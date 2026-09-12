@@ -6,6 +6,7 @@
 
 //#include "WICTextureLoader.h"
 #include <directxtk/DDSTextureLoader.h>
+#include "Console.h"
 
 #pragma comment(lib, "DirectXTK.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -311,6 +312,7 @@ void URenderer::ReleaseFontAtlasQuad()
 	}
 
 	mTextVertexCount = 0;
+	mTextVertexCapacity = 0;
 }
 
 /// 
@@ -835,6 +837,7 @@ void URenderer::PrepareLineShader()
 
 void URenderer::RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 {
+	PrepareSimpleShader();
 	UINT offset = 0;
 	// Bind the vertex buffer
 	DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &StrideSimple, &offset);
@@ -1354,10 +1357,10 @@ bool URenderer::CreateTestQuad()
 // 폰트 1개가 나올 Quad를 그리는 함수
 bool URenderer::CreateFontAtlasQuad(std::string* Text)
 {
-	if (!Device || !Text)
+	if (!Device || !Text || !DeviceContext)
 		return false;
 
-	ReleaseFontAtlasQuad();
+	//ReleaseFontAtlasQuad();
 
 	std::vector<FVertexTextured> verticesList;
 
@@ -1426,28 +1429,56 @@ bool URenderer::CreateFontAtlasQuad(std::string* Text)
 
 	}
 
-	// 빈 문자열은 그릴 정점없이 종료
+	// 빈 문자열이면 버퍼는 유지하고 그리기만 생략
 	if (verticesList.empty())
+	{
+		mTextVertexCount = 0;
 		return true;
+	}
 
+	const UINT requiredCount = static_cast<UINT>(verticesList.size());
 	mTextVertexCount = static_cast<UINT>(verticesList.size());
 
-	D3D11_BUFFER_DESC bufferDesc = {};
-	bufferDesc.ByteWidth =	static_cast<UINT>(mTextVertexCount * sizeof(FVertexTextured));
-	bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	if (!FontTextureBuffer || requiredCount > mTextVertexCapacity)
+	{
+		const UINT newCapacity = (std::max)(requiredCount, mTextVertexCapacity * 2);
 
-	D3D11_SUBRESOURCE_DATA initialData = {};
-	initialData.pSysMem = verticesList.data();
+		D3D11_BUFFER_DESC bufferDesc = {};
+		bufferDesc.ByteWidth = newCapacity * sizeof(FVertexTextured);
+		bufferDesc.Usage = D3D11_USAGE_DYNAMIC; // 동적 설정
+		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // 동적으로 CPU가 쓰기 가능
 
-	HRESULT hr = Device->CreateBuffer(&bufferDesc, &initialData, &FontTextureBuffer);
+		ID3D11Buffer* newBuffer = nullptr;
+		Device->CreateBuffer(&bufferDesc, nullptr, &newBuffer);
+		UE_LOG(Log, Render,	"Font buffer CREATE: capacity %u -> %u",
+			mTextVertexCapacity, newCapacity);
+
+		// 새 버퍼 생성에 성공한 뒤 기존 버퍼를 교체
+		ReleaseFontAtlasQuad();
+		FontTextureBuffer = newBuffer;
+		mTextVertexCapacity = newCapacity;
+
+	}
+
+	D3D11_MAPPED_SUBRESOURCE mappedTextFontData = {};
+
+	// 하위 리소스에 포함된 데이터에 대한 포인터를 가져오고 해당 하위 리소스에 대한 GPU 액세스를 거부합니다.
+	HRESULT hr = DeviceContext->Map(FontTextureBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedTextFontData);
+
+/*	HRESULT hr = Device->CreateBuffer(&bufferDesc, &textFontData, &FontTextureBuffer);*/
 
 	if (FAILED(hr))
 	{
-		ReleaseFontAtlasQuad();
+		mTextVertexCount = 0;
 		return false;
 	}
 
+	memcpy(mappedTextFontData.pData, verticesList.data(),	verticesList.size() * sizeof(FVertexTextured));
+
+	DeviceContext->Unmap(FontTextureBuffer, 0);
+
+	mTextVertexCount = requiredCount;
 	return true;
 
 }
@@ -1543,7 +1574,8 @@ void URenderer::RenderFontTexture(const FMatrix& world, const FMatrix& viewProje
 // 
 void URenderer::ReleaseFontTexture()
 {
-	ReleaseFontAtlasQuad();
+	// 매번 해제하면 버퍼를 재사용 불가능
+	//ReleaseFontAtlasQuad();
 
 	if (TextureSamplerState)
 	{

@@ -178,5 +178,6 @@ public:
 
 private:
 	UINT mTextVertexCount = 0;
+	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
 };
 
