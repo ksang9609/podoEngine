@@ -9,6 +9,7 @@ struct FRenderInfo
 	FMatrix WorldTransformMatrix;
 	FObjectID ObejctID;
 	FVector4 Color;
+	ERenderFlags eRenderFlags;
 
 	// Return world matrix for billboard quads to face the camera
 	// Get FRotator input because current camera rotation is stored in FRotator.

@@ -36,18 +36,12 @@ public:
 	void Prepare(const FCamera* mCamera);
 	void GizmoPrepare();
 
-	// Rendering functions
+	/* Rendering functions */
 	void Render(
 		const TArray<FRenderInfo>& scenerRenderInfos,
 		const TArray<FRenderInfo>& gizmoRenderInfos,
 		const FCamera& camera,
 		const AActor* selectedActor);
-
-	void RenderPrimitive(const TArray<FRenderInfo> renderInfos, const FCamera& camera);
-	void RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera);
-	void RenderWorldAxis();
-	void RenderAABB(const TArray<FRenderInfo> renderInfos, const FRotator& cameraRotation);
-	void RenderGrid();
 
 	void Display();
 	void Update(float deltaTime);
@@ -90,7 +84,6 @@ public:
 
 	static FVector GetPrimitiveCenter(EPrimitive type);
 	static FVector GetPrimitiveHalfExtent(EPrimitive type);
-	void RenderHighLight(const FRenderInfo& RI, const FCamera& camera);
 
 	// Projection ratio smoothing
 	void StartProjectionTransition(bool orthographic);
@@ -149,4 +142,19 @@ private:
 
 	bool mbShowPrimitives = true;
 	//void RenderBillboardText();
+
+	void updateRenderQueue(
+		const TArray<FRenderInfo>& renderInfos,
+		TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap
+	) const;
+
+	/* Rendering Functions */
+	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderWorldAxis();
+	void renderBoundingBox(const TArray<const FRenderInfo*>& renderInfos, const FRotator& cameraRotation);
+	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);
+	void renderGrid();
 };

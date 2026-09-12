@@ -91,7 +91,6 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 void FGraphicsManager::GizmoPrepare()
 {
 	mRenderer->RSUpdateState();
-
 }
 
 // TODO: remove outBillboardRenderQueue
@@ -118,6 +117,50 @@ void QueueRenderQueue(
 	}
 }
 
+bool RenderFlagMatch(ERenderFlags targetFlags, ERenderFlags renderFlags)
+{
+	return (static_cast<uint32>(targetFlags) & static_cast<uint32>(renderFlags)) != 0;
+}
+
+void FGraphicsManager::updateRenderQueue(
+	const TArray<FRenderInfo>& renderInfos,
+	TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap) const
+{
+	for (const FRenderInfo& renderInfo : renderInfos)
+	{
+		ERenderFlags renderFlags = renderInfo.eRenderFlags;
+
+		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_SimplePrimitive) &&
+			HasShowFlag(EEngineShowFlags::SF_Primitives))
+		{
+			outRenderQueueMap[ERenderFlags::RF_SimplePrimitive].Add(&renderInfo);
+		}
+		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_TexturedPrimitive) &&
+			HasShowFlag(EEngineShowFlags::SF_Primitives))
+		{
+			outRenderQueueMap[ERenderFlags::RF_TexturedPrimitive].Add(&renderInfo);
+		}
+		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_BillboardText) &&
+			HasShowFlag(EEngineShowFlags::SF_BillboardText))
+		{
+			outRenderQueueMap[ERenderFlags::RF_BillboardText].Add(&renderInfo);
+		}
+		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_WorldAxis) &&
+			HasShowFlag(EEngineShowFlags::SF_WorldAxis))
+		{
+			outRenderQueueMap[ERenderFlags::RF_WorldAxis].Add(&renderInfo);
+		}
+		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_Gizmo))
+		{
+			outRenderQueueMap[ERenderFlags::RF_Gizmo].Add(&renderInfo);
+		}
+		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_BoundingBox))
+		{
+			outRenderQueueMap[ERenderFlags::RF_BoundingBox].Add(&renderInfo);
+		}
+	}
+}
+
 void FGraphicsManager::Render(
 	const TArray<FRenderInfo>& scenerRenderInfos,
 	const TArray<FRenderInfo>& gizmoRenderInfos,
@@ -127,14 +170,23 @@ void FGraphicsManager::Render(
 	// Prepare Render queue
 	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
 	// Each render info is splitted into different render queues
+	TMap<ERenderFlags, TArray<const FRenderInfo*>> renderQueueMap;
+	updateRenderQueue(scenerRenderInfos, renderQueueMap);
+	updateRenderQueue(gizmoRenderInfos, renderQueueMap);
 
 	Prepare(&camera);
-	RenderPrimitive(scenerRenderInfos, camera);
+
+	renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
+	renderTexturedPrimitive(renderQueueMap[ERenderFlags::RF_TexturedPrimitive], camera);
+	renderBillboardText(renderQueueMap[ERenderFlags::RF_BillboardText], camera);
 
 	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
-	RenderWorldAxis();
-	RenderGrid();
-	RenderAABB(scenerRenderInfos, camera.GetRotation());
+	if (HasShowFlag(EEngineShowFlags::SF_WorldAxis))
+	{
+		renderWorldAxis(); // TODO: FIX?
+	}
+	renderGrid();
+	renderBoundingBox(renderQueueMap[ERenderFlags::RF_BoundingBox], camera.GetRotation());
 	FlushLines();
 
 	//강조
@@ -142,77 +194,73 @@ void FGraphicsManager::Render(
 	{
 		FRenderInfo clickedRenderInfo;
 		selectedActor->GetFirstRenderInfo(clickedRenderInfo);
-		RenderHighLight(clickedRenderInfo, camera);
+		renderHighLight(clickedRenderInfo, camera);
 	}
+
+	/* Clear Depth */
+	mRenderer->ClearDepth();
 
 	// Gizmo
 	GizmoPrepare();
-	RenderOverlay(gizmoRenderInfos, camera);
-
+	renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_Gizmo], camera);
 }
 
-void FGraphicsManager::RenderPrimitive(const TArray<FRenderInfo> renderInfos, const FCamera& camera)
+void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
 	FMatrix viewProjection = mViewUnifiedProjectionMatrix;
 
-	// Prepare RenderQueue
-	TArray<const FRenderInfo*> simpleRenderQueue;
-	TArray<const FRenderInfo*> textureRenderQueue;
-	TArray<const FRenderInfo*> billboardRenderQueue;
-	QueueRenderQueue(renderInfos, simpleRenderQueue, textureRenderQueue, billboardRenderQueue);
+	mRenderer->PrepareSimpleShader();
+	for (const FRenderInfo* renderInfo : renderInfos)
+	{
+		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
+		if (vertexBuffer == nullptr)
+		{
+			UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
+			continue;
+		}
+		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+	}
+}
 
+void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+{
+	mRenderer->PrepareTextureShader();
+	for (const FRenderInfo* renderInfo : renderInfos)
+	{
+		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
+		if (vertexBuffer == nullptr)
+		{
+			UE_LOG(Error, Render, "Error: Textured vertex buffer not found for primitive type.");
+			continue;
+		}
+		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
+		if (texture == nullptr)
+		{
+			UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
+			continue;
+		}
+		mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
+			texture->SRV, texture->Sampler);
+	}
+}
+
+void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+{
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
 	if (HasShowFlag(EEngineShowFlags::SF_BillboardText))
 	{
-		for (const FRenderInfo* renderInfo : billboardRenderQueue)
+		for (const FRenderInfo* renderInfo : renderInfos)
 		{
 			FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
-			mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+			mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 			mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
 		}
 	}
-
-	if (HasShowFlag(EEngineShowFlags::SF_Primitives))
-	{
-		// Render Simple Primitives
-		mRenderer->PrepareSimpleShader();
-		for (const FRenderInfo* renderInfo : simpleRenderQueue)
-		{
-			FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-			mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
-			FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
-			if (vertexBuffer == nullptr)
-			{
-				UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
-				continue;
-			}
-			mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
-		}
-
-		// Render Textured Primitives
-		mRenderer->PrepareTextureShader();
-		for (const FRenderInfo* renderInfo : textureRenderQueue)
-		{
-			FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-			mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
-			FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
-			if (vertexBuffer == nullptr)
-			{
-				UE_LOG(Error, Render, "Error: Textured vertex buffer not found for primitive type.");
-				continue;
-			}
-			FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
-			if (texture == nullptr)
-			{
-				UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
-				continue;
-			}
-			mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
-				texture->SRV, texture->Sampler);
-		}
-	}
-	
 }
 
 void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
@@ -243,7 +291,7 @@ void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVect
 	}
 }
 
-void FGraphicsManager::RenderWorldAxis()
+void FGraphicsManager::renderWorldAxis()
 {
 	if (!HasShowFlag(EEngineShowFlags::SF_WorldAxis)) return;
 
@@ -282,7 +330,7 @@ void FGraphicsManager::RenderWorldAxis()
 	}
 }
 
-void FGraphicsManager::RenderGrid()
+void FGraphicsManager::renderGrid()
 {
 	int LineCount = (mgridExtent / 2) / mgridSpacing;
 	for (int32 i = -LineCount; i <= LineCount;i++)
@@ -296,11 +344,11 @@ void FGraphicsManager::RenderGrid()
 	}
 }
 
-void FGraphicsManager::RenderAABB(const TArray<FRenderInfo> renderInfos, const FRotator& cameraRotation)
+void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& renderInfos, const FRotator& cameraRotation)
 {
-	for (const FRenderInfo& renderInfo : renderInfos)
+	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
+		if (renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad)
 		{
 			if (!HasShowFlag(EEngineShowFlags::SF_BillboardText))
 			{
@@ -315,8 +363,8 @@ void FGraphicsManager::RenderAABB(const TArray<FRenderInfo> renderInfos, const F
 			}
 		}
 
-		FMatrix worldTransform = renderInfo.GetBillboardTransformMatrix(cameraRotation);
-		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo.ePrimitive);
+		FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(cameraRotation);
+		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (LocalminmaxBuffer == nullptr)
 		{
 			continue;
@@ -385,11 +433,11 @@ void FGraphicsManager::FlushLines()
 	mLineIndices.Reset(LINE_INDEX_CAPACITY);
 }
 
-void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera) //깊이버퍼 초기화
-{
-	mRenderer->ClearDepth();
-	RenderPrimitive(renderInfos, camera);
-}
+//void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera) //깊이버퍼 초기화
+//{
+//	mRenderer->ClearDepth();
+//	RenderSimplePrimitive(renderInfos, camera);
+//}
 /*
 void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimitive)
 {
@@ -562,7 +610,7 @@ void  FGraphicsManager::SetGridWidth(float width)
 }
 
 
-void FGraphicsManager::RenderHighLight(const FRenderInfo& RI, const FCamera& camera)
+void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
 	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
 	{

@@ -36,12 +36,47 @@ enum class EViewModeIndex : uint32
 	VMI_Wireframe,
 };
 
+enum class ERenderFlags : uint32
+{
+	RF_SimplePrimitive = 1 << 0,
+	RF_TexturedPrimitive = 1 << 1,
+	RF_BillboardText = 1 << 2,
+	RF_WorldAxis = 1 << 3,
+	RF_Gizmo = 1 << 4,
+	RF_BoundingBox = 1 << 5,
+};
+
+constexpr ERenderFlags operator|(ERenderFlags lhs, ERenderFlags rhs)
+{
+	return static_cast<ERenderFlags>(static_cast<uint32>(lhs) | static_cast<uint32>(rhs));
+}
+
+constexpr ERenderFlags operator&(ERenderFlags lhs, ERenderFlags rhs)
+{
+	return static_cast<ERenderFlags>(static_cast<uint32>(lhs) & static_cast<uint32>(rhs));
+}
+
+constexpr ERenderFlags operator~(ERenderFlags flag)
+{
+	return static_cast<ERenderFlags>(~static_cast<uint32>(flag));
+}
+
 enum class EEngineShowFlags : uint32
 {
 	SF_Primitives = 1 << 0,
 	SF_BillboardText = 1 << 1,
 	SF_WorldAxis = 1 << 2
 };
+
+constexpr EEngineShowFlags operator|(EEngineShowFlags lhs, EEngineShowFlags rhs)
+{
+	return static_cast<EEngineShowFlags>(static_cast<uint32>(lhs) | static_cast<uint32>(rhs));
+}
+
+constexpr EEngineShowFlags operator&(EEngineShowFlags lhs, EEngineShowFlags rhs)
+{
+	return static_cast<EEngineShowFlags>(static_cast<uint32>(lhs) & static_cast<uint32>(rhs));
+}
 
 inline EPrimitive StringToEPrimitive(const char* str)
 {

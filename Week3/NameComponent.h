@@ -20,4 +20,6 @@ protected:
 
 	virtual void updateComponentToWorld(const FMatrix& parentTransform) override;
 	//virtual void updateComponentToWorld() override;
+
+	virtual FRenderInfo makeRenderInfo() const override;
 };
