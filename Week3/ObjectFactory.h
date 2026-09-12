@@ -6,7 +6,7 @@
 #include "Vector.h"
 #include "Rotator.h"
 #include "TMap.h"
-#include "FName.h"
+#include "Name.h"
 
 namespace json { class JSON; }
 
