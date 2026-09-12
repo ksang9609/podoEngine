@@ -517,6 +517,11 @@ void  FGraphicsManager::SetGridWidth(float width)
 
 void FGraphicsManager::RenderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return;
+	}
+
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
 	FMatrix worldTransformMatrix = RI.GetBillboardTransformMatrix(camera.Rotation);
