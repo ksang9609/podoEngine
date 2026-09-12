@@ -62,17 +62,8 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 	float d = mCamera->mOrthoDistance;
 
 	FMatrix view = mCamera->GetViewMatrix();
-	FMatrix projection_u_p = mCamera->GetUnifiedProjectionMatrix(mAspect, mCamera->mFovDegree, d, nearZ, farZ, 1.0f);
-	FMatrix projection_u_o = mCamera->GetUnifiedProjectionMatrix(mAspect, mCamera->mFovDegree, d, nearZ, farZ, 0.0f);
 	FMatrix projection_u = mCamera->GetUnifiedProjectionMatrix(mAspect, mCamera->mFovDegree, d, nearZ, farZ, mProjectionRatio);
 
-	//mViewProjectionMatrix = view * mCamera->GetProjectionMatrix(mAspect, mCamera->mFovDegree, nearZ, farZ);
-	mViewProjectionMatrix = view * projection_u_p;
-
-	float orthoHeight = mCamera->mOrthoHeight;
-	float orthoWidth = orthoHeight * mAspect;
-	//mViewOrthogonalProjectionMatrix = view * mCamera->GetOrthographicMatrix(orthoWidth, orthoHeight, nearZ, farZ);
-	mViewOrthogonalProjectionMatrix = view * projection_u_o;
 	mViewUnifiedProjectionMatrix = view * projection_u;
 
 	// 하이라이트 두께를 화면 픽셀 기준으로 환산할 때 쓴다
