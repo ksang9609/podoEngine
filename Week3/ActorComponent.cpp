@@ -19,6 +19,11 @@ void UActorComponent::SetOwner(AActor* owner)
 	mOwner = owner;
 }
 
+void UActorComponent::ClearOwner()
+{
+	mOwner = nullptr;
+}
+
 AActor* UActorComponent::GetOwner() const
 {
 	return mOwner;

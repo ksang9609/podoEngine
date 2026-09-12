@@ -12,7 +12,10 @@ AActor::~AActor()
 {
 	for (UActorComponent* removeComponent : mComponents)
 	{
-		delete removeComponent;
+		if (removeComponent)
+		{
+			removeComponent->Destroy();
+		}
 	}
 }
 
@@ -117,9 +120,40 @@ bool AActor::RemoveComponent(uint32 componentUUID)
 		return false;
 	}
 
-	//mComponents.RemoveAt(componentIndex, 1);
-	mComponents.RemoveAtSwap(componentIndex);
+	UActorComponent* component = mComponents[componentIndex];
 
+	if (auto* sceneComponent = component->Cast<USceneComponent>())
+	{
+		sceneComponent->DetachFromParent();
+		sceneComponent->DetachAllChildren();
+	}
+	if (component == mRootComponent)
+	{
+		mRootComponent = nullptr;
+	}
+
+	mComponents.RemoveAtSwap(componentIndex);
+	component->ClearOwner();
+
+	return true;
+}
+
+bool AActor::DestroyComponent(uint32 componentUUID)
+{
+	int32 componentIndex = getComponentIndex(componentUUID);
+	if (componentIndex == -1)
+	{
+		return false;
+	}
+
+	UActorComponent* component = mComponents[componentIndex];
+
+	if (!RemoveComponent(componentUUID))
+	{
+		return false;
+	}
+
+	component->Destroy();
 	return true;
 }
 
@@ -127,7 +161,12 @@ FTransform AActor::GetTransform() const
 {
 	if (mRootComponent)
 	{
-		return mRootComponent->GetTransformMatrix();
+		// Return the transform of the root component
+		return {
+			mRootComponent->GetRelativeLocation(),
+			mRootComponent->GetRelativeRotation().Quaternion(),
+			mRootComponent->GetRelativeScale3D(),
+		};
 	}
 	else
 	{

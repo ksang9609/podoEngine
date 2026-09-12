@@ -12,14 +12,14 @@ namespace UWorldTest
 
 	class AMockActor : public AActor
 	{
-		REFLECT_CLASS(AMockActor, AActor)
+		DECLARE_OBJECT(AMockActor, AActor)
 
 		virtual void Update(TArray<FRenderInfo>* outRenderInfos) override
 		{
 			++gUpdateCounter;
 		}
 	};
-
+	IMPLEMENT_CLASS(AMockActor, AActor)
 
 	class TestUWorld : public testing::Test
 	{

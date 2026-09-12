@@ -131,6 +131,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="BillboardComponent.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
@@ -138,6 +140,7 @@
     <ClCompile Include="Name.cpp" />
     <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="JsonUtil.cpp" />
+    <ClCompile Include="NameComponent.cpp" />
     <ClCompile Include="ObjectFactory.cpp" />
     <ClCompile Include="FEditorViewportClient.cpp" />
     <ClCompile Include="GraphicsManager.cpp" />
@@ -154,6 +157,7 @@
     <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="PrimitiveComponent.cpp" />
     <ClCompile Include="Quat.cpp" />
+    <ClCompile Include="RenderInfo.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="CubeComponent.cpp" />
     <ClCompile Include="SceneData.cpp" />
@@ -163,15 +167,22 @@
     <ClInclude Include="FBoundingBox.h" />
     <ClInclude Include="Name.h" />
     <ClInclude Include="GizmoArrow.h" />
+    <ClInclude Include="NameComponent.h" />
+    <ClInclude Include="Primitives.h" />
     <ClInclude Include="Quat.h" />
+    <ClInclude Include="SurfaceSettings.h" />
+    <ClInclude Include="TexturedPrimitives.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="TSparseArray.inl">
       <FileType>Document</FileType>
     </ClInclude>
+    <ClCompile Include="WICTextureLoader.cpp" />
+    <ClCompile Include="Vector.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor.h" />
+    <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="MathUtility.cpp" />
     <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
@@ -217,13 +228,21 @@
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="CubeComponent.h" />
     <ClInclude Include="TSparseArray.h" />
+    <ClInclude Include="BillboardComponent.h" />
     <ClInclude Include="Vector.h" />
+    <ClInclude Include="WICTextureLoader.h" />
     <ClInclude Include="World.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="WindowApplication.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="ShaderFont.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="ShaderTexture.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="ShaderLine.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
@@ -235,6 +254,9 @@
   <ItemGroup>
     <None Include="Object.inl" />
     <None Include="ObjectFactory.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="FontEnglish.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

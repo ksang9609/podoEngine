@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\..\Week3\Matrix.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="TestActor.cpp" />
     <ClCompile Include="TestExample.cpp" />
@@ -86,6 +89,23 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Week3\World.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
+    <ClCompile Include="..\..\Week3\Quat.cpp" />
+    <ClCompile Include="..\..\Week3\FName.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Week3\UBillboardComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Week3\Vector.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
