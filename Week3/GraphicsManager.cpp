@@ -258,7 +258,9 @@ void FGraphicsManager::DrawGrid()
 	for (int32 i = -LineCount; i <= LineCount;i++)
 	{
 		float Spaceline = i * mgridSpacing;
-		if (Spaceline == 0) continue;
+		if (HasShowFlag(EEngineShowFlags::SF_WorldAxis)) {
+			if (Spaceline == 0) continue;
+		}
 		DrawLine(FVector3(Spaceline, -mgridExtent / 2.0f, 0), FVector3(Spaceline, mgridExtent / 2.0f, 0), FVector4(0.3f, 0.3f, 0.3f, 1.0f));  // Y축 기준 Grid
 		DrawLine(FVector3(-mgridExtent / 2.0f, Spaceline, 0), FVector3(mgridExtent / 2.0f, Spaceline, 0), FVector4(0.3f, 0.3f, 0.3f, 1.0f)); // X축 기준 Grid
 	}
