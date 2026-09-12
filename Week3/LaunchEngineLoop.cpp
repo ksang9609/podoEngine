@@ -227,26 +227,13 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		}
 
 		mGraphicsManager->Update(deltaTime);
-		mGraphicsManager->Prepare(&ViewportClient->mCamera);
-		mGraphicsManager->Render(mSceneManager->GetRenderInfos(), ViewportClient->mCamera);
-		
-		//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
-		mGraphicsManager->DrawWorldAxis();
-		mGraphicsManager->DrawGrid();
-		mGraphicsManager->DrawAABB(mSceneManager->GetRenderInfos(), ViewportClient->mCamera.Rotation);
-		mGraphicsManager->FlushLines();
 
-		//강조
-		if (mSceneManager->GetSelectedActor())
-		{
-			FRenderInfo clickedRenderInfo;
-			mSceneManager->GetSelectedActor()->GetFirstRenderInfo(clickedRenderInfo);
-			mGraphicsManager->RenderHighLight(clickedRenderInfo, ViewportClient->mCamera);
-		}
-
-		// Gizmo
-		mGraphicsManager->GizmoPrepare();
-		mGraphicsManager->RenderOverlay(ViewportClient->mGizmo.GetGizmoRenderInfo(), ViewportClient->mCamera);
+		mGraphicsManager->Render(
+			mSceneManager->GetRenderInfos(),
+			ViewportClient->mGizmo.GetGizmoRenderInfo(),
+			ViewportClient->GetCamera(),
+			mSceneManager->GetSelectedActor()
+		);
 
 		//ImGui
 		{

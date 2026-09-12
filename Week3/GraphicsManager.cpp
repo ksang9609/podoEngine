@@ -6,6 +6,7 @@
 #include "TQueue.h"
 #include "PrimitiveComponent.h"
 #include "NameComponent.h"
+#include "Actor.h"
 
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
@@ -117,9 +118,40 @@ void QueueRenderQueue(
 	}
 }
 
+void FGraphicsManager::Render(
+	const TArray<FRenderInfo>& scenerRenderInfos,
+	const TArray<FRenderInfo>& gizmoRenderInfos,
+	const FCamera& camera,
+	const AActor* selectedActor)
+{
+	// Prepare Render queue
+	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
+	// Each render info is splitted into different render queues
 
+	Prepare(&camera);
+	RenderPrimitive(scenerRenderInfos, camera);
 
-void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCamera& camera)
+	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
+	RenderWorldAxis();
+	RenderGrid();
+	RenderAABB(scenerRenderInfos, camera.GetRotation());
+	FlushLines();
+
+	//강조
+	if (selectedActor)
+	{
+		FRenderInfo clickedRenderInfo;
+		selectedActor->GetFirstRenderInfo(clickedRenderInfo);
+		RenderHighLight(clickedRenderInfo, camera);
+	}
+
+	// Gizmo
+	GizmoPrepare();
+	RenderOverlay(gizmoRenderInfos, camera);
+
+}
+
+void FGraphicsManager::RenderPrimitive(const TArray<FRenderInfo> renderInfos, const FCamera& camera)
 {
 	FMatrix viewProjection = mViewUnifiedProjectionMatrix;
 
@@ -211,7 +243,7 @@ void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVect
 	}
 }
 
-void FGraphicsManager::DrawWorldAxis()
+void FGraphicsManager::RenderWorldAxis()
 {
 	if (!HasShowFlag(EEngineShowFlags::SF_WorldAxis)) return;
 
@@ -250,7 +282,7 @@ void FGraphicsManager::DrawWorldAxis()
 	}
 }
 
-void FGraphicsManager::DrawGrid()
+void FGraphicsManager::RenderGrid()
 {
 	int LineCount = (mgridExtent / 2) / mgridSpacing;
 	for (int32 i = -LineCount; i <= LineCount;i++)
@@ -264,7 +296,7 @@ void FGraphicsManager::DrawGrid()
 	}
 }
 
-void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos, FRotator& cameraRotation)
+void FGraphicsManager::RenderAABB(const TArray<FRenderInfo> renderInfos, const FRotator& cameraRotation)
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
@@ -356,7 +388,7 @@ void FGraphicsManager::FlushLines()
 void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera) //깊이버퍼 초기화
 {
 	mRenderer->ClearDepth();
-	Render(renderInfos, camera);
+	RenderPrimitive(renderInfos, camera);
 }
 /*
 void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimitive)
