@@ -164,6 +164,7 @@ void FGraphicsManager::updateRenderQueue(
 void FGraphicsManager::Render(
 	const TArray<FRenderInfo>& scenerRenderInfos,
 	const TArray<FRenderInfo>& gizmoRenderInfos,
+	const TArray<FRenderInfo>& axisRenderInfos,
 	const FCamera& camera,
 	const AActor* selectedActor)
 {
@@ -173,12 +174,7 @@ void FGraphicsManager::Render(
 	TMap<ERenderFlags, TArray<const FRenderInfo*>> renderQueueMap;
 	updateRenderQueue(scenerRenderInfos, renderQueueMap);
 	updateRenderQueue(gizmoRenderInfos, renderQueueMap);
-
-	FRenderInfo worldAxisRenderInfo{};
-	worldAxisRenderInfo.eRenderFlags = ERenderFlags::RF_WorldAxis;
-	TArray<FRenderInfo> editorRenderInfos;
-	editorRenderInfos.Add(worldAxisRenderInfo);
-	updateRenderQueue(editorRenderInfos, renderQueueMap);
+	updateRenderQueue(axisRenderInfos, renderQueueMap);
 
 	Prepare(&camera);
 

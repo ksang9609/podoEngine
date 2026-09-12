@@ -231,6 +231,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		mGraphicsManager->Render(
 			mSceneManager->GetRenderInfos(),
 			ViewportClient->mGizmo.GetGizmoRenderInfo(),
+			mSceneManager->GetAxisRenderInfos(),
 			ViewportClient->GetCamera(),
 			mSceneManager->GetSelectedActor()
 		);
