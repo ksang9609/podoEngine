@@ -193,7 +193,6 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 
 	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
 	{
-		// 구현 필요
 		bool bPrimitives = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_Primitives));
 		if (ImGui::Checkbox("Primitives", &bPrimitives))
 		{
@@ -229,27 +228,6 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	}
 
 	ImGui::SeparatorText("Camera Control");
-
-
-	// Debug perspective ratio slider
-	//float perspectiveRatio = guiReference.GraphicsManager->GetPerspectiveRatio();
-	//const float previousPerspectiveRatio = perspectiveRatio;
-	//if (ImGui::SliderFloat("Perspective Ratio", &perspectiveRatio, 0.0f, 1.0f))
-	//{
-	//	guiReference.GraphicsManager->SetPerspectiveRatio(perspectiveRatio);
-	//	// Update camera ortho distance as the distance between camera and selected actor
-	//	if (mSelectedActor && previousPerspectiveRatio == 1.0f)
-	//	{
-	//		FCamera& camera = guiReference.ViewportClient->GetCamera();
-	//		FVector cameraToActor =
-	//			mSelectedActor->GetTransform().Location -
-	//			camera.Transform.Location;
-
-	//		const float depth = FVector::dot(cameraToActor, camera.GetForwardVector());
-	//		camera.mOrthoDistance = FMath::Max(depth, 0.1f);
-	//	}
-	//}
-	//ImGui::Text("Camera Ortho Distance: %.2f", guiReference.ViewportClient->GetCamera().mOrthoDistance);
 
 	ImGui::Text("FOV      ");
 	ImGui::SameLine();

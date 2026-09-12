@@ -4,6 +4,8 @@
 #include "Camera.h"
 #include "Console.h"
 #include "TQueue.h"
+#include "PrimitiveComponent.h"
+#include "NameComponent.h"
 
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
@@ -119,11 +121,6 @@ void QueueRenderQueue(
 
 void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCamera& camera)
 {
-	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
-	{
-		return;
-	}
-
 	FMatrix viewProjection = mViewUnifiedProjectionMatrix;
 
 	// Prepare RenderQueue
@@ -134,48 +131,54 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCame
 
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
-	for (const FRenderInfo* renderInfo : billboardRenderQueue)
+	if (HasShowFlag(EEngineShowFlags::SF_BillboardText))
 	{
-		FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
-		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
-		mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
+		for (const FRenderInfo* renderInfo : billboardRenderQueue)
+		{
+			FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
+			mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+			mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
+		}
 	}
 
-	// Render Simple Primitives
-	mRenderer->PrepareSimpleShader();
-	for (const FRenderInfo* renderInfo : simpleRenderQueue)
+	if (HasShowFlag(EEngineShowFlags::SF_Primitives))
 	{
-		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
-		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
-		if (vertexBuffer == nullptr)
+		// Render Simple Primitives
+		mRenderer->PrepareSimpleShader();
+		for (const FRenderInfo* renderInfo : simpleRenderQueue)
 		{
-			UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
-			continue;
+			FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+			mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+			FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
+			if (vertexBuffer == nullptr)
+			{
+				UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
+				continue;
+			}
+			mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 		}
-		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
-	}
 
-	// Render Textured Primitives
-	mRenderer->PrepareTextureShader();
-	for (const FRenderInfo* renderInfo : textureRenderQueue)
-	{
-		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
-		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
-		if (vertexBuffer == nullptr)
+		// Render Textured Primitives
+		mRenderer->PrepareTextureShader();
+		for (const FRenderInfo* renderInfo : textureRenderQueue)
 		{
-			UE_LOG(Error, Render, "Error: Textured vertex buffer not found for primitive type.");
-			continue;
+			FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+			mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+			FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
+			if (vertexBuffer == nullptr)
+			{
+				UE_LOG(Error, Render, "Error: Textured vertex buffer not found for primitive type.");
+				continue;
+			}
+			FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
+			if (texture == nullptr)
+			{
+				UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
+				continue;
+			}
+			mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
+				texture->SRV, texture->Sampler);
 		}
-		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
-		if (texture == nullptr)
-		{
-			UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
-			continue;
-		}
-		mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
-			texture->SRV, texture->Sampler);
 	}
 	
 }
@@ -195,11 +198,6 @@ void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const 
 
 void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVector4& color)
 {
-	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
-	{
-		return;
-	}
-
 	int32 baseVertex = mLineVertices.Num();
 	for (int32 i = 0;i < worArray.Num();i++)
 	{
@@ -268,6 +266,21 @@ void FGraphicsManager::DrawAABB(const TArray<FRenderInfo> renderInfos, FRotator&
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
+		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
+		{
+			if (!HasShowFlag(EEngineShowFlags::SF_BillboardText))
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+			{
+				continue;
+			}
+		}
+
 		FMatrix worldTransform = renderInfo.GetBillboardTransformMatrix(cameraRotation);
 		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo.ePrimitive);
 		if (LocalminmaxBuffer == nullptr)

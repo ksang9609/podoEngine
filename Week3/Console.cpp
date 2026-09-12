@@ -129,7 +129,6 @@ void ConsoleWindow::Draw(float panelWidth)
 	ImGui::Begin(mTitle.CStr(), nullptr, flags);
 
 	float FooterHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
-	// Draw console buffer
 	if (ImGui::BeginChild("ConsoleMessage", ImVec2(0, -FooterHeight), true))
 	{
 		// Auto-scroll to bottom if enabled
@@ -228,7 +227,6 @@ const FConsoleMessage& ConsoleWindow::GetMessage(size_t Index) const
 
 void ConsoleWindow::Clear()
 {
-	// Pending Buffer도 모두 삭제
 	{
 		std::lock_guard<std::mutex> Lock(
 			mPendingMutex
@@ -238,7 +236,6 @@ void ConsoleWindow::Clear()
 		mPendingBuffers[1].Reset(0);
 	}
 
-	// History 삭제
 	mMessages.Reset(0);
 
 	mFront = 0;
