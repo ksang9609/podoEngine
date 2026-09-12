@@ -52,6 +52,7 @@ FGraphicsManager::~FGraphicsManager()
 	mTexturedBufferMap.Empty();
 	mPrimitiveTextureMap.Empty();
 
+	mRenderer->ReleaseFontAtlasQuad();
 	mRenderer->ReleaseLineVertexBuffer();
 	mRenderer->ReleaseLineIndexBuffer();
 	mRenderer->ReleaseConstantBuffer();
@@ -242,8 +243,24 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 			UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
 			continue;
 		}
-		mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
-			texture->SRV, texture->Sampler);
+		/*mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
+			texture->SRV, texture->Sampler);*/
+
+		ID3D11Buffer* indexBuffer = nullptr;
+
+		if (renderInfo->ePrimitive == EPrimitive::EP_Cube)
+		{
+			indexBuffer = mRenderer->CubeIndexBuffer;
+			if (!indexBuffer)
+				continue;
+		}
+
+		mRenderer->RenderTexturePrimitive(
+			vertexBuffer->Buffer,
+			vertexBuffer->SourceNum,
+			texture->SRV,
+			texture->Sampler,
+			indexBuffer); // 마지막 인수에 전달
 	}
 }
 
@@ -458,6 +475,35 @@ void FGraphicsManager::Display()
 void FGraphicsManager::Update(float deltaTime)
 {
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
+
+	// 테스트용: deltaTime이 초 단위라는 전제
+	static float elapsed = 0.0f;
+	static size_t index = 0;
+
+	static std::string testTexts[] = {
+		"ABC",
+		"XYZ",
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+		"Hi",
+		"",
+		"Back!",
+		"sdffffffffffffffffffffffffffffffffffffffffffffff"
+	};
+
+	elapsed += deltaTime;
+
+	if (elapsed >= 1.0f)
+	{
+		elapsed = 0.0f;
+
+		if (!mRenderer->CreateFontAtlasQuad(&testTexts[index]))
+		{
+			UE_LOG(Error, Render, "Failed to update font text.");
+		}
+
+		index = (index + 1)
+			% (sizeof(testTexts) / sizeof(testTexts[0]));
+	}
 }
 
 bool FGraphicsManager::IsPerspectiveProjection() const
@@ -552,6 +598,8 @@ void FGraphicsManager::CreatePrimitiveTexture(EPrimitive ePrimitive, const wchar
 	{
 		UE_LOG(Log, Core, "Failed to create primitive texture resources.");
 	}
+
+	mRenderer->CreateSamplerState(&texture.Sampler);
 
 	mPrimitiveTextureMap.Add(ePrimitive, texture);
 }
