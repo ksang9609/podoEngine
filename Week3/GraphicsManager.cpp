@@ -206,7 +206,7 @@ void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVect
 		mLineVertices.Add({ worArray[i].x, worArray[i].y, worArray[i].z, color.x, color.y, color.z, color.w });
 	}
 	// Index Buffer 업데이트
-	TArray<int32> indicelist = { 0, 1, 1, 3, 3, 2, 2, 0, 4, 5, 5, 7, 7, 6, 6, 4, 0, 4, 1, 5, 2, 6, 3, 7 };
+	TArray<int32> indicelist = { 0, 1, 1, 3, 3, 2, 2, 0, 4, 5, 5, 7, 7, 6, 6, 4, 0, 4, 1, 5, 2, 6, 3, 7 }; // 밑면 -> 윗면 -> 기둥 순 
 	for (int32 j = 0;j < indicelist.Num();j++)
 	{
 		mLineIndices.Add(baseVertex + indicelist[j]);
@@ -517,6 +517,11 @@ void  FGraphicsManager::SetGridWidth(float width)
 
 void FGraphicsManager::RenderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
+	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return;
+	}
+
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
 	FMatrix worldTransformMatrix = RI.GetBillboardTransformMatrix(camera.Rotation);
