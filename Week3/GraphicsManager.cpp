@@ -175,8 +175,24 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCame
 			UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
 			continue;
 		}
-		mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
-			texture->SRV, texture->Sampler);
+		/*mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
+			texture->SRV, texture->Sampler);*/
+
+		ID3D11Buffer* indexBuffer = nullptr;
+
+		if (renderInfo->ePrimitive == EPrimitive::EP_Cube)
+		{
+			indexBuffer = mRenderer->CubeIndexBuffer;
+			if (!indexBuffer)
+				continue;
+		}
+
+		mRenderer->RenderTexturePrimitive(
+			vertexBuffer->Buffer,
+			vertexBuffer->SourceNum,
+			texture->SRV,
+			texture->Sampler,
+			indexBuffer); // 마지막 인수에 전달
 	}
 	
 }

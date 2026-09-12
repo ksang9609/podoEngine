@@ -89,11 +89,26 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const int rows = 4;
 	const int faceCells[6] = { 6, 4, 13, 5, 1, 9 };
 
-	FVertexTextured atlasVertices[36];
+	// 24: 인덱스 방식 / 36: 기존 방식
+	FVertexTextured atlasVertices[24];
 
 	BuildCubeAtlasVertices(atlasVertices, columns, rows,faceCells);
 
 	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
+
+	{
+		URenderer* renderer = mGraphicsManager->GetRenderer();
+
+		D3D11_BUFFER_DESC desc = {};
+		desc.Usage = D3D11_USAGE_IMMUTABLE;
+		desc.ByteWidth = sizeof(CubeTextureIndices);
+		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+		D3D11_SUBRESOURCE_DATA data = {};
+		data.pSysMem = CubeTextureIndices;
+
+		renderer->Device->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
+	}
 
 	// 구 텍스쳐 uv 매핑
 	constexpr std::size_t sphereVertexCount = sizeof(Sphere_vertices) / sizeof(Sphere_vertices[0]);

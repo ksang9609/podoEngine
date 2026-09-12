@@ -85,6 +85,19 @@ inline FVertexTextured CubeTextureVertices[] =
 	{ 0.5f, -0.5f,  0.5f,  1.0f, 1.0f },
 };
 
+// 6개의 면을 그리는 index
+inline unsigned int CubeTextureIndices[36] =
+{
+	 0,  1,  2,     0,  2,  3, // -Z
+	 4,  5,  6,     4,  6,  7, // +Z
+	 8,  9, 10,     8, 10, 11, // -X
+	12, 13, 14,    12, 14, 15, // +X
+	16, 17, 18,    16, 18, 19, // +Y
+	20, 21, 22,    20, 22, 23, // -Y
+};
+
+
+
 // 한 텍스쳐를 꽉 채운 6칸으로 생성할 때
 inline void BuildCubeAtlasVertices(FVertexTextured(&outVertices)[36])
 {
@@ -226,6 +239,7 @@ inline void BuildCubeAtlasVertices(FVertexTextured(&outVertices)[36], int column
 	}
 }
 
+
 // sphere uv 매핑(y축을 중심)
 template <std::size_t N>
 inline void BuildSphereTextureVertices(const FVertexSimple(&source)[N],	FVertexTextured(&outVertices)[N])
@@ -334,3 +348,49 @@ inline void BuildSphereTextureVertices(const FVertexSimple(&source)[N],	FVertexT
 		}
 	}
 }
+
+
+// 면별 A, B, C, A, C, D → A, B, C, D
+inline void CompactCubeVertices(
+	const FVertexTextured(&source)[36],
+	FVertexTextured(&destination)[24])
+{
+	constexpr int offsets[4] = { 0, 1, 2, 5 };
+
+	for (int face = 0; face < 6; ++face)
+	{
+		for (int vertex = 0; vertex < 4; ++vertex)
+		{
+			destination[face * 4 + vertex] =
+				source[face * 6 + offsets[vertex]];
+		}
+	}
+}
+
+// 인덱스 버퍼용: 기본 아틀라스
+inline void BuildCubeAtlasVertices(
+	FVertexTextured(&outVertices)[24])
+{
+	FVertexTextured expanded[36];
+
+	// 기존 36정점 버전 호출: UV 방향 처리도 그대로 재사용
+	BuildCubeAtlasVertices(expanded);
+
+	CompactCubeVertices(expanded, outVertices);
+}
+
+// 인덱스 버퍼용: 사용자 지정 아틀라스
+inline void BuildCubeAtlasVertices(
+	FVertexTextured(&outVertices)[24],
+	int columns,
+	int rows,
+	const int(&faceCells)[6])
+{
+	FVertexTextured expanded[36];
+
+	BuildCubeAtlasVertices(expanded, columns, rows, faceCells);
+
+	CompactCubeVertices(expanded, outVertices);
+}
+
+

@@ -7,6 +7,7 @@
 //#include "WICTextureLoader.h"
 #include <directxtk/DDSTextureLoader.h>
 #include "Console.h"
+#include "TexturedPrimitives.h"
 
 #pragma comment(lib, "DirectXTK.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -458,6 +459,11 @@ void URenderer::Release()
 
 	// 테스트
 
+	if (CubeIndexBuffer)
+	{
+		CubeIndexBuffer->Release();
+		CubeIndexBuffer = nullptr;
+	}
 	ReleaseFontAtlasTexture();
 	ReleaseFontTexture();
 	//ReleaseTestTexture();
@@ -856,7 +862,7 @@ void URenderer::RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 }
 
 void URenderer::RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
-	ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState)
+	ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer)
 {
 	UINT offset = 0;
 	// Bind the vertex buffer
@@ -867,7 +873,16 @@ void URenderer::RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
 	DeviceContext->PSSetSamplers(0, 1, &samplerState);
 
 
-	DeviceContext->Draw(numVertices, 0);
+	//DeviceContext->Draw(numVertices, 0);
+
+
+	DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// 임시 큐브
+	if (indexBuffer)
+		DeviceContext->DrawIndexed(36, 0, 0);
+	else
+		DeviceContext->Draw(numVertices, 0);
 }
 
 //void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVertices)
@@ -1691,3 +1706,5 @@ void URenderer::ReleasePrimitiveTextureResources(
 		samplerState = nullptr;
 	}
 }
+
+
