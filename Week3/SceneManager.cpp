@@ -607,7 +607,7 @@ void FSceneManager::LoadScene(std::string_view filePath, const FFileManager& fil
 	}
 	catch (const std::exception& e)
 	{
-		UE_LOG_F("Failed to read scene file {}: {}", filePath, e.what());
+		UE_LOG_F(Error, Core, "Failed to read scene file {}: {}", filePath, e.what());
 		return;
 	}
 
@@ -643,7 +643,7 @@ void FSceneManager::LoadScene(std::string_view filePath, const FFileManager& fil
 	}
 	catch (const std::exception& e)
 	{
-		UE_LOG_F("Failed to load scene file {}: {}", filePath, e.what());
+		UE_LOG_F(Error, Core, "Failed to load scene file {}: {}", filePath, e.what());
 	}
 }
 
@@ -653,17 +653,17 @@ void  FSceneManager::SetSelectedActor(AActor* actor)
 {
 	if (actor == nullptr)
 	{
-		UE_LOG_F("SetSelectedActor: Attempted to set selected actor to nullptr.");
+		UE_LOG_F(Warning, Core, "SetSelectedActor: Attempted to set selected actor to nullptr.");
 		return;
 	}
 
 	if (actor == mSelectedActor)
 	{
-		UE_LOG_F("SetSelectedActor: Actor with UUID {} is already selected.", actor->UUID);
+		UE_LOG_F(Log, Core, "SetSelectedActor: Actor with UUID {} is already selected.", actor->UUID);
 		return; // No change
 	}
 
-	UE_LOG_F("SetSelectedActor: Actor with UUID {} is now selected.", actor->UUID);
+	UE_LOG_F(Log, Core, "SetSelectedActor: Actor with UUID {} is now selected.", actor->UUID);
 	mSelectedActor = actor;
 }
 
