@@ -101,13 +101,24 @@ void URenderer::Create(HWND hWindow)
 
 	// 일반 Primitive용 텍스처 리소스 생성
 	// 경로는 실제 보유한 DDS 파일 경로로 변경
-	if (!CreatePrimitiveTextureResources(L"Dice.dds"))
+	// CubeTextureSample.dds / Dice.dds
+	if (!CreatePrimitiveTextureResources())
 	{
 		MessageBox(
 			hWindow,
 			L"Primitive 텍스처 리소스 생성에 실패했습니다.",
 			L"Primitive texture initialization error",
 			MB_OK | MB_ICONERROR);
+	}
+	// 바로 여기에 추가
+	if (!LoadTexture(L"CubeTextureSample.dds", &CubeTextureSRV))
+	{
+		OutputDebugStringA("Cube texture load failed.\n");
+	}
+
+	if (!LoadTexture(L"EarthTexture.dds", &SphereTextureSRV))
+	{
+		OutputDebugStringA("Sphere texture load failed.\n");
 	}
 }
 
@@ -637,9 +648,9 @@ void URenderer::ReleaseShader()
 	}
 }
 
-bool URenderer::CreatePrimitiveTextureResources(const wchar_t* texturePath)
+bool URenderer::CreatePrimitiveTextureResources()
 {
-	if (!Device || !texturePath)
+	if (!Device)
 		return false;
 
 	// 재초기화하는 경우 기존 리소스 정리
@@ -745,17 +756,7 @@ bool URenderer::CreatePrimitiveTextureResources(const wchar_t* texturePath)
 		if (FAILED(hr))
 			break;
 
-		// 6. 실제 이미지 파일 로드
-		hr = DirectX::CreateDDSTextureFromFile(
-			Device,
-			texturePath,
-			nullptr,
-			&PrimitiveTextureSRV);
-
-		if (FAILED(hr))
-			break;
-
-		// 7. 텍스처를 읽는 방법 설정
+		// 6. 텍스처를 읽는 방법 설정
 		D3D11_SAMPLER_DESC samplerDesc = {};
 		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -789,6 +790,44 @@ bool URenderer::CreatePrimitiveTextureResources(const wchar_t* texturePath)
 		ReleasePrimitiveTextureResources();
 
 	return success;
+}
+
+// 개별 이미지: 지정된 파일을 로딩해서 결과를 반환
+bool URenderer::LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV)
+{
+	if (!Device || !texturePath || texturePath[0] == L'\0' || !outSRV)
+	{
+		OutputDebugStringA("LoadTexture: invalid argument or Device.\n");
+		return false;
+	}
+
+	// 임시 포인터로 로딩해서 실패 시 기존 텍스처를 보존
+	ID3D11ShaderResourceView* loadedSRV = nullptr;
+
+	const HRESULT hr = DirectX::CreateDDSTextureFromFile(
+		Device,
+		texturePath,
+		nullptr,
+		&loadedSRV);
+
+	if (FAILED(hr))
+	{
+		if (loadedSRV)
+			loadedSRV->Release();
+
+		OutputDebugStringW(L"LoadTexture failed: ");
+		OutputDebugStringW(texturePath);
+		OutputDebugStringW(L"\n");
+
+		return false;
+	}
+
+	// 성공한 경우에만 기존 텍스처를 교체
+	if (*outSRV)
+		(*outSRV)->Release();
+
+	*outSRV = loadedSRV;
+	return true;
 }
 
 void URenderer::Prepare(bool bWireFrame)
@@ -847,7 +886,7 @@ void URenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 	DeviceContext->Draw(numVertices, 0);
 }
 
-void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVertices)
+void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVertices,ID3D11ShaderResourceView* textureSRV)
 {
 	if (!DeviceContext ||
 		!vertexBuffer ||
@@ -856,7 +895,7 @@ void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVert
 		!PrimitiveTextureVertexShader ||
 		!PrimitiveTexturePixelShader ||
 		!PrimitiveTextureLayout ||
-		!PrimitiveTextureSRV ||
+		!textureSRV ||
 		!PrimitiveTextureSampler ||
 		!DepthStencilState)
 	{
@@ -883,8 +922,9 @@ void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVert
 	//  GraphicsManager에서 갱신한 변환 행렬 연결
 	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
 
+
 	// HLSL의 t0에 텍스처, s0에 샘플러 연결
-	DeviceContext->PSSetShaderResources(0, 1, &PrimitiveTextureSRV);
+	DeviceContext->PSSetShaderResources(0, 1, &textureSRV);
 
 	DeviceContext->PSSetSamplers(0, 1, &PrimitiveTextureSampler);
 
@@ -1587,10 +1627,16 @@ void URenderer::ReleasePrimitiveTextureResources()
 		PrimitiveTextureLayout = nullptr;
 	}
 
-	if (PrimitiveTextureSRV)
+	if (CubeTextureSRV)
 	{
-		PrimitiveTextureSRV->Release();
-		PrimitiveTextureSRV = nullptr;
+		CubeTextureSRV->Release();
+		CubeTextureSRV = nullptr;
+	}
+
+	if (SphereTextureSRV)
+	{
+		SphereTextureSRV->Release();
+		SphereTextureSRV = nullptr;
 	}
 
 	if (PrimitiveTextureSampler)

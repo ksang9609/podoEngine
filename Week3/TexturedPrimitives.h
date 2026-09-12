@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Renderer.h" // FVertexTextured 정의
+#include <cmath>
 
 inline FVertexTextured QuadTextureVertices[] =
 {
@@ -84,12 +85,12 @@ inline FVertexTextured CubeTextureVertices[] =
 	{ 0.5f, -0.5f,  0.5f,  1.0f, 1.0f },
 };
 
-
+// 한 텍스쳐를 꽉 채운 6칸으로 생성할 때
 inline void BuildCubeAtlasVertices(FVertexTextured(&outVertices)[36])
 {
 	// 기존 면 순서: -Z, +Z, -X, +X, +Y, -Y
 	// 각 면에 배정할 아틀라스 칸 번호
-/*	const int faceCells[6] = { 0, 1, 2, 3, 4, 5 };
+/*	const int faceCells[6] = { 0, 1, 2, 3, 4, 5 };a
 
 	for (int face = 0; face < 6; ++face)
 	{
@@ -161,6 +162,175 @@ inline void BuildCubeAtlasVertices(FVertexTextured(&outVertices)[36])
 
 			outVertices[index].u = (column + u) / 3.0f;
 			outVertices[index].v = (row + v) / 2.0f;
+		}
+	}
+}
+
+// sample과 동일하게 인덱스로 큐브 면을 나타낼때
+inline void BuildCubeAtlasVertices(FVertexTextured(&outVertices)[36], int columns, int rows, const int(&faceCells)[6])
+{
+	for (int face = 0; face < 6; ++face)
+	{
+		const int cellIndex = faceCells[face];
+
+		assert(cellIndex >= 0);
+		assert(cellIndex / columns < rows);
+
+		const int column = cellIndex % columns;
+		const int row = cellIndex / columns;
+
+		for (int vertex = 0; vertex < 6; ++vertex)
+		{
+			const int index = face * 6 + vertex;
+			const FVertexTextured& source = CubeTextureVertices[index];
+
+			// 정점 위치와 원본 UV 복사
+			outVertices[index] = source;
+
+			float u = source.u;
+			float v = source.v;
+
+			// face별 그림 방향 유지
+			switch (face)
+			{
+			case 0: // -Z
+				u = source.v;
+				v = 1.0f - source.u;
+				break;
+
+			case 1: // +Z
+			case 2: // -X
+				u = 1.0f - source.v;
+				v = source.u;
+				break;
+
+			case 3: // +X
+				u = source.v;
+				v = 1.0f - source.u;
+				break;
+
+			case 4: // +Y
+				break;
+
+			case 5: // -Y
+				u = 1.0f - source.u;
+				v = 1.0f - source.v;
+				break;
+			}
+
+			// 면 내부의 0~1 UV를 선택한 칸으로 변환
+			outVertices[index].u =	(column + u) / static_cast<float>(columns);
+
+			outVertices[index].v =	(row + v) / static_cast<float>(rows);
+		}
+	}
+}
+
+// sphere uv 매핑(y축을 중심)
+template <std::size_t N>
+inline void BuildSphereTextureVertices(const FVertexSimple(&source)[N],	FVertexTextured(&outVertices)[N])
+{
+	static_assert(N % 3 == 0, "정점 개수는 3의 배수여야 합니다.");
+
+	constexpr float pi = 3.14159265358979323846f;
+	// 부동 소수점 처리
+	constexpr float poleEpsilon = 0.00001f;
+
+	// 삼각형 하나씩 처리
+	for (std::size_t i = 0; i < N; i += 3)
+	{
+		bool isPole[3] = {};
+
+		// 위치 복사 및 기본 UV 계산
+		for (int j = 0; j < 3; ++j)
+		{
+			const FVertexSimple& src = source[i + j];
+			FVertexTextured& dst = outVertices[i + j];
+
+			dst.x = src.x;
+			dst.y = src.y;
+			dst.z = src.z;
+
+			const float length = std::sqrt(	src.x * src.x + src.y * src.y +	src.z * src.z);
+
+			// 정상적인 구 표면에는 원점 정점이 없음
+			if (length == 0.0f)
+			{
+				dst.u = 0.0f;
+				dst.v = 0.0f;
+				continue;
+			}
+
+			// 벡터 정규화
+			const float nx = src.x / length;
+			float ny = src.y / length;
+			const float nz = src.z / length;
+
+			// acos 입력 범위를 부동소수점 오차로부터 보호
+			if (ny > 1.0f) ny = 1.0f;
+			if (ny < -1.0f) ny = -1.0f;
+
+			// x= 0, z = 0인지 확인(북극과 남극)
+			isPole[j] =	nx * nx + nz * nz < poleEpsilon * poleEpsilon;
+
+
+			// 극점의 u는 아래에서 따로 계산
+			dst.u = isPole[j] ? 0.0f : 0.5f + std::atan2(nz, nx) / (2.0f * pi);
+
+			// acos의 범우: 0~ pi
+			dst.v = std::acos(ny) / pi;
+		}
+
+		// 극점을 제외하고 이음새를 넘는지 확인
+		float minU = 1.0f;
+		float maxU = 0.0f;
+		int nonPoleCount = 0;
+
+		for (int j = 0; j < 3; ++j)
+		{
+			if (isPole[j])
+				continue;
+
+			const float u = outVertices[i + j].u;
+
+			if (u < minU) minU = u;
+			if (u > maxU) maxU = u;
+			++nonPoleCount;
+		}
+
+		// 예: 0.98, 0.02 → 0.98, 1.02 => 이음새를 가로지른다.
+		if (nonPoleCount > 1 && maxU - minU > 0.5f)
+		{
+			for (int j = 0; j < 3; ++j)
+			{
+				if (!isPole[j] && outVertices[i + j].u < 0.5f)
+				{
+					outVertices[i + j].u += 1.0f;
+				}
+			}
+		}
+		// UV 값이 1보다 커지는데 괜찮은가?
+		// => 텍스처 주소 모드가 Wrap이면 상관없다.
+		// samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; 
+
+
+		// 극점의 u는 보정된 주변 u의 평균으로 설정
+		float sumU = 0.0f;
+
+		for (int j = 0; j < 3; ++j)
+		{
+			if (!isPole[j])
+				sumU += outVertices[i + j].u;
+		}
+
+		const float poleU = nonPoleCount > 0
+			? sumU / static_cast<float>(nonPoleCount)
+			: 0.5f;
+
+		for (int j = 0; j < 3; ++j)
+		{
+			if (isPole[j])
+				outVertices[i + j].u = poleU;
 		}
 	}
 }

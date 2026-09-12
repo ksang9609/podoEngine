@@ -126,7 +126,23 @@ void FGraphicsManager::Render(const TArray<FRenderInfo> renderInfos, const FCame
 
 		if (renderInfo.bUseTexture)
 		{
-			mRenderer->RenderTexturedPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+			ID3D11ShaderResourceView* textureSRV = nullptr;
+
+			switch (renderInfo.ePrimitive)
+			{
+			case EPrimitive::EP_Cube:
+				textureSRV = mRenderer->CubeTextureSRV;
+				break;
+
+			case EPrimitive::EP_Sphere:
+				textureSRV = mRenderer->SphereTextureSRV;
+				break;
+
+			default:
+				break;
+			}
+
+			mRenderer->RenderTexturedPrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum, textureSRV);
 		}
 		else
 		{

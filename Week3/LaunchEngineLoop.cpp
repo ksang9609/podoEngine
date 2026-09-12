@@ -7,6 +7,7 @@
 #include "Console.h"
 #include "GraphicsManager.h"
 #include "CubeComponent.h"
+#include "SphereComponent.h"
 #include "ObjectFactory.h"
 #include "Object.h"
 #include "GizmoArrow.h"
@@ -79,9 +80,29 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
 
 	// 큐브 텍스처 6개로 나눈 버전을 사용하려면
-	BuildCubeAtlasVertices(CubeTextureVertices);
+	/*BuildCubeAtlasVertices(CubeTextureVertices);
 
-	mGraphicsManager->CreateTexturedBuffer(	EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));*/
+
+	// 예시 텍스쳐 사용용
+	const int columns = 4;
+	const int rows = 4;
+	const int faceCells[6] = { 6, 4, 13, 5, 1, 9 };
+
+	FVertexTextured atlasVertices[36];
+
+	BuildCubeAtlasVertices(atlasVertices, columns, rows,faceCells);
+
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
+
+	// 구 텍스쳐 uv 매핑
+	constexpr std::size_t sphereVertexCount = sizeof(Sphere_vertices) / sizeof(Sphere_vertices[0]);
+
+	FVertexTextured sphereTextureVertices[sphereVertexCount];
+	BuildSphereTextureVertices(Sphere_vertices,	sphereTextureVertices);
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices));
+
+
 
 	FrameTimer = new FFrameTimer(120);
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
@@ -125,6 +146,24 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 			FObjectFactory::ConstructObject<AActor>();
 
 		actor->AddRootSceneComponent(cube);
+		mSceneManager->GetCurrentWorld()->AddActor(actor);
+	}
+
+	{
+		USphereComponent* sphere =
+			FObjectFactory::ConstructObject<USphereComponent>(
+				FVector(0.0f, 1.5f, 0.0f),
+				FRotator(0.0f, 0.0f, -90.0f),
+				FVector(1.0f, 1.0f, 1.0f));
+
+		// 구의 텍스처 버퍼와 텍스처 셰이더 사용
+		sphere->SetUseTexture(true);
+
+		AActor* actor =
+			FObjectFactory::ConstructObject<AActor>();
+
+		actor->AddRootSceneComponent(sphere);
+
 		mSceneManager->GetCurrentWorld()->AddActor(actor);
 	}
 	//test code
