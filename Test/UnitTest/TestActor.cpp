@@ -11,13 +11,13 @@ namespace AActorTest
 
 	class AMockActor : public AActor
 	{
-		REFLECT_CLASS(AMockActor, AActor)
+		DECLARE_OBJECT(AMockActor, AActor)
 	public:
 	};
 
 	class UMockSceneComponent : public USceneComponent
 	{
-		REFLECT_CLASS(UMockSceneComponent, USceneComponent)
+		DECLARE_OBJECT(UMockSceneComponent, USceneComponent)
 	public:
 	};
 
@@ -41,6 +41,8 @@ namespace AActorTest
 		delete mockSceneComponent;
 	}
 
+	IMPLEMENT_CLASS(AMockActor, AActor)
+	IMPLEMENT_CLASS(UMockSceneComponent, USceneComponent)
 	TEST(TestActor, WhenRemoveNotAddedComponent_ReturnFalse)
 	{
 		AMockActor* mockActor = FObjectFactory::ConstructObject<AMockActor>();

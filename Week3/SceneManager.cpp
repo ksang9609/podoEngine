@@ -24,7 +24,8 @@
 #include "CubeComponent.h"
 #include "ActorComponent.h"
 
-FSceneManager::FSceneManager()
+FSceneManager::FSceneManager(const FCamera& viewportCameraRef)
+	: mViewportCameraRef(viewportCameraRef)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	mPanelWidth = io.DisplaySize.x * MIN_WIDTH_RATIO;
@@ -109,7 +110,7 @@ void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
 	// NOTE: This name array must be edited when adding new primitive types to EPrimitive enum.
 	ImGui::SeparatorText("Spawn Actor");
 
-	const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle", "GizmoArrow", "Circle" };
+	const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle", "GizmoArrow", "Circle", "BillboardQuad"};
 	int32 primitiveTypeIndex = static_cast<int32>(mGuiInputField.PrimitiveType);
 	int32 spawnCount = mGuiInputField.SpawnCount;
 

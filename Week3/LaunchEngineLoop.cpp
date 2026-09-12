@@ -7,11 +7,8 @@
 #include "Console.h"
 #include "GraphicsManager.h"
 #include "CubeComponent.h"
+#include "SphereComponent.h"
 #include "ObjectFactory.h"
-#include "Cube.h"
-#include "Sphere.h"
-#include "Circle.h"
-#include "Triangle.h"
 #include "Object.h"
 #include "GizmoArrow.h"
 #include "ImGui/imgui.h"
@@ -21,6 +18,14 @@
 #include "World.h"
 #include "Name.h"
 #include "SceneManager.h"
+
+// Primitive vertices definitions
+#include "Cube.h"
+#include "Sphere.h"
+#include "Circle.h"
+#include "Triangle.h"
+#include "Primitives.h"
+#include "TexturedPrimitives.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -72,6 +77,35 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Circle, Circle_vertices, sizeof(Circle_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
+	mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
+
+	// 큐브 텍스처 6개로 나눈 버전을 사용하려면
+	/*BuildCubeAtlasVertices(CubeTextureVertices);
+
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));*/
+
+	// 예시 텍스쳐 사용용
+	const int columns = 4;
+	const int rows = 4;
+	const int faceCells[6] = { 6, 4, 13, 5, 1, 9 };
+
+	FVertexTextured atlasVertices[36];
+
+	BuildCubeAtlasVertices(atlasVertices, columns, rows,faceCells);
+
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
+
+	// 구 텍스쳐 uv 매핑
+	constexpr std::size_t sphereVertexCount = sizeof(Sphere_vertices) / sizeof(Sphere_vertices[0]);
+
+	FVertexTextured sphereTextureVertices[sphereVertexCount];
+	BuildSphereTextureVertices(Sphere_vertices,	sphereTextureVertices);
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices));
+
+	// mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"CubeTextureSample.dds");
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"EarthTexture.dds");
+
 
 	FrameTimer = new FFrameTimer(120);
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
@@ -79,14 +113,62 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
-	mSceneManager = new FSceneManager();
+	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
 	mFileManager = new FFileManager();
 
 	mSceneManager->Initialize(*ViewportClient, mGraphicsManager);
 
 	mSceneManager->NewScene();
 	// mSceneManager->LoadScene("TestScene", *mFileManager);
+	{
+		UCubeComponent* cube =
+			FObjectFactory::ConstructObject<UCubeComponent>(
+				FVector(0.0f, -1.5f, 0.0f),
+				FRotator(0.0f, 0.0f, 0.0f),
+				FVector(1.0f, 1.0f, 1.0f));
 
+		cube->SetUseTexture(true);
+
+		AActor* actor =
+			FObjectFactory::ConstructObject<AActor>();
+
+		actor->AddRootSceneComponent(cube);
+		mSceneManager->GetCurrentWorld()->AddActor(actor);
+	}
+
+	{
+		UCubeComponent* cube =
+			FObjectFactory::ConstructObject<UCubeComponent>(
+				FVector(0.0f, 1.5f, 0.0f),
+				FRotator(0.0f, 0.0f, 0.0f),
+				FVector(1.0f, 1.0f, 1.0f));
+
+		cube->SetUseTexture(false);
+
+		AActor* actor =
+			FObjectFactory::ConstructObject<AActor>();
+
+		actor->AddRootSceneComponent(cube);
+		mSceneManager->GetCurrentWorld()->AddActor(actor);
+	}
+
+	{
+		USphereComponent* sphere =
+			FObjectFactory::ConstructObject<USphereComponent>(
+				FVector(0.0f, 1.5f, 0.0f),
+				FRotator(0.0f, 0.0f, -90.0f),
+				FVector(1.0f, 1.0f, 1.0f));
+
+		// 구의 텍스처 버퍼와 텍스처 셰이더 사용
+		sphere->SetUseTexture(true);
+
+		AActor* actor =
+			FObjectFactory::ConstructObject<AActor>();
+
+		actor->AddRootSceneComponent(sphere);
+
+		mSceneManager->GetCurrentWorld()->AddActor(actor);
+	}
 	//test code
 	//{
 	//	UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
@@ -146,13 +228,12 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		mGraphicsManager->Update(deltaTime);
 		mGraphicsManager->Prepare(&ViewportClient->mCamera);
-		mGraphicsManager->Render(mSceneManager->GetRenderInfos());
+		mGraphicsManager->Render(mSceneManager->GetRenderInfos(), ViewportClient->mCamera);
 		
-
 		//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
 		mGraphicsManager->DrawWorldAxis();
 		mGraphicsManager->DrawGrid();
-		mGraphicsManager->DrawAABB(mSceneManager->GetRenderInfos());
+		mGraphicsManager->DrawAABB(mSceneManager->GetRenderInfos(), ViewportClient->mCamera.Rotation);
 		mGraphicsManager->FlushLines();
 
 		//강조
@@ -160,12 +241,12 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		{
 			FRenderInfo clickedRenderInfo;
 			mSceneManager->GetSelectedActor()->GetFirstRenderInfo(clickedRenderInfo);
-			mGraphicsManager->RenderHighLight(clickedRenderInfo);
+			mGraphicsManager->RenderHighLight(clickedRenderInfo, ViewportClient->mCamera);
 		}
 
 		// Gizmo
 		mGraphicsManager->GizmoPrepare();
-		mGraphicsManager->RenderOverlay(ViewportClient->mGizmo.GetGizmoRenderInfo());
+		mGraphicsManager->RenderOverlay(ViewportClient->mGizmo.GetGizmoRenderInfo(), ViewportClient->mCamera);
 
 		//ImGui
 		{
@@ -173,6 +254,11 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		}
 
+		// 테스트용 쿼드 그리기
+		//mGraphicsManager->GetRenderer()->RenderTestQuad();
+
+
+		///
 		mGraphicsManager->Display();
 	}
 

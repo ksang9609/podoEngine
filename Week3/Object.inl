@@ -11,7 +11,7 @@ public:                                                                         
 private:
 
 #define IMPLEMENT_CLASS(className, superClassName)                               \
-[[maybe_unused]] static constexpr int CONCAT(RTTI_Tag_, ClassName) = 0;          \
+[[maybe_unused]] static constexpr int CONCAT(RTTI_Tag_, className) = 0;          \
 FClassInfo className::ClassInfo(                                                 \
     #className,                                                                  \
     superClassName::GetClass(),                                                  \

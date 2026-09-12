@@ -1,16 +1,20 @@
 ﻿#include "FEditorViewportClient.h"
 
-#include "Cube.h"
-#include "Sphere.h"
-#include "Triangle.h"
-#include "GizmoArrow.h"
-#include "Circle.h"
 #include "WindowApplication.h"
 #include "ImGui/imgui.h"
 #include "Console.h"
 #include "SceneManager.h"
 #include "MathUtility.h"
 #include "GraphicsManager.h"
+
+// Primitive vertices definitions
+#include "Cube.h"
+#include "Sphere.h"
+#include "Triangle.h"
+#include "GizmoArrow.h"
+#include "Circle.h"
+#include "Primitives.h"
+
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
 // 포인터로 받으면 배열 크기 정보가 사라지므로 여기서 개수를 같이 넘긴다.
@@ -38,12 +42,16 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 		OutVertices = Circle_vertices;
 		OutCount = static_cast<uint32>(sizeof(Circle_vertices) / sizeof(FVertexSimple));
 		return true;
+	case EPrimitive::EP_BillboardQuad:
+		OutVertices = Quad_vertices;
+		OutCount = static_cast<uint32>(sizeof(Quad_vertices) / sizeof(FVertexSimple));
+		return true;
 	}
 
 	return false;
 }
 
-void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, float perspectiveRatio)
+void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FRenderInfo>& renderInfos, float perspectiveRatio)
 {
 	bMouseHit = false;
 
@@ -87,8 +95,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, 
 	}
 
 	// Object 탐색
-	const TArray<FRenderInfo> RenderInfos = World->GetRenderInfos();
-	for (const FRenderInfo& RI : RenderInfos)
+	for (const FRenderInfo& RI : renderInfos)
 	{
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
@@ -97,7 +104,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, UWorld* World, 
 			continue;   // 모르는 프리미티브는 건너뛴다
 		}
 
-		const FMatrix WorldToLocal = RI.WorldTransformMatrix.Inverse();
+		const FMatrix WorldToLocal = RI.GetBillboardTransformMatrix(mCamera.Rotation).Inverse();
 
 		//역행렬이 존재하지 않으면(스케일이 작아 det이 0에 가까운 경우) Racast 대상에서 제외
 		if (WorldToLocal == FMatrix::Zero) continue;
@@ -202,7 +209,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	}
 
 
-	RayCast(ViewportInfo, sceneManager->GetCurrentWorld(), perspectiveRatio);
+	RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio);
 
 	//RayCast
 

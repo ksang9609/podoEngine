@@ -6,6 +6,8 @@
 #include "PrimitiveComponent.h"
 #include "Object.h"
 
+#include "NameComponent.h"
+
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
 	if (!classInfo || !classInfo->Constructor)
@@ -47,6 +49,9 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 
 	actor->AddRootSceneComponent(component);
 
+	/* DEBUG */
+	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>("Test", FVector3{ 0, 0, 2 });
+	billboardComponent.AttachTo(*component);
 	return actor;
 }
 

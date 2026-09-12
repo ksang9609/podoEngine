@@ -9,22 +9,22 @@ namespace UObjectTest
 
 	class UMockObject : public UObject
 	{
-		REFLECT_CLASS(UMockObject, UObject);
+		DECLARE_OBJECT(UMockObject, UObject);
 	};
 
 	class UMockObjectChildA : public UMockObject
 	{
-		REFLECT_CLASS(UMockObjectChildA, UMockObject);
+		DECLARE_OBJECT(UMockObjectChildA, UMockObject);
 	};
 
 	class UMockObjectChildB : public UMockObject
 	{
-		REFLECT_CLASS(UMockObjectChildB, UMockObject);
+		DECLARE_OBJECT(UMockObjectChildB, UMockObject);
 	};
 
 	class UMockObjectParameter : public UObject
 	{
-		REFLECT_CLASS(UMockObjectParameter, UObject);
+		DECLARE_OBJECT(UMockObjectParameter, UObject);
 
 	public:
 		int32 Param1;
@@ -50,6 +50,11 @@ namespace UObjectTest
 			Param2 = inJson.at("Properties").at("Param2").ToInt();
 		}
 	};
+
+	IMPLEMENT_CLASS(UMockObject, UObject);
+	IMPLEMENT_CLASS(UMockObjectChildA, UMockObject);
+	IMPLEMENT_CLASS(UMockObjectChildB, UMockObject);
+	IMPLEMENT_CLASS(UMockObjectParameter, UObject);
 
 	TEST(TestUObject, UObject_WhenCreatingInstance_ReturnsCorrectType)
 	{

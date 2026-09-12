@@ -20,9 +20,17 @@ public:
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
 
+	template<typename TComponent, typename... Args>
+		requires std::derived_from<TComponent, USceneComponent>
+	TComponent& CreateAndAddComponent(Args&&... args);
+
 	void AddComponent(UActorComponent* actorComponent);
 	void AddRootSceneComponent(USceneComponent* sceneComponent);
+
+	// Remove a component from the actor but does not destroy it.
 	bool RemoveComponent(uint32 componentUUID);
+
+	bool DestroyComponent(uint32 componentUUID);
 
 	FTransform GetTransform() const;
 	FRotator GetRotator() const;
@@ -50,3 +58,21 @@ private:
 	bool mbStarted = false;
 };
 
+template<typename TComponent, typename... Args>
+	requires std::derived_from<TComponent, USceneComponent>
+TComponent& AActor::CreateAndAddComponent(Args&&... args)
+{
+	static_assert(requires(TComponent * obj)
+	{
+		obj->Initialize(std::forward<Args>(args)...);
+	}, "TComponent must have an Initialize method that accepts the provided arguments.");
+
+	TComponent* component = FObjectFactory::ConstructObject<TComponent>(std::forward<Args>(args)...);
+
+	if (component)
+	{
+		AddComponent(component);
+		return *component;
+	}
+	throw std::runtime_error("Failed to create component");
+}

@@ -16,6 +16,7 @@ class FFrameTimer;
 class FEditorViewportClient;
 class FGraphicsManager;
 class UWorld;
+class FCamera;
 
 struct FGuiReference
 {
@@ -42,7 +43,7 @@ struct FGuiInputField
 class FSceneManager
 {
 public:
-	FSceneManager();
+	FSceneManager(const FCamera& viewportCameraRef);
 	~FSceneManager();
 
 	void Update(float delaTime);
@@ -82,6 +83,8 @@ private:
 	AActor* mSelectedActor = nullptr;
 	FGuiInputField mGuiInputField;
 	std::string LoadScenename;
+
+	const FCamera& mViewportCameraRef;
 
 	FString mOpenSceneFileDialog() const;
 	FString mSaveSceneFileDialog() const;

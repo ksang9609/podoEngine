@@ -12,6 +12,7 @@ public:
 	virtual ~UActorComponent();
 
 	void SetOwner(AActor* owner);
+	void ClearOwner();
 	AActor* GetOwner() const;
 
 	// Todo: Make as pure class
