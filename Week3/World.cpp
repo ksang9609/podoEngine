@@ -83,7 +83,7 @@ bool UWorld::RemoveActor(uint32 componentUUID)
 	return true;
 }
 
-const TArray<FRenderInfo> UWorld::GetRenderInfos()
+const TArray<FRenderInfo>& UWorld::GetRenderInfos()
 {
 	return mRenderInfos;
 }

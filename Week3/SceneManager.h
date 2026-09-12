@@ -49,8 +49,8 @@ public:
 	void Update(float delaTime);
 	void UpdateGUI(const FGuiReference& guiReference);
 
-	const TArray<FRenderInfo> GetRenderInfos() const;
-	const TArray<FRenderInfo> GetAxisRenderInfos();
+	const TArray<FRenderInfo>& GetRenderInfos() const;
+	const TArray<FRenderInfo>& GetAxisRenderInfos() const;
 
 	// Clear world
 	void NewScene();
