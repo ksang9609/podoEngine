@@ -19,7 +19,7 @@ public:
 	void AddActor(AActor* actor);
 	bool RemoveActor(uint32 componentUUID);
 
-	const TArray<FRenderInfo> GetRenderInfos();
+	const TArray<FRenderInfo>& GetRenderInfos();
 	TArray<AActor*>& GetActors() { return mActors; }
 
 	void Update();

@@ -73,7 +73,7 @@ void UPrimitiveComponent::Update(TArray<FRenderInfo>* outRenderInfos)
 	{
 		//UE_LOG("Primitive selected");
 	}
-	
+
 	GetRenderInfos(outRenderInfos);
 }
 
@@ -81,7 +81,28 @@ void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) co
 {
 	assert(outRenderInfos);
 
-	outRenderInfos->Add({ mePrimitive, GetTransformMatrix(), { mOwner->UUID, mOwner->InternalIndex }, FVector4(0, 0, 0, 0), mbUseTexture });
+	outRenderInfos->Add(makeRenderInfo());
+}
+
+FRenderInfo UPrimitiveComponent::makeRenderInfo() const
+{
+	ERenderFlags renderFlags = mbUseTexture
+		? ERenderFlags::RF_TexturedPrimitive
+		: ERenderFlags::RF_SimplePrimitive;
+
+	if (mbShowBoundingBox)
+	{
+		renderFlags = renderFlags | ERenderFlags::RF_BoundingBox;
+	}
+
+	return {
+		mePrimitive,
+		GetTransformMatrix(),
+		{ mOwner->UUID, mOwner->InternalIndex },
+		FVector4(0, 0, 0, 0),
+		renderFlags,
+		mbUseTexture
+	};
 }
 
 /*

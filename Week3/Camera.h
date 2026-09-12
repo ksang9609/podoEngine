@@ -16,6 +16,8 @@ public:
 	FVector Location;
 	FRotator Rotation;
 
+	const FRotator GetRotation() const { return Rotation; }
+
 	FMatrix GetViewMatrix() const
 	{
 		// 카메라에는 스케일이 없다. 위치를 되돌리고, 회전을 되돌리고, 축을 교환한다.

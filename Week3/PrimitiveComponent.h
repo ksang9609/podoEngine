@@ -27,9 +27,11 @@ public:
 	bool GetUseTexture() const { return mbUseTexture; }
 
 protected:
+	virtual FRenderInfo makeRenderInfo() const;
 	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
 	bool mbUseTexture = false;
+	bool mbShowBoundingBox = true;
 };
 
 

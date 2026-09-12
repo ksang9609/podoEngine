@@ -36,12 +36,12 @@ public:
 	void Prepare(const FCamera* mCamera);
 	void GizmoPrepare();
 
-	//void Render(FTransform worldTransformMatrix, EPrimitive ePrimitive); // FRenderInfo
-	//void Render(const TArray<FRenderInfo> renderInfos);
-	void Render(const TArray<FRenderInfo> renderInfos, const FCamera& camera);
-	void RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera);
-	//void RenderOverlay(const TArray<FRenderInfo> renderInfos); //깊이버퍼 초기화
-	// FRenderInfo
+	/* Rendering functions */
+	void Render(
+		const TArray<FRenderInfo>& scenerRenderInfos,
+		const TArray<FRenderInfo>& gizmoRenderInfos,
+		const FCamera& camera,
+		const AActor* selectedActor);
 
 	void Display();
 	void Update(float deltaTime);
@@ -74,9 +74,6 @@ public:
 	// 호출 즉시 그리지 않고 배열에 쌓는다. FlushLines()에서 한 번에 그린다.
 	void DrawLine(const FVector& start, const FVector& end, const FVector4& color);
 	void DrawAABBLine(const TArray<FVector3> worArray, const FVector4& color);
-	void DrawWorldAxis();
-	void DrawGrid();
-	void DrawAABB(const TArray<FRenderInfo> renderInfos, FRotator& cameraRotation);
 	void FlushLines();
 
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
@@ -87,7 +84,6 @@ public:
 
 	static FVector GetPrimitiveCenter(EPrimitive type);
 	static FVector GetPrimitiveHalfExtent(EPrimitive type);
-	void RenderHighLight(const FRenderInfo& RI, const FCamera& camera);
 
 	// Projection ratio smoothing
 	void StartProjectionTransition(bool orthographic);
@@ -146,4 +142,19 @@ private:
 
 	bool mbShowPrimitives = true;
 	//void RenderBillboardText();
+
+	void updateRenderQueue(
+		const TArray<FRenderInfo>& renderInfos,
+		TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap
+	) const;
+
+	/* Rendering Functions */
+	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderWorldAxis();
+	void renderBoundingBox(const TArray<const FRenderInfo*>& renderInfos, const FRotator& cameraRotation);
+	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);
+	void renderGrid();
 };

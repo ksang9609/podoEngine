@@ -651,7 +651,7 @@ float FSceneManager::GetPanelWidth() const
 	return mPanelWidth;
 }
 
-const TArray<FRenderInfo> FSceneManager::GetRenderInfos() const
+const TArray<FRenderInfo>& FSceneManager::GetRenderInfos() const
 {
 	if (mCurrentWorld)
 	{
@@ -661,10 +661,11 @@ const TArray<FRenderInfo> FSceneManager::GetRenderInfos() const
 	return TArray<FRenderInfo>();
 }
 
-const TArray<FRenderInfo> FSceneManager::GetAxisRenderInfos()
+const TArray<FRenderInfo>& FSceneManager::GetAxisRenderInfos() const
 {
 	// TODO: Implement axis render info retrieval logic
-	return TArray<FRenderInfo>();
+	static TArray<FRenderInfo> emptyRenderInfos;
+	return emptyRenderInfos;
 }
 
 FString FSceneManager::mOpenSceneFileDialog() const
