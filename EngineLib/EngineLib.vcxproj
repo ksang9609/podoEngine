@@ -24,7 +24,7 @@
     <ProjectGuid>{48a29156-bbfa-4845-b70e-39f798f0ccaa}</ProjectGuid>
     <RootNamespace>Week</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Week3</ProjectName>
+    <ProjectName>EngineLib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -41,23 +41,21 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v145</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v145</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings"></ImportGroup>
+  <ImportGroup Label="Shared"></ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -130,135 +128,146 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Actor.cpp" />
-    <ClCompile Include="BillboardComponent.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Console.cpp" />
-    <ClCompile Include="Core.cpp" />
-    <ClCompile Include="EngineStatics.cpp" />
-    <ClCompile Include="FileManager.cpp" />
-    <ClCompile Include="Name.cpp" />
-    <ClCompile Include="Gizmo.cpp" />
-    <ClCompile Include="JsonUtil.cpp" />
-    <ClCompile Include="NameComponent.cpp" />
-    <ClCompile Include="ObjectFactory.cpp" />
-    <ClCompile Include="FEditorViewportClient.cpp" />
-    <ClCompile Include="GraphicsManager.cpp" />
-    <ClCompile Include="ImGui\imgui.cpp" />
-    <ClCompile Include="ImGui\imgui_demo.cpp" />
-    <ClCompile Include="ImGui\imgui_draw.cpp" />
-    <ClCompile Include="ImGui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="ImGui\imgui_impl_win32.cpp" />
-    <ClCompile Include="ImGui\imgui_tables.cpp" />
-    <ClCompile Include="ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="LaunchEngineLoop.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Object.cpp" />
-    <ClCompile Include="ActorComponent.cpp" />
-    <ClCompile Include="PrimitiveComponent.cpp" />
-    <ClCompile Include="Quat.cpp" />
-    <ClCompile Include="RenderInfo.cpp" />
-    <ClCompile Include="SceneComponent.cpp" />
-    <ClCompile Include="CubeComponent.cpp" />
-    <ClCompile Include="SceneData.cpp" />
-    <ClCompile Include="SceneManager.cpp" />
-    <ClCompile Include="SphereComponent.cpp" />
-    <ClInclude Include="Circle.h" />
-    <ClInclude Include="FBoundingBox.h" />
-    <ClInclude Include="Name.h" />
-    <ClInclude Include="GizmoArrow.h" />
-    <ClInclude Include="NameComponent.h" />
-    <ClInclude Include="Primitives.h" />
-    <ClInclude Include="Quat.h" />
-    <ClInclude Include="SurfaceSettings.h" />
-    <ClInclude Include="TexturedPrimitives.h" />
-    <ClInclude Include="Triangle.h" />
-    <ClInclude Include="TSparseArray.inl">
+    <Image Include="Assets\Fonts\EnglishBigFontAtlas.dds" />
+    <Image Include="Assets\Fonts\EnglishFont.png" />
+    <Image Include="Assets\Fonts\EnglishFontAtlas.dds" />
+    <Image Include="Assets\Fonts\FontEnglish.dds" />
+    <Image Include="Assets\Textures\CubeTextureSample.dds" />
+    <Image Include="Assets\Textures\Dice.dds" />
+    <Image Include="Assets\Textures\EarthTexture.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\SceneData\Default.Scene" />
+    <None Include="Assets\SceneData\test1.Scene" />
+    <None Include="Assets\SceneData\TestScene.Scene" />
+    <None Include="Config\editor.ini" />
+    <None Include="Config\imgui.ini" />
+    <None Include="Core\Object\Object.inl" />
+    <None Include="Core\Object\ObjectFactory.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\Container\TArray.h" />
+    <ClInclude Include="Core\Container\TMap.h" />
+    <ClInclude Include="Core\Container\TQueue.h" />
+    <ClInclude Include="Core\Container\TSet.h" />
+    <ClInclude Include="Core\Container\TSparseArray.h" />
+    <ClInclude Include="Core\Container\TSparseArray.inl">
       <FileType>Document</FileType>
     </ClInclude>
-    <ClCompile Include="WICTextureLoader.cpp" />
-    <ClCompile Include="Vector.cpp" />
-    <ClCompile Include="World.cpp" />
+    <ClInclude Include="Core\Core.h" />
+    <ClInclude Include="Core\enum.h" />
+    <ClInclude Include="Core\FrameTimer.h" />
+    <ClInclude Include="Core\IO\FileManager.h" />
+    <ClInclude Include="Core\IO\JsonUtil.h" />
+    <ClInclude Include="Core\Math\FBoundingBox.h" />
+    <ClInclude Include="Core\Math\MathUtility.h" />
+    <ClInclude Include="Core\Math\Matrix.h" />
+    <ClInclude Include="Core\Math\Projection.h" />
+    <ClInclude Include="Core\Math\Quat.h" />
+    <ClInclude Include="Core\Math\RayCast.h" />
+    <ClInclude Include="Core\Math\Rotator.h" />
+    <ClInclude Include="Core\Math\Transform.h" />
+    <ClInclude Include="Core\Math\Vector.h" />
+    <ClInclude Include="Core\Name.h" />
+    <ClInclude Include="Core\Object\ObejctID.h" />
+    <ClInclude Include="Core\Object\Object.h" />
+    <ClInclude Include="Core\Object\ObjectFactory.h" />
+    <ClInclude Include="Editor\Console.h" />
+    <ClInclude Include="Editor\EditorSetting.h" />
+    <ClInclude Include="Editor\FEditorViewportClient.h" />
+    <ClInclude Include="Editor\Gizmo.h" />
+    <ClInclude Include="Editor\SceneManager.h" />
+    <ClInclude Include="Engine\Actor.h" />
+    <ClInclude Include="Engine\Components\ActorComponent.h" />
+    <ClInclude Include="Engine\Components\BillboardComponent.h" />
+    <ClInclude Include="Engine\Components\CubeComponent.h" />
+    <ClInclude Include="Engine\Components\NameComponent.h" />
+    <ClInclude Include="Engine\Components\PrimitiveComponent.h" />
+    <ClInclude Include="Engine\Components\SceneComponent.h" />
+    <ClInclude Include="Engine\Components\SphereComponent.h" />
+    <ClInclude Include="Engine\EngineStatics.h" />
+    <ClInclude Include="Engine\Serialization\SceneData.h" />
+    <ClInclude Include="Engine\World.h" />
+    <ClInclude Include="Platform\InputState.h" />
+    <ClInclude Include="Platform\WindowApplication.h" />
+    <ClInclude Include="Rendering\Camera.h" />
+    <ClInclude Include="Rendering\GraphicsManager.h" />
+    <ClInclude Include="Rendering\Primitives\Circle.h" />
+    <ClInclude Include="Rendering\Primitives\Cube.h" />
+    <ClInclude Include="Rendering\Primitives\GizmoArrow.h" />
+    <ClInclude Include="Rendering\Primitives\Primitive.h" />
+    <ClInclude Include="Rendering\Primitives\Primitives.h" />
+    <ClInclude Include="Rendering\Primitives\Sphere.h" />
+    <ClInclude Include="Rendering\Primitives\TexturedPrimitives.h" />
+    <ClInclude Include="Rendering\Primitives\Triangle.h" />
+    <ClInclude Include="Rendering\Renderer.h" />
+    <ClInclude Include="Rendering\RenderInfo.h" />
+    <ClInclude Include="Test11.h" />
+    <ClInclude Include="ThirdParty\DirectX\WICTextureLoader.h" />
+    <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_internal.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="ThirdParty\Json\json.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Actor.h" />
-    <ClCompile Include="Matrix.cpp" />
-    <ClCompile Include="MathUtility.cpp" />
-    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Core\Core.cpp" />
+    <ClCompile Include="Core\IO\FileManager.cpp" />
+    <ClCompile Include="Core\IO\JsonUtil.cpp" />
+    <ClCompile Include="Core\Math\MathUtility.cpp" />
+    <ClCompile Include="Core\Math\Matrix.cpp" />
+    <ClCompile Include="Core\Math\Quat.cpp" />
+    <ClCompile Include="Core\Math\Vector.cpp" />
+    <ClCompile Include="Core\Name.cpp" />
+    <ClCompile Include="Core\Object\Object.cpp" />
+    <ClCompile Include="Core\Object\ObjectFactory.cpp" />
+    <ClCompile Include="Editor\Console.cpp" />
+    <ClCompile Include="Editor\FEditorViewportClient.cpp" />
+    <ClCompile Include="Editor\Gizmo.cpp" />
+    <ClCompile Include="Editor\SceneManager.cpp" />
+    <ClCompile Include="Engine\Actor.cpp" />
+    <ClCompile Include="Engine\Components\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Components\BillboardComponent.cpp" />
+    <ClCompile Include="Engine\Components\CubeComponent.cpp" />
+    <ClCompile Include="Engine\Components\NameComponent.cpp" />
+    <ClCompile Include="Engine\Components\PrimitiveComponent.cpp" />
+    <ClCompile Include="Engine\Components\SceneComponent.cpp" />
+    <ClCompile Include="Engine\Components\SphereComponent.cpp" />
+    <ClCompile Include="Engine\EngineStatics.cpp" />
+    <ClCompile Include="Engine\Serialization\SceneData.cpp" />
+    <ClCompile Include="Engine\World.cpp" />
+    <ClCompile Include="Rendering\Camera.cpp" />
+    <ClCompile Include="Rendering\GraphicsManager.cpp" />
+    <ClCompile Include="Rendering\Renderer.cpp" />
+    <ClCompile Include="Rendering\RenderInfo.cpp" />
+    <ClCompile Include="ThirdParty\DirectX\WICTextureLoader.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="Core.h" />
-    <ClInclude Include="Cube.h" />
-    <ClInclude Include="FEditorViewportClient.h" />
-    <ClInclude Include="Gizmo.h" />
-    <ClInclude Include="FileManager.h" />
-    <ClInclude Include="JsonUtil.h" />
-    <ClInclude Include="ObjectFactory.h" />
-    <ClInclude Include="SceneManager.h" />
-    <ClInclude Include="InputState.h" />
-    <ClInclude Include="Json\json.hpp" />
-    <ClInclude Include="SceneData.h" />
-    <ClInclude Include="LaunchEngineLoop.h" />
-    <ClInclude Include="MathUtility.h" />
-    <ClInclude Include="Matrix.h" />
-    <ClInclude Include="Console.h" />
-    <ClInclude Include="EngineStatics.h" />
-    <ClInclude Include="Enum.h" />
-    <ClInclude Include="FrameTimer.h" />
-    <ClInclude Include="GraphicsManager.h" />
-    <ClInclude Include="ImGui\imconfig.h" />
-    <ClInclude Include="ImGui\imgui.h" />
-    <ClInclude Include="ImGui\imgui_impl_dx11.h" />
-    <ClInclude Include="ImGui\imgui_impl_win32.h" />
-    <ClInclude Include="ImGui\imgui_internal.h" />
-    <ClInclude Include="ImGui\imstb_rectpack.h" />
-    <ClInclude Include="ImGui\imstb_textedit.h" />
-    <ClInclude Include="ImGui\imstb_truetype.h" />
-    <ClInclude Include="Object.h" />
-    <ClInclude Include="PrimitiveComponent.h" />
-    <ClInclude Include="RenderInfo.h" />
-    <ClInclude Include="SceneComponent.h" />
-    <ClInclude Include="Sphere.h" />
-    <ClInclude Include="SphereComponent.h" />
-    <ClInclude Include="TArray.h" />
-    <ClInclude Include="TMap.h" />
-    <ClInclude Include="TQueue.h" />
-    <ClInclude Include="TSet.h" />
-    <ClInclude Include="ActorComponent.h" />
-    <ClInclude Include="CubeComponent.h" />
-    <ClInclude Include="TSparseArray.h" />
-    <ClInclude Include="BillboardComponent.h" />
-    <ClInclude Include="Vector.h" />
-    <ClInclude Include="WICTextureLoader.h" />
-    <ClInclude Include="World.h" />
-    <ClInclude Include="Transform.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="WindowApplication.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="ShaderFont.hlsl">
+    <FxCompile Include="Shaders\ShaderFont.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="ShaderTexture.hlsl">
+    <FxCompile Include="Shaders\ShaderLine.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="ShaderLine.hlsl">
+    <FxCompile Include="Shaders\ShaderTexture.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="ShaderW0.hlsl">
+    <FxCompile Include="Shaders\ShaderW0.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Object.inl" />
-    <None Include="ObjectFactory.inl" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="FontEnglish.dds" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets"></ImportGroup>
 </Project>

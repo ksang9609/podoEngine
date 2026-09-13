@@ -1,120 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\Week3\Matrix.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="TestActor.cpp" />
-    <ClCompile Include="TestExample.cpp" />
-    <ClCompile Include="TestFileManager.cpp" />
-    <ClCompile Include="TestObject.cpp" />
-    <ClCompile Include="TestSceneData.cpp" />
-    <ClCompile Include="TestSparseArray.cpp" />
-    <ClCompile Include="TestsTArray.cpp" />
-    <ClCompile Include="TestWorld.cpp" />
-    <ClCompile Include="..\..\Week3\Actor.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestActor.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Week3\ActorComponent.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestExample.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Week3\Camera.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestFileManager.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Week3\Console.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestObject.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Week3\Core.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestSceneComponent.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Week3\CubeComponent.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestSceneData.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Week3\EngineStatics.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestSparseArray.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Week3\FEditorViewportClient.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestsTArray.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Week3\FileManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\Gizmo.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\GraphicsManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\JsonUtil.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\LaunchEngineLoop.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\MathUtility.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\Object.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\ObjectFactory.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\PrimitiveComponent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\Renderer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\RenderInfo.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\SceneComponent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\SceneData.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\SceneManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\SphereComponent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\USphereComponent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\World.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
-    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
-    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
-    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
-    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
-    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
-    <ClCompile Include="..\..\Week3\ImGui\imgui*.cpp" />
-    <ClCompile Include="..\..\Week3\Quat.cpp" />
-    <ClCompile Include="..\..\Week3\FName.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\UBillboardComponent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Week3\Vector.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="TestWorld.cpp">
+      <Filter>TestSource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="소스 파일">
-      <UniqueIdentifier>{3ec1df77-5986-4bdd-a1c7-e332fd0b718d}</UniqueIdentifier>
+    <Filter Include="TestSource">
+      <UniqueIdentifier>{c2f6e386-a7e7-43a2-aa61-9c291c200702}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
