@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Core.h"
 #include <fstream>
@@ -8,7 +8,7 @@ struct FEditorSetting
 	float CameraSensitivity = 0.1f;
 	float GridSpacing = 1.0f;
 
-	void Load(const std::string& FilePath = "editor.ini")
+	void Load(const std::string& FilePath = "Config/editor.ini")
 	{
 		std::ifstream File(FilePath);
 
@@ -33,7 +33,7 @@ struct FEditorSetting
 		
 	}
 
-	void Save(const std::string& FilePath = "editor.ini") const
+	void Save(const std::string& FilePath = "Config/editor.ini") const
 	{
 		std::ofstream File(FilePath);
 

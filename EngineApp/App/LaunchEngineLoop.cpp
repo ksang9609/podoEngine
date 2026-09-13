@@ -67,6 +67,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
 	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
+	ImGui::GetIO().IniFilename = "Config/imgui.ini";
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
