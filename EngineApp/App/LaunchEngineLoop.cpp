@@ -459,5 +459,12 @@ void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
 
 void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& command)
 {
+	AActor* selectedActor = mSceneManager->GetSelectedActor();
+	if (selectedActor && command.bOrthographic && mGraphicsManager->GetPerspectiveRatio() == 1.0f)
+	{
+		const FVector offset = selectedActor->GetTransform().Location - ViewportClient->GetCamera().Location;
+		const float depth = FVector::dot(offset, ViewportClient->GetCamera().GetForwardVector());
+		ViewportClient->GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
+	}
 	mGraphicsManager->StartProjectionTransition(command.bOrthographic);
 }
