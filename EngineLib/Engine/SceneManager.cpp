@@ -27,33 +27,6 @@
 FSceneManager::FSceneManager(const FCamera& viewportCameraRef)
 	: mViewportCameraRef(viewportCameraRef)
 {
-	ImGuiIO& io = ImGui::GetIO();
-	mPanelWidth = io.DisplaySize.x * MIN_WIDTH_RATIO;
-
-	//mCurrentWorld = FObjectFactory::ConstructObject<UWorld>();
-
-	// Todo: Test code, move to other function
-	//{
-	//	UCubeComponent* cubeComponent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
-	//	AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
-	//	cubeActor->AddComponent(cubeComponent);
-	//	mCurrentWorld->AddActor(cubeActor);
-
-	//	UCubeComponent* cubeComponent2 = FObjectFactory::ConstructObject<UCubeComponent>(FVector(1, 1, 1), FRotator(), FVector(0.5));
-	//	AActor* cubeActor2 = FObjectFactory::ConstructObject<AActor>();
-	//	cubeActor2->AddComponent(cubeComponent2);
-	//	mCurrentWorld->AddActor(cubeActor2);
-	//}
-}
-
-void FSceneManager::Initialize(FEditorViewportClient& ViewportClient, FGraphicsManager* GraphicsManager)
-{
-	mEditorSetting.Load();
-
-	FCamera& camera = ViewportClient.GetCamera();
-	camera.SetCameraSensitivity(mEditorSetting.CameraSensitivity);
-
-	GraphicsManager->SetGridWidth(mEditorSetting.GridSpacing);
 }
 
 FSceneManager::~FSceneManager()
@@ -70,445 +43,6 @@ void FSceneManager::Update(float delaTime)
 
 	mCurrentWorld->Update();
 }
-
-void FSceneManager::UpdateGUI(const FGuiReference& guiReference)
-{
-	//ImGui
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-
-	updateControlPanelGUI(guiReference);
-	updatePropertyWindowGUI(guiReference);
-	updateObjectListPanelGUI(guiReference);
-
-	ConsoleWindow::GetInstance().Draw(mPanelWidth);
-}
-
-void FSceneManager::updateControlPanelGUI(const FGuiReference& guiReference)
-{
-	ImGuiIO& io = ImGui::GetIO();
-
-	float panelHeight = io.DisplaySize.y * CONTROL_PANEL_HEIGHT_RATIO;
-
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-
-	ImGui::SetNextWindowSizeConstraints(
-		ImVec2(io.DisplaySize.x * MIN_WIDTH_RATIO, panelHeight),
-		ImVec2(io.DisplaySize.x * MAX_WIDTH_RATIO, panelHeight)
-	);
-	ImGui::SetNextWindowSize(ImVec2(mPanelWidth, panelHeight), ImGuiCond_Always);
-
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-	ImGui::Begin("Jungle Control Panel", nullptr, flags);
-	mPanelWidth = ImGui::GetWindowWidth();
-
-	ImGui::Text("Hello Jungle World!");
-	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
-
-	/* Spawn Actor */
-	// NOTE: This name array must be edited when adding new primitive types to EPrimitive enum.
-	ImGui::SeparatorText("Spawn Actor");
-
-	const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle", "GizmoArrow", "Circle", "BillboardQuad"};
-	int32 primitiveTypeIndex = static_cast<int32>(mGuiInputField.PrimitiveType);
-	int32 spawnCount = mGuiInputField.SpawnCount;
-
-	if (ImGui::Combo("Primitive Type", &primitiveTypeIndex, primitiveTypeNames, IM_ARRAYSIZE(primitiveTypeNames)))
-	{
-		mGuiInputField.PrimitiveType = static_cast<EPrimitive>(primitiveTypeIndex);
-	}
-	if (ImGui::Button("Spawn"))
-	{
-		for (int32 i = 0; i < mGuiInputField.SpawnCount; ++i)
-		{
-			AActor* newActor = FObjectFactory::SpawnPrimitiveActor(
-				mGuiInputField.PrimitiveType,
-				FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
-			);
-			mCurrentWorld->AddActor(newActor);
-		}
-	}
-	ImGui::SameLine();
-	if (ImGui::InputInt("Number of spawn", &spawnCount))
-	{
-		if (spawnCount < 1)
-		{
-			spawnCount = 1;
-		}
-		mGuiInputField.SpawnCount = spawnCount;
-	}
-
-	/* Scene Control */
-	ImGui::SeparatorText("Scene Control");
-
-	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName), ImGuiInputTextFlags_ReadOnly);
-	if (ImGui::Button("New scene"))
-	{
-		// TODO: add clear depth buffer function in renderer
-		//guiReference.GraphicsManager->GetRenderer()->ClearDepthBuffer();
-		guiReference.ViewportClient->Reset();
-		NewScene();
-		strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), "Default");
-	}
-	if (ImGui::Button("Save scene"))
-	{
-		const FString selectedFile = mSaveSceneFileDialog();
-
-		if (selectedFile.Len() > 0)
-		{
-			std::filesystem::path p(selectedFile.CStr());
-			SaveScene(p.stem().string(), *guiReference.FileManager);
-			guiReference.ViewportClient->Reset();
-		}
-	}
-	if (ImGui::Button("Load scene"))
-	{
-		const FString selectedFile = mOpenSceneFileDialog();
-
-		if (selectedFile.Len() > 0)
-		{
-			LoadScene(selectedFile, *guiReference.FileManager);
-			std::filesystem::path p(selectedFile.CStr());
-			std::string LoadScenename = p.stem().string();
-			strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), LoadScenename.c_str());
-			guiReference.ViewportClient->Reset();
-		}
-	}
-
-	FCamera& camera = guiReference.ViewportClient->GetCamera();
-	URenderer* renderer = guiReference.GraphicsManager->GetRenderer();
-
-	ImGui::SeparatorText("View Mode");
-	static EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
-	const char* ViewModeNames[] = { "Lit", "Unlit", "Wireframe" };
-
-	int32 ViewModeIndex = static_cast<int32>(ViewMode);
-
-	if (ImGui::Combo("View Mode", &ViewModeIndex, ViewModeNames, IM_ARRAYSIZE(ViewModeNames)))
-	{
-		ViewMode = static_cast<EViewModeIndex>(ViewModeIndex);
-		guiReference.GraphicsManager->SetViewMode(ViewMode);
-	}
-
-	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
-	{
-		bool bPrimitives = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_Primitives));
-		if (ImGui::Checkbox("Primitives", &bPrimitives))
-		{
-			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_Primitives, bPrimitives);
-		}
-
-		bool bBillboardText = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_BillboardText));
-		if (ImGui::Checkbox("Billboard Text", &bBillboardText))
-		{
-			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_BillboardText, bBillboardText);
-		}
-
-		bool bShowWorldAxis = guiReference.GraphicsManager->HasShowFlag((EEngineShowFlags::SF_WorldAxis));
-		if (ImGui::Checkbox("World axis", &bShowWorldAxis))
-		{
-			guiReference.GraphicsManager->SetShowFlag(EEngineShowFlags::SF_WorldAxis, bShowWorldAxis);
-		}
-
-		ImGui::EndCombo();
-	}
-
-	bool bOrthographic = guiReference.GraphicsManager->IsOrthographicTarget();
-	//bool bOrthographic = guiReference.GraphicsManager->HasShowFlag(EEngineShowFlags::SF_Primitives);
-	if (ImGui::Checkbox("Orthogonal", &bOrthographic))
-	{
-		if (mSelectedActor && bOrthographic && guiReference.GraphicsManager->GetPerspectiveRatio() == 1.0f)
-		{
-			const FVector offset = mSelectedActor->GetTransform().Location - camera.Location;
-			const float depth = FVector::dot(offset, camera.GetForwardVector());
-			camera.mOrthoDistance = FMath::Max(depth, 0.1f);
-		}
-		guiReference.GraphicsManager->StartProjectionTransition(bOrthographic);
-	}
-
-	ImGui::SeparatorText("Camera Control");
-
-	ImGui::Text("FOV      ");
-	ImGui::SameLine();
-	ImGui::SliderFloat("##FOV", &camera.mFovDegree, 0.0f, 180.0f);
-
-	// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
-	ImGui::Text("Location ");
-	ImGui::SameLine();
-
-	// 2) 텍스트를 그린 "뒤"의 남은 폭을 기준으로 계산
-	const float spacing = ImGui::GetStyle().ItemSpacing.x;
-	const float itemWidth = (ImGui::GetContentRegionAvail().x - spacing * 2.0f) / 3.0f;
-
-	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocX", &camera.Location.x, 0.1f, 10.0f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocY", &camera.Location.y, 0.1f, 10.0f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamLocZ", &camera.Location.z, 0.1f, 10.0f);
-
-	ImGui::Text("Rotation ");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotX", &camera.Rotation.Roll, 0.1f, 180.0f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotY", &camera.Rotation.Pitch, 0.1f, 180.0f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(itemWidth);
-	ImGui::DragFloat("##CamRotZ", &camera.Rotation.Yaw, 0.1f, 180.0f);
-
-	//ImGui::Checkbox("Depth Test", &renderer->bDepthTestEnabled);
-	//ImGui::TextUnformatted(renderer->bDepthTestEnabled
-	//	? "ON : orange (near) stays in front"
-	//	: "OFF: blue (far, drawn last) overwrites");
-
-	ImGui::Text("GridWidth");
-	ImGui::SameLine();
-	float gridWidth = guiReference.GraphicsManager->GetGridWidth();
-	if (ImGui::SliderFloat("##GridWidth", &gridWidth, 0.1f, 10.0f))
-	{
-		guiReference.GraphicsManager->SetGridWidth(gridWidth);
-		mEditorSetting.GridSpacing = gridWidth; 
-		mEditorSetting.Save();
-	}
-
-	ImGui::Text("Sensitivity");
-	ImGui::SameLine();
-	if (ImGui::SliderFloat("##Sensitivity", &camera.Sensitivity, 0.0f, 1.0f))
-	{
-		mEditorSetting.CameraSensitivity = camera.Sensitivity;
-		mEditorSetting.Save();
-	}
-
-	/* Memory Info */
-	ImGui::SeparatorText("Memory Info");
-
-	ImGui::Text("Total allocated memory count: %d", UEngineStatics::sTotalAllocationCount);
-	ImGui::Text("Total allocated memory size: %d bytes", UEngineStatics::sTotalAllocationBytes);
-
-	/* Gizmo Control */
-	ImGui::SeparatorText("Gizmo Control");
-
-	// Display the current gizmo mode dropdown
-	const char* gizmoModeNames[] = { "Translate", "Rotate", "Scale" };
-	int32 gizmoModeIndex = static_cast<int32>(guiReference.ViewportClient->mGizmo.eType);
-	if (ImGui::Combo("Gizmo Mode", &gizmoModeIndex, gizmoModeNames, IM_ARRAYSIZE(gizmoModeNames)))
-	{
-		guiReference.ViewportClient->mGizmo.SetGizmoType(static_cast<EGIZMO_TYPE>(gizmoModeIndex));
-	}
-	if (ImGui::Button("Next Gizmo Mode"))
-	{
-		guiReference.ViewportClient->mGizmo.CycleGizmoType();
-	}
-
-
-	ImGui::End();
-}
-
-void FSceneManager::updatePropertyWindowGUI(const FGuiReference& guiReference)
-{
-	ImGuiIO& io = ImGui::GetIO();
-
-	float controlPanelHeight = io.DisplaySize.y * CONTROL_PANEL_HEIGHT_RATIO;
-	float propertyHeight = io.DisplaySize.y * WINDOW_PROPERTY_HEIGHT_RATIO;
-
-	ImGui::SetNextWindowPos(ImVec2(0.0f, controlPanelHeight), ImGuiCond_Always);
-
-	ImGui::SetNextWindowSizeConstraints(
-		ImVec2(io.DisplaySize.x * MIN_WIDTH_RATIO, propertyHeight),
-		ImVec2(io.DisplaySize.x * MAX_WIDTH_RATIO, propertyHeight)
-	);
-	ImGui::SetNextWindowSize(ImVec2(mPanelWidth, propertyHeight), ImGuiCond_Always);
-
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-
-	ImGui::Begin("Jungle Property Window", nullptr, flags);
-
-	mPanelWidth = ImGui::GetWindowWidth();
-
-	if (mSelectedActor)
-	{
-		// Temporary variables to hold the values for ImGui input fields
-		const FTransform& originalTransform = mSelectedActor->GetTransform();
-
-		// Get the current transform of the clicked actor
-		FVector translationInput = originalTransform.Location;
-		FRotator originalRotator = mSelectedActor->GetRotator();
-		float rotationInput[3] = {
-			originalRotator.Roll,
-			originalRotator.Pitch,
-			originalRotator.Yaw
-		};
-		FVector scaleInput = originalTransform.Scale;
-
-		// Display and edit the transform properties using ImGui input fields
-		if (ImGui::DragFloat3("Translation", &translationInput.x, 0.1f))
-		{
-			mSelectedActor->SetLocation(translationInput);
-		}
-		if (ImGui::DragFloat3("Rotation", &rotationInput[0], 0.1f))
-		{
-			mSelectedActor->SetRotation(FRotator{
-				rotationInput[1], // Pitch
-				rotationInput[2], // Yaw
-				rotationInput[0]  // Roll
-				});
-
-		}
-		if (ImGui::DragFloat3("Scale", &scaleInput.x, 0.1f, MIN_SCALE, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
-		{
-			mSelectedActor->SetScale(scaleInput);
-		}
-	}
-	ImGui::End();
-}
-
-void FSceneManager::updateObjectListPanelGUI(const FGuiReference& guiReference)
-{
-	ImGuiIO& io = ImGui::GetIO();
-
-	float offsetHeight = io.DisplaySize.y * (CONTROL_PANEL_HEIGHT_RATIO + WINDOW_PROPERTY_HEIGHT_RATIO);
-	float objectListPanelHeight = io.DisplaySize.y - offsetHeight;
-
-	ImGui::SetNextWindowPos(ImVec2(0.0f, offsetHeight), ImGuiCond_Always);
-
-	ImGui::SetNextWindowSizeConstraints(
-		ImVec2(io.DisplaySize.x * MIN_WIDTH_RATIO, objectListPanelHeight),
-		ImVec2(io.DisplaySize.x * MAX_WIDTH_RATIO, objectListPanelHeight)
-	);
-	ImGui::SetNextWindowSize(ImVec2(mPanelWidth, objectListPanelHeight), ImGuiCond_Always);
-
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-
-	ImGui::Begin("Object List Panel", nullptr, flags);
-	{
-		/* Object Lists */
-		ImGui::SeparatorText("Object Lists");
-		if (ImGui::BeginChild("ObjectList", ImVec2(0, 0),
-			ImGuiChildFlags_Borders))
-		{
-			if (mGuiInputField.LastGUObjectRevision != UObject::GetGObjectRevision())
-			{
-				mGuiInputField.SortedObjectLists = UObject::GetGObjectArray().ToTArray();
-				mGuiInputField.LastGUObjectRevision = UObject::GetGObjectRevision();
-
-				// Sort the objects by UUID
-				std::sort(mGuiInputField.SortedObjectLists.begin(), mGuiInputField.SortedObjectLists.end(),
-					[](UObject* a, UObject* b) { return a->UUID < b->UUID; });
-			}
-
-			int32 selectedActorUUID = mSelectedActor
-				? mSelectedActor->UUID
-				: -1;
-
-			// Todo: rbegin()
-			//for (UObject* object : mGuiInputField.SortedObjectLists)
-
-			UObject* bDeleteActorOrNull = nullptr;
-
-			static char NameBuffer[128] = {};
-			static int32 CachedSelectedUUID = -1;
-
-			for (unsigned int objectsIndex = 0; objectsIndex < mGuiInputField.SortedObjectLists.Num(); ++objectsIndex)
-			{
-				UObject* object = mGuiInputField.SortedObjectLists[objectsIndex];
-
-				bool bSelected = false;
-				ImGui::PushID(object->UUID); // Ensure unique ID for each child
-
-				if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
-					ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
-				{
-					ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
-					ImGui::Text("UUID: %d", object->UUID);
-					FString ObjectName = object->GetName().ToString();
-					ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
-						ObjectName.CStr(),
-						object->GetName().DisplayIndex,
-						object->GetName().ComparisonIndex
-					);
-
-					// TODO: Move implement delete to where?
-					if (object->IsA<AActor>())
-					{
-						AActor* actor = object->Cast<AActor>();
-
-						if (ImGui::Button("Select"))
-						{
-							SetSelectedActor(actor);
-						}
-						else
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Delete"))
-							{
-								bDeleteActorOrNull = object;
-							}
-						}
-					}
-				}
-
-				// Highlight the frame if this object is the clicked actor
-				if (object->UUID == selectedActorUUID)
-				{
-					bSelected = true;
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
-
-					if (CachedSelectedUUID != object->UUID)
-					{
-						CachedSelectedUUID = object->UUID;
-
-						FString CurrentName = object->GetName().ToString();
-
-						strcpy_s(NameBuffer, sizeof(NameBuffer), CurrentName.CStr());
-					}
-
-					ImGui::Text("Edit Name");
-					ImGui::SameLine();
-					bool bEnterPressed = ImGui::InputText("##Edit Name", NameBuffer, sizeof(NameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
-					ImGui::SameLine();
-					bool bApplyPressed = ImGui::Button("Apply");
-
-					if (bEnterPressed || bApplyPressed)
-					{
-						object->SetName(FName(NameBuffer));
-					}
-				}
-				
-				ImGui::EndChild();
-
-				if (bSelected)
-				{
-					ImGui::PopStyleColor(); // Pop the border color if it was pushed
-				}
-
-				ImGui::PopID();
-			}
-
-			if (bDeleteActorOrNull != nullptr)
-			{
-				AActor* deleteActor = bDeleteActorOrNull->Cast<AActor>();
-
-				if (mSelectedActor != nullptr && mSelectedActor->UUID == deleteActor->UUID)
-				{
-					mSelectedActor = nullptr;
-				}
-
-				assert(mCurrentWorld != nullptr);
-				mCurrentWorld->RemoveActor(deleteActor->UUID);
-
-				delete deleteActor;
-			}
-		}
-		ImGui::EndChild();
-	}
-	ImGui::End();
-}
-
 
 void FSceneManager::NewScene()
 {
@@ -626,7 +160,19 @@ void FSceneManager::LoadScene(std::string_view filePath, const FFileManager& fil
 	}
 }
 
+void FSceneManager::RemoveActor(AActor* actor)
+{
+	if (mSelectedActor == actor)
+	{
+		ResetSelectedActor();
+	}
 
+	assert(mCurrentWorld != nullptr);
+	mCurrentWorld->RemoveActor(actor->UUID);
+
+	// TODO?: Consider whether to delete the actor here or manage its lifetime elsewhere.
+	delete actor;
+}
 
 void  FSceneManager::SetSelectedActor(AActor* actor)
 {
@@ -676,73 +222,73 @@ const TArray<FRenderInfo>& FSceneManager::GetAxisRenderInfos() const
 	return axisRenderInfos;
 }
 
-FString FSceneManager::mOpenSceneFileDialog() const
-{
-	char fileName[MAX_PATH] = {};
-	OPENFILENAMEA openFileName = {};
+//FString FSceneManager::mOpenSceneFileDialog() const
+//{
+//	char fileName[MAX_PATH] = {};
+//	OPENFILENAMEA openFileName = {};
+//
+//	openFileName.lStructSize = sizeof(OPENFILENAMEA);
+//	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
+//
+//	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
+//	openFileName.lpstrFile = fileName;
+//	openFileName.nMaxFile = MAX_PATH;
+//
+//	openFileName.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+//	openFileName.lpstrDefExt = "Scene";
+//
+//	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
+//
+//	if (!std::filesystem::exists(initialDirectory))
+//	{
+//		std::filesystem::create_directories(initialDirectory);
+//	}
+//
+//	const std::string initialDirectoryString = initialDirectory.string();
+//
+//	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
+//
+//	if (GetOpenFileNameA(&openFileName))
+//	{
+//		return FString(fileName);
+//	}
+//
+//	return FString("");
+//}
 
-	openFileName.lStructSize = sizeof(OPENFILENAMEA);
-	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
-
-	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
-	openFileName.lpstrFile = fileName;
-	openFileName.nMaxFile = MAX_PATH;
-
-	openFileName.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
-	openFileName.lpstrDefExt = "Scene";
-
-	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
-
-	if (!std::filesystem::exists(initialDirectory))
-	{
-		std::filesystem::create_directories(initialDirectory);
-	}
-
-	const std::string initialDirectoryString = initialDirectory.string();
-
-	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
-
-	if (GetOpenFileNameA(&openFileName))
-	{
-		return FString(fileName);
-	}
-
-	return FString("");
-}
-
-FString FSceneManager::mSaveSceneFileDialog() const
-{
-	char fileName[MAX_PATH] = {};
-	OPENFILENAMEA openFileName = {};
-
-	openFileName.lStructSize = sizeof(OPENFILENAMEA);
-	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
-
-	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
-	openFileName.lpstrFile = fileName;
-	openFileName.nMaxFile = MAX_PATH;
-
-	openFileName.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
-	openFileName.lpstrDefExt = "Scene";
-
-	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
-
-	if (!std::filesystem::exists(initialDirectory))
-	{
-		std::filesystem::create_directories(initialDirectory);
-	}
-
-	const std::string initialDirectoryString = initialDirectory.string();
-
-	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
-
-	if (GetSaveFileNameA(&openFileName))
-	{
-		return FString(fileName);
-	}
-
-	return FString("");
-}
+//FString FSceneManager::mSaveSceneFileDialog() const
+//{
+//	char fileName[MAX_PATH] = {};
+//	OPENFILENAMEA openFileName = {};
+//
+//	openFileName.lStructSize = sizeof(OPENFILENAMEA);
+//	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
+//
+//	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
+//	openFileName.lpstrFile = fileName;
+//	openFileName.nMaxFile = MAX_PATH;
+//
+//	openFileName.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+//	openFileName.lpstrDefExt = "Scene";
+//
+//	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
+//
+//	if (!std::filesystem::exists(initialDirectory))
+//	{
+//		std::filesystem::create_directories(initialDirectory);
+//	}
+//
+//	const std::string initialDirectoryString = initialDirectory.string();
+//
+//	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
+//
+//	if (GetSaveFileNameA(&openFileName))
+//	{
+//		return FString(fileName);
+//	}
+//
+//	return FString("");
+//}
 
 //
 //FSceneData FSceneManager::ReadSceneData(

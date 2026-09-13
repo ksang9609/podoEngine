@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Math/Matrix.h"
 #include "Core/enum.h"
@@ -60,7 +60,7 @@ public:
 	float GetCameraOrthoDistance() const { return mCameraOrthoDistance; }
 	void SetCameraOrthoDistance(float distance) { mCameraOrthoDistance = distance; }
 
-	float GetGridWidth();
+	float GetGridWidth() const;
 	void SetGridWidth(float width);
 
 	// Todo: Change name
@@ -92,7 +92,9 @@ public:
 	void UpdateProjectionTransition(float deltaTime);
 
 	bool HasShowFlag(EEngineShowFlags Flag) const;
+	uint32 GetShowFlags() const { return mShowFlags; }
 	void SetShowFlag(EEngineShowFlags Flag, bool bEnable);
+	void SetShowFlags(uint32 flags) { mShowFlags = flags; }
 
 private:
 	URenderer* mRenderer;

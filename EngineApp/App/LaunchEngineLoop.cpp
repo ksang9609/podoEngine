@@ -61,13 +61,21 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	rid.hwndTarget = hWnd;
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
+
+	/* Init Managers */
 	mGraphicsManager = new FGraphicsManager(hWnd);
+	FrameTimer = new FFrameTimer(120);
+	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
+	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
+	mFileManager = new FFileManager();
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
 	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
 	ImGui::GetIO().IniFilename = "Config/imgui.ini";
+
+	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
@@ -93,7 +101,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	// 24: 인덱스 방식 / 36: 기존 방식
 	FVertexTextured atlasVertices[24];
 
-	BuildCubeAtlasVertices(atlasVertices, columns, rows,faceCells);
+	BuildCubeAtlasVertices(atlasVertices, columns, rows, faceCells);
 
 	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
 
@@ -115,7 +123,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	constexpr std::size_t sphereVertexCount = sizeof(Sphere_vertices) / sizeof(Sphere_vertices[0]);
 
 	FVertexTextured sphereTextureVertices[sphereVertexCount];
-	BuildSphereTextureVertices(Sphere_vertices,	sphereTextureVertices);
+	BuildSphereTextureVertices(Sphere_vertices, sphereTextureVertices);
 	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices));
 
 	// mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
@@ -123,16 +131,10 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
 
 
-	FrameTimer = new FFrameTimer(120);
-	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
-	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
-	mFileManager = new FFileManager();
-
-	mSceneManager->Initialize(*ViewportClient, mGraphicsManager);
 
 	mSceneManager->NewScene();
 	// mSceneManager->LoadScene("TestScene", *mFileManager);
@@ -194,7 +196,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	//}
 
 
-	
+
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
@@ -212,8 +214,17 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		//ImGui Input
 		{
-			mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
+			//mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 		}
+		FEditorCommands editorCommands;
+		mEditorUIManager->UpdateGui({
+			*FrameTimer,
+			*mSceneManager,
+			*ViewportClient,
+			*mGraphicsManager,
+			*mFileManager,
+			}, editorCommands);
+		processEditorCommands(editorCommands);
 
 		mGraphicsManager->UpdateProjectionTransition(deltaTime);
 		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->GetPerspectiveRatio());
@@ -284,4 +295,169 @@ void FEngineLoop::End()
 	delete mFileManager;
 
 	delete mGraphicsManager;
+}
+
+void FEngineLoop::processEditorCommands(const FEditorCommands& commands)
+{
+	// Process each command except for the delete command first
+	for (const auto& command : commands)
+	{
+		if (std::holds_alternative<FDeleteActorCommand>(command))
+		{
+			continue; // Skip delete commands for now
+		}
+
+		std::visit(
+			[this](const auto& cmd)
+			{
+				processEditorCommand(cmd);
+			},
+			command
+		);
+	}
+
+	// Process delete commands last to avoid issues with dangling references
+	for (const auto& command : commands)
+	{
+		if (const auto* deleteActorCommand =
+			std::get_if<FDeleteActorCommand>(&command))
+		{
+			processEditorCommand(*deleteActorCommand);
+		}
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FNewSceneCommand& command)
+{
+	mSceneManager->NewScene();
+}
+
+void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
+{
+	mSceneManager->SaveScene(command.SceneName, *mFileManager);
+}
+
+void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
+{
+	mSceneManager->LoadScene(command.SceneName, *mFileManager);
+}
+
+void FEngineLoop::processEditorCommand(const FSpawnActorCommand& command)
+{
+	for (int32 i = 0; i < command.SpawnCount; ++i)
+	{
+		AActor* newActor = FObjectFactory::SpawnPrimitiveActor(
+			command.PrimitiveType,
+			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
+		);
+		mSceneManager->GetCurrentWorld()->AddActor(newActor);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FDeleteActorCommand& command)
+{
+	AActor* actor = UObject::GetObjectByInternalIndex<AActor>(command.ObjectID.InternalIndex);
+	if (actor)
+	{
+		mSceneManager->RemoveActor(actor);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetActorLocationCommand& command)
+{
+	AActor* actor = UObject::GetObjectByInternalIndex<AActor>(command.ObjectID.InternalIndex);
+	if (actor)
+	{
+		actor->SetLocation(command.Location);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetActorRotationCommand& command)
+{
+	AActor* actor = UObject::GetObjectByInternalIndex<AActor>(command.ObjectID.InternalIndex);
+	if (actor)
+	{
+		actor->SetRotation(command.Rotation);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetActorScaleCommand& command)
+{
+	AActor* actor = UObject::GetObjectByInternalIndex<AActor>(command.ObjectID.InternalIndex);
+	if (actor)
+	{
+		actor->SetScale(command.Scale);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetActorNameCommand& command)
+{
+	AActor* actor = UObject::GetObjectByInternalIndex<AActor>(command.ObjectID.InternalIndex);
+	if (actor)
+	{
+		actor->SetName(command.NewName);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetSelectedActorCommand& command)
+{
+	AActor* actor = UObject::GetObjectByInternalIndex<AActor>(command.ObjectID.InternalIndex);
+	if (actor)
+	{
+		mSceneManager->SetSelectedActor(actor);
+	}
+	else
+	{
+		mSceneManager->ResetSelectedActor();
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewModeCommand& command)
+{
+	mGraphicsManager->SetViewMode(command.ViewMode);
+}
+
+void FEngineLoop::processEditorCommand(const FSetShowFlagCommand& command)
+{
+	mGraphicsManager->SetShowFlags(command.ShowFlags);
+}
+
+void FEngineLoop::processEditorCommand(const FSetCameraSensitivityCommand& command)
+{
+	ViewportClient->GetCamera().SetCameraSensitivity(command.Sensitivity);
+}
+
+void FEngineLoop::processEditorCommand(const FSetCameraFovCommand& command)
+{
+	ViewportClient->GetCamera().mFovDegree = command.Fov;
+}
+
+void FEngineLoop::processEditorCommand(const FSetCameraLocationCommand& command)
+{
+	ViewportClient->GetCamera().Location = command.Location;
+}
+
+void FEngineLoop::processEditorCommand(const FSetCameraRotationCommand& command)
+{
+	ViewportClient->GetCamera().Rotation = command.Rotation;
+}
+
+void FEngineLoop::processEditorCommand(const FSetGizmoModeCommand& command)
+{
+	ViewportClient->mGizmo.SetGizmoType(command.GizmoMode);
+}
+
+void FEngineLoop::processEditorCommand(const FCycleGizmoModeCommand& command)
+{
+	ViewportClient->mGizmo.CycleGizmoType();
+}
+
+void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
+{
+	mGraphicsManager->SetGridWidth(command.GridWidth);
+}
+
+void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& command)
+{
+	mGraphicsManager->StartProjectionTransition(command.bOrthographic);
 }

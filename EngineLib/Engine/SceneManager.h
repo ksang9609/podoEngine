@@ -18,27 +18,27 @@ class FGraphicsManager;
 class UWorld;
 class FCamera;
 
-struct FGuiReference
-{
-	const FFrameTimer& FrameTimer;
-	FGraphicsManager* GraphicsManager;
-	FEditorViewportClient* ViewportClient;
-	const FFileManager* FileManager;
-};
+//struct FGuiReference
+//{
+//	const FFrameTimer& FrameTimer;
+//	FGraphicsManager* GraphicsManager;
+//	FEditorViewportClient* ViewportClient;
+//	const FFileManager* FileManager;
+//};
 
-struct FGuiInputField
-{
-	/* Spawn Actor */
-	EPrimitive PrimitiveType = EPrimitive::EP_Cube;
-	int32 SpawnCount = 1;
-
-	/* Scene Control */
-	char SceneName[512] = "Default";
-
-	/* Object Lists */
-	TArray<UObject*> SortedObjectLists;
-	uint64 LastGUObjectRevision = -1;
-};
+//struct FGuiInputField
+//{
+//	/* Spawn Actor */
+//	EPrimitive PrimitiveType = EPrimitive::EP_Cube;
+//	int32 SpawnCount = 1;
+//
+//	/* Scene Control */
+//	char SceneName[512] = "Default";
+//
+//	/* Object Lists */
+//	TArray<UObject*> SortedObjectLists;
+//	uint64 LastGUObjectRevision = -1;
+//};
 
 class FSceneManager
 {
@@ -47,7 +47,6 @@ public:
 	~FSceneManager();
 
 	void Update(float delaTime);
-	void UpdateGUI(const FGuiReference& guiReference);
 
 	const TArray<FRenderInfo>& GetRenderInfos() const;
 	const TArray<FRenderInfo>& GetAxisRenderInfos() const;
@@ -62,26 +61,25 @@ public:
 	UWorld* GetCurrentWorld() const { return mCurrentWorld; }
 
 	AActor* GetSelectedActor() const { return mSelectedActor; }
+
+	void RemoveActor(AActor* actor);
+
 	bool IsActorSelected() const { return mSelectedActor != nullptr; }
 	void SetSelectedActor(AActor* actor);
 	void ResetSelectedActor() { mSelectedActor = nullptr; }
 
 	float GetPanelWidth() const;
-
-	void Initialize(FEditorViewportClient& ViewportClient, FGraphicsManager* GraphicsManager);
-
 private:
-	static constexpr float MIN_WIDTH_RATIO = 0.2f;
-	static constexpr float MAX_WIDTH_RATIO = 0.6f;
+	//static constexpr float MIN_WIDTH_RATIO = 0.2f;
+	//static constexpr float MAX_WIDTH_RATIO = 0.6f;
 
-	static constexpr float CONTROL_PANEL_HEIGHT_RATIO = 0.4f;
-	static constexpr float WINDOW_PROPERTY_HEIGHT_RATIO = 0.3f;
+	//static constexpr float CONTROL_PANEL_HEIGHT_RATIO = 0.4f;
+	//static constexpr float WINDOW_PROPERTY_HEIGHT_RATIO = 0.3f;
 
 	float mPanelWidth;
 
 	UWorld* mCurrentWorld = nullptr;
 	AActor* mSelectedActor = nullptr;
-	FGuiInputField mGuiInputField;
 	std::string LoadScenename;
 
 	const FCamera& mViewportCameraRef;
@@ -90,8 +88,4 @@ private:
 	FString mSaveSceneFileDialog() const;
 
 	FEditorSetting mEditorSetting;
-
-	void updateControlPanelGUI(const FGuiReference& guiReference);
-	void updatePropertyWindowGUI(const FGuiReference& guiReference);
-	void updateObjectListPanelGUI(const FGuiReference& guiReference);
 };

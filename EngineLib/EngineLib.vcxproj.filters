@@ -180,6 +180,9 @@
     <ClCompile Include="Engine\SceneManager.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Editor\EditorUIManager.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Container\TArray.h">
@@ -374,6 +377,9 @@
     </ClInclude>
     <ClInclude Include="Engine\SceneManager.h">
       <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\EditorUIManager.h">
+      <Filter>Editor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -180,6 +180,7 @@
     <ClInclude Include="Core\Object\ObjectFactory.h" />
     <ClInclude Include="Editor\Console.h" />
     <ClInclude Include="Editor\EditorSetting.h" />
+    <ClInclude Include="Editor\EditorUIManager.h" />
     <ClInclude Include="Editor\FEditorViewportClient.h" />
     <ClInclude Include="Editor\Gizmo.h" />
     <ClInclude Include="Engine\Actor.h" />
@@ -232,6 +233,7 @@
     <ClCompile Include="Core\Object\Object.cpp" />
     <ClCompile Include="Core\Object\ObjectFactory.cpp" />
     <ClCompile Include="Editor\Console.cpp" />
+    <ClCompile Include="Editor\EditorUIManager.cpp" />
     <ClCompile Include="Editor\FEditorViewportClient.cpp" />
     <ClCompile Include="Editor\Gizmo.cpp" />
     <ClCompile Include="Engine\Actor.cpp" />
