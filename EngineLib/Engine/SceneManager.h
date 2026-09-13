@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string_view>
 
@@ -6,7 +6,7 @@
 #include "Core/Container/TArray.h"
 #include "Rendering/RenderInfo.h"
 #include "Core/enum.h"
-#include "EditorSetting.h"
+#include "Editor/EditorSetting.h"
 
 inline constexpr std::string_view kSceneDataDir = "SceneData\\";
 inline constexpr std::string_view kSceneDataSuffix = ".Scene";

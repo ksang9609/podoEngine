@@ -8,6 +8,7 @@
 #include "Rendering/GraphicsManager.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
+#include "Engine/SceneManager.h"
 #include "Core/Object/ObjectFactory.h"
 #include "Core/Object/Object.h"
 #include "Rendering/Primitives/GizmoArrow.h"
@@ -17,7 +18,6 @@
 #include "Engine/Actor.h"
 #include "Engine/World.h"
 #include "Core/Name.h"
-#include "Editor/SceneManager.h"
 
 // Primitive vertices definitions
 #include "Rendering/Primitives/Cube.h"

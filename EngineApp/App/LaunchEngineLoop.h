@@ -1,13 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include <Windows.h>
+
 #include "Core/FrameTimer.h"
-#include "Editor/FEditorViewportClient.h"
-#include "Rendering/Camera.h"
-#include "Editor/SceneManager.h"
 #include "Core/IO/FileManager.h"
-#include "Rendering/Renderer.h"
+#include "Editor/FEditorViewportClient.h"
+#include "Engine/SceneManager.h"
 #include "Engine/World.h"
+#include "Rendering/Camera.h"
+#include "Rendering/Renderer.h"
 
 #include <d3d11.h>
 
