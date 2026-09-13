@@ -1,8 +1,8 @@
-﻿#include "SceneData.h"
+#include "SceneData.h"
 
-#include "Json/json.hpp"
+#include "ThirdParty/Json/json.hpp"
 
-#include "JsonUtil.h"
+#include "Core/IO/JsonUtil.h"
 
 FPrimitiveData::FPrimitiveData()
 	: Location(0.f, 0.f, 0.f)

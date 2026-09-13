@@ -1,10 +1,10 @@
-﻿#pragma once
+#pragma once
 
-#include "Vector.h"
-#include "RenderInfo.h"
-#include "TArray.h"
-#include "Transform.h"
-#include "enum.h"
+#include "Core/Math/Vector.h"
+#include "Rendering/RenderInfo.h"
+#include "Core/Container/TArray.h"
+#include "Core/Math/Transform.h"
+#include "Core/enum.h"
 
 class AActor;
 

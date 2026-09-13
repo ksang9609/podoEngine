@@ -1,10 +1,10 @@
-﻿#include "World.h"
+#include "World.h"
 
 #include <format>
 
-#include "RenderInfo.h"
-#include "JsonUtil.h"
-#include "Console.h"
+#include "Rendering/RenderInfo.h"
+#include "Core/IO/JsonUtil.h"
+#include "Editor/Console.h"
 
 IMPLEMENT_CLASS(UWorld, UObject);
 

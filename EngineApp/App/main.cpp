@@ -1,11 +1,11 @@
-﻿#include <windows.h>
+#include <windows.h>
 
-#include "Sphere.h"
-#include "Renderer.h"
-#include "WindowApplication.h"
+#include "Rendering/Primitives/Sphere.h"
+#include "Rendering/Renderer.h"
+#include "Platform/WindowApplication.h"
 #include "LaunchEngineLoop.h"
-#include "Object.h"
-#include "EngineStatics.h"
+#include "Core/Object/Object.h"
+#include "Engine/EngineStatics.h"
 
 enum : UINT_PTR
 {

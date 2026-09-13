@@ -1,6 +1,6 @@
-﻿#include "JsonUtil.h"
+#include "JsonUtil.h"
 
-#include "Json/json.hpp"
+#include "ThirdParty/Json/json.hpp"
 
 json::JSON FVectorToJson(const FVector& Vector)
 {

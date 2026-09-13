@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
-#include "Transform.h"
-#include "Object.h"
+#include "Core/Math/Transform.h"
+#include "Core/Object/Object.h"
 
 struct FRenderInfo
 {

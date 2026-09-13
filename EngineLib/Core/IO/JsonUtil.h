@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
-#include "Json/json.hpp"
-#include "Vector.h"
-#include "Rotator.h"
-#include "enum.h"
+#include "ThirdParty/Json/json.hpp"
+#include "Core/Math/Vector.h"
+#include "Core/Math/Rotator.h"
+#include "Core/enum.h"
 
 json::JSON FVectorToJson(const FVector& Vector);
 json::JSON FRotatorToJson(const FRotator& Rotator);

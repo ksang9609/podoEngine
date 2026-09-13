@@ -1,19 +1,19 @@
-﻿#include "FEditorViewportClient.h"
+#include "FEditorViewportClient.h"
 
-#include "WindowApplication.h"
-#include "ImGui/imgui.h"
+#include "Platform/WindowApplication.h"
+#include "ThirdParty/ImGui/imgui.h"
 #include "Console.h"
 #include "SceneManager.h"
-#include "MathUtility.h"
-#include "GraphicsManager.h"
+#include "Core/Math/MathUtility.h"
+#include "Rendering/GraphicsManager.h"
 
 // Primitive vertices definitions
-#include "Cube.h"
-#include "Sphere.h"
-#include "Triangle.h"
-#include "GizmoArrow.h"
-#include "Circle.h"
-#include "Primitives.h"
+#include "Rendering/Primitives/Cube.h"
+#include "Rendering/Primitives/Sphere.h"
+#include "Rendering/Primitives/Triangle.h"
+#include "Rendering/Primitives/GizmoArrow.h"
+#include "Rendering/Primitives/Circle.h"
+#include "Rendering/Primitives/Primitives.h"
 
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.

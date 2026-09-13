@@ -1,8 +1,8 @@
-﻿
+
 #include "Object.h"
-#include "EngineStatics.h"
-#include "Json/json.hpp"
-#include "Name.h"
+#include "Engine/EngineStatics.h"
+#include "ThirdParty/Json/json.hpp"
+#include "Core/Name.h"
 
 TSparseArray<UObject*> UObject::GUObjectArray;
 

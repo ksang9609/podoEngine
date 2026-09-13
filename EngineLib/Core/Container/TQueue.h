@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #pragma once
 
 #include <cassert>
 #include <queue>
 #include <utility>
-#include "Core.h"
+#include "Core/Core.h"
 
 template <typename T>
 class TQueue

@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Object.h"
+#include "Core/Object/Object.h"
 
 struct FRenderInfo;
 

@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include <cassert>
 #include <unordered_map>
 #include <utility>
 #include <initializer_list>
 
-#include "Core.h"
+#include "Core/Core.h"
 
 template <typename T, typename V>
 class TMap

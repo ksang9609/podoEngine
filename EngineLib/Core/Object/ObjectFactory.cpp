@@ -1,12 +1,12 @@
-﻿#include "ObjectFactory.h"
+#include "ObjectFactory.h"
 
-#include "Json/json.hpp"
+#include "ThirdParty/Json/json.hpp"
 
-#include "Actor.h"
-#include "PrimitiveComponent.h"
+#include "Engine/Actor.h"
+#include "Engine/Components/PrimitiveComponent.h"
 #include "Object.h"
 
-#include "NameComponent.h"
+#include "Engine/Components/NameComponent.h"
 
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
@@ -75,10 +75,10 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 	return true;
 }
 
-#include "SceneComponent.h"
-#include "CubeComponent.h"
-#include "SphereComponent.h"
-#include "World.h"
+#include "Engine/Components/SceneComponent.h"
+#include "Engine/Components/CubeComponent.h"
+#include "Engine/Components/SphereComponent.h"
+#include "Engine/World.h"
 
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetClass },

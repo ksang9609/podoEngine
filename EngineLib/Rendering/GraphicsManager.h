@@ -1,15 +1,15 @@
-﻿#pragma once
+#pragma once
 
-#include "Matrix.h"
-#include "enum.h"
+#include "Core/Math/Matrix.h"
+#include "Core/enum.h"
 
-#include "TArray.h"
-#include "TMap.h"
+#include "Core/Container/TArray.h"
+#include "Core/Container/TMap.h"
 #include "Renderer.h"
 #include "Camera.h"
 #include "RenderInfo.h"
-#include "Vector.h"
-#include "FBoundingBox.h"
+#include "Core/Math/Vector.h"
+#include "Core/Math/FBoundingBox.h"
 
 struct FBuffer
 {

@@ -1,6 +1,6 @@
-﻿#include <format>
+#include <format>
 
-#include "ImGui/imgui.h"
+#include "ThirdParty/ImGui/imgui.h"
 #include "Console.h"
 
 #include <cassert>

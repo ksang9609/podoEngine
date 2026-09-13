@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
-#include "Vector.h"
-#include "Transform.h"
+#include "Core/Math/Vector.h"
+#include "Core/Math/Transform.h"
 
 class Primitive
 {

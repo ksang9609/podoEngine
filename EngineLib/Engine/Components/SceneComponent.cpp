@@ -1,10 +1,10 @@
-﻿#include "SceneComponent.h"
+#include "SceneComponent.h"
 
 #include <format>
 
-#include "Transform.h"
-#include "JsonUtil.h"
-#include "Actor.h"
+#include "Core/Math/Transform.h"
+#include "Core/IO/JsonUtil.h"
+#include "Engine/Actor.h"
 
 IMPLEMENT_CLASS(USceneComponent, UActorComponent);
 

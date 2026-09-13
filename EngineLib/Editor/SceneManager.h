@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include <string_view>
 
-#include "SceneData.h"
-#include "TArray.h"
-#include "RenderInfo.h"
-#include "enum.h"
+#include "Engine/Serialization/SceneData.h"
+#include "Core/Container/TArray.h"
+#include "Rendering/RenderInfo.h"
+#include "Core/enum.h"
 #include "EditorSetting.h"
 
 inline constexpr std::string_view kSceneDataDir = "SceneData\\";

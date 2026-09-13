@@ -1,10 +1,10 @@
-﻿
+
 #pragma once
 
 #include <cassert>
 #include <vector>
 
-#include "Core.h"
+#include "Core/Core.h"
 
 template<typename T>
 class TArray

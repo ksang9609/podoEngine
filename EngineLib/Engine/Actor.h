@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
-#include "Object.h"
-#include "ActorComponent.h"
+#include "Core/Object/Object.h"
+#include "Engine/Components/ActorComponent.h"
 
 class UWorld;
 struct FRenderInfo;

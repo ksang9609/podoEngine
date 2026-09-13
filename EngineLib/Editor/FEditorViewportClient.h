@@ -1,10 +1,10 @@
-﻿#pragma once
-#include "Vector.h"
+#pragma once
+#include "Core/Math/Vector.h"
 
 #include <d3d11.h>
-#include "World.h"
-#include "Camera.h"
-#include "RenderInfo.h"
+#include "Engine/World.h"
+#include "Rendering/Camera.h"
+#include "Rendering/RenderInfo.h"
 #include "Gizmo.h"
 
 class AActor;

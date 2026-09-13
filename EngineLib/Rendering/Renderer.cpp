@@ -1,4 +1,4 @@
-﻿#include "Renderer.h"
+#include "Renderer.h"
 
 #include <fstream>
 #include <filesystem>
@@ -6,8 +6,8 @@
 
 //#include "WICTextureLoader.h"
 #include <directxtk/DDSTextureLoader.h>
-#include "Console.h"
-#include "TexturedPrimitives.h"
+#include "Editor/Console.h"
+#include "Rendering/Primitives/TexturedPrimitives.h"
 
 #pragma comment(lib, "DirectXTK.lib")
 #pragma comment(lib, "dxguid.lib")

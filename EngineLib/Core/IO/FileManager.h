@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include <filesystem>
 
-#include "Core.h"
+#include "Core/Core.h"
 
 inline constexpr std::string_view kDefaultRootPath = ".\\";
 inline constexpr std::string_view kDefaultAssetsPath = ".\\Assets\\";

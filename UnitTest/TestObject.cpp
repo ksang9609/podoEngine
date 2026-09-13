@@ -1,8 +1,8 @@
-﻿#include "pch.h"
+#include "pch.h"
 
-#include "Json/json.hpp"
+#include "ThirdParty/Json/json.hpp"
 
-#include "Object.h"
+#include "Core/Object/Object.h"
 
 namespace UObjectTest
 {

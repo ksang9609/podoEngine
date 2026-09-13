@@ -1,12 +1,12 @@
-﻿#include "GraphicsManager.h"
+#include "GraphicsManager.h"
 
 #include "Renderer.h"
 #include "Camera.h"
-#include "Console.h"
-#include "TQueue.h"
-#include "PrimitiveComponent.h"
-#include "NameComponent.h"
-#include "Actor.h"
+#include "Editor/Console.h"
+#include "Core/Container/TQueue.h"
+#include "Engine/Components/PrimitiveComponent.h"
+#include "Engine/Components/NameComponent.h"
+#include "Engine/Actor.h"
 
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다

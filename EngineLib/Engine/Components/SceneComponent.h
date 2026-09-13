@@ -1,10 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "ActorComponent.h"
-#include "GraphicsManager.h"
+#include "Rendering/GraphicsManager.h"
 
-#include "Vector.h"
-#include "TArray.h"
+#include "Core/Math/Vector.h"
+#include "Core/Container/TArray.h"
 
 class FTransform;
 

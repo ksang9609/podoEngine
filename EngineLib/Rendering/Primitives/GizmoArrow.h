@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Renderer.h"
+#include "Rendering/Renderer.h"
 
 // 기즈모 축 화살표. 자루(원기둥) + 촉(원뿔)이고, 인덱스 없는 삼각형 리스트다.
 //

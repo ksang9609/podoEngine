@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core.h"
+#include "Core/Core.h"
 #include <fstream>
 
 struct FEditorSetting

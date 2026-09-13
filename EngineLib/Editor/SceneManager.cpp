@@ -1,28 +1,28 @@
-﻿
+
 #include "SceneManager.h"
 
 #include <algorithm>
 #include <format>
 
-#include "FileManager.h"
-#include "EngineStatics.h"
-#include "JsonUtil.h"
-#include "ObjectFactory.h"
-#include "PrimitiveComponent.h"
-#include "TArray.h"
-#include "World.h"
+#include "Core/IO/FileManager.h"
+#include "Engine/EngineStatics.h"
+#include "Core/IO/JsonUtil.h"
+#include "Core/Object/ObjectFactory.h"
+#include "Engine/Components/PrimitiveComponent.h"
+#include "Core/Container/TArray.h"
+#include "Engine/World.h"
 #include "FEditorViewportClient.h"
-#include "Camera.h"
+#include "Rendering/Camera.h"
 #include "Console.h"
-#include "enum.h"
+#include "Core/enum.h"
 
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_dx11.h"
-#include "imGui/imgui_impl_win32.h"
+#include "ThirdParty/ImGui/imgui.h"
+#include "ThirdParty/ImGui/imgui_impl_dx11.h"
+#include "ThirdParty/ImGui/imgui_impl_win32.h"
 
-#include "FrameTimer.h"
-#include "CubeComponent.h"
-#include "ActorComponent.h"
+#include "Core/FrameTimer.h"
+#include "Engine/Components/CubeComponent.h"
+#include "Engine/Components/ActorComponent.h"
 
 FSceneManager::FSceneManager(const FCamera& viewportCameraRef)
 	: mViewportCameraRef(viewportCameraRef)

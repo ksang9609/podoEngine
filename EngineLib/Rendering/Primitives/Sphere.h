@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 // © 2024 KRAFTON, Inc. ALL RIGHTS RESERVED.
 
-#include "Renderer.h"
+#include "Rendering/Renderer.h"
 
 inline FVertexSimple Sphere_vertices[] = {
 	{ 0.000000f, 1.000000f, 0.000000f, 0.500000f, 1.000000f, 0.500000f, 1.000000f },

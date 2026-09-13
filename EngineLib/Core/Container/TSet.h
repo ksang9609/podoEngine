@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <cassert>
 #include <unordered_set>
 
-#include "Core.h"
+#include "Core/Core.h"
 
 template <typename T>
 class TSet

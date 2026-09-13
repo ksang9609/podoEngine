@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 #include "Vector.h"
 #include "MathUtility.h"
 #include "Rotator.h"
-#include "enum.h"
+#include "Core/enum.h"
 
 struct FMatrix { 
 	float M[4][4];

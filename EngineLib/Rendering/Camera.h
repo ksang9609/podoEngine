@@ -1,7 +1,7 @@
-﻿#pragma once
-#include "Transform.h"
+#pragma once
+#include "Core/Math/Transform.h"
 #include <cmath>
-#include "Vector.h"
+#include "Core/Math/Vector.h"
 
 class FCamera
 {

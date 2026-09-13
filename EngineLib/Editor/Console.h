@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include <vector>
 #include <format>
 #include <mutex>
 
-#include "Core.h"
-#include "TArray.h"
+#include "Core/Core.h"
+#include "Core/Container/TArray.h"
 
 enum class ELogLevel { Log, Warning, Error, Fatal };
 enum class ELogCategory { Core, Render, Physics, Etc };

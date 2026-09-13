@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
-#include "Matrix.h"
-#include "Vector.h"
+#include "Core/Math/Matrix.h"
+#include "Core/Math/Vector.h"
 #include "RenderInfo.h"
 
 #pragma comment(lib, "user32")

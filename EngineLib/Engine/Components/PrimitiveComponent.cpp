@@ -1,13 +1,13 @@
-﻿
+
 #include "PrimitiveComponent.h"
 
 #include <format>
 
-#include "RenderInfo.h"
-#include "enum.h"
-#include "JsonUtil.h"
-#include "Console.h"
-#include "Actor.h"
+#include "Rendering/RenderInfo.h"
+#include "Core/enum.h"
+#include "Core/IO/JsonUtil.h"
+#include "Editor/Console.h"
+#include "Engine/Actor.h"
 
 IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent);
 

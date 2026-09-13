@@ -1,10 +1,10 @@
-﻿#include "Actor.h"
+#include "Actor.h"
 
 #include <format>
 
-#include "JsonUtil.h"
-#include "RenderInfo.h"
-#include "SceneComponent.h"
+#include "Core/IO/JsonUtil.h"
+#include "Rendering/RenderInfo.h"
+#include "Engine/Components/SceneComponent.h"
 
 IMPLEMENT_CLASS(AActor, UObject);
 

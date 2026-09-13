@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
-#include "Object.h"
+#include "Core/Object/Object.h"
 #include "Actor.h"
 
-#include "RenderInfo.h"
+#include "Rendering/RenderInfo.h"
 //struct FRenderInfo;
 
 class UWorld final : public UObject

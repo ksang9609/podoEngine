@@ -1,6 +1,6 @@
-﻿#include "Core.h"
-#include "TArray.h"
-#include "TMap.h"
+#include "Core.h"
+#include "Core/Container/TArray.h"
+#include "Core/Container/TMap.h"
 #include "Name.h"
 
 #include <vector>

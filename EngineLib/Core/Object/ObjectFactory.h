@@ -1,12 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include <functional>
 
-#include "enum.h"
-#include "Vector.h"
-#include "Rotator.h"
-#include "TMap.h"
-#include "Name.h"
+#include "Core/enum.h"
+#include "Core/Math/Vector.h"
+#include "Core/Math/Rotator.h"
+#include "Core/Container/TMap.h"
+#include "Core/Name.h"
 
 namespace json { class JSON; }
 

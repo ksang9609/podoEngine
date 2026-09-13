@@ -1,9 +1,9 @@
-﻿#include "pch.h"
+#include "pch.h"
 
-#include "Actor.h"
-#include "SceneComponent.h"
-#include "ObjectFactory.h"
-#include "JsonUtil.h"
+#include "Engine/Actor.h"
+#include "Engine/Components/SceneComponent.h"
+#include "Core/Object/ObjectFactory.h"
+#include "Core/IO/JsonUtil.h"
 
 namespace AActorTest
 {

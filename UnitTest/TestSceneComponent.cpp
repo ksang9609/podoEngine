@@ -1,8 +1,8 @@
-﻿#include "pch.h"
+#include "pch.h"
 
-#include "SceneComponent.h"
-#include "Actor.h"
-#include "Matrix.h"
+#include "Engine/Components/SceneComponent.h"
+#include "Engine/Actor.h"
+#include "Core/Math/Matrix.h"
 
 namespace SceneComponentTest
 {

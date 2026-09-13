@@ -1,12 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include <functional>
 
-#include "Core.h"
-#include "TArray.h"
-#include "TSparseArray.h"
+#include "Core/Core.h"
+#include "Core/Container/TArray.h"
+#include "Core/Container/TSparseArray.h"
 #include "ObjectFactory.h"
-#include "Name.h"
+#include "Core/Name.h"
 
 
 namespace json { class JSON; }

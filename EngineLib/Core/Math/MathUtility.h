@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include <cmath>
-#include "Core.h"
+#include "Core/Core.h"
 
 constexpr float PI = 3.1415926535897932f;
 constexpr double DOUBLE_PI = 3.1415926535897932;

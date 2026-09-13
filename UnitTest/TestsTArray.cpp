@@ -1,6 +1,6 @@
-﻿
+
 #include "pch.h"
-#include "TArray.h"
+#include "Core/Container/TArray.h"
 
 namespace TArrayTest
 {

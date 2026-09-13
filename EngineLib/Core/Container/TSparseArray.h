@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <vector>
 #include <utility>
 
-#include "Core.h"
+#include "Core/Core.h"
 #include "TArray.h"
 
 template<typename T>
