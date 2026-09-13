@@ -2,12 +2,14 @@
 
 IMPLEMENT_CLASS(UNameComponent, UBillboardComponent)
 
-void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOffset)
+void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOffset, const FFontResource& fontResourceRef)
 {
 	UBillboardComponent::Initialize(worldPositionOffset, FRotator(), FVector(0));
 
 	mNameText = nameText;
+	mFontResourceRef = &fontResourceRef;
 
+	mTextMesh.SetText(mNameText, *mFontResourceRef);
 }
 
 void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
@@ -34,4 +36,12 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 	renderInfo.eRenderFlags = renderFlags;
 
 	return renderInfo;
+}
+
+void UNameComponent::SetNameText(const FString& nameText)
+{
+	mNameText = nameText;
+
+	// TODO: Optimize this by updating in the GetRenderInfos function instead of recreating the FTextMesh every time.
+	mTextMesh.SetText(mNameText, *mFontResourceRef);
 }

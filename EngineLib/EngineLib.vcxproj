@@ -198,6 +198,8 @@
     <ClInclude Include="Platform\InputState.h" />
     <ClInclude Include="Platform\WindowApplication.h" />
     <ClInclude Include="Rendering\Camera.h" />
+    <ClInclude Include="Rendering\FontResource.h" />
+    <ClInclude Include="Rendering\FTextMesh.h" />
     <ClInclude Include="Rendering\GraphicsManager.h" />
     <ClInclude Include="Rendering\Primitives\Circle.h" />
     <ClInclude Include="Rendering\Primitives\Cube.h" />
@@ -209,6 +211,7 @@
     <ClInclude Include="Rendering\Primitives\Triangle.h" />
     <ClInclude Include="Rendering\Renderer.h" />
     <ClInclude Include="Rendering\RenderInfo.h" />
+    <ClInclude Include="Rendering\VertexType.h" />
     <ClInclude Include="Test11.h" />
     <ClInclude Include="ThirdParty\DirectX\WICTextureLoader.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
@@ -249,6 +252,7 @@
     <ClCompile Include="Engine\Serialization\SceneData.cpp" />
     <ClCompile Include="Engine\World.cpp" />
     <ClCompile Include="Rendering\Camera.cpp" />
+    <ClCompile Include="Rendering\FTextMesh.cpp" />
     <ClCompile Include="Rendering\GraphicsManager.cpp" />
     <ClCompile Include="Rendering\Renderer.cpp" />
     <ClCompile Include="Rendering\RenderInfo.cpp" />

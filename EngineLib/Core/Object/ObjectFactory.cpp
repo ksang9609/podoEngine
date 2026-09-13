@@ -1,12 +1,18 @@
-#include "ObjectFactory.h"
+﻿#include "ObjectFactory.h"
 
 #include "ThirdParty/Json/json.hpp"
 
 #include "Engine/Actor.h"
 #include "Engine/Components/PrimitiveComponent.h"
+#include "Engine/Components/NameComponent.h"
+#include "Rendering/FontResource.h"
+
 #include "Object.h"
 
-#include "Engine/Components/NameComponent.h"
+void FObjectFactory::Initialize(const FFontResource& fontResource)
+{
+	mDefaultFontResource = &fontResource;
+}
 
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
@@ -50,7 +56,9 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 	actor->AddRootSceneComponent(component);
 
 	/* DEBUG */
-	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>("Test", FVector3{ 0, 0, 2 });
+	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnPrimitiveActor.");
+	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
+		actor->GetName().ToString(), FVector3{0, 0, 1}, *mDefaultFontResource);
 	billboardComponent.AttachTo(*component);
 	return actor;
 }

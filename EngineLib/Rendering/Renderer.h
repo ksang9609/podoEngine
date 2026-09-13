@@ -1,23 +1,17 @@
-#pragma once
+﻿#pragma once
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector.h"
+
 #include "RenderInfo.h"
+#include "VertexType.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
-
-// 1. Define the triangle vertices
-struct FVertexSimple
-{
-    float x, y, z;    // Position
-    float r, g, b, a; // Color
-
-	FVector GetPosition() const { return FVector(x, y, z); }
-};
 
 struct FConstants
 {
@@ -25,14 +19,6 @@ struct FConstants
 	FMatrix ViewProjection;
 	FVector4 Tint;          // rgb = 색, a = 섞는 비율
 };
-
-struct FVertexTextured
-{
-	float x, y, z;
-	float u, v;
-};
-
-
 
 class URenderer
 {

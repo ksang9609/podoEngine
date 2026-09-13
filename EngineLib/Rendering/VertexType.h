@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/Core.h"
+#include "Core/Math/Vector.h"
 
 struct FVertexSimple
 {
