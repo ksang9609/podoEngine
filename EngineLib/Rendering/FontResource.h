@@ -22,10 +22,10 @@ public:
 		return mCharacterMap.Find(character);
 	}
 
-	FFontResource() = default;
+	//FFontResource() = default;
 
 	// Build FFontResource from ASCII table. Each character is mapped to a grid cell in the texture atlas.
-	FFontResource(int colums, int rows, float charWidth = 0.1f, float charHeight = 0.2f, float charAdvance = 0.7f)
+	FFontResource(int colums = 16, int rows = 16, float charWidth = 0.1f, float charHeight = 0.2f, float charAdvance = 0.7f)
 	{
 		for (int i = 0; i < colums * rows; ++i)
 		{

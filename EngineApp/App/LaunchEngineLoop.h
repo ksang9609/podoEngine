@@ -37,6 +37,8 @@ private:
 	FFileManager* mFileManager;
 	FEditorUIManager* mEditorUIManager;
 
+	FFontResource* mDefaultFontResource;
+
 	/* Editor Command */
 	void processEditorCommands(const FEditorCommands& commands);
 	void processEditorCommand(const FNewSceneCommand& command);

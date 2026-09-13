@@ -17,6 +17,7 @@ struct FFontResource;
 
 struct FObjectFactory
 {
+	// TODO?: Rename?
 	static void Initialize(const FFontResource& defaultFontResource);
 
 	static UObject* ConstructUnInitializedObject(const FClassInfo* classInfo);

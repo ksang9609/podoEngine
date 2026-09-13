@@ -64,6 +64,20 @@ private:
 	bool mbStarted = false;
 };
 
+template<typename TComponent>
+	requires std::derived_from<TComponent, UActorComponent>
+TComponent* AActor::GetComponentByType() const
+{
+	for (UActorComponent* component : mComponents)
+	{
+		if (component && component->IsA<TComponent>())
+		{
+			return static_cast<TComponent*>(component);
+		}
+	}
+	return nullptr;
+}
+
 template<typename TComponent, typename... Args>
 	requires std::derived_from<TComponent, USceneComponent>
 TComponent& AActor::CreateAndAddComponent(Args&&... args)

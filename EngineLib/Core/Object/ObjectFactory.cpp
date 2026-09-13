@@ -9,6 +9,8 @@
 
 #include "Object.h"
 
+const FFontResource* FObjectFactory::mDefaultFontResource = nullptr;
+
 void FObjectFactory::Initialize(const FFontResource& fontResource)
 {
 	mDefaultFontResource = &fontResource;

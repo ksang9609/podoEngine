@@ -2,30 +2,31 @@
 
 #include <windows.h>
 
-#include "Rendering/Renderer.h"
-#include "Platform/WindowApplication.h"
+#include "Core/Name.h"
+#include "Core/Object/Object.h"
+#include "Core/Object/ObjectFactory.h"
 #include "Editor/Console.h"
-#include "Rendering/GraphicsManager.h"
+#include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/SceneManager.h"
-#include "Core/Object/ObjectFactory.h"
-#include "Core/Object/Object.h"
+#include "Engine/World.h"
+#include "Platform/WindowApplication.h"
+#include "Rendering/GraphicsManager.h"
 #include "Rendering/Primitives/GizmoArrow.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/FontResource.h"
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_dx11.h"
 #include "ThirdParty/ImGui/imgui_impl_win32.h"
-#include "Engine/Actor.h"
-#include "Engine/World.h"
-#include "Core/Name.h"
 
 // Primitive vertices definitions
-#include "Rendering/Primitives/Cube.h"
-#include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/Circle.h"
-#include "Rendering/Primitives/Triangle.h"
+#include "Rendering/Primitives/Cube.h"
 #include "Rendering/Primitives/Primitives.h"
+#include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/TexturedPrimitives.h"
+#include "Rendering/Primitives/Triangle.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -81,6 +82,10 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 	console.Init("Jungle Console Window", clientWidth);
 
+	/* Resource Registration */
+	mDefaultFontResource = new FFontResource();
+	FObjectFactory::Initialize(*mDefaultFontResource);
+
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
@@ -130,7 +135,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
 
-
+	
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
@@ -290,10 +295,12 @@ void FEngineLoop::End()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
+	delete ViewportClient;
+	delete mEditorUIManager;
 	delete FrameTimer;
 	delete mSceneManager;
 	delete mFileManager;
-
+	delete mDefaultFontResource;
 	delete mGraphicsManager;
 }
 
