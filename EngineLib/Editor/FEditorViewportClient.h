@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Core/Math/Vector.h"
 
 #include <d3d11.h>
@@ -21,6 +21,7 @@ public:
 	void Reset();
 
 	FCamera& GetCamera() { return mCamera; }
+	const FCamera& GetCamera() const { return mCamera; }
 
 	FCamera mCamera;
 	FGizmo mGizmo;

@@ -1,4 +1,4 @@
-#include "GraphicsManager.h"
+﻿#include "GraphicsManager.h"
 
 #include "Renderer.h"
 #include "Camera.h"
@@ -645,7 +645,7 @@ FVector FGraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
 	}
 }
 
-float FGraphicsManager::GetGridWidth()
+float FGraphicsManager::GetGridWidth() const
 {
 	return mgridSpacing;
 }
