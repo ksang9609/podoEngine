@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Math/Transform.h"
 #include "Core/Object/Object.h"
+#include "Core/Math/FBoundingBox.h"
 
 struct FRenderInfo
 {
@@ -10,6 +11,9 @@ struct FRenderInfo
 	FObjectID ObejctID;
 	FVector4 Color;
 	ERenderFlags eRenderFlags;
+
+	FBoundingBox LocalBounds{};
+	FBoundingBox WorldBounds{};
 
 	// Return world matrix for billboard quads to face the camera
 	// Get FRotator input because current camera rotation is stored in FRotator.

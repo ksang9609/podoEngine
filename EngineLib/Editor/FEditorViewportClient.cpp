@@ -1,4 +1,4 @@
-#include "FEditorViewportClient.h"
+﻿#include "FEditorViewportClient.h"
 
 #include "Platform/WindowApplication.h"
 #include "ThirdParty/ImGui/imgui.h"
@@ -49,6 +49,52 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 	}
 
 	return false;
+}
+
+bool FEditorViewportClient::RaycastBounds(
+	const FVector& rayStart,
+	const FVector& rayEnd,
+	const FBoundingBox& bounds)
+{
+	const FVector direction = rayEnd - rayStart;
+
+	float tMin = 0.0f;
+	float tMax = 1.0f;
+
+	for (int axis = 0; axis < 3; ++axis)
+	{
+		const float origin = rayStart[axis];
+		const float dir = direction[axis];
+		const float minValue = bounds.min[axis];
+		const float maxValue = bounds.max[axis];
+
+		if (fabsf(dir) < 1e-6f)
+		{
+			if (origin < minValue || origin > maxValue)
+			{
+				return false;
+			}
+			continue;
+		}
+
+		float t1 = (minValue - origin) / dir;
+		float t2 = (maxValue - origin) / dir;
+
+		if (t1 > t2)
+		{
+			std::swap(t1, t2);
+		}
+
+		tMin = max(tMin, t1);
+		tMax = min(tMax, t2);
+
+		if (tMin > tMax)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FRenderInfo>& renderInfos, float perspectiveRatio)
@@ -104,13 +150,38 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FR
 			continue;   // 모르는 프리미티브는 건너뛴다
 		}
 
+		const FMatrix effectiveWorld =
+			RI.GetBillboardTransformMatrix(mCamera.Rotation);
+
+		const FBoundingBox worldBounds =
+			RI.ePrimitive == EPrimitive::EP_BillboardQuad
+			? TransformBoundingBox(RI.LocalBounds, effectiveWorld)
+			: RI.WorldBounds;
+
+		// 1. 월드 AABB로 대부분 제거: 역행렬/삼각형 검사도 안 함
+		if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
+		{
+			continue;
+		}
+
 		const FMatrix WorldToLocal = RI.GetBillboardTransformMatrix(mCamera.Rotation).Inverse();
+
+
+		if (WorldToLocal == FMatrix::Zero)
+		{
+			continue;
+		}
 
 		//역행렬이 존재하지 않으면(스케일이 작아 det이 0에 가까운 경우) Racast 대상에서 제외
 		if (WorldToLocal == FMatrix::Zero) continue;
 
 		const FVector LocalNear = WorldToLocal.TransformPosition(NearPoint);
 		const FVector LocalFar = WorldToLocal.TransformPosition(FarPoint);
+
+		if (!RaycastBounds(LocalNear, LocalFar, RI.LocalBounds))
+		{
+			continue;
+		}
 
 		// 삼각형 리스트라 정점 3개씩 묶인다
 		for (uint32 i = 0; i + 2 < length; i += 3)
@@ -208,9 +279,6 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		mGizmo.CycleGizmoType();
 	}
 
-
-	RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio);
-
 	//RayCast
 
 	////Editor Click 처리
@@ -222,6 +290,8 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	// 누른 순간에만 선택을 갱신한다. 떼는 것으로는 선택이 풀리지 않는다.
 	if (!ImGui::GetIO().WantCaptureMouse && Input.WasPressed(VK_LBUTTON))
 	{
+		RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio);
+
 		AActor* Hit = nullptr;
 
 		if (IsMouseHit())
@@ -276,6 +346,8 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
 	if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
 	{
+		RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio);
+
 		if (mGizmo.eType == EGIZMO_TYPE::TRANSLATE)
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다

@@ -1,4 +1,4 @@
-
+﻿
 #include "PrimitiveComponent.h"
 
 #include <format>
@@ -8,6 +8,16 @@
 #include "Core/IO/JsonUtil.h"
 #include "Editor/Console.h"
 #include "Engine/Actor.h"
+
+#include "Rendering/Primitives/Cube.h"
+#include "Rendering/Primitives/Sphere.h"
+#include "Rendering/Primitives/Triangle.h"
+#include "Rendering/Primitives/GizmoArrow.h"
+#include "Rendering/Primitives/Circle.h"
+#include "Rendering/Primitives/Primitives.h"
+
+static FBoundingBox CalculateBounds(const FVertexSimple* vertices, uint32 count);
+static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive);
 
 IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent);
 
@@ -35,12 +45,14 @@ void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FR
 	USceneComponent::Initialize(location, rotation, scale3D);
 
 	mePrimitive = ePrimitive;
+	mLocalBounds = GetPrimitiveLocalBounds(ePrimitive);
 }
 
 void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D, bool bUseTexture)
 {
 	USceneComponent::Initialize(location, rotation, scale3D);
 	mePrimitive = ePrimitive;
+	mLocalBounds = GetPrimitiveLocalBounds(ePrimitive);
 	mbUseTexture = bUseTexture;
 }
 
@@ -65,6 +77,7 @@ void UPrimitiveComponent::DeserializeClass(const json::JSON& inJson)
 	}
 
 	mePrimitive = EPrimitiveFromJson(propertiesJson.at("mePrimitiveType"));
+	mLocalBounds = GetPrimitiveLocalBounds(mePrimitive);
 }
 
 void UPrimitiveComponent::Update(TArray<FRenderInfo>* outRenderInfos)
@@ -95,14 +108,19 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 		renderFlags = renderFlags | ERenderFlags::RF_BoundingBox;
 	}
 
-	return {
-		mePrimitive,
-		GetTransformMatrix(),
-		{ mOwner->UUID, mOwner->InternalIndex },
-		FVector4(0, 0, 0, 0),
-		renderFlags,
-		mbUseTexture
-	};
+	FRenderInfo renderInfo{};
+	renderInfo.ePrimitive = mePrimitive;
+	renderInfo.WorldTransformMatrix = GetTransformMatrix();
+	renderInfo.ObejctID = { mOwner->UUID, mOwner->InternalIndex };
+	renderInfo.Color = FVector4(0, 0, 0, 0);
+	renderInfo.eRenderFlags = renderFlags;
+	renderInfo.bUseTexture = mbUseTexture;
+
+	renderInfo.LocalBounds = mLocalBounds;
+	renderInfo.WorldBounds =
+		TransformBoundingBox(mLocalBounds, renderInfo.WorldTransformMatrix);
+
+	return renderInfo;
 }
 
 /*
@@ -113,4 +131,72 @@ void UPrimitiveComponent::Render(FStruct)
 }
 */
 
+static FBoundingBox CalculateBounds(
+	const FVertexSimple* vertices,
+	uint32 count)
+{
+	FBoundingBox result{};
+	result.min = vertices[0].GetPosition();
+	result.max = result.min;
 
+	for (uint32 i = 1; i < count; ++i)
+	{
+		const FVector position = vertices[i].GetPosition();
+
+		result.min.x = min(result.min.x, position.x);
+		result.min.y = min(result.min.y, position.y);
+		result.min.z = min(result.min.z, position.z);
+
+		result.max.x = max(result.max.x, position.x);
+		result.max.y = max(result.max.y, position.y);
+		result.max.z = max(result.max.z, position.z);
+	}
+
+	return result;
+}
+
+static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive)
+{
+	switch (primitive)
+	{
+	case EPrimitive::EP_Cube:
+	{
+		static const FBoundingBox bounds =
+			CalculateBounds(Cube_vertices, _countof(Cube_vertices));
+		return bounds;
+	}
+	case EPrimitive::EP_Sphere:
+	{
+		static const FBoundingBox bounds =
+			CalculateBounds(Sphere_vertices, _countof(Sphere_vertices));
+		return bounds;
+	}
+	case EPrimitive::EP_Triangle:
+	{
+		static const FBoundingBox bounds =
+			CalculateBounds(Triangle_vertices, _countof(Triangle_vertices));
+		return bounds;
+	}
+	case EPrimitive::EP_GizmoArrow:
+	{
+		static const FBoundingBox bounds =
+			CalculateBounds(GizmoArrow_vertices, _countof(GizmoArrow_vertices));
+		return bounds;
+	}
+	case EPrimitive::EP_Circle:
+	{
+		static const FBoundingBox bounds =
+			CalculateBounds(Circle_vertices, _countof(Circle_vertices));
+		return bounds;
+	}
+	case EPrimitive::EP_BillboardQuad:
+	{
+		static const FBoundingBox bounds =
+			CalculateBounds(Quad_vertices, _countof(Quad_vertices));
+		return bounds;
+	}
+	}
+
+	static const FBoundingBox emptyBounds{};
+	return emptyBounds;
+}

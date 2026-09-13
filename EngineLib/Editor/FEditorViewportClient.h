@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Core/Math/Vector.h"
 
 #include <d3d11.h>
@@ -6,6 +6,7 @@
 #include "Rendering/Camera.h"
 #include "Rendering/RenderInfo.h"
 #include "Gizmo.h"
+#include "Core/Math/FBoundingBox.h"
 
 class AActor;
 class FSceneManager;
@@ -13,6 +14,10 @@ class FSceneManager;
 struct FEditorViewportClient
 {
 public:
+	bool RaycastBounds(
+		const FVector& rayStart,
+		const FVector& rayEnd,
+		const FBoundingBox& bounds);
 	void RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FRenderInfo>& renderInfos, float perspectiveRatio);
 	float GetFov() const { return mCamera.mFovDegree; }
 	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, float perspectiveRatio);
