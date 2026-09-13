@@ -26,6 +26,16 @@ struct FTexture
 	ID3D11SamplerState* Sampler;
 };
 
+enum ERenderQueueType
+{
+	RQT_SimplePrimitive,
+	RQT_TexturedPrimitive,
+	RQT_BillboardText,
+	RQT_WorldAxis,
+	RQT_Gizmo,
+	RQT_BoundingBox
+};
+
 class FGraphicsManager
 {
 public:
@@ -148,7 +158,7 @@ private:
 
 	void updateRenderQueue(
 		const TArray<FRenderInfo>& renderInfos,
-		TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap
+		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap
 	) const;
 
 	/* Rendering Functions */

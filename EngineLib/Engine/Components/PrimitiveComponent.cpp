@@ -1,4 +1,4 @@
-
+﻿
 #include "PrimitiveComponent.h"
 
 #include <format>
@@ -87,8 +87,8 @@ void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) co
 FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 {
 	ERenderFlags renderFlags = mbUseTexture
-		? ERenderFlags::RF_TexturedPrimitive
-		: ERenderFlags::RF_SimplePrimitive;
+		? ERenderFlags::RF_Texture | ERenderFlags::RF_Primitive
+		: ERenderFlags::RF_Primitive;
 
 	if (mbShowBoundingBox)
 	{
@@ -101,7 +101,6 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 		{ mOwner->UUID, mOwner->InternalIndex },
 		FVector4(0, 0, 0, 0),
 		renderFlags,
-		mbUseTexture
 	};
 }
 

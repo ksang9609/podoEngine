@@ -26,7 +26,7 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 	ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
 	// Remove primitive flags and add billboardtext flags
-	renderFlags = (renderFlags & ~ERenderFlags::RF_SimplePrimitive) | ERenderFlags::RF_BillboardText;
+	renderFlags = (renderFlags & ~ERenderFlags::RF_Primitive) | ERenderFlags::RF_BillboardText;
 
 	renderInfo.eRenderFlags = renderFlags;
 

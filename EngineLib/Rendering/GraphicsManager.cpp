@@ -94,70 +94,77 @@ void FGraphicsManager::GizmoPrepare()
 	mRenderer->RSUpdateState();
 }
 
-// TODO: remove outBillboardRenderQueue
-void QueueRenderQueue(
-	const TArray<FRenderInfo>& renderInfos,
-	TArray<const FRenderInfo*>& outSimpleRenderQueue,
-	TArray<const FRenderInfo*>& outTextureRenderQueue,
-	TArray<const FRenderInfo*>& outBillboardRenderQueue)
-{
-	for (const FRenderInfo& renderInfo : renderInfos)
-	{
-		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
-		{
-			outBillboardRenderQueue.Add(&renderInfo);
-		}
-		else if (renderInfo.bUseTexture)
-		{
-			outTextureRenderQueue.Add(&renderInfo);
-		}
-		else
-		{
-			outSimpleRenderQueue.Add(&renderInfo);
-		}
-	}
-}
+//// TODO: remove outBillboardRenderQueue
+//void QueueRenderQueue(
+//	const TArray<FRenderInfo>& renderInfos,
+//	TArray<const FRenderInfo*>& outSimpleRenderQueue,
+//	TArray<const FRenderInfo*>& outTextureRenderQueue,
+//	TArray<const FRenderInfo*>& outBillboardRenderQueue)
+//{
+//	for (const FRenderInfo& renderInfo : renderInfos)
+//	{
+//		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
+//		{
+//			outBillboardRenderQueue.Add(&renderInfo);
+//		}
+//		else if ((renderInfo.eRenderFlags & ERenderFlags::RF_TexturedPrimitive) == ERenderFlags::RF_None)
+//		{
+//			outTextureRenderQueue.Add(&renderInfo);
+//		}
+//		else
+//		{
+//			outSimpleRenderQueue.Add(&renderInfo);
+//		}
+//	}
+//}
+//
+//bool RenderFlagMatch(ERenderFlags targetFlags, ERenderFlags renderFlags)
+//{
+//	return (static_cast<uint32>(targetFlags) & static_cast<uint32>(renderFlags)) != 0;
+//}
 
-bool RenderFlagMatch(ERenderFlags targetFlags, ERenderFlags renderFlags)
-{
-	return (static_cast<uint32>(targetFlags) & static_cast<uint32>(renderFlags)) != 0;
-}
+// TODO: Combine worldaxis, bounding box into a single render queue type,
+// since they are both line-based rendering and can be batched together.
+// This will reduce the number of draw calls and improve performance.
+
 
 void FGraphicsManager::updateRenderQueue(
 	const TArray<FRenderInfo>& renderInfos,
-	TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap) const
+	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap) const
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
 		ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_SimplePrimitive) &&
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
-			outRenderQueueMap[ERenderFlags::RF_SimplePrimitive].Add(&renderInfo);
+			if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
+			{
+				outRenderQueueMap[RQT_TexturedPrimitive].Add(&renderInfo);
+			}
+			else
+			{
+				outRenderQueueMap[RQT_SimplePrimitive].Add(&renderInfo);
+			}
 		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_TexturedPrimitive) &&
-			HasShowFlag(EEngineShowFlags::SF_Primitives))
-		{
-			outRenderQueueMap[ERenderFlags::RF_TexturedPrimitive].Add(&renderInfo);
-		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_BillboardText) &&
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BillboardText) &&
 			HasShowFlag(EEngineShowFlags::SF_BillboardText))
 		{
-			outRenderQueueMap[ERenderFlags::RF_BillboardText].Add(&renderInfo);
+			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
 		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_WorldAxis) &&
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_WorldAxis) &&
 			HasShowFlag(EEngineShowFlags::SF_WorldAxis))
 		{
-			outRenderQueueMap[ERenderFlags::RF_WorldAxis].Add(&renderInfo);
+			outRenderQueueMap[RQT_WorldAxis].Add(&renderInfo);
 		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_Gizmo))
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Gizmo))
 		{
-			outRenderQueueMap[ERenderFlags::RF_Gizmo].Add(&renderInfo);
+			outRenderQueueMap[RQT_Gizmo].Add(&renderInfo);
 		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_BoundingBox))
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox))
 		{
-			outRenderQueueMap[ERenderFlags::RF_BoundingBox].Add(&renderInfo);
+			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
 		}
 	}
 }
@@ -172,21 +179,21 @@ void FGraphicsManager::Render(
 	// Prepare Render queue
 	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
 	// Each render info is splitted into different render queues
-	TMap<ERenderFlags, TArray<const FRenderInfo*>> renderQueueMap;
+	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
 	updateRenderQueue(scenerRenderInfos, renderQueueMap);
 	updateRenderQueue(gizmoRenderInfos, renderQueueMap);
 	updateRenderQueue(axisRenderInfos, renderQueueMap);
 
 	Prepare(&camera);
 
-	renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
-	renderTexturedPrimitive(renderQueueMap[ERenderFlags::RF_TexturedPrimitive], camera);
-	renderBillboardText(renderQueueMap[ERenderFlags::RF_BillboardText], camera);
-	renderWorldAxis(renderQueueMap[ERenderFlags::RF_WorldAxis]);
+	renderSimplePrimitive(renderQueueMap[RQT_SimplePrimitive], camera);
+	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);
+	renderBillboardText(renderQueueMap[RQT_BillboardText], camera);
+	renderWorldAxis(renderQueueMap[RQT_WorldAxis]);
 
 	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
 	renderGrid();
-	renderBoundingBox(renderQueueMap[ERenderFlags::RF_BoundingBox], camera.GetRotation());
+	renderBoundingBox(renderQueueMap[RQT_BoundingBox], camera.GetRotation());
 	FlushLines();
 
 	//강조
@@ -202,7 +209,7 @@ void FGraphicsManager::Render(
 
 	// Gizmo
 	GizmoPrepare();
-	renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_Gizmo], camera);
+	renderSimplePrimitive(renderQueueMap[RQT_Gizmo], camera);
 }
 
 void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
