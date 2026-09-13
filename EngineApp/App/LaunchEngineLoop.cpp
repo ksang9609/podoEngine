@@ -1,4 +1,4 @@
-#include "LaunchEngineLoop.h"
+﻿#include "LaunchEngineLoop.h"
 
 #include <windows.h>
 
@@ -118,8 +118,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices));
 
 	// mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"CubeTextureSample.dds");
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"EarthTexture.dds");
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
 
 
 	FrameTimer = new FFrameTimer(120);

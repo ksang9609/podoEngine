@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 
 #include <fstream>
 #include <filesystem>
@@ -241,7 +241,7 @@ bool URenderer::CreateFontAtlasTexture()
 	// 추후 동적으로 텍스쳐 로드하자 
 	HRESULT hr = DirectX::CreateDDSTextureFromFile(
 		Device,
-		L"EnglishBigFontAtlas.dds",
+		L"Assets/Fonts/EnglishBigFontAtlas.dds",
 		nullptr,
 		&FontAtlasShaderResoruceView
 	);
@@ -485,27 +485,27 @@ void URenderer::CreateShader()
 	ID3DBlob* primitiveTexturePixelShaderCSO;
 
 
-	D3DCompileFromFile(L"ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vertexshaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vertexshaderCSO, nullptr);
 
 	Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), nullptr, &SimpleVertexShader);
 
-	D3DCompileFromFile(L"ShaderW0.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &pixelshaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &pixelshaderCSO, nullptr);
 
 	Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(), pixelshaderCSO->GetBufferSize(), nullptr, &SimplePixelShader);
 
-	D3DCompileFromFile(L"ShaderLine.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &LinevertexshaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderLine.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &LinevertexshaderCSO, nullptr);
 
 	Device->CreateVertexShader(LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), nullptr, &LineSimpleVertexShader);
 
-	D3DCompileFromFile(L"ShaderLine.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &LinepixelshaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderLine.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &LinepixelshaderCSO, nullptr);
 
 	Device->CreatePixelShader(LinepixelshaderCSO->GetBufferPointer(), LinepixelshaderCSO->GetBufferSize(), nullptr, &LineSimplePixelShader);
 
-	D3DCompileFromFile(L"ShaderTexture.hlsl",nullptr,	nullptr,"mainVS","vs_5_0",0,0,	&primitiveTextureVertexShaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl",nullptr,	nullptr,"mainVS","vs_5_0",0,0,	&primitiveTextureVertexShaderCSO, nullptr);
 
 	Device->CreateVertexShader(primitiveTextureVertexShaderCSO->GetBufferPointer(), primitiveTextureVertexShaderCSO->GetBufferSize(), nullptr,	&PrimitiveTextureVertexShader);
 
-	D3DCompileFromFile(L"ShaderTexture.hlsl", nullptr,	nullptr,"mainPS", "ps_5_0",	0,	0,	&primitiveTexturePixelShaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr,	nullptr,"mainPS", "ps_5_0",	0,	0,	&primitiveTexturePixelShaderCSO, nullptr);
 
 	Device->CreatePixelShader(primitiveTexturePixelShaderCSO->GetBufferPointer(), primitiveTexturePixelShaderCSO->GetBufferSize(), nullptr, &PrimitiveTexturePixelShader);
 
@@ -597,7 +597,7 @@ bool URenderer::CreateFontShader()
 	do
 	{
 		HRESULT hr = D3DCompileFromFile(
-			L"ShaderFont.hlsl", nullptr, nullptr,
+			L"Shaders/ShaderFont.hlsl", nullptr, nullptr,
 			"mainVS", "vs_5_0", 0, 0,
 			&vsCode, nullptr
 		);
@@ -606,7 +606,7 @@ bool URenderer::CreateFontShader()
 			break;
 
 		hr = D3DCompileFromFile(
-			L"ShaderFont.hlsl", nullptr, nullptr,
+			L"Shaders/ShaderFont.hlsl", nullptr, nullptr,
 			"mainPS", "ps_5_0", 0, 0,
 			&psCode, nullptr
 		);
