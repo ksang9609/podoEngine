@@ -124,12 +124,42 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		renderer->Device->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
 	}
 
+	/*
 	// 구 텍스쳐 uv 매핑
 	constexpr std::size_t sphereVertexCount = sizeof(Sphere_vertices) / sizeof(Sphere_vertices[0]);
 
 	FVertexTextured sphereTextureVertices[sphereVertexCount];
 	BuildSphereTextureVertices(Sphere_vertices, sphereTextureVertices);
-	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices));
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices)); */
+
+	TArray<FVertexTextured> sphereIndexVertices;
+	TArray<UINT> sphereIndices;
+
+	BuildSphereTextureMeshIndices(Sphere_vertices, sphereIndexVertices, sphereIndices);
+	mGraphicsManager->CreateTexturedBuffer(
+		EPrimitive::EP_Sphere,
+		&sphereIndexVertices[0],
+		static_cast<uint32>(
+			sphereIndexVertices.Num() * sizeof(FVertexTextured))
+	);
+
+	{
+		URenderer* renderer = mGraphicsManager->GetRenderer();
+
+		renderer->SphereIndexBuffer = renderer->CreatePrimitiveIndexBuffer(
+			&sphereIndices[0],
+			static_cast<UINT>(sphereIndices.Num())
+		);
+
+		renderer->SphereIndexCount = renderer->SphereIndexBuffer
+			? static_cast<UINT>(sphereIndices.Num())
+			: 0;
+
+		if (!renderer->SphereIndexBuffer)
+		{
+			UE_LOG(Error, Render, "Failed to create sphere index buffer.");
+		}
+	}
 
 	// mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");

@@ -9,6 +9,9 @@ typedef struct FVector
 	FVector(float n);
 	FVector(float _x, float _y, float _z);
 
+	float& operator[](int Index);
+	const float& operator[](int Index) const;
+
 	const FVector operator-(const FVector& other) const;
 	const FVector operator+(const FVector& other) const;
 
@@ -18,7 +21,7 @@ typedef struct FVector
 	// Return the negation of this vector.
 	FVector operator-() const;
 
-	//내적
+	//내
 	static float dot(const FVector& A, const FVector& B);
 
 	//외적
@@ -84,3 +87,5 @@ struct FVector2
 	float Length() const;
 	float LengthSquared() const;
 };
+
+

@@ -30,6 +30,7 @@ protected:
 	virtual FRenderInfo makeRenderInfo() const;
 	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
+	FBoundingBox mLocalBounds{};
 	bool mbUseTexture = false;
 	bool mbShowBoundingBox = true;
 };

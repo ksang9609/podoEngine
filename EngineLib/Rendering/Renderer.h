@@ -55,6 +55,10 @@ public:
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
 	ID3D11Buffer* CubeIndexBuffer = nullptr;     // 큐브 인덱스 저장
+	ID3D11Buffer* SphereIndexBuffer = nullptr;
+	UINT SphereIndexCount = 0;
+
+
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
     D3D11_VIEWPORT ViewportInfo;
@@ -82,7 +86,8 @@ public:
 	// Create API for GraphicsManager
 	void CreateSamplerState(ID3D11SamplerState** outSamplerState);
 	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
-	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT byteWidth);
+	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT ByteWidth);
+	ID3D11Buffer* CreatePrimitiveIndexBuffer(const uint32* indices, UINT ByteWidth);
 
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
 	
@@ -111,7 +116,7 @@ public:
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
-		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer = nullptr);
+		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer = nullptr, UINT numIndices = 0);
 	// Render Text in the FontTextureBuffer and FontIndexBuffer.
 	// It doesn't recieve buffer parameters since it use the internal buffers.
 	void RenderFontTexture(uint32 numCharacter);

@@ -4,6 +4,32 @@ FVector::FVector() : x(0), y(0), z(0) {}
 FVector::FVector(float n) : x(n), y(n), z(n) {}
 FVector::FVector(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 
+float& FVector::operator[](int Index)
+{
+	switch (Index)
+	{
+	case 0:
+		return x;
+	case 1:
+		return y;
+	default:
+		return z;
+	}
+}
+
+const float& FVector::operator[](int Index) const
+{
+	switch (Index)
+	{
+	case 0:
+		return x;
+	case 1:
+		return y;
+	default:
+		return z;
+	}
+}
+
 const FVector FVector::operator-(const FVector& other) const
 {
 	return FVector(x - other.x, y - other.y, z - other.z);
