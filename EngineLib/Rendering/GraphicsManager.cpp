@@ -271,7 +271,7 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 	
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
+		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
 		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
 	}
@@ -290,18 +290,45 @@ void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const 
 	mLineIndices.Add(mStartOffset + 1);
 }
 
-void FGraphicsManager::DrawAABBLine(const TArray<FVector3> worArray, const FVector4& color)
+void FGraphicsManager::DrawAABBLine(const FBoundingBox& bounds, const FVector4& color)
 {
-	int32 baseVertex = mLineVertices.Num();
-	for (int32 i = 0;i < worArray.Num();i++)
+	const FVector3& boundsMin = bounds.min;
+	const FVector3& boundsMax = bounds.max;
+
+	const FVector3 corners[8] =
 	{
-		mLineVertices.Add({ worArray[i].x, worArray[i].y, worArray[i].z, color.x, color.y, color.z, color.w });
+		{ boundsMin.x, boundsMin.y, boundsMin.z },
+		{ boundsMax.x, boundsMin.y, boundsMin.z },
+		{ boundsMin.x, boundsMax.y, boundsMin.z },
+		{ boundsMax.x, boundsMax.y, boundsMin.z },
+
+		{ boundsMin.x, boundsMin.y, boundsMax.z },
+		{ boundsMax.x, boundsMin.y, boundsMax.z },
+		{ boundsMin.x, boundsMax.y, boundsMax.z },
+		{ boundsMax.x, boundsMax.y, boundsMax.z }
+	};
+
+	const uint32 baseVertex =
+		static_cast<uint32>(mLineVertices.Num());
+
+	for (const FVector3& corner : corners)
+	{
+		mLineVertices.Add({
+			corner.x, corner.y, corner.z,
+			color.x, color.y, color.z, color.w
+			});
 	}
-	// Index Buffer 업데이트
-	static const TArray<int32> indicelist = { 0, 1, 1, 3, 3, 2, 2, 0, 4, 5, 5, 7, 7, 6, 6, 4, 0, 4, 1, 5, 2, 6, 3, 7 }; // 밑면 -> 윗면 -> 기둥 순 
-	for (int32 j = 0;j < indicelist.Num();j++)
+
+	static constexpr uint32 indices[] =
 	{
-		mLineIndices.Add(baseVertex + indicelist[j]);
+		0, 1, 1, 3, 3, 2, 2, 0,
+		4, 5, 5, 7, 7, 6, 6, 4,
+		0, 4, 1, 5, 2, 6, 3, 7
+	};
+
+	for (uint32 index : indices)
+	{
+		mLineIndices.Add(baseVertex + index);
 	}
 }
 
@@ -378,51 +405,17 @@ void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& rende
 			}
 		}
 
-		FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(cameraRotation);
-		FBuffer* LocalminmaxBuffer = mBufferMap.Find(renderInfo->ePrimitive);
-		if (LocalminmaxBuffer == nullptr)
-		{
-			continue;
-		}
-		FVector3 LocalMin = LocalminmaxBuffer->LocalBounds.min;
-		FVector3 LocalMax = LocalminmaxBuffer->LocalBounds.max;
-		FVector3 p0 = LocalMin;
-		FVector3 p1 = FVector3(LocalMax.x, LocalMin.y, LocalMin.z);
-		FVector3 p2 = FVector3(LocalMin.x, LocalMax.y, LocalMin.z);
-		FVector3 p3 = FVector3(LocalMax.x, LocalMax.y, LocalMin.z);
-		FVector3 p4 = FVector3(LocalMin.x, LocalMin.y, LocalMax.z);
-		FVector3 p5 = FVector3(LocalMax.x, LocalMin.y, LocalMax.z);
-		FVector3 p6 = FVector3(LocalMin.x, LocalMax.y, LocalMax.z);
-		FVector3 p7 = LocalMax;
-		TArray<FVector3> LocalArray = { p0,p1,p2,p3,p4,p5,p6,p7 };
-		TArray<FVector3> WorldArray;
-		for (int i = 0;i < LocalArray.Num();i++)
-		{
-			FVector3 Worlddot = worldTransform.TransformPosition(LocalArray[i]);
-			WorldArray.Add(Worlddot);
-		}
-		FVector3 WorldMin = WorldArray[0];
-		FVector3 WorldMax = WorldArray[0];
-		for (int i = 0;i < WorldArray.Num();i++)
-		{
-			WorldMin.x = min(WorldMin.x, WorldArray[i].x);
-			WorldMin.y = min(WorldMin.y, WorldArray[i].y);
-			WorldMin.z = min(WorldMin.z, WorldArray[i].z);
-			WorldMax.x = max(WorldMax.x, WorldArray[i].x);
-			WorldMax.y = max(WorldMax.y, WorldArray[i].y);
-			WorldMax.z = max(WorldMax.z, WorldArray[i].z);
-		}
+		// Billboard는 카메라 회전이 실제 렌더 행렬에 포함되므로(카메라 방향에 따라 월드 변환이 바뀜)
+		// 현재 카메라 기준으로 WorldBounds를 갱신
+		const FBoundingBox bounds = renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad
+			? TransformBoundingBox(
+				renderInfo->LocalBounds,
+				renderInfo->GetTransformMatrix(cameraRotation))
+			: renderInfo->WorldBounds;
 
-		FVector3 w0 = WorldMin;
-		FVector3 w1 = FVector3(WorldMax.x, WorldMin.y, WorldMin.z);
-		FVector3 w2 = FVector3(WorldMin.x, WorldMax.y, WorldMin.z);
-		FVector3 w3 = FVector3(WorldMax.x, WorldMax.y, WorldMin.z);
-		FVector3 w4 = FVector3(WorldMin.x, WorldMin.y, WorldMax.z);
-		FVector3 w5 = FVector3(WorldMax.x, WorldMin.y, WorldMax.z);
-		FVector3 w6 = FVector3(WorldMin.x, WorldMax.y, WorldMax.z);
-		FVector3 w7 = WorldMax;
-		TArray<FVector3> WorldBoxArray = { w0,w1,w2,w3,w4,w5,w6,w7 };
-		DrawAABBLine(WorldBoxArray, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		DrawAABBLine(
+			bounds,
+			FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 	}
 }
 
@@ -565,7 +558,7 @@ void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertex
 	buffer.LocalBounds.min = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
 	buffer.LocalBounds.max = buffer.LocalBounds.min;
 
-	for (uint32 i = 1; i < buffer.SourceNum; ++i)
+	/*for (uint32 i = 1; i < buffer.SourceNum; ++i)
 	{
 		const auto& v = vertices[i];
 
@@ -576,7 +569,7 @@ void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertex
 		buffer.LocalBounds.max.x = max(buffer.LocalBounds.max.x, v.x);
 		buffer.LocalBounds.max.y = max(buffer.LocalBounds.max.y, v.y);
 		buffer.LocalBounds.max.z = max(buffer.LocalBounds.max.z, v.z);
-	}
+	}*/
 
 	// 동일한 종류를 다시 등록한다면 이전 버퍼 해제
 	if (FBuffer* previous = mTexturedBufferMap.Find(ePrimitive))
@@ -660,7 +653,7 @@ void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& cam
 {
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
-	FMatrix worldTransformMatrix = RI.GetBillboardTransformMatrix(camera.Rotation);
+	FMatrix worldTransformMatrix = RI.GetTransformMatrix(camera.Rotation);
 
 	// 화면에서 OUTLINE_PIXELS 만큼 보이려면 이 깊이에서 월드로 얼마여야 하는지 환산한다.
 	// 깊이 d에서 뷰포트가 담는 월드 높이가 2*d*tan(fov/2) 이므로, 그걸 픽셀 수로 나누면 픽셀당 월드 크기다.

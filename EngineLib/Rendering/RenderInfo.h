@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Math/Transform.h"
 #include "Core/Object/Object.h"
+#include "Core/Math/FBoundingBox.h"
 
 struct FRenderInfo
 {
@@ -11,10 +12,13 @@ struct FRenderInfo
 	FVector4 Color;
 	ERenderFlags eRenderFlags;
 
+	FBoundingBox LocalBounds{};
+	FBoundingBox WorldBounds{};
+
 	// Return world matrix for billboard quads to face the camera
 	// Get FRotator input because current camera rotation is stored in FRotator.
 	// If camera stores rotation in FQuat, we can use FQuat to calculate billboard matrix.
-	FMatrix GetBillboardTransformMatrix(const FRotator& cameraRotation) const
+	FMatrix GetTransformMatrix(const FRotator& cameraRotation) const
 	{
 		if (ePrimitive != EPrimitive::EP_BillboardQuad)
 		{

@@ -74,7 +74,7 @@ public:
 	//Line batch
 	// 호출 즉시 그리지 않고 배열에 쌓는다. FlushLines()에서 한 번에 그린다.
 	void DrawLine(const FVector& start, const FVector& end, const FVector4& color);
-	void DrawAABBLine(const TArray<FVector3> worArray, const FVector4& color);
+	void DrawAABBLine(const FBoundingBox& bounds, const FVector4& color);
 	void FlushLines();
 
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
