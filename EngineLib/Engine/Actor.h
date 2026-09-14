@@ -42,6 +42,8 @@ public:
 	FRotator GetRotator() const;
 	FQuat GetRotation() const;
 
+	const TArray<UActorComponent*>& GetComponents() const { return mComponents; }
+
 	virtual void Update(TArray<FRenderInfo>* outRenderInfos);
 	//void Render();
 

@@ -16,6 +16,8 @@ struct FSetActorScaleCommand { FObjectID ObjectID; FVector Scale; };
 struct FSetActorNameCommand { FObjectID ObjectID; FName NewName; };
 struct FSetSelectedActorCommand { FObjectID ObjectID; };
 
+struct FSetComponentUseTextureCommand { FObjectID ObjectID; bool bUseTexture; };
+
 /* EditorViewportClient Commands */
 struct FSetViewModeCommand { EViewModeIndex ViewMode; };
 struct FSetShowFlagCommand { uint32 ShowFlags; };
@@ -34,6 +36,7 @@ using FEditorCommand = std::variant <
 	FNewSceneCommand,
 	FSaveSceneCommand,
 	FLoadSceneCommand,
+
 	FSpawnActorCommand,
 	FDeleteActorCommand,
 	FSetActorLocationCommand,
@@ -41,6 +44,9 @@ using FEditorCommand = std::variant <
 	FSetActorScaleCommand,
 	FSetActorNameCommand,
 	FSetSelectedActorCommand,
+
+	FSetComponentUseTextureCommand,
+
 	FSetViewModeCommand,
 	FSetShowFlagCommand,
 	FSetCameraSensitivityCommand,
@@ -49,6 +55,7 @@ using FEditorCommand = std::variant <
 	FSetCameraRotationCommand,
 	FSetGizmoModeCommand,
 	FCycleGizmoModeCommand,
+
 	FSetGridWidthCommand,
 	FStartProjectionTransitionCommand
 > ;

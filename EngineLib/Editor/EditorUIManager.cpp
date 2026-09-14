@@ -9,6 +9,8 @@
 #include "Rendering/GraphicsManager.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/SceneManager.h"
+#include "Engine/Components/ActorComponent.h"
+#include "Engine/Components/PrimitiveComponent.h"
 
 /* Editor */
 #include "FEditorViewportClient.h"
@@ -415,7 +417,8 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 
 	mPanelWidth = ImGui::GetWindowWidth();
 
-
+	/* Actor Transform */
+	ImGui::SeparatorText("Actor Transform");
 	const AActor* selectedActor = guiReference.SceneManager.GetSelectedActor();
 	if (selectedActor)
 	{
@@ -445,7 +448,7 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 			//	rotationInput[2], // Yaw
 			//	rotationInput[0]  // Roll
 			//	});
-			
+
 			outCommands.Emplace(FSetActorRotationCommand{ selectedActor->GetObjectID(), FRotator{
 				rotationInput[1], // Pitch
 				rotationInput[2], // Yaw
@@ -457,7 +460,46 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 			//mSelectedActor->SetScale(scaleInput);
 			outCommands.Emplace(FSetActorScaleCommand{ selectedActor->GetObjectID(), scaleInput });
 		}
+
+		/* Components */
+		ImGui::SeparatorText("Components");
+		if (ImGui::BeginChild("Components", ImVec2(0, 0), ImGuiChildFlags_Borders))
+		{
+			const TArray<UActorComponent*>& components = selectedActor->GetComponents();
+			for (const UActorComponent* component : components)
+			{
+				ImGui::PushID(component->UUID); // Ensure unique ID for each child
+				if (ImGui::BeginChild("ComponentFrame", ImVec2(0, 0),
+					ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+				{
+					ImGui::Text("Class: %s", component->GetRuntimeClass()->Name.CStr());
+					ImGui::Text("UUID: %d", component->UUID);
+					FString ComponentName = component->GetName().ToString();
+					ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
+						ComponentName.CStr(),
+						component->GetName().DisplayIndex,
+						component->GetName().ComparisonIndex
+					);
+				}
+
+				if (const UPrimitiveComponent* primitiveComponent =
+					component->Cast<UPrimitiveComponent>())
+				{
+					bool bUseTexture = primitiveComponent->GetUseTexture();
+
+					if (ImGui::Checkbox("Use Texture", &bUseTexture))
+					{
+						outCommands.Emplace(FSetComponentUseTextureCommand{ primitiveComponent->GetObjectID(), bUseTexture });
+					}
+				}
+
+				ImGui::EndChild();
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndChild();
 	}
+
 	ImGui::End();
 }
 
@@ -532,7 +574,7 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 						if (ImGui::Button("Select"))
 						{
 							//SetSelectedActor(actor);
-							outCommands.Emplace(FSetSelectedActorCommand{ actor->GetObjectID()});
+							outCommands.Emplace(FSetSelectedActorCommand{ actor->GetObjectID() });
 						}
 						else
 						{
