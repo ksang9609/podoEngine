@@ -1,4 +1,5 @@
 ﻿#include "NameComponent.h"
+#include "Core/IO/JsonUtil.h"
 
 #include <format>
 
@@ -11,8 +12,29 @@ void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOf
 	UBillboardComponent::Initialize(worldPositionOffset, FRotator(), FVector(0));
 
 	mFontResourceRef = &fontResourceRef;
-
 	mNameText = nameText;
+}
+
+void UNameComponent::SerializeClass(json::JSON& outJson) const
+{
+	UBillboardComponent::SerializeClass(outJson);
+	outJson["Properties"]["mNameText"] = mNameText.CStr();
+}
+
+void UNameComponent::DeserializeClass(const json::JSON& inJson)
+{
+	UBillboardComponent::DeserializeClass(inJson);
+
+	const json::JSON& propertiesJson = inJson.at("Properties");
+	if (!propertiesJson.hasKey("mNameText") || propertiesJson.at("mNameText").JSONType() != json::JSON::Class::String)
+	{
+		throw std::runtime_error("UNameComponent: mNameText requires a string");
+	}
+
+	mNameText = FString(propertiesJson.at("mNameText").ToString());
+	mFontResourceRef = FObjectFactory::GetDefaultFontResource();
+
+	mTextMesh.SetText(mNameText, *mFontResourceRef);
 }
 
 void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
@@ -70,3 +92,8 @@ bool UNameComponent::AttachTo(USceneComponent& parent)
 	SetNameText(mOwner->GetName().ToString());
 	return true;
 }
+
+UNameComponent::~UNameComponent()
+{
+}
+
