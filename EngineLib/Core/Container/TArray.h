@@ -1,4 +1,4 @@
-
+﻿
 #pragma once
 
 #include <cassert>
@@ -49,6 +49,9 @@ public:
 	void RemoveAt(uint32 index, int32 count);
 	void RemoveAtSwap(uint32 index);
 	void RemoveLast();
+
+	T* GetData() { return mDatas.data(); }
+	const T* GetData() const { return mDatas.data(); }
 
 
 	/*

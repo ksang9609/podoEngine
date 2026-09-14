@@ -183,6 +183,9 @@
     <ClCompile Include="Editor\EditorUIManager.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\TextMesh.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Container\TArray.h">
@@ -380,6 +383,15 @@
     </ClInclude>
     <ClInclude Include="Editor\EditorUIManager.h">
       <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\TextMesh.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\VertexType.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\FontResource.h">
+      <Filter>Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

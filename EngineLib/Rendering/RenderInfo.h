@@ -4,6 +4,7 @@
 #include "Core/Object/Object.h"
 #include "Core/Math/FBoundingBox.h"
 
+struct FTextMesh;
 struct FRenderInfo
 {
 	EPrimitive ePrimitive;
@@ -11,6 +12,7 @@ struct FRenderInfo
 	FObjectID ObejctID;
 	FVector4 Color;
 	ERenderFlags eRenderFlags;
+	const FTextMesh* Textmesh;
 
 	FBoundingBox LocalBounds{};
 	FBoundingBox WorldBounds{};
@@ -20,7 +22,7 @@ struct FRenderInfo
 	// If camera stores rotation in FQuat, we can use FQuat to calculate billboard matrix.
 	FMatrix GetTransformMatrix(const FRotator& cameraRotation) const
 	{
-		if (ePrimitive != EPrimitive::EP_BillboardQuad)
+		if (!HasAllRenderFlags(eRenderFlags, ERenderFlags::RF_BillboardText))
 		{
 			return WorldTransformMatrix;
 		}
@@ -34,6 +36,4 @@ struct FRenderInfo
 		const FVector scale = FVector(1); // Billboard quad should not be scaled by world matrix, keep it uniform scale
 		return FMatrix::Scale(scale) * FMatrix::Rotate(cameraRotation) * FMatrix::Translation(location);
 	}
-
-	bool bUseTexture = false;
 };

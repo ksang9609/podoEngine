@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-#include "Rendering/Renderer.h"
+#include "Rendering/VertexType.h"
 
 inline FVertexSimple Quad_vertices[6] =
 {

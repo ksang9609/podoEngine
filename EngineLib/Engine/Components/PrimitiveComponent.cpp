@@ -100,8 +100,8 @@ void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) co
 FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 {
 	ERenderFlags renderFlags = mbUseTexture
-		? ERenderFlags::RF_TexturedPrimitive
-		: ERenderFlags::RF_SimplePrimitive;
+		? ERenderFlags::RF_Texture | ERenderFlags::RF_Primitive
+		: ERenderFlags::RF_Primitive;
 
 	if (mbShowBoundingBox)
 	{
@@ -114,7 +114,7 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 	renderInfo.ObejctID = { mOwner->UUID, mOwner->InternalIndex };
 	renderInfo.Color = FVector4(0, 0, 0, 0);
 	renderInfo.eRenderFlags = renderFlags;
-	renderInfo.bUseTexture = mbUseTexture;
+	renderInfo.Textmesh = nullptr;
 
 	renderInfo.LocalBounds = mLocalBounds;
 	renderInfo.WorldBounds = TransformBoundingBox(mLocalBounds, renderInfo.WorldTransformMatrix);

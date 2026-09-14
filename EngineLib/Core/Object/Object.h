@@ -48,7 +48,7 @@ public:
 		return mName;
 	}
 
-	void SetName(const FName& name)
+	virtual void SetName(const FName& name)
 	{
 		mName = name;
 	}

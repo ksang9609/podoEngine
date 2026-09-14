@@ -1,7 +1,7 @@
-// TexturedPrimitives.h
+﻿// TexturedPrimitives.h
 #pragma once
 
-#include "Rendering/Renderer.h" // FVertexTextured 정의
+#include "Rendering/VertexType.h" // FVertexTextured 정의
 #include <cmath>
 
 inline FVertexTextured QuadTextureVertices[] =
@@ -242,9 +242,11 @@ inline void BuildCubeAtlasVertices(FVertexTextured(&outVertices)[36], int column
 
 // sphere uv 매핑(y축을 중심)
 template <std::size_t N>
-inline void BuildSphereTextureVertices(const FVertexSimple(&source)[N],	FVertexTextured(&outVertices)[N])
+inline void BuildSphereTextureVertices(const FVertexSimple(&source)[N], TArray<FVertexTextured>& outVertices)
 {
 	static_assert(N % 3 == 0, "정점 개수는 3의 배수여야 합니다.");
+
+	outVertices.Init(FVertexTextured{}, static_cast<uint32>(N));
 
 	constexpr float pi = 3.14159265358979323846f;
 	// 부동 소수점 처리
@@ -393,4 +395,50 @@ inline void BuildCubeAtlasVertices(
 	CompactCubeVertices(expanded, outVertices);
 }
 
+template<size_t N>
+inline void BuildSphereTextureMeshIndices(const FVertexSimple(&source)[N],
+	TArray<FVertexTextured>& outVertices, TArray<UINT>& outIndices)
+{
+	TArray<FVertexTextured> expanded;
+	BuildSphereTextureVertices(source, expanded);
 
+	outVertices.Reset(0);
+	outIndices.Reset(0);
+
+	outVertices.Reserve(static_cast<uint32>(N));
+	outIndices.Reserve(static_cast<uint32>(N));
+
+	for (size_t i = 0; i < N; ++i)
+	{
+		const FVertexTextured& vertex = expanded[i];
+		int32 foundIndex = -1;
+
+		// 위치와 UV가 모두 같은 정점을 찾는다.
+		// 위치가 같아도 UV가 다르면 별개 취급
+		for (int32 j = 0; j < outVertices.Num(); ++j)
+		{
+			const FVertexTextured& existing = outVertices[j];
+
+			if (existing.x == vertex.x &&
+				existing.y == vertex.y &&
+				existing.z == vertex.z &&
+				existing.u == vertex.u &&
+				existing.v == vertex.v)
+			{
+				foundIndex = j;
+				break;
+			}
+		}
+
+		if (foundIndex >= 0)
+		{
+			outIndices.Add(static_cast<unsigned int>(foundIndex));
+		}
+		else
+		{
+			// Add()가 새 정점의 인덱스를 반환한다.
+			const unsigned int newIndex = outVertices.Add(vertex);
+			outIndices.Add(newIndex);
+		}
+	}
+}

@@ -2,30 +2,31 @@
 
 #include <windows.h>
 
-#include "Rendering/Renderer.h"
-#include "Platform/WindowApplication.h"
+#include "Core/Name.h"
+#include "Core/Object/Object.h"
+#include "Core/Object/ObjectFactory.h"
 #include "Editor/Console.h"
-#include "Rendering/GraphicsManager.h"
+#include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/SceneManager.h"
-#include "Core/Object/ObjectFactory.h"
-#include "Core/Object/Object.h"
+#include "Engine/World.h"
+#include "Platform/WindowApplication.h"
+#include "Rendering/GraphicsManager.h"
 #include "Rendering/Primitives/GizmoArrow.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/FontResource.h"
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_dx11.h"
 #include "ThirdParty/ImGui/imgui_impl_win32.h"
-#include "Engine/Actor.h"
-#include "Engine/World.h"
-#include "Core/Name.h"
 
 // Primitive vertices definitions
-#include "Rendering/Primitives/Cube.h"
-#include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/Circle.h"
-#include "Rendering/Primitives/Triangle.h"
+#include "Rendering/Primitives/Cube.h"
 #include "Rendering/Primitives/Primitives.h"
+#include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/TexturedPrimitives.h"
+#include "Rendering/Primitives/Triangle.h"
 
 void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -81,6 +82,10 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 	console.Init("Jungle Console Window", clientWidth);
 
+	/* Resource Registration */
+	mDefaultFontResource = new FFontResource();
+	FObjectFactory::Initialize(*mDefaultFontResource);
+
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
@@ -119,18 +124,48 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		renderer->Device->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
 	}
 
+	/*
 	// 구 텍스쳐 uv 매핑
 	constexpr std::size_t sphereVertexCount = sizeof(Sphere_vertices) / sizeof(Sphere_vertices[0]);
 
 	FVertexTextured sphereTextureVertices[sphereVertexCount];
 	BuildSphereTextureVertices(Sphere_vertices, sphereTextureVertices);
-	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices));
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices)); */
+
+	TArray<FVertexTextured> sphereIndexVertices;
+	TArray<UINT> sphereIndices;
+
+	BuildSphereTextureMeshIndices(Sphere_vertices, sphereIndexVertices, sphereIndices);
+	mGraphicsManager->CreateTexturedBuffer(
+		EPrimitive::EP_Sphere,
+		&sphereIndexVertices[0],
+		static_cast<uint32>(
+			sphereIndexVertices.Num() * sizeof(FVertexTextured))
+	);
+
+	{
+		URenderer* renderer = mGraphicsManager->GetRenderer();
+
+		renderer->SphereIndexBuffer = renderer->CreatePrimitiveIndexBuffer(
+			&sphereIndices[0],
+			static_cast<UINT>(sphereIndices.Num())
+		);
+
+		renderer->SphereIndexCount = renderer->SphereIndexBuffer
+			? static_cast<UINT>(sphereIndices.Num())
+			: 0;
+
+		if (!renderer->SphereIndexBuffer)
+		{
+			UE_LOG(Error, Render, "Failed to create sphere index buffer.");
+		}
+	}
 
 	// mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
 
-
+	
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
@@ -290,10 +325,12 @@ void FEngineLoop::End()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
+	delete ViewportClient;
+	delete mEditorUIManager;
 	delete FrameTimer;
 	delete mSceneManager;
 	delete mFileManager;
-
+	delete mDefaultFontResource;
 	delete mGraphicsManager;
 }
 
@@ -459,5 +496,12 @@ void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
 
 void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& command)
 {
+	AActor* selectedActor = mSceneManager->GetSelectedActor();
+	if (selectedActor && command.bOrthographic && mGraphicsManager->GetPerspectiveRatio() == 1.0f)
+	{
+		const FVector offset = selectedActor->GetTransform().Location - ViewportClient->GetCamera().Location;
+		const float depth = FVector::dot(offset, ViewportClient->GetCamera().GetForwardVector());
+		ViewportClient->GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
+	}
 	mGraphicsManager->StartProjectionTransition(command.bOrthographic);
 }

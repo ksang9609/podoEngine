@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Object/Object.h"
 #include "Engine/Components/ActorComponent.h"
@@ -17,8 +17,14 @@ public:
 
 	void Initialize();
 
+	virtual void SetName(const FName& name) override;
+
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
+
+	template<typename TComponent>
+		requires std::derived_from<TComponent, UActorComponent>
+	TComponent* GetComponentByType() const;
 
 	template<typename TComponent, typename... Args>
 		requires std::derived_from<TComponent, USceneComponent>
@@ -57,6 +63,20 @@ private:
 	bool mbPressed = false;
 	bool mbStarted = false;
 };
+
+template<typename TComponent>
+	requires std::derived_from<TComponent, UActorComponent>
+TComponent* AActor::GetComponentByType() const
+{
+	for (UActorComponent* component : mComponents)
+	{
+		if (component && component->IsA<TComponent>())
+		{
+			return static_cast<TComponent*>(component);
+		}
+	}
+	return nullptr;
+}
 
 template<typename TComponent, typename... Args>
 	requires std::derived_from<TComponent, USceneComponent>

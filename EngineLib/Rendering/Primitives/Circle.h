@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-#include "Rendering/Renderer.h"
+#include "Rendering/VertexType.h"
 
 // 회전 기즈모용 링(토러스). 인덱스 없는 삼각형 리스트다.
 //
