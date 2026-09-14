@@ -20,6 +20,8 @@ struct FBuffer
 	FBoundingBox LocalBounds;
 
 	ID3D11Buffer* TexturedBuffer = nullptr;
+	ID3D11Buffer* IndexBuffer = nullptr;
+	UINT IndexCount = 0;
 };
 
 struct FTexture
@@ -168,10 +170,16 @@ private:
 	void renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderWorldAxis(const TArray<const FRenderInfo*>& renderInfos);
 	void renderBoundingBox(const TArray<const FRenderInfo*>& renderInfos, const FRotator& cameraRotation);
+	// Instancing
+	void renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);
 	void renderGrid();
 	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 
 	void CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos);
+
+	// Instancing Test
+	void RenderInstancingTest();
+	ID3D11Buffer* mTestInstanceIndexBuffer = nullptr;
 };
