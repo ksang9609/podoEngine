@@ -21,7 +21,7 @@ public:
 	virtual void DeserializeClass(const json::JSON& inJson) override;
 
 	//virtual void Render();
-	void Update(TArray<FRenderInfo>* outRenderInfos) override final;
+	void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const override final;
 	void SetUseTexture(bool value) { mbUseTexture = value; }
 	bool GetUseTexture() const { return mbUseTexture; }

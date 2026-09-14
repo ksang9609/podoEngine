@@ -10,11 +10,11 @@ struct FSubUVMesh
 	TArray<uint32> Indices;
 
 	FSubUVMesh() = default;
-	FSubUVMesh(float n, float m);
+	FSubUVMesh(uint32 n, uint32 m);
 
-	void UpdateMesh(float n, float m);
+	void UpdateMesh(uint32 n, uint32 m, uint32 i);
 
 private:
 	// Generate the mesh from i-th item of n by m grid
-	void generateMesh(float n, float m, float i);
+	void generateMesh(uint32 n, uint32 m, uint32 i);
 };

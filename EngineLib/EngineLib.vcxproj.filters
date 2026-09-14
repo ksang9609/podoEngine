@@ -186,6 +186,9 @@
     <ClCompile Include="Rendering\TextMesh.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\SubUVMesh.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Container\TArray.h">
@@ -395,6 +398,12 @@
     </ClInclude>
     <ClInclude Include="Editor\EditorCommands.h">
       <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\SubUVMesh.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\ParticleSubUVComponent.h">
+      <Filter>Engine\Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Object/Object.h"
 
@@ -16,7 +16,7 @@ public:
 	AActor* GetOwner() const;
 
 	// Todo: Make as pure class
-	virtual void Update(TArray<FRenderInfo>* outRenderInfos);
+	virtual void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos);
 	virtual void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const;
 
 protected:
