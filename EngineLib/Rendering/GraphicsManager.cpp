@@ -396,8 +396,6 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 			mesh->IndexCount = mesh->SourceNum;
 		}
 
-		// 함수 내부에서 인스턴스 버퍼 업로드와
-		// 인스턴싱 셰이더 바인딩까지 처리한다.
 		const bool success = mRenderer->RenderSimpleInstanced(
 			mesh->Buffer,
 			mesh->IndexBuffer,
@@ -914,7 +912,7 @@ void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
 void FGraphicsManager::CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos)
 {
 	uint32 countIndices = 6 + (mgridExtent / mgridSpacing) * 2 * 2 + renderInfos.Num() * 24;
-	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 + renderInfos.Num() * 8;
+	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 * 2+ renderInfos.Num() * 8;
 	mLineIndices.Reserve(countIndices);
 	mLineVertices.Reserve(countvertices);
 }
