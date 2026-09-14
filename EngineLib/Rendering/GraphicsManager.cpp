@@ -271,7 +271,7 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 	
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
+		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
 		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
 	}
@@ -410,7 +410,7 @@ void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& rende
 		const FBoundingBox bounds = renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad
 			? TransformBoundingBox(
 				renderInfo->LocalBounds,
-				renderInfo->GetBillboardTransformMatrix(cameraRotation))
+				renderInfo->GetTransformMatrix(cameraRotation))
 			: renderInfo->WorldBounds;
 
 		DrawAABBLine(
@@ -653,7 +653,7 @@ void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& cam
 {
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
-	FMatrix worldTransformMatrix = RI.GetBillboardTransformMatrix(camera.Rotation);
+	FMatrix worldTransformMatrix = RI.GetTransformMatrix(camera.Rotation);
 
 	// 화면에서 OUTLINE_PIXELS 만큼 보이려면 이 깊이에서 월드로 얼마여야 하는지 환산한다.
 	// 깊이 d에서 뷰포트가 담는 월드 높이가 2*d*tan(fov/2) 이므로, 그걸 픽셀 수로 나누면 픽셀당 월드 크기다.
