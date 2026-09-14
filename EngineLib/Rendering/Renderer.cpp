@@ -260,10 +260,10 @@ bool URenderer::RenderSimpleInstanced(
 	const UINT instanceStride = sizeof(FInstanceData);
 	UINT offset = 0;
 
-	// 슬롯 0 메시의 정점 데이터
-	DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &vertexStride, &offset);
-	// 슬롯 1인스턴스별 데이터
-	DeviceContext->IASetVertexBuffers(1, 1, &InstanceBuffer, &instanceStride, &offset);
+	ID3D11Buffer* vbs[2] = { vertexBuffer, InstanceBuffer }; // VertexBuffer와 InstanceBuffer 각각의 슬롯 0,1에 삽입
+	UINT strides[2] = { vertexStride, instanceStride };
+	UINT offsets[2] = { 0, 0 };
+	DeviceContext->IASetVertexBuffers(0, 2, vbs, strides, offsets);
 
 
 	// 인덱스 버퍼는 정점 버퍼 슬롯과 별도로 연결
@@ -496,6 +496,12 @@ void URenderer::Release()
 	releaseFontBuffers();
 	//ReleaseTestTexture();
 	releaseDeviceAndSwapChain();
+
+	if (InstanceBuffer)
+	{
+		InstanceBuffer->Release();
+		InstanceBuffer = nullptr;
+	}
 }
 
 void URenderer::SwapBuffer()
