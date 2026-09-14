@@ -19,7 +19,6 @@ public:
 
 	void Initialize(const FString& nameText, FVector worldPositionOffset, const FFontResource& fontResourceRef);
 	void SetNameText(const FString& nameText);
-	//void SetNameText(FString&& nameText);
 
 	virtual bool AttachTo(USceneComponent& parent) override;
 

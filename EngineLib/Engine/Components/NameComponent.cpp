@@ -12,8 +12,7 @@ void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOf
 	UBillboardComponent::Initialize(worldPositionOffset, FRotator(), FVector(0));
 
 	mFontResourceRef = &fontResourceRef;
-
-	mTextMesh.SetText(mNameText, *mFontResourceRef);
+	mNameText = nameText;
 }
 
 void UNameComponent::SerializeClass(json::JSON& outJson) const

@@ -20,10 +20,10 @@ public:
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
 
-	bool AttachTo(USceneComponent& parent);
-	bool RemoveChild(USceneComponent& child);
-	void DetachFromParent();
-	void DetachAllChildren();
+	virtual bool AttachTo(USceneComponent& parent);
+	virtual bool RemoveChild(USceneComponent& child);
+	virtual void DetachFromParent();
+	virtual void DetachAllChildren();
 	int32 GetParentUUID() const;
 	int32 GetSerializedParentUUID() const;
 
