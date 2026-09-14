@@ -42,7 +42,6 @@ public:
 	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
 	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
 
-	//ID3D11ShaderResourceView* TestTextureSRV = nullptr;
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
 	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
 	ID3D11VertexShader* FontVertexShader = nullptr;
@@ -56,12 +55,6 @@ public:
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
 	ID3D11Buffer* CubeIndexBuffer = nullptr;     // 큐브 인덱스 저장
-
-
-	//ID3D11ShaderResourceView* PrimitiveTextureSRV = nullptr;
-
-	//ID3D11SamplerState* PrimitiveTextureSampler = nullptr;
-
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
     D3D11_VIEWPORT ViewportInfo;
@@ -83,7 +76,6 @@ public:
     unsigned int StrideTextured;
 
 public:
-
 	/* Create */
 	void Create(HWND hWindow);
 
@@ -92,24 +84,10 @@ public:
 	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT byteWidth);
 
-	// font용
-	//bool CreateFontShader();
-
-	//void RenderFontTexture(const FMatrix& world, const FMatrix& viewProjection);
-
-	//bool CreateTestQuad(); // 기존의 쿼드를 그리는 함수(테스트 용)
-
-	// texturedPrimitive용
-	//void RenderTexture(const FMatrix& world, const FMatrix& viewProjection);
-
-	
-	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices, ID3D11ShaderResourceView* textureSRV);
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
 	
 	void ReleasePrimitiveTextureResources(
 		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
-	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices);
-	
 
 	// Release all resources that this render holds.
 	void Release();
