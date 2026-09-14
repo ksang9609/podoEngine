@@ -1,4 +1,4 @@
-// TexturedPrimitives.h
+﻿// TexturedPrimitives.h
 #pragma once
 
 #include "Rendering/Renderer.h" // FVertexTextured 정의
@@ -393,4 +393,52 @@ inline void BuildCubeAtlasVertices(
 	CompactCubeVertices(expanded, outVertices);
 }
 
+template<size_t N>
+inline void BuildSphereTextureMeshIndices(
+	const FVertexSimple(&source)[N],
+	TArray<FVertexTextured>& outVertices,
+	TArray<unsigned int>& outIndices)
+{
+	FVertexTextured expanded[N];
+	BuildSphereTextureVertices(source, expanded);
 
+	outVertices.Reset(0);
+	outIndices.Reset(0);
+
+	outVertices.Reserve(static_cast<uint32>(N));
+	outIndices.Reserve(static_cast<uint32>(N));
+
+	for (size_t i = 0; i < N; ++i)
+	{
+		const FVertexTextured& vertex = expanded[i];
+		int32 foundIndex = -1;
+
+		// 위치와 UV가 모두 같은 정점을 찾는다.
+		// 위치가 같아도 UV가 다르면 별개 취급
+		for (int32 j = 0; j < outVertices.Num(); ++j)
+		{
+			const FVertexTextured& existing = outVertices[j];
+
+			if (existing.x == vertex.x &&
+				existing.y == vertex.y &&
+				existing.z == vertex.z &&
+				existing.u == vertex.u &&
+				existing.v == vertex.v)
+			{
+				foundIndex = j;
+				break;
+			}
+		}
+
+		if (foundIndex >= 0)
+		{
+			outIndices.Add(static_cast<unsigned int>(foundIndex));
+		}
+		else
+		{
+			// Add()가 새 정점의 인덱스를 반환한다.
+			const unsigned int newIndex = outVertices.Add(vertex);
+			outIndices.Add(newIndex);
+		}
+	}
+}
