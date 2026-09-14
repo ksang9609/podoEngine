@@ -125,6 +125,7 @@ public:
 
 	/* Prepare methods for each rendering type */
 	void PrepareSimplePrimitive();
+	void PrepareSimpleInstanced();
 	void PrepareTexturedPrimitive();
 	void PrepareLine();
 	void PrepareFont();
@@ -190,6 +191,7 @@ private:
 
 	/* Prepare methods for each shader */
 	void prepareSimpleShader();
+	void prepareInstancedShader();
 	void prepareTextureShader();
 	void prepareLineShader();
 	void prepareFontShader();
