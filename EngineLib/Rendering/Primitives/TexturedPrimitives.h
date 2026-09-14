@@ -242,9 +242,11 @@ inline void BuildCubeAtlasVertices(FVertexTextured(&outVertices)[36], int column
 
 // sphere uv 매핑(y축을 중심)
 template <std::size_t N>
-inline void BuildSphereTextureVertices(const FVertexSimple(&source)[N],	FVertexTextured(&outVertices)[N])
+inline void BuildSphereTextureVertices(const FVertexSimple(&source)[N], TArray<FVertexTextured>& outVertices)
 {
 	static_assert(N % 3 == 0, "정점 개수는 3의 배수여야 합니다.");
+
+	outVertices.Init(FVertexTextured{}, static_cast<uint32>(N));
 
 	constexpr float pi = 3.14159265358979323846f;
 	// 부동 소수점 처리
@@ -394,12 +396,10 @@ inline void BuildCubeAtlasVertices(
 }
 
 template<size_t N>
-inline void BuildSphereTextureMeshIndices(
-	const FVertexSimple(&source)[N],
-	TArray<FVertexTextured>& outVertices,
-	TArray<unsigned int>& outIndices)
+inline void BuildSphereTextureMeshIndices(const FVertexSimple(&source)[N],
+	TArray<FVertexTextured>& outVertices, TArray<UINT>& outIndices)
 {
-	FVertexTextured expanded[N];
+	TArray<FVertexTextured> expanded;
 	BuildSphereTextureVertices(source, expanded);
 
 	outVertices.Reset(0);
