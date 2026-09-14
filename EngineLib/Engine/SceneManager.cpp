@@ -71,7 +71,6 @@ void FSceneManager::SaveScene(
 	const FFileManager& fileManager)
 {
 	FString fileName = kSceneDataDir;
-	fileName += FString("/");
 	fileName += sceneName;
 	fileName += kSceneDataSuffix;
 

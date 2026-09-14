@@ -13,12 +13,13 @@ namespace json { class JSON; }
 class UObject;
 class AActor;
 class FClassInfo;
-struct FFontResource;
+class FFontResource;
 
 struct FObjectFactory
 {
 	// TODO?: Rename?
 	static void Initialize(const FFontResource& defaultFontResource);
+	static const FFontResource* GetDefaultFontResource();
 
 	static UObject* ConstructUnInitializedObject(const FClassInfo* classInfo);
 	static UObject* LoadObject(const FClassInfo* classInfo, const json::JSON& inJson);

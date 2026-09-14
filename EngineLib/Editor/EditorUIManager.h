@@ -62,7 +62,7 @@ private:
 	static constexpr float MIN_WIDTH_RATIO = 0.2f;
 	static constexpr float MAX_WIDTH_RATIO = 0.6f;
 
-	static constexpr float CONTROL_PANEL_HEIGHT_RATIO = 0.4f;
+	static constexpr float CONTROL_PANEL_HEIGHT_RATIO = 0.45f;
 	static constexpr float WINDOW_PROPERTY_HEIGHT_RATIO = 0.3f;
 
 	void updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);

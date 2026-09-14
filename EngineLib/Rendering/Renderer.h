@@ -24,6 +24,13 @@ struct FConstants
 	FVector4 Tint;          // rgb = 색, a = 섞는 비율
 };
 
+// intancing 용
+struct FInstanceData
+{
+	FMatrix World;
+	FVector4 Tint;
+};
+
 class URenderer
 {
 public:
@@ -89,6 +96,19 @@ public:
 	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreatePrimitiveIndexBuffer(const uint32* indices, UINT ByteWidth);
 
+	// 인스턴싱
+	bool RenderSimpleInstanced(
+		ID3D11Buffer* vertexBuffer,
+		ID3D11Buffer* indexBuffer,
+		UINT indexCount,
+		const FInstanceData* instances,
+		UINT instanceCount);
+	// texturedPrimitive용
+	//void RenderTexture(const FMatrix& world, const FMatrix& viewProjection);
+
+	
+	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices, ID3D11ShaderResourceView* textureSRV);
+
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
 	
 	void ReleasePrimitiveTextureResources(
@@ -137,6 +157,15 @@ private:
 	bool ensureFontIndexBuffer(UINT fontCount);
 	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
 	UINT mTextIndexCapacity = 0;
+
+
+	ID3D11Buffer* InstanceBuffer = nullptr;
+	UINT InstanceCapacity = 0;
+
+	ID3D11VertexShader* InstancedVertexShader = nullptr; // 인스턴싱용 버텍스 셰이더
+	ID3D11InputLayout* InstancedInputLayout = nullptr;
+
+	bool EnsureInstanceCapacity(UINT count);
 
 	/* Internal global rendering state */
 	bool mbWireFrame = false;

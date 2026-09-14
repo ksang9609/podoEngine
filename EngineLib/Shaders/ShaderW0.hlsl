@@ -35,3 +35,28 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     // Output the color directly
     return input.color;
 }
+
+// 인스턴싱용
+struct VS_INSTANCE_INPUT
+{
+    float3 position : POSITION;
+    float4 color : COLOR;
+
+    row_major float4x4 World : INSTANCE_WORLD;
+    float4 tint : INSTANCE_TINT;
+};
+
+PS_INPUT mainVSInstanced(VS_INSTANCE_INPUT input)
+{
+    PS_INPUT output;
+
+    output.position = mul(
+        mul(float4(input.position, 1.0f), input.World),
+        ViewProjection
+    );
+
+    // 기존과 동일
+    output.color = float4(lerp(input.color.rgb, input.tint.rgb, input.tint.a), 1.0f );
+
+    return output;
+}

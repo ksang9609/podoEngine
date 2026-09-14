@@ -109,6 +109,10 @@ inline EPrimitive StringToEPrimitive(const char* str)
 	{
 		return EPrimitive::EP_Circle;
 	}
+	else if (strcmp(str, "BillboardQuad") == 0)
+	{
+		return EPrimitive::EP_BillboardQuad;
+	}
 	else
 	{
 		throw std::runtime_error("Unknown EPrimitive value");
@@ -133,6 +137,9 @@ inline const char* PrimitiveToString(EPrimitive primitiveType)
 
 	case EPrimitive::EP_Circle:
 		return "Circle";
+
+	case EPrimitive::EP_BillboardQuad:
+		return "BillboardQuad";
 
 	default:
 		return "Unknown";

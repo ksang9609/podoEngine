@@ -24,6 +24,8 @@ public:
 	virtual bool RemoveChild(USceneComponent& child);
 	virtual void DetachFromParent();
 	virtual void DetachAllChildren();
+	int32 GetParentUUID() const;
+	int32 GetSerializedParentUUID() const;
 
 	FVector GetRelativeLocation() const;
 	void SetRelativeLocation(FVector location);
@@ -52,6 +54,7 @@ protected:
 	// The ownership of child components is managed by the actor, not by the parent component.
 	USceneComponent* mParent = nullptr;
 	TArray<USceneComponent*> mChildren;
+	int32 mSerializedParentUUID = -1;
 
 	virtual void updateComponentToWorld(const FMatrix& parentTransform);
 	virtual void updateComponentToWorld();
