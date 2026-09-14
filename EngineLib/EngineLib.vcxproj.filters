@@ -393,6 +393,9 @@
     <ClInclude Include="Rendering\FontResource.h">
       <Filter>Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Editor\EditorCommands.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\ShaderFont.hlsl">

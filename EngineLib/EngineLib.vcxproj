@@ -179,6 +179,7 @@
     <ClInclude Include="Core\Object\Object.h" />
     <ClInclude Include="Core\Object\ObjectFactory.h" />
     <ClInclude Include="Editor\Console.h" />
+    <ClInclude Include="Editor\EditorCommands.h" />
     <ClInclude Include="Editor\EditorSetting.h" />
     <ClInclude Include="Editor\EditorUIManager.h" />
     <ClInclude Include="Editor\FEditorViewportClient.h" />
