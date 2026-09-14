@@ -18,7 +18,8 @@ public:
 		const FVector& rayStart,
 		const FVector& rayEnd,
 		const FBoundingBox& bounds);
-	void RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FRenderInfo>& renderInfos, float perspectiveRatio);
+	void RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FRenderInfo>& renderInfos,
+		float perspectiveRatio, bool bCheckObject);
 	float GetFov() const { return mCamera.mFovDegree; }
 	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, float perspectiveRatio);
 	bool IsMouseHit() const { return bMouseHit; }
@@ -62,8 +63,6 @@ private:
 		float orthoDistance, float perspectiveRatio,
 		FVector& OutNearPoint, FVector& OutFarPoint
 	);
-
-
 
 	bool bMouseHit = false;
 	

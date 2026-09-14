@@ -3,70 +3,24 @@
 #include <fstream>
 #include <filesystem>
 #include <vector>
+#include <directxtk/DDSTextureLoader.h>
 
 //#include "WICTextureLoader.h"
-#include <directxtk/DDSTextureLoader.h>
+#include "Core/Math/MathUtility.h"
 #include "Editor/Console.h"
 #include "Rendering/Primitives/TexturedPrimitives.h"
 
 #pragma comment(lib, "DirectXTK.lib")
 #pragma comment(lib, "dxguid.lib")
-//#pragma comment(lib, "windowscodecs.lib")
-//#pragma comment(lib, "ole32.lib")
 
 void URenderer::Create(HWND hWindow)
 {
-	CreateDeviceAndSwapChain(hWindow);
-	CreateFrameBuffer();
-	//CreateDepthStencilBuffer();
+	createDeviceAndSwapChain(hWindow);
+	createFrameBuffer();
 
-	/*if (!CreateTestTexture())
-	{
-		OutputDebugStringA("CreateTestTexture failed.\n");
-	}
-
-	if (!CreateTestQuad())
-    {
-        OutputDebugStringA("CreateTestTexture failed.\n");
-    }*/
-
-	// Device가 만들어진 이후에 호출해야 한다.
-	/*if (!CreateFontAtlasTexture())
-	{
-		MessageBox(hWindow,
-			L"파일을 불러오지 못했습니다.",
-			L"Font atlas load error",
-			MB_OK | MB_ICONERROR
-		);
-	}*/
-
-	/*if (!CreateTestQuad())
-	{
-		MessageBox(
-			hWindow,
-			L"폰트 Quad 생성에 실패했습니다.",
-			L"Font quad error",
-			MB_OK | MB_ICONERROR
-		);
-	}*/
-
-	// 테스트용 문자열
-	/*std::string text = "Hello!";
-
-	if (!CreateFontAtlasQuad(&text))
-	{
-		MessageBox(
-			hWindow,
-			L"폰트 Quad 생성에 실패했습니다.",
-			L"Font quad error",
-			MB_OK | MB_ICONERROR
-		);
-	}*/
-
-	if (!CreateFontAtlasTexture() ||
-		!CreateFontShader() ||
-		!CreateFontSamplerState() ||
-		!CreateFontBlendState())
+	if (!createFontAtlasTexture() ||
+		!createFontSamplerState() ||
+		!createFontBlendState())
 	{
 		MessageBox(
 			hWindow,
@@ -75,65 +29,22 @@ void URenderer::Create(HWND hWindow)
 			MB_OK | MB_ICONERROR
 		);
 
-		ReleaseFontTexture();
-		ReleaseFontAtlasTexture();
-	}
-	else
-	{
-		// 테스트용 문자열
-		std::string text = "Hello Jungle!";
-
-		if (!CreateFontAtlasQuad(&text))
-		{
-			MessageBox(
-				hWindow,
-				L"폰트 vertex 버퍼 생성에 실패했습니다.",
-				L"Font quad error",
-				MB_OK | MB_ICONERROR
-			);
-		}
+		releaseFontTexture();
+		releaseFontAtlasTexture();
 	}
 
-
-	CreateDepthStencilState();
-	CreateStencilMarkState();
-	CreateStencilOutlineState();
-	CreateNoColorWriteBlendState();
-	CreateRasterizerState();
-
-	// 일반 Primitive용 텍스처 리소스 생성
-	// 경로는 실제 보유한 DDS 파일 경로로 변경
-
-	// CubeTextureSample.dds / Dice.dds
-/*	if (!CreatePrimitiveTextureResources())
-	{
-		MessageBox(
-			hWindow,
-			L"Primitive 텍스처 리소스 생성에 실패했습니다.",
-			L"Primitive texture initialization error",
-			MB_OK | MB_ICONERROR);
-	}
-	// 바로 여기에 추가
-	if (!LoadTexture(L"CubeTextureSample.dds", &CubeTextureSRV))
-	{
-		OutputDebugStringA("Cube texture load failed.\n");
-	}
-
-	if (!LoadTexture(L"EarthTexture.dds", &SphereTextureSRV))
-	{
-		OutputDebugStringA("Sphere texture load failed.\n");
-	}
-	//if (!CreatePrimitiveTextureResources(L"Dice.dds"))
-	//{
-	//	MessageBox(
-	//		hWindow,
-	//		L"Primitive 텍스처 리소스 생성에 실패했습니다.",
-	//		L"Primitive texture initialization error",
-	//		MB_OK | MB_ICONERROR);
-	//}*/
+	createDepthStencilState();
+	createStencilMarkState();
+	createStencilOutlineState();
+	createNoColorWriteBlendState();
+	createRasterizerState();
+	createShader();
+	createConstantBuffer();
+	createLineVertexBuffer(LINE_VERTEX_CAPACITY);
+	createLineIndexBuffer(LINE_INDEX_CAPACITY);
 }
 
-void URenderer::CreateDeviceAndSwapChain(HWND hWindow)
+void URenderer::createDeviceAndSwapChain(HWND hWindow)
 {
 	D3D_FEATURE_LEVEL featurelevels[] = { D3D_FEATURE_LEVEL_11_0 };
 
@@ -164,19 +75,8 @@ void URenderer::CreateDeviceAndSwapChain(HWND hWindow)
 	ViewportInfo = { 0.0f, 0.0f, (float)swapchaindesc.BufferDesc.Width, (float)swapchaindesc.BufferDesc.Height, 0.0f, 1.0f };
 }
 
-void URenderer::ReleaseDeviceAndSwapChain()
+void URenderer::releaseDeviceAndSwapChain()
 {
-
-	if (FontIndexBuffer)
-	{
-		FontIndexBuffer->Release();
-		FontIndexBuffer = nullptr;
-
-		mTextIndexCount = 0;
-		mTextIndexCapacity = 0;
-	}
-
-	
 	if (DeviceContext)
 	{
 		DeviceContext->Flush();
@@ -201,7 +101,7 @@ void URenderer::ReleaseDeviceAndSwapChain()
 	}
 }
 
-void URenderer::CreateFrameBuffer()
+void URenderer::createFrameBuffer()
 {
 	SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&FrameBuffer);
 
@@ -212,7 +112,7 @@ void URenderer::CreateFrameBuffer()
 	Device->CreateRenderTargetView(FrameBuffer, &framebufferRTVdesc, &FrameBufferRTV);
 }
 
-void URenderer::ReleaseFrameBuffer()
+void URenderer::releaseFrameBuffer()
 {
 	if (FrameBuffer)
 	{
@@ -227,7 +127,7 @@ void URenderer::ReleaseFrameBuffer()
 	}
 }
 
-bool URenderer::CreateFontAtlasTexture()
+bool URenderer::createFontAtlasTexture()
 {
 	if (Device == nullptr)
 	{
@@ -236,7 +136,7 @@ bool URenderer::CreateFontAtlasTexture()
 
 	// 함수가 다시 호출되는 경우 기존 텍스처 해제
 	
-	ReleaseFontAtlasTexture();
+	releaseFontAtlasTexture();
 
 	// 추후 동적으로 텍스쳐 로드하자 
 	HRESULT hr = DirectX::CreateDDSTextureFromFile(
@@ -255,7 +155,7 @@ bool URenderer::CreateFontAtlasTexture()
 	return true;
 }
 
-void URenderer::ReleaseFontAtlasTexture()
+void URenderer::releaseFontAtlasTexture()
 {
 	if (FontAtlasShaderResoruceView != nullptr)
 	{
@@ -264,15 +164,15 @@ void URenderer::ReleaseFontAtlasTexture()
 	}
 }
 
-bool URenderer::CreateFontSamplerState()
+bool URenderer::createFontSamplerState()
 {
 	if (!Device)
 		return false;
 
-	if (TextureSamplerState)
+	if (FontSamplerState)
 	{
-		TextureSamplerState->Release();
-		TextureSamplerState = nullptr;
+		FontSamplerState->Release();
+		FontSamplerState = nullptr;
 	}
 
 	D3D11_SAMPLER_DESC desc = {};
@@ -284,11 +184,11 @@ bool URenderer::CreateFontSamplerState()
 	desc.MaxAnisotropy = 1;
 	desc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	return SUCCEEDED(Device->CreateSamplerState(&desc, &TextureSamplerState)
+	return SUCCEEDED(Device->CreateSamplerState(&desc, &FontSamplerState)
 	);
 }
 
-bool URenderer::CreateFontBlendState()
+bool URenderer::createFontBlendState()
 {
 	if (!Device)
 		return false;
@@ -313,18 +213,6 @@ bool URenderer::CreateFontBlendState()
 	rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 	return SUCCEEDED(Device->CreateBlendState(&desc, &FontBlendState));
-}
-
-void URenderer::ReleaseFontAtlasQuad()
-{
-	if (FontTextureBuffer)
-	{
-		FontTextureBuffer->Release();
-		FontTextureBuffer = nullptr;
-	}
-
-	mTextVertexCount = 0;
-	mTextVertexCapacity = 0;
 }
 
 // 인스턴스 사용하여 렌더링(텍스쳐 X)
@@ -495,7 +383,7 @@ void URenderer::ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer)
 
 // 선분은 매 프레임 내용이 바뀌므로 IMMUTABLE로는 만들 수 없다.
 // DYNAMIC + CPU_ACCESS_WRITE 라야 Map으로 덮어쓸 수 있다. (상수 버퍼와 같은 조합)
-void URenderer::CreateLineVertexBuffer(uint32 maxVertices)
+void URenderer::createLineVertexBuffer(uint32 maxVertices)
 {
 	D3D11_BUFFER_DESC vertexbufferdesc = {};
 	vertexbufferdesc.ByteWidth = maxVertices * sizeof(FVertexSimple);
@@ -509,7 +397,7 @@ void URenderer::CreateLineVertexBuffer(uint32 maxVertices)
 	}
 }
 
-void URenderer::ReleaseLineVertexBuffer()
+void URenderer::releaseLineVertexBuffer()
 {
 	if (LineVertexBuffer)
 	{
@@ -520,7 +408,22 @@ void URenderer::ReleaseLineVertexBuffer()
 	LineVertexCapacity = 0;
 }
 
-void URenderer::CreateLineIndexBuffer(uint32 maxIndices)
+void URenderer::releaseFontBuffers()
+{
+	if (FontTextureBuffer)
+	{
+		FontTextureBuffer->Release();
+		FontTextureBuffer = nullptr;
+	}
+
+	if (FontIndexBuffer)
+	{
+		FontIndexBuffer->Release();
+		FontIndexBuffer = nullptr;
+	}
+}
+
+void URenderer::createLineIndexBuffer(uint32 maxIndices)
 {
 	D3D11_BUFFER_DESC indexbufferdesc = {};
 	indexbufferdesc.ByteWidth = maxIndices * sizeof(uint32);
@@ -534,7 +437,7 @@ void URenderer::CreateLineIndexBuffer(uint32 maxIndices)
 	}
 }
 
-void URenderer::ReleaseLineIndexBuffer()
+void URenderer::releaseLineIndexBuffer()
 {
 	if (LineIndexBuffer)
 	{
@@ -545,7 +448,7 @@ void URenderer::ReleaseLineIndexBuffer()
 	LineIndexCapacity = 0;
 }
 
-void URenderer::CreateRasterizerState()
+void URenderer::createRasterizerState()
 {
 	D3D11_RASTERIZER_DESC rasterizerdesc[2] = {};
 	rasterizerdesc[0].FillMode = D3D11_FILL_SOLID;
@@ -560,7 +463,7 @@ void URenderer::CreateRasterizerState()
 	Device->CreateRasterizerState(&rasterizerdesc[1], &RasterizerState[1]);
 }
 
-void URenderer::ReleaseRasterizerState()
+void URenderer::releaseRasterizerState()
 {
 	for (int i = 0; i < 2; ++i)
 	{
@@ -573,14 +476,18 @@ void URenderer::ReleaseRasterizerState()
 }
 void URenderer::Release()
 {
-	ReleaseRasterizerState();
+	releaseRasterizerState();
 
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
-	ReleaseDepthStencilBuffer();
-	ReleaseDepthStencilState();
-	ReleaseBlendState();
-	ReleaseFrameBuffer();
+	releaseDepthStencilBuffer();
+	releaseDepthStencilState();
+	releaseBlendState();
+	releaseFrameBuffer();
+	releaseLineVertexBuffer();
+	releaseLineIndexBuffer();
+	releaseConstantBuffer();
+	releaseShader();
 
 	// 테스트
 
@@ -589,18 +496,11 @@ void URenderer::Release()
 		CubeIndexBuffer->Release();
 		CubeIndexBuffer = nullptr;
 	}
-
-	if (SphereIndexBuffer)
-	{
-		SphereIndexBuffer->Release();
-		SphereIndexBuffer = nullptr;
-	}
-
-	SphereIndexCount = 0;
-	ReleaseFontAtlasTexture();
-	ReleaseFontTexture();
+	releaseFontAtlasTexture();
+	releaseFontTexture();
+	releaseFontBuffers();
 	//ReleaseTestTexture();
-	ReleaseDeviceAndSwapChain();
+	releaseDeviceAndSwapChain();
 }
 
 void URenderer::SwapBuffer()
@@ -608,7 +508,7 @@ void URenderer::SwapBuffer()
 	SwapChain->Present(1, 0);
 }
 
-void URenderer::CreateShader()
+void URenderer::createShader()
 {
 	ID3DBlob* vertexshaderCSO;
 	ID3DBlob* pixelshaderCSO;
@@ -617,6 +517,9 @@ void URenderer::CreateShader()
 	ID3DBlob* primitiveTextureVertexShaderCSO;
 	ID3DBlob* primitiveTexturePixelShaderCSO;
 	ID3DBlob* instancedVertexShaderCS0;
+	ID3DBlob* fontVertexShaderCSO;
+	ID3DBlob* fontPixelShaderCSO;
+
 
 
 	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vertexshaderCSO, nullptr);
@@ -647,6 +550,15 @@ void URenderer::CreateShader()
 	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVSInstanced", "vs_5_0", 0, 0, &instancedVertexShaderCS0, nullptr);
 
 	Device->CreateVertexShader(instancedVertexShaderCS0->GetBufferPointer(), instancedVertexShaderCS0->GetBufferSize(), nullptr, &InstancedVertexShader);
+
+	D3DCompileFromFile(L"Shaders/ShaderFont.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &fontVertexShaderCSO, nullptr);
+
+	Device->CreateVertexShader(fontVertexShaderCSO->GetBufferPointer(), fontVertexShaderCSO->GetBufferSize(), nullptr, &FontVertexShader);
+
+	D3DCompileFromFile(L"Shaders/ShaderFont.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &fontPixelShaderCSO, nullptr);
+
+	Device->CreatePixelShader(fontPixelShaderCSO->GetBufferPointer(), fontPixelShaderCSO->GetBufferSize(), nullptr, &FontPixelShader);
+
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -685,6 +597,7 @@ void URenderer::CreateShader()
 	Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
 	Device->CreateInputLayout(Linelayout, ARRAYSIZE(Linelayout), LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), &LineSimpleInputLayout);
 	Device->CreateInputLayout(primitiveTextureLayout,ARRAYSIZE(primitiveTextureLayout), primitiveTextureVertexShaderCSO->GetBufferPointer(), primitiveTextureVertexShaderCSO->GetBufferSize(), &PrimitiveTextureLayout);
+	Device->CreateInputLayout(primitiveTextureLayout, ARRAYSIZE(primitiveTextureLayout), fontVertexShaderCSO->GetBufferPointer(), fontVertexShaderCSO->GetBufferSize(), &FontInputLayout);
 
 	Device->CreateInputLayout(layoutInstanced, ARRAYSIZE(layoutInstanced), instancedVertexShaderCS0->GetBufferPointer(), instancedVertexShaderCS0->GetBufferSize(), &InstancedInputLayout);
 
@@ -698,7 +611,8 @@ void URenderer::CreateShader()
 	primitiveTextureVertexShaderCSO->Release();
 	primitiveTexturePixelShaderCSO->Release();
 	instancedVertexShaderCS0->Release();
-
+	fontVertexShaderCSO->Release();
+	fontPixelShaderCSO->Release();
 }
 
 // Sampler State 설정
@@ -717,120 +631,7 @@ void URenderer::CreateSamplerState(ID3D11SamplerState** outSamplerState)
 	Device->CreateSamplerState(&samplerDesc, outSamplerState);
 }
 
-void URenderer::ReleaseFontShader()
-{
-	if (TextureVertexShader)
-	{
-		TextureVertexShader->Release();
-		TextureVertexShader = nullptr;
-	}
-
-	if (TexturePixelShader)
-	{
-		TexturePixelShader->Release();
-		TexturePixelShader = nullptr;
-	}
-
-	if (TextureInputLayout)
-	{
-		TextureInputLayout->Release();
-		TextureInputLayout = nullptr;
-	}
-}
-
-bool URenderer::CreateFontShader()
-{
-	if (!Device)
-		return false;
-
-	ReleaseFontShader();
-
-	ID3DBlob* vsCode = nullptr;
-	ID3DBlob* psCode = nullptr;
-
-	bool success = false;
-
-	do
-	{
-		HRESULT hr = D3DCompileFromFile(
-			L"Shaders/ShaderFont.hlsl", nullptr, nullptr,
-			"mainVS", "vs_5_0", 0, 0,
-			&vsCode, nullptr
-		);
-
-		if (FAILED(hr))
-			break;
-
-		hr = D3DCompileFromFile(
-			L"Shaders/ShaderFont.hlsl", nullptr, nullptr,
-			"mainPS", "ps_5_0", 0, 0,
-			&psCode, nullptr
-		);
-
-		if (FAILED(hr))
-			break;
-
-		hr = Device->CreateVertexShader(
-			vsCode->GetBufferPointer(),
-			vsCode->GetBufferSize(),
-			nullptr,
-			&TextureVertexShader
-		);
-
-		if (FAILED(hr))
-			break;
-
-		hr = Device->CreatePixelShader(
-			psCode->GetBufferPointer(),
-			psCode->GetBufferSize(),
-			nullptr,
-			&TexturePixelShader
-		);
-
-		if (FAILED(hr))
-			break;
-
-		const D3D11_INPUT_ELEMENT_DESC layout[] =
-		{
-			{
-				"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
-				0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
-			},
-			{
-				"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,
-				0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0
-			}
-		};
-
-		hr = Device->CreateInputLayout(
-			layout,
-			ARRAYSIZE(layout),
-			vsCode->GetBufferPointer(),
-			vsCode->GetBufferSize(),
-			&TextureInputLayout
-		);
-
-		if (FAILED(hr))
-			break;
-
-		success = true;
-	} while (false);
-
-	if (vsCode)
-		vsCode->Release();
-
-	if (psCode)
-		psCode->Release();
-
-	// 중간에 실패한 경우, 이미 생성한 자원도 정리
-	if (!success)
-		ReleaseFontShader();
-
-	return success;
-}
-
-
-void URenderer::ReleaseShader()
+void URenderer::releaseShader()
 {
 	/* Simple Shader */
 	if (SimpleInputLayout)
@@ -871,22 +672,22 @@ void URenderer::ReleaseShader()
 	}
 
 	/* Texture Shader */
-	if (TextureInputLayout)
+	if (FontInputLayout)
 	{
-		TextureInputLayout->Release();
-		TextureInputLayout = nullptr;
+		FontInputLayout->Release();
+		FontInputLayout = nullptr;
 	}
 
-	if (TexturePixelShader)
+	if (FontPixelShader)
 	{
-		TexturePixelShader->Release();
-		TexturePixelShader = nullptr;
+		FontPixelShader->Release();
+		FontPixelShader = nullptr;
 	}
 
-	if (TextureVertexShader)
+	if (FontVertexShader)
 	{
-		TextureVertexShader->Release();
-		TextureVertexShader = nullptr;
+		FontVertexShader->Release();
+		FontVertexShader = nullptr;
 	}
 
 	/* Primitive Texture Shader */
@@ -919,6 +720,24 @@ void URenderer::ReleaseShader()
 	{
 		InstancedVertexShader->Release();
 		InstancedVertexShader = nullptr;
+	}
+	/* Font Shader */
+	if (FontVertexShader)
+	{
+		FontVertexShader->Release();
+		FontVertexShader = nullptr;
+	}
+
+	if (FontPixelShader)
+	{
+		FontPixelShader->Release();
+		FontPixelShader = nullptr;
+	}
+
+	if (FontInputLayout)
+	{
+		FontInputLayout->Release();
+		FontInputLayout = nullptr;
 	}
 }
 
@@ -960,6 +779,7 @@ bool URenderer::LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView
 	return true;
 }
 
+// Prepare global rendering state for a new frame
 void URenderer::Prepare(bool bWireFrame)
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
@@ -972,7 +792,8 @@ void URenderer::Prepare(bool bWireFrame)
 
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 
-	DeviceContext->RSSetState(RasterizerState[bWireFrame ? 1 : 0]);
+	//DeviceContext->RSSetState(RasterizerState[bWireFrame ? 1 : 0]);
+	mbWireFrame = bWireFrame;
 
 	//세 번째 인자에 nullptr 대신 DSV를 넘긴다
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
@@ -980,12 +801,71 @@ void URenderer::Prepare(bool bWireFrame)
 	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
-void URenderer::RSUpdateState()
+
+void URenderer::PrepareSimplePrimitive()
 {
-	DeviceContext->RSSetState(RasterizerState[0]);
+	prepareSimpleShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
+	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
 
-void URenderer::PrepareSimpleShader()
+void URenderer::PrepareTexturedPrimitive()
+{
+	prepareTextureShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
+	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+}
+
+void URenderer::PrepareLine()
+{
+	prepareLineShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
+	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+}
+
+void URenderer::PrepareFont()
+{
+	prepareFontShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Always render solid
+	DeviceContext->RSSetState(RasterizerState[0]);
+	DeviceContext->OMSetBlendState(FontBlendState, nullptr, 0xffffffff);
+}
+
+void URenderer::PrepareGizmo()
+{
+	prepareSimpleShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Always render solid
+	DeviceContext->RSSetState(RasterizerState[0]);
+	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+}
+
+void URenderer::PrepareHighlight()
+{
+	prepareSimpleShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Always render solid
+	DeviceContext->RSSetState(RasterizerState[0]);
+	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+}
+
+void URenderer::prepareSimpleShader()
 {
 	DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
 	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
@@ -997,7 +877,7 @@ void URenderer::PrepareSimpleShader()
 	}
 }
 
-void URenderer::PrepareTextureShader()
+void URenderer::prepareTextureShader()
 {
 	DeviceContext->VSSetShader(PrimitiveTextureVertexShader, nullptr, 0);
 	DeviceContext->PSSetShader(PrimitiveTexturePixelShader, nullptr, 0);
@@ -1009,7 +889,7 @@ void URenderer::PrepareTextureShader()
 	}
 }
 
-void URenderer::PrepareLineShader()
+void URenderer::prepareLineShader()
 {
 	DeviceContext->VSSetShader(LineSimpleVertexShader, nullptr, 0);
 	DeviceContext->PSSetShader(LineSimplePixelShader, nullptr, 0);
@@ -1021,9 +901,20 @@ void URenderer::PrepareLineShader()
 	}
 }
 
+void URenderer::prepareFontShader()
+{
+	DeviceContext->VSSetShader(FontVertexShader, nullptr, 0);
+	DeviceContext->PSSetShader(FontPixelShader, nullptr, 0);
+	DeviceContext->IASetInputLayout(FontInputLayout);
+	if (ConstantBuffer)
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
+	}
+}
+
 void URenderer::RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 {
-	PrepareSimpleShader();
 	UINT offset = 0;
 	// Bind the vertex buffer
 	DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &StrideSimple, &offset);
@@ -1053,7 +944,6 @@ void URenderer::RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
 	else
 		DeviceContext->Draw(numVertices, 0);
 }
-
 
 
 //void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVertices)
@@ -1117,6 +1007,22 @@ void URenderer::RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
 //	PrepareSimpleShader();
 //}
 
+void URenderer::RenderFontTexture(uint32 numCharacter)
+{
+	UINT offset = 0;
+	// Bind the vertex buffer
+	DeviceContext->IASetVertexBuffers(0, 1, &FontTextureBuffer, &StrideTextured, &offset);
+
+	// Bind the texture resource
+	DeviceContext->PSSetShaderResources(0, 1, &FontAtlasShaderResoruceView);
+	DeviceContext->PSSetSamplers(0, 1, &FontSamplerState);
+
+	// Bind the index buffer
+	DeviceContext->IASetIndexBuffer(FontIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	DeviceContext->DrawIndexed(numCharacter * 6, 0, 0);
+}
+
 // 쌓아둔 선분 전체를 한 번의 Draw로 그린다.
 // 토폴로지를 바꾸므로 반드시 이 함수 안에서 되돌린다. 안 그러면 뒤에 그리는 것들이 전부 깨진다.
 void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices)
@@ -1159,12 +1065,7 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, c
 	UINT offset = 0;
 	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &StrideSimple, &offset);
 	DeviceContext->IASetIndexBuffer(LineIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	PrepareLineShader();
 	DeviceContext->DrawIndexed(numindices, 0, 0);
-
-	PrepareSimpleShader();
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix)
@@ -1190,7 +1091,7 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 
 //=============================================
 
-void URenderer::CreateConstantBuffer()
+void URenderer::createConstantBuffer()
 {
 	D3D11_BUFFER_DESC constantbufferdesc = {};
 	constantbufferdesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
@@ -1201,7 +1102,7 @@ void URenderer::CreateConstantBuffer()
 	Device->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
 }
 
-void URenderer::ReleaseConstantBuffer()
+void URenderer::releaseConstantBuffer()
 {
 	if (ConstantBuffer)
 	{
@@ -1210,7 +1111,7 @@ void URenderer::ReleaseConstantBuffer()
 	}
 }
 
-void URenderer::CreateDepthStencilBuffer(UINT width, UINT height)
+void URenderer::createDepthStencilBuffer(UINT width, UINT height)
 {
 	D3D11_TEXTURE2D_DESC desc = {};
 
@@ -1234,7 +1135,7 @@ void URenderer::CreateDepthStencilBuffer(UINT width, UINT height)
 	Device->CreateDepthStencilView(DepthStencilBuffer, &dsvdesc, &DepthStencilView);
 }
 
-void URenderer::CreateDepthStencilState()
+void URenderer::createDepthStencilState()
 {
 	D3D11_DEPTH_STENCIL_DESC desc = {};
 	desc.DepthEnable = TRUE;							 // 깊이 테스트 켜기
@@ -1245,7 +1146,7 @@ void URenderer::CreateDepthStencilState()
 	Device->CreateDepthStencilState(&desc, &DepthStencilState);
 }
 
-void URenderer::CreateStencilMarkState()
+void URenderer::createStencilMarkState()
 {
 	D3D11_DEPTH_STENCIL_DESC desc = {};
 	// 아웃라인 패스가 깊이를 무시하므로 마킹도 깊이를 무시해야 짝이 맞는다.
@@ -1268,7 +1169,7 @@ void URenderer::CreateStencilMarkState()
 	Device->CreateDepthStencilState(&desc, &StencilMarkState);
 }
 
-void URenderer::CreateStencilOutlineState()
+void URenderer::createStencilOutlineState()
 {
 	D3D11_DEPTH_STENCIL_DESC desc = {};
 	desc.DepthEnable = FALSE;							// 항상 위에 그린다
@@ -1289,7 +1190,7 @@ void URenderer::CreateStencilOutlineState()
 }
 
 // 렌더타겟에 색을 전혀 쓰지 않는 상태. 스텐실 마킹 전용 패스에 쓴다
-void URenderer::CreateNoColorWriteBlendState()
+void URenderer::createNoColorWriteBlendState()
 {
 	D3D11_BLEND_DESC desc = {};
 	desc.RenderTarget[0].BlendEnable = FALSE;
@@ -1298,18 +1199,18 @@ void URenderer::CreateNoColorWriteBlendState()
 	Device->CreateBlendState(&desc, &NoColorWriteBlendState);
 }
 
-void URenderer::ReleaseBlendState()
+void URenderer::releaseBlendState()
 {
 	if (NoColorWriteBlendState) { NoColorWriteBlendState->Release(); NoColorWriteBlendState = nullptr; }
 }
 
-void URenderer::ReleaseDepthStencilBuffer()
+void URenderer::releaseDepthStencilBuffer()
 {
 	if (DepthStencilView) { DepthStencilView->Release();   DepthStencilView = nullptr; }
 	if (DepthStencilBuffer) { DepthStencilBuffer->Release(); DepthStencilBuffer = nullptr; }
 }
 
-void URenderer::ReleaseDepthStencilState()
+void URenderer::releaseDepthStencilState()
 {
 	if (DepthStencilState) { DepthStencilState->Release();  DepthStencilState = nullptr; }
 	if (StencilMarkState) { StencilMarkState->Release();  StencilMarkState = nullptr; }
@@ -1333,6 +1234,49 @@ void URenderer::UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 t
 	}
 }
 
+void URenderer::UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter)
+{
+	const uint32 numVertices = vertices.Num();
+
+	// Increase Buffer Size if Needed
+	// TODO: Move to a separate function to handle buffer resizing
+	if (!FontTextureBuffer || numVertices > mTextVertexCapacity)
+	{
+		const uint32 newCapacity = FMath::Max(numVertices, static_cast<uint32>(mTextVertexCapacity * 2));
+
+		D3D11_BUFFER_DESC bufferDesc = {};
+		bufferDesc.ByteWidth = newCapacity * sizeof(FVertexTextured);
+		bufferDesc.Usage = D3D11_USAGE_DYNAMIC; // 동적 설정
+		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // 동적으로 CPU가 쓰기 가능
+
+		ID3D11Buffer* newBuffer = nullptr;
+		Device->CreateBuffer(&bufferDesc, nullptr, &newBuffer);
+		UE_LOG(Log, Render, "Font buffer CREATE: capacity %u -> %u",
+			mTextVertexCapacity, newCapacity);
+
+		// 새 버퍼 생성에 성공한 뒤 기존 버퍼를 교체
+		//ReleaseFontAtlasQuad();
+		if (FontTextureBuffer)
+		{
+			FontTextureBuffer->Release();
+		}
+		FontTextureBuffer = newBuffer;
+		mTextVertexCapacity = newCapacity;
+	}
+
+	// Map the vertex buffer and copy the vertex data
+	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+	DeviceContext->Map(FontTextureBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, vertices.GetData(), numVertices * sizeof(FVertexTextured));
+	DeviceContext->Unmap(FontTextureBuffer, 0);
+
+
+
+	const uint32 numIndices = indices.Num();
+	ensureFontIndexBuffer(numIndices / 4);
+}
+
 void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight)
 {
 	if (!SwapChain || width == 0 || height == 0) return;
@@ -1340,8 +1284,8 @@ void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float vie
 
 	//해상도에 의존하는 프레임 버퍼와 뎁스 스텐실 버퍼를 재생성한다.
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-	ReleaseFrameBuffer();
-	ReleaseDepthStencilBuffer();
+	releaseFrameBuffer();
+	releaseDepthStencilBuffer();
 
 	HRESULT hr = SwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
 	if (FAILED(hr)) return;
@@ -1352,8 +1296,8 @@ void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float vie
 	ViewportInfo = { viewportWidth, 0.0f, static_cast<float>(width) - viewportWidth, viewportHeight, 0.0f, 1.0f };
 
 	//상태는 이전에 생성한 걸 그대로 재사용
-	CreateFrameBuffer();
-	CreateDepthStencilBuffer(width, height);
+	createFrameBuffer();
+	createDepthStencilBuffer(width, height);
 }
 
 void URenderer::ClearDepth()
@@ -1361,7 +1305,7 @@ void URenderer::ClearDepth()
 	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
-ID3D11Buffer* URenderer::CreatePrimitiveIndexBuffer(const UINT* indices,UINT indexCount)
+ID3D11Buffer* URenderer::CreatePrimitiveIndexBuffer(const UINT* indices, UINT indexCount)
 {
 	if (!indices || indexCount == 0)
 		return nullptr;
@@ -1378,346 +1322,6 @@ ID3D11Buffer* URenderer::CreatePrimitiveIndexBuffer(const UINT* indices,UINT ind
 	HRESULT hr = Device->CreateBuffer(&desc, &data, &buffer);
 
 	return SUCCEEDED(hr) ? buffer : nullptr;
-}
-
-// 테스트용 쿼드 출력 나중에 지울 예정
-
-bool URenderer::CreateTestQuad()
-{
-	if (!Device)
-		return false;
-
-	ReleaseFontTexture();
-
-	mTextVertexCount = 0;
-
-	std::vector<FVertexTextured> verticesList;
-	const std::string  text = "Hello Jungle!"; // 예시 문자열
-
-	// 화면에 표시할 문자 한 개의 크기
-	const float charWidth = 0.1f;
-	const float charHeight = 0.2f;
-
-	//글자 사이 간격
-	const float charAdvance = charWidth * 0.7f;
-
-	const float textWidth =
-		text.empty() ? 0.0f : static_cast<float>(text.size() - 1) * charAdvance + charWidth;
-
-	// 문자 가운데 정렬
-	const float startX = -textWidth * 0.5f;
-	const float startY = charHeight * 0.5f;
-
-
-	// dds의 배치
-	const int columns = 16;
-	const int rows = 16;
-
-	// 한 칸의 크기
-	const float cellWidth = 1.0f / columns;
-	const float cellHeight = 1.0f / rows;
-
-	verticesList.reserve(text.size() * 6);
-	
-	const int firstCharacter = 0;
-
-
-	for (size_t i = 0; i < text.size(); ++i)
-	{
-		const unsigned char character = static_cast<unsigned char>(text[i]);
-
-		int charCode = (int)character; // 아스키 코드 값
-
-
-		const int fontAtlasIndex = charCode - firstCharacter;
-
-
-		const float u0 = (fontAtlasIndex % columns) * cellWidth;
-		const float v0 = (fontAtlasIndex / columns) * cellHeight;
-		const float u1 = u0 + cellWidth;
-		const float v1 = v0 + cellHeight;
-
-		// 화면에서 해당 문자의 사각형 위치
-		const float left = startX + static_cast<float>(i) * charAdvance;
-		const float right = left + charWidth;
-		const float top = startY;
-		const float bottom = top - charHeight;
-
-		// 삼각형
-		
-		// Billboard local plane: X = 0, horizontal = Y, vertical = Z.
-		verticesList.push_back({ 0.0f, left, top, u0, v0 });
-		verticesList.push_back({ 0.0f, right, top, u1, v0 });
-		verticesList.push_back({ 0.0f, left, bottom, u0, v1 });
-
-		verticesList.push_back({ 0.0f, right, bottom, u1, v1 });
-		verticesList.push_back({ 0.0f, left, bottom, u0, v1 });
-		verticesList.push_back({ 0.0f, right, top, u1, v0 });
-
-
-	}
-	
-	mTextVertexCount = static_cast<UINT>(verticesList.size());
-
-	// 문자열이 비어있다
-	if (mTextVertexCount == 0)
-		return false;
-
-	ID3DBlob* vsCode = nullptr;
-	ID3DBlob* psCode = nullptr;
-
-	bool success = false;
-
-	do
-	{
-		// HLSL 컴파일
-		HRESULT hr = D3DCompileFromFile(L"ShaderFont.hlsl",	nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vsCode, nullptr);
-
-		if (FAILED(hr))
-			break;
-
-		hr = D3DCompileFromFile(L"ShaderFont.hlsl",	nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &psCode, nullptr);
-
-		if (FAILED(hr))
-			break;
-
-		// GPU 셰이더 생성
-		hr = Device->CreateVertexShader(vsCode->GetBufferPointer(),	vsCode->GetBufferSize(), nullptr, &TextureVertexShader);
-
-		if (FAILED(hr))
-			break;
-
-		hr = Device->CreatePixelShader(psCode->GetBufferPointer(),	psCode->GetBufferSize(), nullptr, &TexturePixelShader);
-
-		if (FAILED(hr))
-			break;
-
-		// 정점 메모리 구조를 셰이더 입력과 연결
-		const D3D11_INPUT_ELEMENT_DESC layout[] =
-		{
-			{
-				"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
-				0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
-			},
-			{
-				"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,
-				0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0
-			},
-		};
-
-		hr = Device->CreateInputLayout(layout,	ARRAYSIZE(layout),	vsCode->GetBufferPointer(),	vsCode->GetBufferSize(),
-			&TextureInputLayout);
-
-		if (FAILED(hr))
-			break;
-
-		// 문자별 정점과 UV를 GPU에 저장
-		D3D11_BUFFER_DESC bufferDesc = {};
-		bufferDesc.ByteWidth = mTextVertexCount * sizeof(FVertexTextured);
-		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-		D3D11_SUBRESOURCE_DATA initialData = {};
-		initialData.pSysMem = verticesList.data();
-
-		hr = Device->CreateBuffer(&bufferDesc,	&initialData, &FontTextureBuffer);
-
-		if (FAILED(hr))
-			break;
-
-		
-		D3D11_SAMPLER_DESC samplerDesc = {};
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		samplerDesc.MaxAnisotropy = 1;
-		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-		hr = Device->CreateSamplerState(&samplerDesc,	&TextureSamplerState);
-
-		if (FAILED(hr))
-			break;
-
-		D3D11_BLEND_DESC desc = {};
-		auto& rt = desc.RenderTarget[0];
-
-		rt.BlendEnable = TRUE;
-		rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-		rt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-		rt.BlendOp = D3D11_BLEND_OP_ADD;
-
-		rt.SrcBlendAlpha = D3D11_BLEND_ONE;
-		rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-		rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-		hr = Device->CreateBlendState(&desc, &FontBlendState);
-		if (FAILED(hr))
-			break;
-
-		success = true;
-	} while (false);
-
-	if (vsCode) vsCode->Release();
-	if (psCode) psCode->Release();
-
-	if (!success)
-		ReleaseFontTexture();
-
-	return success;
-}
-
-// 폰트 1개가 나올 Quad를 그리는 함수
-bool URenderer::CreateFontAtlasQuad(std::string* Text)
-{
-	if (!Device || !Text || !DeviceContext)
-		return false;
-
-	//ReleaseFontAtlasQuad();
-
-	std::vector<FVertexTextured> verticesList;
-
-	mTextVertexCount = 0;
-
-	// 인덱스는 Quad를 그릴때 마다 초기화
-	mTextIndexCount = 0;
-	
-	
-
-	// 화면에 표시할 문자 한 개의 크기
-	const float charWidth = 0.1f;
-	const float charHeight = 0.2f;
-
-	//글자 사이 간격
-	const float charAdvance = charWidth * 0.7f;
-
-	const float textWidth =
-		Text->empty() ? 0.0f : static_cast<float>(Text->size() - 1) * charAdvance + charWidth;
-
-	// 문자 가운데 정렬
-	const float startX = -textWidth * 0.5f;
-	const float startY = charHeight * 0.5f;
-
-
-	// dds의 배치
-	const int columns = 16;
-	const int rows = 16;
-
-	// 한 칸의 크기
-	const float cellWidth = 1.0f / columns;
-	const float cellHeight = 1.0f / rows;
-
-	// verticesList.reserve(Text->size() * 6);
-
-	// index buffer 사용시
-	verticesList.reserve(Text->size() * 4);
-
-	const int firstCharacter = 0;
-
-
-	for (size_t i = 0; i < Text->size(); ++i)
-	{
-		const unsigned char character = static_cast<unsigned char>((*Text)[i]);
-
-		int charCode = (int)character; // 아스키 코드 값
-
-
-		const int fontAtlasIndex = charCode - firstCharacter;
-
-
-		const float u0 = (fontAtlasIndex % columns) * cellWidth;
-		const float v0 = (fontAtlasIndex / columns) * cellHeight;
-		const float u1 = u0 + cellWidth;
-		const float v1 = v0 + cellHeight;
-
-		// 화면에서 해당 문자의 사각형 위치
-		const float left = startX + static_cast<float>(i) * charAdvance;
-		const float right = left + charWidth;
-		const float top = startY;
-		const float bottom = top - charHeight;
-
-		// 삼각형
-
-		// 기존 방식
-		// Billboard local plane: X = 0, horizontal = Y, vertical = Z.
-		/*verticesList.push_back({ 0.0f, left, top, u0, v0 });
-		verticesList.push_back({ 0.0f, right, top, u1, v0 });
-		verticesList.push_back({ 0.0f, left, bottom, u0, v1 });
-
-		verticesList.push_back({ 0.0f, right, bottom, u1, v1 });
-		verticesList.push_back({ 0.0f, left, bottom, u0, v1 });
-		verticesList.push_back({ 0.0f, right, top, u1, v0 });*/
-
-		verticesList.push_back({ 0.0f, left,  top,    u0, v0 }); // 0: 좌상
-		verticesList.push_back({ 0.0f, right, top,    u1, v0 }); // 1: 우상
-		verticesList.push_back({ 0.0f, left,  bottom, u0, v1 }); // 2: 좌하
-		verticesList.push_back({ 0.0f, right, bottom, u1, v1 }); // 3: 우하
-
-
-	}
-
-	// 빈 문자열이면 버퍼는 유지하고 그리기만 생략
-	if (verticesList.empty())
-	{
-		mTextVertexCount = 0;
-		return true;
-	}
-
-	const UINT requiredCount = static_cast<UINT>(verticesList.size());
-	mTextVertexCount = static_cast<UINT>(verticesList.size());
-
-	if (!FontTextureBuffer || requiredCount > mTextVertexCapacity)
-	{
-		const UINT newCapacity = (std::max)(requiredCount, mTextVertexCapacity * 2);
-
-		D3D11_BUFFER_DESC bufferDesc = {};
-		bufferDesc.ByteWidth = newCapacity * sizeof(FVertexTextured);
-		bufferDesc.Usage = D3D11_USAGE_DYNAMIC; // 동적 설정
-		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // 동적으로 CPU가 쓰기 가능
-
-		ID3D11Buffer* newBuffer = nullptr;
-		Device->CreateBuffer(&bufferDesc, nullptr, &newBuffer);
-		UE_LOG(Log, Render,	"Font buffer CREATE: capacity %u -> %u",
-			mTextVertexCapacity, newCapacity);
-
-		// 새 버퍼 생성에 성공한 뒤 기존 버퍼를 교체
-		ReleaseFontAtlasQuad();
-		FontTextureBuffer = newBuffer;
-		mTextVertexCapacity = newCapacity;
-
-	}
-
-	D3D11_MAPPED_SUBRESOURCE mappedTextFontData = {};
-
-	// 하위 리소스에 포함된 데이터에 대한 포인터를 가져오고 해당 하위 리소스에 대한 GPU 액세스를 거부합니다.
-	HRESULT hr = DeviceContext->Map(FontTextureBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedTextFontData);
-
-/*	HRESULT hr = Device->CreateBuffer(&bufferDesc, &textFontData, &FontTextureBuffer);*/
-
-
-
-	if (FAILED(hr))
-	{
-		mTextVertexCount = 0;
-		return false;
-	}
-
-	memcpy(mappedTextFontData.pData, verticesList.data(),	verticesList.size() * sizeof(FVertexTextured));
-
-	DeviceContext->Unmap(FontTextureBuffer, 0);
-
-	const UINT fontCount = static_cast<UINT>(Text->size());
-
-	if (!ensureFontIndexBuffer(fontCount))
-		return false;
-
-	mTextIndexCount = fontCount * 6;
-	mTextVertexCount = requiredCount;
-	return true;
-
 }
 
 bool URenderer::ensureFontIndexBuffer(UINT fontCpunt)
@@ -1741,9 +1345,9 @@ bool URenderer::ensureFontIndexBuffer(UINT fontCpunt)
 		indices.push_back(base + 1);
 		indices.push_back(base + 2);
 
-		indices.push_back(base + 3);
 		indices.push_back(base + 2);
-		indices.push_back(base + 1);
+		indices.push_back(base + 3);
+		indices.push_back(base + 0);
 	}
 
 /*	D3D11_BUFFER_DESC desc = {};
@@ -1771,109 +1375,15 @@ bool URenderer::ensureFontIndexBuffer(UINT fontCpunt)
 	return true;
 }
 
-void URenderer::RenderFontTexture(const FMatrix& world, const FMatrix& viewProjection)
-{
-	if(!DeviceContext ||
-		!FontAtlasShaderResoruceView || // 폰트 아틀라스 텍스처를 셰이더에 연결할 뷰가 없음
-		!FontTextureBuffer ||				// 문자열의 정점 데이터가 담긴 GPU 버퍼가 없음
-		!TextureVertexShader ||			// 정점 위치와 UV를 처리할 버텍스 셰이더가 없음
-		!TexturePixelShader ||			// 폰트 텍스처를 읽어 픽셀 색상을 출력할 픽셀 셰이더가 없음
-		!TextureInputLayout ||			// 정점의 위치·UV 메모리 배치를 설명하는 입력 레이아웃이 없음
-		!TextureSamplerState ||			// 텍스처 필터링과 주소 처리 방식을 지정하는 샘플러가 없음
-		!FontBlendState ||				// 폰트의 알파값으로 배경과 합성할 블렌드 상태가 없음
-		!ConstantBuffer ||				// 변환 행렬과 색상 등을 셰이더에 전달할 상수 버퍼가 없음
-		mTextVertexCount == 0)			// 그릴 문자열 정점이 없음
-	{
-		return;
-	}
-	if (!FontIndexBuffer || mTextIndexCount == 0)
-		return;
-
-	// 이 테스트에서 바꿀 렌더 상태를 보관한다.
-	ID3D11RasterizerState* previousRasterizer = nullptr;
-	ID3D11DepthStencilState* previousDepth = nullptr;
-	ID3D11BlendState* previousBlend = nullptr;
-
-	UINT previousStencilRef = 0;
-	FLOAT previousBlendFactor[4] = {};
-	UINT previousSampleMask = 0;
-
-	DeviceContext->RSGetState(&previousRasterizer);
-	DeviceContext->OMGetDepthStencilState(&previousDepth, &previousStencilRef);
-	DeviceContext->OMGetBlendState(	&previousBlend,	previousBlendFactor,&previousSampleMask);
-
-	// 깊이 설정
-	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
-	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-
-	DeviceContext->RSSetState(RasterizerState[0]);
-	//DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-	DeviceContext->OMSetBlendState(FontBlendState, nullptr, 0xffffffff);
-
-	const UINT stride = sizeof(FVertexTextured);
-	const UINT offset = 0;
-
-	DeviceContext->IASetVertexBuffers(0, 1, &FontTextureBuffer, &stride, &offset);
-	DeviceContext->IASetIndexBuffer(FontIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	DeviceContext->IASetInputLayout(TextureInputLayout);
-	DeviceContext->IASetPrimitiveTopology(
-		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	DeviceContext->VSSetShader(TextureVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(TexturePixelShader, nullptr, 0);
-
-	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-	DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
-
-	// HLSL의 t0, s0에 각각 연결한다.
-	DeviceContext->PSSetShaderResources(0, 1, &FontAtlasShaderResoruceView);
-	DeviceContext->PSSetSamplers(0, 1, &TextureSamplerState);
-
-	UpdateConstant(world, viewProjection, FVector4(1, 1, 1, 1));
-
-	// 기존 방식
-	//DeviceContext->Draw(mTextVertexCount, 0);
-	// 인덱스 버퍼 방식
-	DeviceContext->DrawIndexed(mTextIndexCount, 0, 0);
-	//DeviceContext->Draw(6, 0);
-
-	// 테스트 바인딩 해제
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	ID3D11SamplerState* nullSampler = nullptr;
-
-	DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
-	DeviceContext->PSSetSamplers(0, 1, &nullSampler);
-
-	// 기존 엔진의 출력 대상과 상태 복원
-	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
-
-	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-
-	DeviceContext->RSSetState(previousRasterizer);
-	DeviceContext->OMSetDepthStencilState(previousDepth, previousStencilRef);
-	DeviceContext->OMSetBlendState(
-		previousBlend,
-		previousBlendFactor,
-		previousSampleMask);
-
-	if (previousRasterizer) previousRasterizer->Release();
-	if (previousDepth) previousDepth->Release();
-	if (previousBlend) previousBlend->Release();
-
-	PrepareSimpleShader();
-}
-
-// 
-void URenderer::ReleaseFontTexture()
+void URenderer::releaseFontTexture()
 {
 	// 매번 해제하면 버퍼를 재사용 불가능
 	//ReleaseFontAtlasQuad();
 
-	if (TextureSamplerState)
+	if (FontSamplerState)
 	{
-		TextureSamplerState->Release();
-		TextureSamplerState = nullptr;
+		FontSamplerState->Release();
+		FontSamplerState = nullptr;
 	}
 
 	if (FontBlendState)

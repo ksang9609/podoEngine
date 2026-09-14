@@ -9,6 +9,8 @@
 #include "Rendering/GraphicsManager.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/SceneManager.h"
+#include "Engine/Components/ActorComponent.h"
+#include "Engine/Components/PrimitiveComponent.h"
 
 /* Editor */
 #include "FEditorViewportClient.h"
@@ -114,10 +116,14 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 
 		if (selectedFile.Len() > 0)
 		{
-			//std::filesystem::path p(selectedFile.CStr());
-			//SaveScene(p.stem().string(), *guiReference.FileManager);
-			//guiReference.ViewportClient->Reset();
-			outCommands.Emplace(FSaveSceneCommand{ selectedFile });
+			const std::filesystem::path selectedPath(selectedFile.CStr());
+			const FString sceneName(selectedPath.stem().string());
+
+			outCommands.Emplace(FSaveSceneCommand{ sceneName });
+			strcpy_s(
+				mGuiInputField.SceneName,
+				sizeof(mGuiInputField.SceneName),
+				sceneName.CStr());
 		}
 	}
 	if (ImGui::Button("Load scene"))
@@ -411,7 +417,8 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 
 	mPanelWidth = ImGui::GetWindowWidth();
 
-
+	/* Actor Transform */
+	ImGui::SeparatorText("Actor Transform");
 	const AActor* selectedActor = guiReference.SceneManager.GetSelectedActor();
 	if (selectedActor)
 	{
@@ -441,7 +448,7 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 			//	rotationInput[2], // Yaw
 			//	rotationInput[0]  // Roll
 			//	});
-			
+
 			outCommands.Emplace(FSetActorRotationCommand{ selectedActor->GetObjectID(), FRotator{
 				rotationInput[1], // Pitch
 				rotationInput[2], // Yaw
@@ -453,7 +460,46 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 			//mSelectedActor->SetScale(scaleInput);
 			outCommands.Emplace(FSetActorScaleCommand{ selectedActor->GetObjectID(), scaleInput });
 		}
+
+		/* Components */
+		ImGui::SeparatorText("Components");
+		if (ImGui::BeginChild("Components", ImVec2(0, 0), ImGuiChildFlags_Borders))
+		{
+			const TArray<UActorComponent*>& components = selectedActor->GetComponents();
+			for (const UActorComponent* component : components)
+			{
+				ImGui::PushID(component->UUID); // Ensure unique ID for each child
+				if (ImGui::BeginChild("ComponentFrame", ImVec2(0, 0),
+					ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+				{
+					ImGui::Text("Class: %s", component->GetRuntimeClass()->Name.CStr());
+					ImGui::Text("UUID: %d", component->UUID);
+					FString ComponentName = component->GetName().ToString();
+					ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
+						ComponentName.CStr(),
+						component->GetName().DisplayIndex,
+						component->GetName().ComparisonIndex
+					);
+				}
+
+				if (const UPrimitiveComponent* primitiveComponent =
+					component->Cast<UPrimitiveComponent>())
+				{
+					bool bUseTexture = primitiveComponent->GetUseTexture();
+
+					if (ImGui::Checkbox("Use Texture", &bUseTexture))
+					{
+						outCommands.Emplace(FSetComponentUseTextureCommand{ primitiveComponent->GetObjectID(), bUseTexture });
+					}
+				}
+
+				ImGui::EndChild();
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndChild();
 	}
+
 	ImGui::End();
 }
 
@@ -476,126 +522,130 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 	ImGui::Begin("Object List Panel", nullptr, flags);
 	{
 		/* Object Lists */
-		ImGui::SeparatorText("Object Lists");
-		if (ImGui::BeginChild("ObjectList", ImVec2(0, 0),
-			ImGuiChildFlags_Borders))
+		if (ImGui::CollapsingHeader("Object List"))
 		{
-			// Update and sort the object list only if there has been a change in the global object revision
-			if (mGuiInputField.LastGUObjectRevision != UObject::GetGObjectRevision())
+			if (ImGui::BeginChild("ObjectList", ImVec2(0, 0),
+				ImGuiChildFlags_Borders))
 			{
-				mGuiInputField.SortedObjectLists = UObject::GetGObjectArray().ToTArray();
-				mGuiInputField.LastGUObjectRevision = UObject::GetGObjectRevision();
-
-				// Sort the objects by UUID
-				std::sort(mGuiInputField.SortedObjectLists.begin(), mGuiInputField.SortedObjectLists.end(),
-					[](UObject* a, UObject* b) { return a->UUID < b->UUID; });
-			}
-
-			int32 selectedActorUUID = selectedActor
-				? selectedActor->UUID
-				: -1;
-
-			//UObject* bDeleteActorOrNull = nullptr;
-
-			static char NameBuffer[128] = {};
-			static int32 CachedSelectedUUID = -1;
-
-			//for (unsigned int objectsIndex = 0; objectsIndex < mGuiInputField.SortedObjectLists.Num(); ++objectsIndex)
-			//{
-			//	UObject* object = mGuiInputField.SortedObjectLists[objectsIndex];
-			for (const UObject* object : mGuiInputField.SortedObjectLists)
-			{
-				bool bSelected = false;
-				ImGui::PushID(object->UUID); // Ensure unique ID for each child
-
-				if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
-					ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+				// Update and sort the object list only if there has been a change in the global object revision
+				if (mGuiInputField.LastGUObjectRevision != UObject::GetGObjectRevision())
 				{
-					ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
-					ImGui::Text("UUID: %d", object->UUID);
-					FString ObjectName = object->GetName().ToString();
-					ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
-						ObjectName.CStr(),
-						object->GetName().DisplayIndex,
-						object->GetName().ComparisonIndex
-					);
+					mGuiInputField.SortedObjectLists = UObject::GetGObjectArray().ToTArray();
+					mGuiInputField.LastGUObjectRevision = UObject::GetGObjectRevision();
 
-					// TODO: Move implement delete to where?
-					if (object->IsA<AActor>())
+					// Sort the objects by UUID
+					std::sort(mGuiInputField.SortedObjectLists.begin(), mGuiInputField.SortedObjectLists.end(),
+						[](UObject* a, UObject* b) { return a->UUID < b->UUID; });
+				}
+
+				int32 selectedActorUUID = selectedActor
+					? selectedActor->UUID
+					: -1;
+
+				//UObject* bDeleteActorOrNull = nullptr;
+
+				static char NameBuffer[128] = {};
+				static int32 CachedSelectedUUID = -1;
+
+				//for (unsigned int objectsIndex = 0; objectsIndex < mGuiInputField.SortedObjectLists.Num(); ++objectsIndex)
+				//{
+				//	UObject* object = mGuiInputField.SortedObjectLists[objectsIndex];
+				for (const UObject* object : mGuiInputField.SortedObjectLists)
+				{
+					bool bSelected = false;
+					ImGui::PushID(object->UUID); // Ensure unique ID for each child
+
+					if (ImGui::BeginChild("ObjectFrame", ImVec2(0, 0),
+						ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
 					{
-						const AActor* actor = object->Cast<AActor>();
+						ImGui::Text("Class: %s", object->GetRuntimeClass()->Name.CStr());
+						ImGui::Text("UUID: %d", object->UUID);
+						FString ObjectName = object->GetName().ToString();
+						ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
+							ObjectName.CStr(),
+							object->GetName().DisplayIndex,
+							object->GetName().ComparisonIndex
+						);
 
-						if (ImGui::Button("Select"))
+						// TODO: Move implement delete to where?
+						if (object->IsA<AActor>())
 						{
-							//SetSelectedActor(actor);
-							outCommands.Emplace(FSetSelectedActorCommand{ actor->GetObjectID()});
-						}
-						else
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Delete"))
+							const AActor* actor = object->Cast<AActor>();
+
+							if (ImGui::Button("Select"))
 							{
-								//bDeleteActorOrNull = object;
-								outCommands.Emplace(FDeleteActorCommand{ actor->GetObjectID() });
+								//SetSelectedActor(actor);
+								outCommands.Emplace(FSetSelectedActorCommand{ actor->GetObjectID() });
+							}
+							else
+							{
+								ImGui::SameLine();
+								if (ImGui::Button("Delete"))
+								{
+									//bDeleteActorOrNull = object;
+									outCommands.Emplace(FDeleteActorCommand{ actor->GetObjectID() });
+								}
 							}
 						}
 					}
-				}
 
-				// Highlight the frame if this object is the clicked actor
-				if (object->UUID == selectedActorUUID)
-				{
-					bSelected = true;
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
-
-					if (CachedSelectedUUID != object->UUID)
+					// Highlight the frame if this object is the clicked actor
+					if (object->UUID == selectedActorUUID)
 					{
-						CachedSelectedUUID = object->UUID;
+						bSelected = true;
+						ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(255, 255, 0, 50)); // Light yellow background
 
-						FString CurrentName = object->GetName().ToString();
+						if (CachedSelectedUUID != object->UUID)
+						{
+							CachedSelectedUUID = object->UUID;
 
-						strcpy_s(NameBuffer, sizeof(NameBuffer), CurrentName.CStr());
+							FString CurrentName = object->GetName().ToString();
+
+							strcpy_s(NameBuffer, sizeof(NameBuffer), CurrentName.CStr());
+						}
+
+						ImGui::Text("Edit Name");
+						ImGui::SameLine();
+						bool bEnterPressed = ImGui::InputText("##Edit Name", NameBuffer, sizeof(NameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+						ImGui::SameLine();
+						bool bApplyPressed = ImGui::Button("Apply");
+
+						if (bEnterPressed || bApplyPressed)
+						{
+							//object->SetName(FName(NameBuffer));
+							outCommands.Emplace(FSetActorNameCommand{ object->GetObjectID(), FName(NameBuffer) });
+						}
 					}
 
-					ImGui::Text("Edit Name");
-					ImGui::SameLine();
-					bool bEnterPressed = ImGui::InputText("##Edit Name", NameBuffer, sizeof(NameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
-					ImGui::SameLine();
-					bool bApplyPressed = ImGui::Button("Apply");
-
-					if (bEnterPressed || bApplyPressed)
+					if (bSelected)
 					{
-						//object->SetName(FName(NameBuffer));
-						outCommands.Emplace(FSetActorNameCommand{ object->GetObjectID(), FName(NameBuffer) });
+						ImGui::PopStyleColor(); // Pop the border color if it was pushed
 					}
+
+					ImGui::EndChild();
+
+					ImGui::PopID();
 				}
 
-				ImGui::EndChild();
+				//if (bDeleteActorOrNull != nullptr)
+				//{
+				//	AActor* deleteActor = bDeleteActorOrNull->Cast<AActor>();
 
-				if (bSelected)
-				{
-					ImGui::PopStyleColor(); // Pop the border color if it was pushed
-				}
+				//	if (selectedActor != nullptr && selectedActor->UUID == deleteActor->UUID)
+				//	{
+				//		selectedActor = nullptr;
+				//	}
 
-				ImGui::PopID();
+				//	assert(mCurrentWorld != nullptr);
+				//	mCurrentWorld->RemoveActor(deleteActor->UUID);
+
+				//	delete deleteActor;
+				//}
+				
 			}
-
-			//if (bDeleteActorOrNull != nullptr)
-			//{
-			//	AActor* deleteActor = bDeleteActorOrNull->Cast<AActor>();
-
-			//	if (selectedActor != nullptr && selectedActor->UUID == deleteActor->UUID)
-			//	{
-			//		selectedActor = nullptr;
-			//	}
-
-			//	assert(mCurrentWorld != nullptr);
-			//	mCurrentWorld->RemoveActor(deleteActor->UUID);
-
-			//	delete deleteActor;
-			//}
+			ImGui::EndChild();
 		}
-		ImGui::EndChild();
+		
 	}
 	ImGui::End();
 }

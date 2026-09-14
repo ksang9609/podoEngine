@@ -4,9 +4,22 @@
 
 #include "Engine/Actor.h"
 #include "Engine/Components/PrimitiveComponent.h"
+#include "Engine/Components/NameComponent.h"
+#include "Rendering/FontResource.h"
+
 #include "Object.h"
 
-#include "Engine/Components/NameComponent.h"
+const FFontResource* FObjectFactory::mDefaultFontResource = nullptr;
+
+void FObjectFactory::Initialize(const FFontResource& fontResource)
+{
+	mDefaultFontResource = &fontResource;
+}
+
+const FFontResource* FObjectFactory::GetDefaultFontResource()
+{
+	return mDefaultFontResource;
+}
 
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
@@ -50,7 +63,9 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 	actor->AddRootSceneComponent(component);
 
 	/* DEBUG */
-	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>("Test", FVector3{ 0, 0, 2 });
+	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnPrimitiveActor.");
+	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
+		actor->GetName().ToString(), FVector3{0, 0, 1}, *mDefaultFontResource);
 	billboardComponent.AttachTo(*component);
 	return actor;
 }
@@ -79,6 +94,7 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/World.h"
+#include "Engine/Components/BillboardComponent.h"
 
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetClass },
@@ -88,5 +104,7 @@ TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap
 	{"UPrimitiveComponent", &UPrimitiveComponent::GetClass },
 	{"UCubeComponent", &UCubeComponent::GetClass },
 	{"USphereComponent", &USphereComponent::GetClass },
-	{"UWorld", &UWorld::GetClass }
+	{"UBillboardComponent", &UBillboardComponent::GetClass },
+	{"UWorld", &UWorld::GetClass },
+	{"UNameComponent",& UNameComponent::GetClass }
 };

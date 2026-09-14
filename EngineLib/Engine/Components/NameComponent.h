@@ -1,6 +1,12 @@
 ﻿#pragma once
 
+#include <functional>
+
+#include "Rendering/TextMesh.h"
+#include "Rendering/FontResource.h"
+
 #include "BillboardComponent.h"
+#include "Core/Object/ObjectFactory.h"
 
 class UNameComponent : public UBillboardComponent
 {
@@ -9,7 +15,15 @@ class UNameComponent : public UBillboardComponent
 public:
 	UNameComponent() = default;
 
-	void Initialize(const FString& nameText, FVector worldPositionOffset);
+	virtual ~UNameComponent();
+
+	void Initialize(const FString& nameText, FVector worldPositionOffset, const FFontResource& fontResourceRef);
+	void SetNameText(const FString& nameText);
+
+	virtual bool AttachTo(USceneComponent& parent) override;
+
+	void SerializeClass(json::JSON& outJson) const override;
+	void DeserializeClass(const json::JSON& inJson) override;
 
 protected:
 	// NameComponent always located over the actor's world position,
@@ -17,6 +31,9 @@ protected:
 	// FVector mRelativeLocation
 
 	FString mNameText;
+
+	FTextMesh mTextMesh;
+	const FFontResource* mFontResourceRef;
 
 	virtual void updateComponentToWorld(const FMatrix& parentTransform) override;
 	//virtual void updateComponentToWorld() override;

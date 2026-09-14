@@ -2,34 +2,26 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector.h"
+
 #include "RenderInfo.h"
+#include "VertexType.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
-// 1. Define the triangle vertices
-struct FVertexSimple
-{
-    float x, y, z;    // Position
-    float r, g, b, a; // Color
-
-	FVector GetPosition() const { return FVector(x, y, z); }
-};
+// 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
+static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
+static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
 
 struct FConstants
 {
 	FMatrix World; //Model
 	FMatrix ViewProjection;
 	FVector4 Tint;          // rgb = 색, a = 섞는 비율
-};
-
-struct FVertexTextured
-{
-	float x, y, z;
-	float u, v;
 };
 
 // intancing 용
@@ -57,13 +49,12 @@ public:
 	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
 	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
 
-	//ID3D11ShaderResourceView* TestTextureSRV = nullptr;
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
-	ID3D11Buffer* FontTextureBuffer = nullptr;
-	ID3D11VertexShader* TextureVertexShader = nullptr;
-	ID3D11PixelShader* TexturePixelShader = nullptr;
-	ID3D11InputLayout* TextureInputLayout = nullptr;
-	ID3D11SamplerState* TextureSamplerState = nullptr;
+	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
+	ID3D11VertexShader* FontVertexShader = nullptr;
+	ID3D11PixelShader* FontPixelShader = nullptr;
+	ID3D11InputLayout* FontInputLayout = nullptr;
+	ID3D11SamplerState* FontSamplerState = nullptr;
 	ID3D11BlendState* FontBlendState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
 
@@ -74,9 +65,6 @@ public:
 	ID3D11Buffer* SphereIndexBuffer = nullptr;
 	UINT SphereIndexCount = 0;
 
-	//ID3D11ShaderResourceView* PrimitiveTextureSRV = nullptr;
-
-	//ID3D11SamplerState* PrimitiveTextureSampler = nullptr;
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -99,39 +87,14 @@ public:
     unsigned int StrideTextured;
 
 public:
-
-	//create
+	/* Create */
 	void Create(HWND hWindow);
-	void CreateDeviceAndSwapChain(HWND hWindow);
-	void CreateShader();
-	void CreateFrameBuffer();
-	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
-	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT byteWidth);
-	void CreateLineVertexBuffer(uint32 maxVertices);
-	void CreateLineIndexBuffer(uint32 maxIndices);
-	void CreateRasterizerState();
-	void CreateConstantBuffer();
-	void CreateDepthStencilBuffer(UINT width, UINT height);
 
-	void CreateDepthStencilState();
-	void CreateStencilMarkState();
-	void CreateStencilOutlineState();
-	void CreateNoColorWriteBlendState();
-	bool CreateFontAtlasTexture();
+	// Create API for GraphicsManager
 	void CreateSamplerState(ID3D11SamplerState** outSamplerState);
-
-	// font용
-	bool CreateFontShader();
-	bool CreateFontSamplerState();
-	bool CreateFontBlendState();
-	void RenderFontTexture(const FMatrix& world, const FMatrix& viewProjection);
-	void ReleaseFontAtlasQuad();
-	void ReleaseFontShader();
-	bool CreateFontAtlasQuad(std::string* Text);
-
-	bool CreateTestQuad(); // 기존의 쿼드를 그리는 함수(테스트 용)
-
-	ID3D11Buffer* CreatePrimitiveIndexBuffer(const UINT* indices, UINT indexCount);
+	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
+	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT ByteWidth);
+	ID3D11Buffer* CreatePrimitiveIndexBuffer(const uint32* indices, UINT ByteWidth);
 
 	// 인스턴싱
 	bool RenderSimpleInstanced(
@@ -145,43 +108,38 @@ public:
 
 	
 	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices, ID3D11ShaderResourceView* textureSRV);
+
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
 	
 	void ReleasePrimitiveTextureResources(
 		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
-	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices);
-	
 
-	//release
+	// Release all resources that this render holds.
 	void Release();
-	void ReleaseDeviceAndSwapChain();
-	void ReleaseShader();
-	void ReleaseFrameBuffer();
+
 	void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer);
-	void ReleaseLineVertexBuffer();
-	void ReleaseLineIndexBuffer();
-	void ReleaseRasterizerState();
-	void ReleaseConstantBuffer();
-	void ReleaseDepthStencilBuffer();
-	void ReleaseDepthStencilState();
-	void ReleaseBlendState();
-	void ReleaseFontTexture();
-	void ReleaseFontAtlasTexture();
 
-	//Update
-	void RSUpdateState();
 
-	//Rendering
+	// Gloabal prepare method
 	void Prepare(bool bWireFrame);
-	void PrepareSimpleShader();
-	void PrepareTextureShader();
-	void PrepareLineShader();
+
+	/* Prepare methods for each rendering type */
+	void PrepareSimplePrimitive();
+	void PrepareTexturedPrimitive();
+	void PrepareLine();
+	void PrepareFont();
+	void PrepareGizmo();
+	void PrepareHighlight();
 
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
+	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
-		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer = nullptr, UINT indexCount = 0);
+		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer = nullptr, UINT numIndices = 0);
+	// Render Text in the FontTextureBuffer and FontIndexBuffer.
+	// It doesn't recieve buffer parameters since it use the internal buffers.
+	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
 
@@ -197,10 +155,9 @@ public:
 
 private:
 	bool ensureFontIndexBuffer(UINT fontCount);
-	UINT mTextVertexCount = 0;
 	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
-	UINT mTextIndexCount = 0;
 	UINT mTextIndexCapacity = 0;
+
 
 	ID3D11Buffer* InstanceBuffer = nullptr;
 	UINT InstanceCapacity = 0;
@@ -209,5 +166,47 @@ private:
 	ID3D11InputLayout* InstancedInputLayout = nullptr;
 
 	bool EnsureInstanceCapacity(UINT count);
+
+	/* Internal global rendering state */
+	bool mbWireFrame = false;
+
+	/* Create methods for each resources*/
+	void createDeviceAndSwapChain(HWND hWindow);
+	void createShader();
+	void createFrameBuffer();
+	void createLineVertexBuffer(uint32 maxVertices);
+	void createLineIndexBuffer(uint32 maxIndices);
+	void createRasterizerState();
+	void createConstantBuffer();
+	void createDepthStencilBuffer(UINT width, UINT height);
+
+	void createDepthStencilState();
+	void createStencilMarkState();
+	void createStencilOutlineState();
+	void createNoColorWriteBlendState();
+	bool createFontAtlasTexture();
+	bool createFontSamplerState();
+	bool createFontBlendState();
+
+	/* Prepare methods for each shader */
+	void prepareSimpleShader();
+	void prepareTextureShader();
+	void prepareLineShader();
+	void prepareFontShader();
+
+	/* Release methods for all resources */
+	void releaseDeviceAndSwapChain();
+	void releaseShader();
+	void releaseFrameBuffer();
+	void releaseLineVertexBuffer();
+	void releaseLineIndexBuffer();
+	void releaseFontBuffers();
+	void releaseRasterizerState();
+	void releaseConstantBuffer();
+	void releaseDepthStencilBuffer();
+	void releaseDepthStencilState();
+	void releaseBlendState();
+	void releaseFontTexture();
+	void releaseFontAtlasTexture();
 };
 

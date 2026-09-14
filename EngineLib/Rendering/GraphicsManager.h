@@ -11,6 +11,8 @@
 #include "Core/Math/Vector.h"
 #include "Core/Math/FBoundingBox.h"
 
+struct FFrustum;
+
 struct FBuffer
 {
 	ID3D11Buffer* Buffer;
@@ -28,6 +30,16 @@ struct FTexture
 	ID3D11SamplerState* Sampler;
 };
 
+enum ERenderQueueType
+{
+	RQT_SimplePrimitive,
+	RQT_TexturedPrimitive,
+	RQT_BillboardText,
+	RQT_WorldAxis,
+	RQT_Gizmo,
+	RQT_BoundingBox
+};
+
 class FGraphicsManager
 {
 public:
@@ -36,7 +48,6 @@ public:
 
 	//void Prepare(const Camera* mCamera);
 	void Prepare(const FCamera* mCamera);
-	void GizmoPrepare();
 
 	/* Rendering functions */
 	void Render(
@@ -50,7 +61,7 @@ public:
 	void Update(float deltaTime);
 
 	float GetAspect() const { return mAspect; }
-	bool GetWireFrame() const { return mbWireFrame; } const
+	bool GetWireFrame() const { return mbWireFrame; }
 	void SetWireFrame(bool bWireFrame) { mbWireFrame = bWireFrame; }
 
 	bool IsPerspectiveProjection() const;
@@ -150,8 +161,8 @@ private:
 
 	void updateRenderQueue(
 		const TArray<FRenderInfo>& renderInfos,
-		TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap
-	) const;
+		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
+		const FFrustum* frustum);
 
 	/* Rendering Functions */
 	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
@@ -164,6 +175,7 @@ private:
 	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);
 	void renderGrid();
+	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 
 	void CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos);
 

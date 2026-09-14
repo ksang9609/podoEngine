@@ -37,11 +37,14 @@ private:
 	FFileManager* mFileManager;
 	FEditorUIManager* mEditorUIManager;
 
+	FFontResource* mDefaultFontResource;
+
 	/* Editor Command */
 	void processEditorCommands(const FEditorCommands& commands);
 	void processEditorCommand(const FNewSceneCommand& command);
 	void processEditorCommand(const FSaveSceneCommand& command);
 	void processEditorCommand(const FLoadSceneCommand& command);
+
 	void processEditorCommand(const FSpawnActorCommand& command);
 	void processEditorCommand(const FDeleteActorCommand& command);
 	void processEditorCommand(const FSetActorLocationCommand& command);
@@ -49,6 +52,9 @@ private:
 	void processEditorCommand(const FSetActorScaleCommand& command);
 	void processEditorCommand(const FSetActorNameCommand& command);
 	void processEditorCommand(const FSetSelectedActorCommand& command);
+
+	void processEditorCommand(const FSetComponentUseTextureCommand& command);
+
 	void processEditorCommand(const FSetViewModeCommand& command);
 	void processEditorCommand(const FSetShowFlagCommand& command);
 	void processEditorCommand(const FSetCameraSensitivityCommand& command);
@@ -57,6 +63,7 @@ private:
 	void processEditorCommand(const FSetCameraRotationCommand& command);
 	void processEditorCommand(const FSetGizmoModeCommand& command);
 	void processEditorCommand(const FCycleGizmoModeCommand& command);
+
 	void processEditorCommand(const FSetGridWidthCommand& command);
 	void processEditorCommand(const FStartProjectionTransitionCommand& command);
 };

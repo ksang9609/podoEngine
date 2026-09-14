@@ -1,7 +1,7 @@
 ﻿// TexturedPrimitives.h
 #pragma once
 
-#include "Rendering/Renderer.h" // FVertexTextured 정의
+#include "Rendering/VertexType.h" // FVertexTextured 정의
 #include <cmath>
 
 inline FVertexTextured QuadTextureVertices[] =

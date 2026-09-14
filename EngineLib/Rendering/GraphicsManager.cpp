@@ -1,4 +1,5 @@
 ﻿#include "GraphicsManager.h"
+#include "Core/Math/Frustum.h" 
 
 #include "Renderer.h"
 #include "Camera.h"
@@ -8,11 +9,6 @@
 #include "Engine/Components/NameComponent.h"
 #include "Engine/Actor.h"
 
-
-// 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
-static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
-static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
-
 FGraphicsManager::FGraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
 	, mbPerspectiveProjection(true)
@@ -20,10 +16,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 {
 	mRenderer = new URenderer;
 	mRenderer->Create(hWindow);
-	mRenderer->CreateShader();
-	mRenderer->CreateConstantBuffer();
-	mRenderer->CreateLineVertexBuffer(LINE_VERTEX_CAPACITY);
-	mRenderer->CreateLineIndexBuffer(LINE_INDEX_CAPACITY);
+
 
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 }
@@ -59,11 +52,6 @@ FGraphicsManager::~FGraphicsManager()
 	mTexturedBufferMap.Empty();
 	mPrimitiveTextureMap.Empty();
 
-	mRenderer->ReleaseFontAtlasQuad();
-	mRenderer->ReleaseLineVertexBuffer();
-	mRenderer->ReleaseLineIndexBuffer();
-	mRenderer->ReleaseConstantBuffer();
-	mRenderer->ReleaseShader();
 	mRenderer->Release();
 
 	delete mRenderer;
@@ -72,7 +60,6 @@ FGraphicsManager::~FGraphicsManager()
 void FGraphicsManager::Prepare(const FCamera* mCamera)
 {
 	mRenderer->Prepare(mbWireFrame);
-	mRenderer->PrepareSimpleShader();
 
 	// Cache view and projection matrices for rendering
 	const float nearZ = 0.1f;
@@ -96,75 +83,87 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 	// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
 	//mRenderer->UpdateConstantViewProjection(viewProjection);
 }
-void FGraphicsManager::GizmoPrepare()
-{
-	mRenderer->RSUpdateState();
-}
 
-// TODO: remove outBillboardRenderQueue
-void QueueRenderQueue(
-	const TArray<FRenderInfo>& renderInfos,
-	TArray<const FRenderInfo*>& outSimpleRenderQueue,
-	TArray<const FRenderInfo*>& outTextureRenderQueue,
-	TArray<const FRenderInfo*>& outBillboardRenderQueue)
-{
-	for (const FRenderInfo& renderInfo : renderInfos)
-	{
-		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
-		{
-			outBillboardRenderQueue.Add(&renderInfo);
-		}
-		else if (renderInfo.bUseTexture)
-		{
-			outTextureRenderQueue.Add(&renderInfo);
-		}
-		else
-		{
-			outSimpleRenderQueue.Add(&renderInfo);
-		}
-	}
-}
+//// TODO: remove outBillboardRenderQueue
+//void QueueRenderQueue(
+//	const TArray<FRenderInfo>& renderInfos,
+//	TArray<const FRenderInfo*>& outSimpleRenderQueue,
+//	TArray<const FRenderInfo*>& outTextureRenderQueue,
+//	TArray<const FRenderInfo*>& outBillboardRenderQueue)
+//{
+//	for (const FRenderInfo& renderInfo : renderInfos)
+//	{
+//		if (renderInfo.ePrimitive == EPrimitive::EP_BillboardQuad)
+//		{
+//			outBillboardRenderQueue.Add(&renderInfo);
+//		}
+//		else if ((renderInfo.eRenderFlags & ERenderFlags::RF_TexturedPrimitive) == ERenderFlags::RF_None)
+//		{
+//			outTextureRenderQueue.Add(&renderInfo);
+//		}
+//		else
+//		{
+//			outSimpleRenderQueue.Add(&renderInfo);
+//		}
+//	}
+//}
+//
+//bool RenderFlagMatch(ERenderFlags targetFlags, ERenderFlags renderFlags)
+//{
+//	return (static_cast<uint32>(targetFlags) & static_cast<uint32>(renderFlags)) != 0;
+//}
 
-bool RenderFlagMatch(ERenderFlags targetFlags, ERenderFlags renderFlags)
-{
-	return (static_cast<uint32>(targetFlags) & static_cast<uint32>(renderFlags)) != 0;
-}
+// TODO: Combine worldaxis, bounding box into a single render queue type,
+// since they are both line-based rendering and can be batched together.
+// This will reduce the number of draw calls and improve performance.
+
 
 void FGraphicsManager::updateRenderQueue(
 	const TArray<FRenderInfo>& renderInfos,
-	TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap) const
+	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
+	const FFrustum* frustum)
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
+		if (frustum != nullptr)
+		{
+			if (!frustum->Intersects(renderInfo.WorldBounds))
+			{
+				continue;
+			}
+		}
+
 		ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_SimplePrimitive) &&
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
-			outRenderQueueMap[ERenderFlags::RF_SimplePrimitive].Add(&renderInfo);
+			if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
+			{
+				outRenderQueueMap[RQT_TexturedPrimitive].Add(&renderInfo);
+			}
+			else
+			{
+				outRenderQueueMap[RQT_SimplePrimitive].Add(&renderInfo);
+			}
 		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_TexturedPrimitive) &&
-			HasShowFlag(EEngineShowFlags::SF_Primitives))
-		{
-			outRenderQueueMap[ERenderFlags::RF_TexturedPrimitive].Add(&renderInfo);
-		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_BillboardText) &&
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BillboardText) &&
 			HasShowFlag(EEngineShowFlags::SF_BillboardText))
 		{
-			outRenderQueueMap[ERenderFlags::RF_BillboardText].Add(&renderInfo);
+			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
 		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_WorldAxis) &&
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_WorldAxis) &&
 			HasShowFlag(EEngineShowFlags::SF_WorldAxis))
 		{
-			outRenderQueueMap[ERenderFlags::RF_WorldAxis].Add(&renderInfo);
+			outRenderQueueMap[RQT_WorldAxis].Add(&renderInfo);
 		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_Gizmo))
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Gizmo))
 		{
-			outRenderQueueMap[ERenderFlags::RF_Gizmo].Add(&renderInfo);
+			outRenderQueueMap[RQT_Gizmo].Add(&renderInfo);
 		}
-		if (RenderFlagMatch(renderFlags, ERenderFlags::RF_BoundingBox))
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox))
 		{
-			outRenderQueueMap[ERenderFlags::RF_BoundingBox].Add(&renderInfo);
+			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
 		}
 	}
 }
@@ -176,31 +175,32 @@ void FGraphicsManager::Render(
 	const FCamera& camera,
 	const AActor* selectedActor)
 {
-	// Prepare Render queue
-	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
-	// Each render info is splitted into different render queues
-	TMap<ERenderFlags, TArray<const FRenderInfo*>> renderQueueMap;
-	updateRenderQueue(scenerRenderInfos, renderQueueMap);
-	updateRenderQueue(gizmoRenderInfos, renderQueueMap);
-	updateRenderQueue(axisRenderInfos, renderQueueMap);
 
 	Prepare(&camera);
 
-	// 인스턴스 테스트용(큐브 1만개 출력)
-	RenderInstancingTest();
-	renderSimplePrimitiveInstanced(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
+	const FFrustum frustum = FFrustum::FrustumFromViewProjection(mViewUnifiedProjectionMatrix);
 
-	//renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
-	renderTexturedPrimitive(renderQueueMap[ERenderFlags::RF_TexturedPrimitive], camera);
-	renderBillboardText(renderQueueMap[ERenderFlags::RF_BillboardText], camera);
+	// 인스턴스 테스트용(큐브 1만개 출력=
+	// Prepare Render queue
+	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
+	// Each render info is splitted into different render queues
+	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
+	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum);
+	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr);
+	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr);
+
+	RenderInstancingTest();
+	renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
+	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);
+	renderBillboardText(renderQueueMap[RQT_BillboardText], camera);
 
 	// Line Buffer에 넣기전에 Buffer의 용량을 미리 지정하여 동적할당 방지
-	CalculateLineBuffer(renderQueueMap[ERenderFlags::RF_BoundingBox]);
+	CalculateLineBuffer(renderQueueMap[RQT_BoundingBox]);
 
 	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
-	renderWorldAxis(renderQueueMap[ERenderFlags::RF_WorldAxis]);
+	renderWorldAxis(renderQueueMap[RQT_WorldAxis]);
 	renderGrid();
-	renderBoundingBox(renderQueueMap[ERenderFlags::RF_BoundingBox], camera.GetRotation());
+	renderBoundingBox(renderQueueMap[RQT_BoundingBox], camera.GetRotation());
 	FlushLines();
 
 	//강조
@@ -215,19 +215,33 @@ void FGraphicsManager::Render(
 	mRenderer->ClearDepth();
 
 	// Gizmo
-	GizmoPrepare();
-	renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_Gizmo], camera);
+	renderGizmo(renderQueueMap[RQT_Gizmo], camera);
 }
 
 void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
-	FMatrix viewProjection = mViewUnifiedProjectionMatrix;
-
-	mRenderer->PrepareSimpleShader();
+	mRenderer->PrepareSimplePrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
+		if (vertexBuffer == nullptr)
+		{
+			UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
+			continue;
+		}
+		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+	}
+}
+
+void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+{
+	mRenderer->PrepareGizmo();
+	for (const FRenderInfo* renderInfo : renderInfos)
+	{
+		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -240,7 +254,7 @@ void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& r
 
 void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
-	mRenderer->PrepareTextureShader();
+	mRenderer->PrepareTexturedPrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
@@ -371,12 +385,15 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 {
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
-	
+	mRenderer->PrepareFont();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
 		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
+		mRenderer->UpdateFontBuffer(
+			renderInfo->Textmesh->Vertices, renderInfo->Textmesh->Indices,
+			renderInfo->Textmesh->TextNum);
+		mRenderer->RenderFontTexture(renderInfo->Textmesh->TextNum);
 	}
 }
 
@@ -526,16 +543,10 @@ void FGraphicsManager::FlushLines()
 {
 	if (mLineVertices.Num() == 0) return;
 
+	mRenderer->PrepareLine();
+
 	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
 	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
-	//if (mbPerspectiveProjection)
-	//{
-	//	mRenderer->UpdateConstant(FMatrix::Identity, mViewProjectionMatrix, FVector4(0, 0, 0, 0));
-	//}
-	//else
-	//{
-	//	mRenderer->UpdateConstant(FMatrix::Identity, mViewOrthogonalProjectionMatrix, FVector4(0, 0, 0, 0));
-	//}
 	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
@@ -544,27 +555,12 @@ void FGraphicsManager::FlushLines()
 	mLineIndices.Reset(LINE_INDEX_CAPACITY);
 }
 
-//void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera) //깊이버퍼 초기화
-//{
-//	mRenderer->ClearDepth();
-//	RenderSimplePrimitive(renderInfos, camera);
-//}
-/*
-void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimitive)
-{
-	mRenderer->UpdateConstant(worldTransformMatrix.MakeMatrix(), mViewProjectionMatrix);
-
-	FBuffer vertexBuffer = mBufferMap[ePrimitive];
-	mRenderer->RenderPrimitive(vertexBuffer.Buffer, vertexBuffer.SourceNum);
-}
-*/
-
 void FGraphicsManager::Display()
 {
-	mRenderer->RenderFontTexture(
-		FMatrix::Identity,
-		FMatrix::Identity
-	);
+	//mRenderer->RenderFontTexture(
+	//	FMatrix::Identity,
+	//	FMatrix::Identity
+	//);
 	mRenderer->SwapBuffer();
 }
 
@@ -573,33 +569,33 @@ void FGraphicsManager::Update(float deltaTime)
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 
 	// 테스트용: deltaTime이 초 단위라는 전제
-	static float elapsed = 0.0f;
-	static size_t index = 0;
+	//static float elapsed = 0.0f;
+	//static size_t index = 0;
 
-	static std::string testTexts[] = {
-		"ABC",
-		"XYZ",
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-		"Hi",
-		"",
-		"Back!",
-		"sdffffffffffffffffffffffffffffffffffffffffffffff"
-	};
+	//static std::string testTexts[] = {
+	//	"ABC",
+	//	"XYZ",
+	//	"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	//	"Hi",
+	//	"",
+	//	"Back!",
+	//	"sdffffffffffffffffffffffffffffffffffffffffffffff"
+	//};
 
-	elapsed += deltaTime;
+	//elapsed += deltaTime;
 
-	if (elapsed >= 1.0f)
-	{
-		elapsed = 0.0f;
+	//if (elapsed >= 1.0f)
+	//{
+	//	elapsed = 0.0f;
 
-		if (!mRenderer->CreateFontAtlasQuad(&testTexts[index]))
-		{
-			UE_LOG(Error, Render, "Failed to update font text.");
-		}
+	//	if (!mRenderer->CreateFontAtlasQuad(&testTexts[index]))
+	//	{
+	//		UE_LOG(Error, Render, "Failed to update font text.");
+	//	}
 
-		index = (index + 1)
-			% (sizeof(testTexts) / sizeof(testTexts[0]));
-	}
+	//	index = (index + 1)
+	//		% (sizeof(testTexts) / sizeof(testTexts[0]));
+	//}
 }
 
 bool FGraphicsManager::IsPerspectiveProjection() const
@@ -754,6 +750,8 @@ void  FGraphicsManager::SetGridWidth(float width)
 
 void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
+	mRenderer->PrepareHighlight();
+
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
 	FMatrix worldTransformMatrix = RI.GetTransformMatrix(camera.Rotation);
