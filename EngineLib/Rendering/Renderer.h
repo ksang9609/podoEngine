@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
@@ -66,7 +66,8 @@ public:
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
 	ID3D11Buffer* CubeIndexBuffer = nullptr;     // 큐브 인덱스 저장
-
+	ID3D11Buffer* SphereIndexBuffer = nullptr;
+	UINT SphereIndexCount = 0;
 
 	//ID3D11ShaderResourceView* PrimitiveTextureSRV = nullptr;
 
@@ -125,6 +126,8 @@ public:
 
 	bool CreateTestQuad(); // 기존의 쿼드를 그리는 함수(테스트 용)
 
+	ID3D11Buffer* CreatePrimitiveIndexBuffer(const UINT* indices, UINT indexCount);
+
 	// texturedPrimitive용
 	//void RenderTexture(const FMatrix& world, const FMatrix& viewProjection);
 
@@ -166,7 +169,7 @@ public:
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
-		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer = nullptr);
+		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer = nullptr, UINT indexCount = 0);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
 

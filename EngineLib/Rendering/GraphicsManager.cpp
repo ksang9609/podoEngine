@@ -252,11 +252,23 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 			texture->SRV, texture->Sampler);*/
 
 		ID3D11Buffer* indexBuffer = nullptr;
+		UINT indexCount = 0;
 
 		if (renderInfo->ePrimitive == EPrimitive::EP_Cube)
 		{
 			indexBuffer = mRenderer->CubeIndexBuffer;
+			indexCount = 36;
+
+			// indexBuffer = mRenderer->CubeIndexBuffer;
 			if (!indexBuffer)
+				continue;
+		}
+		else if (renderInfo->ePrimitive == EPrimitive::EP_Sphere)
+		{
+			indexBuffer = mRenderer->SphereIndexBuffer;
+			indexCount = mRenderer->SphereIndexCount;
+
+			if (!indexBuffer || indexCount == 0)
 				continue;
 		}
 
@@ -265,7 +277,7 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 			vertexBuffer->SourceNum,
 			texture->SRV,
 			texture->Sampler,
-			indexBuffer); // 마지막 인수에 전달
+			indexBuffer, indexCount); // 마지막 인수에 전달
 	}
 }
 

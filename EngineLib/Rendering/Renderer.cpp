@@ -464,6 +464,14 @@ void URenderer::Release()
 		CubeIndexBuffer->Release();
 		CubeIndexBuffer = nullptr;
 	}
+
+	if (SphereIndexBuffer)
+	{
+		SphereIndexBuffer->Release();
+		SphereIndexBuffer = nullptr;
+	}
+
+	SphereIndexCount = 0;
 	ReleaseFontAtlasTexture();
 	ReleaseFontTexture();
 	//ReleaseTestTexture();
@@ -862,7 +870,7 @@ void URenderer::RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 }
 
 void URenderer::RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
-	ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer)
+	ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer, UINT indexCount)
 {
 	UINT offset = 0;
 	// Bind the vertex buffer
@@ -880,7 +888,7 @@ void URenderer::RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
 
 	// 임시 큐브
 	if (indexBuffer)
-		DeviceContext->DrawIndexed(36, 0, 0);
+		DeviceContext->DrawIndexed(indexCount, 0, 0);
 	else
 		DeviceContext->Draw(numVertices, 0);
 }
@@ -1190,6 +1198,24 @@ void URenderer::ClearDepth()
 	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
+ID3D11Buffer* URenderer::CreatePrimitiveIndexBuffer(const UINT* indices,UINT indexCount)
+{
+	if (!indices || indexCount == 0)
+		return nullptr;
+
+	D3D11_BUFFER_DESC desc = {};
+	desc.Usage = D3D11_USAGE_IMMUTABLE;
+	desc.ByteWidth = indexCount * sizeof(unsigned int);
+	desc.BindFlags = D3D11_BIND_INDEX_BUFFER; // 인데스 버퍼라고 명시
+
+	D3D11_SUBRESOURCE_DATA data = {};
+	data.pSysMem = indices;
+
+	ID3D11Buffer* buffer = nullptr;
+	HRESULT hr = Device->CreateBuffer(&desc, &data, &buffer);
+
+	return SUCCEEDED(hr) ? buffer : nullptr;
+}
 
 // 테스트용 쿼드 출력 나중에 지울 예정
 
@@ -1557,7 +1583,7 @@ bool URenderer::ensureFontIndexBuffer(UINT fontCpunt)
 		indices.push_back(base + 1);
 	}
 
-	D3D11_BUFFER_DESC desc = {};
+/*	D3D11_BUFFER_DESC desc = {};
 	desc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(UINT));
 	desc.Usage = D3D11_USAGE_IMMUTABLE; // 
 	desc.BindFlags = D3D11_BIND_INDEX_BUFFER; // 인덱스 버퍼라고 명시
@@ -1566,9 +1592,12 @@ bool URenderer::ensureFontIndexBuffer(UINT fontCpunt)
 	data.pSysMem = indices.data();
 
 	ID3D11Buffer* newBuffer = nullptr;
-	HRESULT hr = Device->CreateBuffer(&desc, &data, &newBuffer);
+	HRESULT hr = Device->CreateBuffer(&desc, &data, &newBuffer);*/
 
-	if (FAILED(hr))
+	ID3D11Buffer* newBuffer = CreatePrimitiveIndexBuffer(indices.data(), static_cast<UINT>(indices.size())
+	);
+
+	if (!newBuffer)
 		return false;
 
 	if (FontIndexBuffer)
