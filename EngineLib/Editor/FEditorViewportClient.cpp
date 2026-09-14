@@ -97,7 +97,8 @@ bool FEditorViewportClient::RaycastBounds(
 	return true;
 }
 
-void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FRenderInfo>& renderInfos, float perspectiveRatio)
+void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
+	const TArray<FRenderInfo>& renderInfos, float perspectiveRatio, bool bCheckObject)
 {
 	bMouseHit = false;
 
@@ -137,6 +138,12 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FR
 		bMouseHit = true;
 		mGizmo.mbHovered = true;
 		// gizmo highlight
+		return;
+	}
+
+	// 클릭하지 않았다면 Object는 검사하지 않음
+	if (!bCheckObject)
+	{
 		return;
 	}
 
@@ -272,7 +279,13 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		mGizmo.CycleGizmoType();
 	}
 
-	//RayCast
+	const bool bLeftClicked = !io.WantCaptureMouse && Input.WasPressed(VK_LBUTTON);
+
+	if (!io.WantCaptureMouse)
+	{
+		RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio, bLeftClicked);
+	}
+
 
 	////Editor Click 처리
 	//if (mClickedActor)
@@ -283,8 +296,6 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	// 누른 순간에만 선택을 갱신한다. 떼는 것으로는 선택이 풀리지 않는다.
 	if (!ImGui::GetIO().WantCaptureMouse && Input.WasPressed(VK_LBUTTON))
 	{
-		RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio);
-
 		AActor* Hit = nullptr;
 
 		if (IsMouseHit())
@@ -339,8 +350,6 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
 	if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
 	{
-		RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio);
-
 		if (mGizmo.eType == EGIZMO_TYPE::TRANSLATE)
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다

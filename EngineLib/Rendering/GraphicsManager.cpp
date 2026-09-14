@@ -1,4 +1,5 @@
 ﻿#include "GraphicsManager.h"
+#include "Core/Math/Frustum.h" 
 
 #include "Renderer.h"
 #include "Camera.h"
@@ -112,10 +113,19 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 
 void FGraphicsManager::updateRenderQueue(
 	const TArray<FRenderInfo>& renderInfos,
-	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap) const
+	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
+	const FFrustum* frustum)
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
+		if (frustum != nullptr)
+		{
+			if (!frustum->Intersects(renderInfo.WorldBounds))
+			{
+				continue;
+			}
+		}
+
 		ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
@@ -158,15 +168,18 @@ void FGraphicsManager::Render(
 	const FCamera& camera,
 	const AActor* selectedActor)
 {
+
+	Prepare(&camera);
+
+	const FFrustum frustum = FFrustum::FrustumFromViewProjection(mViewUnifiedProjectionMatrix);
+
 	// Prepare Render queue
 	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
 	// Each render info is splitted into different render queues
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
-	updateRenderQueue(scenerRenderInfos, renderQueueMap);
-	updateRenderQueue(gizmoRenderInfos, renderQueueMap);
-	updateRenderQueue(axisRenderInfos, renderQueueMap);
-
-	Prepare(&camera);
+	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum);
+	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr);
+	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr);
 
 	renderSimplePrimitive(renderQueueMap[RQT_SimplePrimitive], camera);
 	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);

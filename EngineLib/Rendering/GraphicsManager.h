@@ -11,6 +11,8 @@
 #include "Core/Math/Vector.h"
 #include "Core/Math/FBoundingBox.h"
 
+struct FFrustum;
+
 struct FBuffer
 {
 	ID3D11Buffer* Buffer;
@@ -57,7 +59,7 @@ public:
 	void Update(float deltaTime);
 
 	float GetAspect() const { return mAspect; }
-	bool GetWireFrame() const { return mbWireFrame; } const
+	bool GetWireFrame() const { return mbWireFrame; }
 	void SetWireFrame(bool bWireFrame) { mbWireFrame = bWireFrame; }
 
 	bool IsPerspectiveProjection() const;
@@ -157,8 +159,8 @@ private:
 
 	void updateRenderQueue(
 		const TArray<FRenderInfo>& renderInfos,
-		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap
-	) const;
+		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
+		const FFrustum* frustum);
 
 	/* Rendering Functions */
 	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
