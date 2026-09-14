@@ -16,6 +16,11 @@ void FObjectFactory::Initialize(const FFontResource& fontResource)
 	mDefaultFontResource = &fontResource;
 }
 
+const FFontResource* FObjectFactory::GetDefaultFontResource()
+{
+	return mDefaultFontResource;
+}
+
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
 	if (!classInfo || !classInfo->Constructor)
@@ -89,6 +94,7 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/World.h"
+#include "Engine/Components/BillboardComponent.h"
 
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetClass },
@@ -98,5 +104,7 @@ TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap
 	{"UPrimitiveComponent", &UPrimitiveComponent::GetClass },
 	{"UCubeComponent", &UCubeComponent::GetClass },
 	{"USphereComponent", &USphereComponent::GetClass },
-	{"UWorld", &UWorld::GetClass }
+	{"UBillboardComponent", &UBillboardComponent::GetClass },
+	{"UWorld", &UWorld::GetClass },
+	{"UNameComponent",& UNameComponent::GetClass }
 };

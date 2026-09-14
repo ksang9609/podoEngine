@@ -114,10 +114,14 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 
 		if (selectedFile.Len() > 0)
 		{
-			//std::filesystem::path p(selectedFile.CStr());
-			//SaveScene(p.stem().string(), *guiReference.FileManager);
-			//guiReference.ViewportClient->Reset();
-			outCommands.Emplace(FSaveSceneCommand{ selectedFile });
+			const std::filesystem::path selectedPath(selectedFile.CStr());
+			const FString sceneName(selectedPath.stem().string());
+
+			outCommands.Emplace(FSaveSceneCommand{ sceneName });
+			strcpy_s(
+				mGuiInputField.SceneName,
+				sizeof(mGuiInputField.SceneName),
+				sceneName.CStr());
 		}
 	}
 	if (ImGui::Button("Load scene"))
