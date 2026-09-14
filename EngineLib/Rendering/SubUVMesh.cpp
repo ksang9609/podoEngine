@@ -27,10 +27,10 @@ void FSubUVMesh::generateMesh(uint32 n, uint32 m, uint32 i)
 	const float v1 = v0 + width;
 
 	// Add vertices for the quad
-	Vertices.Add({ 0.0f, 0.0f, 0.0f, v0, u0 }); // Top-left
-	Vertices.Add({ 0.0f, 1.0f, 0.0f, v1, u0 }); // Top-right
-	Vertices.Add({ 0.0f, 1.0f, 1.0f, v1, u1 }); // Bottom-right
-	Vertices.Add({ 0.0f, 0.0f, 1.0f, v0, u1 }); // Bottom-left
+	Vertices.Add({ 0.0f, -0.5f, +0.5f, v0, u0 }); // Top-left
+	Vertices.Add({ 0.0f, +0.5f, +0.5f, v1, u0 }); // Top-right
+	Vertices.Add({ 0.0f, +0.5f, -0.5f, v1, u1 }); // Bottom-right
+	Vertices.Add({ 0.0f, -0.5f, -0.5f, v0, u1 }); // Bottom-left
 
 	// Add indices for the quad
 	Indices.Add(0);

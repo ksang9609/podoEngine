@@ -445,6 +445,9 @@
     <Image Include="Assets\Textures\EarthTexture.dds">
       <Filter>Assets\Textures</Filter>
     </Image>
+    <Image Include="Assets\Textures\Explosion.dds">
+      <Filter>Assets\Textures</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\SceneData\Default.Scene">

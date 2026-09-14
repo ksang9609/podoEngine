@@ -42,6 +42,11 @@ void URenderer::Create(HWND hWindow)
 	createConstantBuffer();
 	createLineVertexBuffer(LINE_VERTEX_CAPACITY);
 	createLineIndexBuffer(LINE_INDEX_CAPACITY);
+
+	/* Particle */
+	createParticleStates();
+	createParticleVertexBuffer();
+	createParticleIndexBuffer();
 }
 
 void URenderer::createDeviceAndSwapChain(HWND hWindow)
@@ -213,6 +218,47 @@ bool URenderer::createFontBlendState()
 	rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 	return SUCCEEDED(Device->CreateBlendState(&desc, &FontBlendState));
+}
+
+bool URenderer::createParticleStates()
+{
+	if (!Device)
+		return false;
+	if (ParticleBlendState)
+	{
+		ParticleBlendState->Release();
+		ParticleBlendState = nullptr;
+	}
+	D3D11_BLEND_DESC desc = {};
+	auto& rt = desc.RenderTarget[0];
+
+	rt.BlendEnable = TRUE;
+	rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	rt.DestBlend = D3D11_BLEND_ONE;
+	rt.BlendOp = D3D11_BLEND_OP_ADD;
+
+	rt.SrcBlendAlpha = D3D11_BLEND_ONE;
+	rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+	rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	if (ParticleSamplerState)
+	{
+		ParticleSamplerState->Release();
+		ParticleSamplerState = nullptr;
+	}
+
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	return SUCCEEDED(Device->CreateSamplerState(&samplerDesc, &ParticleSamplerState)) &&
+		SUCCEEDED(Device->CreateBlendState(&desc, &ParticleBlendState));
 }
 
 // 인스턴스 사용하여 렌더링(텍스쳐 X)
@@ -432,6 +478,29 @@ void URenderer::createLineIndexBuffer(uint32 maxIndices)
 	}
 }
 
+void URenderer::createParticleVertexBuffer()
+{
+	D3D11_BUFFER_DESC vertexbufferdesc = {};
+	// Assume particle is a quad
+	vertexbufferdesc.ByteWidth = 4 * sizeof(FVertexTextured);
+	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	Device->CreateBuffer(&vertexbufferdesc, nullptr, &ParticleVertexBuffer);
+}
+
+void URenderer::createParticleIndexBuffer()
+{
+	D3D11_BUFFER_DESC indexbufferdesc = {};
+	indexbufferdesc.ByteWidth = 6 * sizeof(uint32);
+	indexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	Device->CreateBuffer(&indexbufferdesc, nullptr, &ParticleIndexBuffer);
+}
+
 void URenderer::releaseLineIndexBuffer()
 {
 	if (LineIndexBuffer)
@@ -501,6 +570,18 @@ void URenderer::Release()
 	{
 		InstanceBuffer->Release();
 		InstanceBuffer = nullptr;
+	}
+
+	/* Particle */
+	if (ParticleVertexBuffer)
+	{
+		ParticleVertexBuffer->Release();
+		ParticleVertexBuffer = nullptr;
+	}
+	if (ParticleIndexBuffer)
+	{
+		ParticleIndexBuffer->Release();
+		ParticleIndexBuffer = nullptr;
 	}
 }
 
@@ -855,6 +936,17 @@ void URenderer::PrepareGizmo()
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
 
+void URenderer::PrepareParticle()
+{
+	prepareTextureShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Always render solid
+	DeviceContext->RSSetState(RasterizerState[0]);
+	DeviceContext->OMSetBlendState(ParticleBlendState, nullptr, 0xffffffff);
+}
+
 void URenderer::PrepareHighlight()
 {
 	prepareSimpleShader();
@@ -1046,6 +1138,25 @@ void URenderer::RenderFontTexture(uint32 numCharacter)
 	DeviceContext->DrawIndexed(numCharacter * 6, 0, 0);
 }
 
+void URenderer::RenderParticle(ID3D11ShaderResourceView* texture)
+{
+	if (!ParticleVertexBuffer || texture == nullptr) return;
+	
+	UINT offset = 0;
+
+	// Bind the vertex buffer
+	DeviceContext->IASetVertexBuffers(0, 1, &ParticleVertexBuffer, &StrideTextured, &offset);
+
+	// Bind the texture resource
+	DeviceContext->PSSetShaderResources(0, 1, &texture);
+	DeviceContext->PSSetSamplers(0, 1, &ParticleSamplerState);
+
+	// Bind the index buffer
+	DeviceContext->IASetIndexBuffer(ParticleIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	DeviceContext->DrawIndexed(6, 0, 0);
+}
+
 // 쌓아둔 선분 전체를 한 번의 Draw로 그린다.
 // 토폴로지를 바꾸므로 반드시 이 함수 안에서 되돌린다. 안 그러면 뒤에 그리는 것들이 전부 깨진다.
 void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices)
@@ -1225,6 +1336,8 @@ void URenderer::createNoColorWriteBlendState()
 void URenderer::releaseBlendState()
 {
 	if (NoColorWriteBlendState) { NoColorWriteBlendState->Release(); NoColorWriteBlendState = nullptr; }
+	if (FontBlendState) { FontBlendState->Release(); FontBlendState = nullptr; }
+	if (ParticleBlendState) { ParticleBlendState->Release(); ParticleBlendState = nullptr; }
 }
 
 void URenderer::releaseDepthStencilBuffer()
@@ -1298,6 +1411,25 @@ void URenderer::UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const 
 
 	const uint32 numIndices = indices.Num();
 	ensureFontIndexBuffer(numIndices / 4);
+}
+
+void URenderer::UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices)
+{
+	assert(ParticleVertexBuffer && ParticleBlendState);
+
+	const uint32 numVertices = vertices.Num();
+
+	// Map the vertex buffer and copy the vertex data
+	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+	DeviceContext->Map(ParticleVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, vertices.GetData(), numVertices * sizeof(FVertexTextured));
+	DeviceContext->Unmap(ParticleVertexBuffer, 0);
+
+	// Map the index buffer and copy the index data
+	D3D11_MAPPED_SUBRESOURCE mappedIndexResource = {};
+	DeviceContext->Map(ParticleIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedIndexResource);
+	memcpy(mappedIndexResource.pData, indices.GetData(), indices.Num() * sizeof(uint32));
+	DeviceContext->Unmap(ParticleIndexBuffer, 0);
 }
 
 void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight)

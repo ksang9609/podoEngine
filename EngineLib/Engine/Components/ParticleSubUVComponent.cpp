@@ -1,5 +1,7 @@
 ﻿#include "ParticleSubUVComponent.h"
 
+IMPLEMENT_CLASS(UParticleSubUVComponent, UBillboardComponent);
+
 void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
 	uint32 numRows, uint32 numCols,
 	bool bLooping, float playRate, float frameDuration)
@@ -54,5 +56,9 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 {
 	FRenderInfo renderInfo = UBillboardComponent::makeRenderInfo();
 	renderInfo.SubUVMesh = &mSubUVMesh;
+
+	renderInfo.eRenderFlags =
+		ERenderFlags::RF_Billboard |
+		ERenderFlags::RF_Particle;
 	return renderInfo;
 }

@@ -65,6 +65,11 @@ public:
 	ID3D11Buffer* SphereIndexBuffer = nullptr;
 	UINT SphereIndexCount = 0;
 
+	/* Particle */
+	ID3D11SamplerState* ParticleSamplerState = nullptr;
+	ID3D11BlendState* ParticleBlendState = nullptr;
+	ID3D11Buffer* ParticleVertexBuffer = nullptr;
+	ID3D11Buffer* ParticleIndexBuffer = nullptr;
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -131,9 +136,11 @@ public:
 	void PrepareFont();
 	void PrepareGizmo();
 	void PrepareHighlight();
+	void PrepareParticle();
 
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
+	void UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
@@ -143,6 +150,7 @@ public:
 	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
+	void RenderParticle(ID3D11ShaderResourceView* texture);
 
 	void SwapBuffer();
 
@@ -177,6 +185,8 @@ private:
 	void createFrameBuffer();
 	void createLineVertexBuffer(uint32 maxVertices);
 	void createLineIndexBuffer(uint32 maxIndices);
+	void createParticleVertexBuffer();
+	void createParticleIndexBuffer();
 	void createRasterizerState();
 	void createConstantBuffer();
 	void createDepthStencilBuffer(UINT width, UINT height);
@@ -188,6 +198,7 @@ private:
 	bool createFontAtlasTexture();
 	bool createFontSamplerState();
 	bool createFontBlendState();
+	bool createParticleStates();
 
 	/* Prepare methods for each shader */
 	void prepareSimpleShader();
