@@ -44,7 +44,6 @@ public:
 
 	//void Prepare(const Camera* mCamera);
 	void Prepare(const FCamera* mCamera);
-	void GizmoPrepare();
 
 	/* Rendering functions */
 	void Render(
@@ -170,4 +169,5 @@ private:
 	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);
 	void renderGrid();
+	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 };

@@ -8,11 +8,6 @@
 #include "Engine/Components/NameComponent.h"
 #include "Engine/Actor.h"
 
-
-// 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
-static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
-static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
-
 FGraphicsManager::FGraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
 	, mbPerspectiveProjection(true)
@@ -20,10 +15,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 {
 	mRenderer = new URenderer;
 	mRenderer->Create(hWindow);
-	mRenderer->CreateShader();
-	mRenderer->CreateConstantBuffer();
-	mRenderer->CreateLineVertexBuffer(LINE_VERTEX_CAPACITY);
-	mRenderer->CreateLineIndexBuffer(LINE_INDEX_CAPACITY);
+
 
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 }
@@ -52,11 +44,6 @@ FGraphicsManager::~FGraphicsManager()
 	mTexturedBufferMap.Empty();
 	mPrimitiveTextureMap.Empty();
 
-	mRenderer->ReleaseFontAtlasQuad();
-	mRenderer->ReleaseLineVertexBuffer();
-	mRenderer->ReleaseLineIndexBuffer();
-	mRenderer->ReleaseConstantBuffer();
-	mRenderer->ReleaseShader();
 	mRenderer->Release();
 
 	delete mRenderer;
@@ -65,7 +52,6 @@ FGraphicsManager::~FGraphicsManager()
 void FGraphicsManager::Prepare(const FCamera* mCamera)
 {
 	mRenderer->Prepare(mbWireFrame);
-	mRenderer->PrepareSimpleShader();
 
 	// Cache view and projection matrices for rendering
 	const float nearZ = 0.1f;
@@ -88,10 +74,6 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 	// 깊이 테스트가 켜져 있으면 나중에 그린 FarCube 가 깊이 비교에서 탈락해
 	// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
 	//mRenderer->UpdateConstantViewProjection(viewProjection);
-}
-void FGraphicsManager::GizmoPrepare()
-{
-	mRenderer->RSUpdateState();
 }
 
 //// TODO: remove outBillboardRenderQueue
@@ -208,19 +190,33 @@ void FGraphicsManager::Render(
 	mRenderer->ClearDepth();
 
 	// Gizmo
-	GizmoPrepare();
-	renderSimplePrimitive(renderQueueMap[RQT_Gizmo], camera);
+	renderGizmo(renderQueueMap[RQT_Gizmo], camera);
 }
 
 void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
-	FMatrix viewProjection = mViewUnifiedProjectionMatrix;
-
 	mRenderer->PrepareSimplePrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, viewProjection, renderInfo->Color);
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
+		if (vertexBuffer == nullptr)
+		{
+			UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
+			continue;
+		}
+		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+	}
+}
+
+void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+{
+	mRenderer->PrepareGizmo();
+	for (const FRenderInfo* renderInfo : renderInfos)
+	{
+		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -454,10 +450,10 @@ void FGraphicsManager::FlushLines()
 
 void FGraphicsManager::Display()
 {
-	mRenderer->RenderFontTexture(
-		FMatrix::Identity,
-		FMatrix::Identity
-	);
+	//mRenderer->RenderFontTexture(
+	//	FMatrix::Identity,
+	//	FMatrix::Identity
+	//);
 	mRenderer->SwapBuffer();
 }
 

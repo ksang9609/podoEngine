@@ -13,6 +13,10 @@
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
+// 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
+static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
+static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
+
 struct FConstants
 {
 	FMatrix World; //Model
@@ -80,36 +84,20 @@ public:
 
 public:
 
-	//create
+	/* Create */
 	void Create(HWND hWindow);
-	void CreateDeviceAndSwapChain(HWND hWindow);
-	void CreateShader();
-	void CreateFrameBuffer();
+
+	// Create API for GraphicsManager
+	void CreateSamplerState(ID3D11SamplerState** outSamplerState);
 	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT byteWidth);
-	void CreateLineVertexBuffer(uint32 maxVertices);
-	void CreateLineIndexBuffer(uint32 maxIndices);
-	void CreateRasterizerState();
-	void CreateConstantBuffer();
-	void CreateDepthStencilBuffer(UINT width, UINT height);
-
-	void CreateDepthStencilState();
-	void CreateStencilMarkState();
-	void CreateStencilOutlineState();
-	void CreateNoColorWriteBlendState();
-	bool CreateFontAtlasTexture();
-	void CreateSamplerState(ID3D11SamplerState** outSamplerState);
 
 	// font용
-	bool CreateFontShader();
-	bool CreateFontSamplerState();
-	bool CreateFontBlendState();
-	void RenderFontTexture(const FMatrix& world, const FMatrix& viewProjection);
-	void ReleaseFontAtlasQuad();
-	void ReleaseFontShader();
-	bool CreateFontAtlasQuad(std::string* Text);
+	//bool CreateFontShader();
 
-	bool CreateTestQuad(); // 기존의 쿼드를 그리는 함수(테스트 용)
+	//void RenderFontTexture(const FMatrix& world, const FMatrix& viewProjection);
+
+	//bool CreateTestQuad(); // 기존의 쿼드를 그리는 함수(테스트 용)
 
 	// texturedPrimitive용
 	//void RenderTexture(const FMatrix& world, const FMatrix& viewProjection);
@@ -123,31 +111,14 @@ public:
 	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices);
 	
 
-	//release
+	// Release all resources that this render holds.
 	void Release();
-	void ReleaseDeviceAndSwapChain();
-	void ReleaseShader();
-	void ReleaseFrameBuffer();
+
 	void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer);
-	void ReleaseLineVertexBuffer();
-	void ReleaseLineIndexBuffer();
-	void ReleaseRasterizerState();
-	void ReleaseConstantBuffer();
-	void ReleaseDepthStencilBuffer();
-	void ReleaseDepthStencilState();
-	void ReleaseBlendState();
-	void ReleaseFontTexture();
-	void ReleaseFontAtlasTexture();
 
-	//Update
-	void RSUpdateState();
 
-	//Rendering
+	// Gloabal prepare method
 	void Prepare(bool bWireFrame);
-	void PrepareSimpleShader();
-	void PrepareTextureShader();
-	void PrepareLineShader();
-	void PrepareFontShader();
 
 	/* Prepare methods for each rendering type */
 	void PrepareSimplePrimitive();
@@ -181,12 +152,49 @@ public:
 
 private:
 	bool ensureFontIndexBuffer(UINT fontCount);
-	UINT mTextVertexCount = 0;
 	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
-	UINT mTextIndexCount = 0;
 	UINT mTextIndexCapacity = 0;
 
 	/* Internal global rendering state */
 	bool mbWireFrame = false;
+
+	/* Create methods for each resources*/
+	void createDeviceAndSwapChain(HWND hWindow);
+	void createShader();
+	void createFrameBuffer();
+	void createLineVertexBuffer(uint32 maxVertices);
+	void createLineIndexBuffer(uint32 maxIndices);
+	void createRasterizerState();
+	void createConstantBuffer();
+	void createDepthStencilBuffer(UINT width, UINT height);
+
+	void createDepthStencilState();
+	void createStencilMarkState();
+	void createStencilOutlineState();
+	void createNoColorWriteBlendState();
+	bool createFontAtlasTexture();
+	bool createFontSamplerState();
+	bool createFontBlendState();
+
+	/* Prepare methods for each shader */
+	void prepareSimpleShader();
+	void prepareTextureShader();
+	void prepareLineShader();
+	void prepareFontShader();
+
+	/* Release methods for all resources */
+	void releaseDeviceAndSwapChain();
+	void releaseShader();
+	void releaseFrameBuffer();
+	void releaseLineVertexBuffer();
+	void releaseLineIndexBuffer();
+	void releaseFontBuffers();
+	void releaseRasterizerState();
+	void releaseConstantBuffer();
+	void releaseDepthStencilBuffer();
+	void releaseDepthStencilState();
+	void releaseBlendState();
+	void releaseFontTexture();
+	void releaseFontAtlasTexture();
 };
 
