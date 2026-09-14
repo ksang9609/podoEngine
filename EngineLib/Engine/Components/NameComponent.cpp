@@ -34,7 +34,8 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 	renderFlags = renderFlags
 		& ~ERenderFlags::RF_Primitive
 		& ~ERenderFlags::RF_BoundingBox
-		| ERenderFlags::RF_BillboardText;
+		| ERenderFlags::RF_Billboard
+		| ERenderFlags::RF_Text;
 
 	renderInfo.eRenderFlags = renderFlags;
 	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for name text

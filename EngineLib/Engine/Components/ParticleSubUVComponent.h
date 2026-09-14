@@ -31,4 +31,6 @@ private:
 	/* Internal State */
 	float mElapsedTime = 0.0f;
 	uint32 mCurrentFrameIndex = 0;
+
+	virtual FRenderInfo makeRenderInfo() const override;
 };

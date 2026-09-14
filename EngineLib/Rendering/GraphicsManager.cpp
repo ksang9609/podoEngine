@@ -128,7 +128,8 @@ void FGraphicsManager::updateRenderQueue(
 
 		ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
-		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
+		if (HasAllRenderFlags(renderFlags,
+			ERenderFlags::RF_Primitive & ~ERenderFlags::RF_Billboard) &&
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
 			if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
@@ -140,7 +141,8 @@ void FGraphicsManager::updateRenderQueue(
 				outRenderQueueMap[RQT_SimplePrimitive].Add(&renderInfo);
 			}
 		}
-		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BillboardText) &&
+		if (HasAllRenderFlags(renderFlags,
+			ERenderFlags::RF_Billboard | ERenderFlags::RF_Text) &&
 			HasShowFlag(EEngineShowFlags::SF_BillboardText))
 		{
 			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
@@ -157,6 +159,10 @@ void FGraphicsManager::updateRenderQueue(
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox))
 		{
 			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
+		}
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Particle))
+		{
+			outRenderQueueMap[RQT_Particle].Add(&renderInfo);
 		}
 	}
 }

@@ -35,7 +35,8 @@ enum ERenderQueueType
 	RQT_BillboardText,
 	RQT_WorldAxis,
 	RQT_Gizmo,
-	RQT_BoundingBox
+	RQT_BoundingBox,
+	RQT_Particle,
 };
 
 class FGraphicsManager
@@ -172,6 +173,7 @@ private:
 	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);
 	void renderGrid();
 	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 
 	void CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos);
 };

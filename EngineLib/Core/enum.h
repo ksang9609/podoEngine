@@ -41,10 +41,12 @@ enum class ERenderFlags : uint32
 	RF_None = 0,
 	RF_Primitive = 1 << 0,
 	RF_Texture = 1 << 1,
-	RF_BillboardText = 1 << 2,
-	RF_WorldAxis = 1 << 3,
-	RF_Gizmo = 1 << 4,
-	RF_BoundingBox = 1 << 5,
+	RF_Billboard = 1 << 2,
+	RF_Text = 1 << 3,
+	RF_WorldAxis = 1 << 4,
+	RF_Gizmo = 1 << 5,
+	RF_BoundingBox = 1 << 6,
+	RF_Particle = 1 << 7,
 };
 
 constexpr ERenderFlags operator|(ERenderFlags lhs, ERenderFlags rhs)

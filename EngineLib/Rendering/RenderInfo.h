@@ -5,6 +5,7 @@
 #include "Core/Math/FBoundingBox.h"
 
 struct FTextMesh;
+struct FSubUVMesh;
 struct FRenderInfo
 {
 	EPrimitive ePrimitive;
@@ -13,6 +14,7 @@ struct FRenderInfo
 	FVector4 Color;
 	ERenderFlags eRenderFlags;
 	const FTextMesh* Textmesh;
+	const FSubUVMesh* SubUVMesh; 
 
 	FBoundingBox LocalBounds{};
 	FBoundingBox WorldBounds{};
@@ -22,7 +24,7 @@ struct FRenderInfo
 	// If camera stores rotation in FQuat, we can use FQuat to calculate billboard matrix.
 	FMatrix GetTransformMatrix(const FRotator& cameraRotation) const
 	{
-		if (!HasAllRenderFlags(eRenderFlags, ERenderFlags::RF_BillboardText))
+		if (!HasAllRenderFlags(eRenderFlags, ERenderFlags::RF_Billboard))
 		{
 			return WorldTransformMatrix;
 		}

@@ -49,3 +49,10 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRe
 		mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
 	}
 }
+
+FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
+{
+	FRenderInfo renderInfo = UBillboardComponent::makeRenderInfo();
+	renderInfo.SubUVMesh = &mSubUVMesh;
+	return renderInfo;
+}
