@@ -26,6 +26,7 @@ public:
 	void Reset();
 
 	FCamera& GetCamera() { return mCamera; }
+	const FCamera& GetCamera() const { return mCamera; }
 
 	FCamera mCamera;
 	FGizmo mGizmo;

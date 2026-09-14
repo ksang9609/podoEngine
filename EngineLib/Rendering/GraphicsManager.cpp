@@ -638,7 +638,7 @@ FVector FGraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
 	}
 }
 
-float FGraphicsManager::GetGridWidth()
+float FGraphicsManager::GetGridWidth() const
 {
 	return mgridSpacing;
 }

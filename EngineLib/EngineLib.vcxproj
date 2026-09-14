@@ -54,8 +54,10 @@
     <PlatformToolset>v145</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings"></ImportGroup>
-  <ImportGroup Label="Shared"></ImportGroup>
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -178,9 +180,9 @@
     <ClInclude Include="Core\Object\ObjectFactory.h" />
     <ClInclude Include="Editor\Console.h" />
     <ClInclude Include="Editor\EditorSetting.h" />
+    <ClInclude Include="Editor\EditorUIManager.h" />
     <ClInclude Include="Editor\FEditorViewportClient.h" />
     <ClInclude Include="Editor\Gizmo.h" />
-    <ClInclude Include="Editor\SceneManager.h" />
     <ClInclude Include="Engine\Actor.h" />
     <ClInclude Include="Engine\Components\ActorComponent.h" />
     <ClInclude Include="Engine\Components\BillboardComponent.h" />
@@ -190,6 +192,7 @@
     <ClInclude Include="Engine\Components\SceneComponent.h" />
     <ClInclude Include="Engine\Components\SphereComponent.h" />
     <ClInclude Include="Engine\EngineStatics.h" />
+    <ClInclude Include="Engine\SceneManager.h" />
     <ClInclude Include="Engine\Serialization\SceneData.h" />
     <ClInclude Include="Engine\World.h" />
     <ClInclude Include="Platform\InputState.h" />
@@ -230,9 +233,9 @@
     <ClCompile Include="Core\Object\Object.cpp" />
     <ClCompile Include="Core\Object\ObjectFactory.cpp" />
     <ClCompile Include="Editor\Console.cpp" />
+    <ClCompile Include="Editor\EditorUIManager.cpp" />
     <ClCompile Include="Editor\FEditorViewportClient.cpp" />
     <ClCompile Include="Editor\Gizmo.cpp" />
-    <ClCompile Include="Editor\SceneManager.cpp" />
     <ClCompile Include="Engine\Actor.cpp" />
     <ClCompile Include="Engine\Components\ActorComponent.cpp" />
     <ClCompile Include="Engine\Components\BillboardComponent.cpp" />
@@ -242,6 +245,7 @@
     <ClCompile Include="Engine\Components\SceneComponent.cpp" />
     <ClCompile Include="Engine\Components\SphereComponent.cpp" />
     <ClCompile Include="Engine\EngineStatics.cpp" />
+    <ClCompile Include="Engine\SceneManager.cpp" />
     <ClCompile Include="Engine\Serialization\SceneData.cpp" />
     <ClCompile Include="Engine\World.cpp" />
     <ClCompile Include="Rendering\Camera.cpp" />
@@ -273,5 +277,6 @@
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets"></ImportGroup>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
 </Project>

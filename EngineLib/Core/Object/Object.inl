@@ -41,6 +41,17 @@ TObject* UObject::Cast()
 
 template<typename TObject>
 	requires std::derived_from<TObject, UObject>
+const TObject* UObject::Cast() const
+{
+	if (IsA<TObject>())
+	{
+		return static_cast<const TObject*>(this);
+	}
+	return nullptr;
+}
+
+template<typename TObject>
+	requires std::derived_from<TObject, UObject>
 TObject* UObject::GetObjectByUUID(int32 uuid)
 {
 	UObject* object = GetObjectByUUID(uuid);

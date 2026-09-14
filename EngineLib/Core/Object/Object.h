@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <functional>
 
@@ -53,6 +53,11 @@ public:
 		mName = name;
 	}
 
+	inline FObjectID GetObjectID() const
+	{
+		return { UUID, InternalIndex };
+	}
+
 	virtual ~UObject();
 	virtual void Destroy();
 
@@ -79,6 +84,10 @@ public:
 		requires std::derived_from<TObject, UObject>
 	TObject* Cast();
 
+	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
+	const TObject* Cast() const;
+	
 	static UObject* GetObjectByUUID(int32 uuid);
 	static UObject* GetObjectByInternalIndex(uint32 internalIndex);
 
