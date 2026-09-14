@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
 #include <format>
@@ -8,7 +8,7 @@
 #include "Core/Container/TArray.h"
 
 enum class ELogLevel { Log, Warning, Error, Fatal };
-enum class ELogCategory { Core, Render, Physics, Etc };
+enum class ELogCategory { Core, Editor, Render, Physics, Etc };
 
 struct FConsoleMessage
 {
