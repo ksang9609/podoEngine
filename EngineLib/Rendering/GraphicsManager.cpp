@@ -290,9 +290,7 @@ void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const 
 	mLineIndices.Add(mStartOffset + 1);
 }
 
-void FGraphicsManager::DrawAABBLine(
-	const FBoundingBox& bounds,
-	const FVector4& color)
+void FGraphicsManager::DrawAABBLine(const FBoundingBox& bounds, const FVector4& color)
 {
 	const FVector3& boundsMin = bounds.min;
 	const FVector3& boundsMax = bounds.max;
@@ -407,10 +405,9 @@ void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& rende
 			}
 		}
 
-		// Billboard는 카메라 회전이 실제 렌더 행렬에 포함되므로
-		// 현재 카메라 기준으로 WorldBounds를 갱신한다.
-		const FBoundingBox bounds =
-			renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad
+		// Billboard는 카메라 회전이 실제 렌더 행렬에 포함되므로(카메라 방향에 따라 월드 변환이 바뀜)
+		// 현재 카메라 기준으로 WorldBounds를 갱신
+		const FBoundingBox bounds = renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad
 			? TransformBoundingBox(
 				renderInfo->LocalBounds,
 				renderInfo->GetBillboardTransformMatrix(cameraRotation))

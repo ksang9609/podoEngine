@@ -9,18 +9,11 @@ struct FBoundingBox
 	FVector3 max;
 };
 
-inline FBoundingBox TransformBoundingBox(
-	const FBoundingBox& localBounds,
-	const FMatrix& world)
+inline FBoundingBox TransformBoundingBox(const FBoundingBox& localBounds, const FMatrix& world)
 {
-	const FVector3 localCenter =
-		(localBounds.min + localBounds.max) * 0.5f;
-
-	const FVector3 localExtent =
-		(localBounds.max - localBounds.min) * 0.5f;
-
-	const FVector3 worldCenter =
-		world.TransformPosition(localCenter);
+	const FVector3 localCenter = (localBounds.min + localBounds.max) * 0.5f; 
+	const FVector3 localExtent = (localBounds.max - localBounds.min) * 0.5f; 
+	const FVector3 worldCenter = world.TransformPosition(localCenter);
 
 	// 회전/비균등 스케일을 포함한 World AABB extent
 	const FVector3 worldExtent(
@@ -37,8 +30,5 @@ inline FBoundingBox TransformBoundingBox(
 		fabsf(world.M[2][2]) * localExtent.z
 	);
 
-	return {
-		worldCenter - worldExtent,
-		worldCenter + worldExtent
-	};
+	return { worldCenter - worldExtent, worldCenter + worldExtent };
 }

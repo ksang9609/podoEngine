@@ -117,8 +117,7 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 	renderInfo.bUseTexture = mbUseTexture;
 
 	renderInfo.LocalBounds = mLocalBounds;
-	renderInfo.WorldBounds =
-		TransformBoundingBox(mLocalBounds, renderInfo.WorldTransformMatrix);
+	renderInfo.WorldBounds = TransformBoundingBox(mLocalBounds, renderInfo.WorldTransformMatrix);
 
 	return renderInfo;
 }

@@ -150,27 +150,20 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FR
 			continue;   // 모르는 프리미티브는 건너뛴다
 		}
 
-		const FMatrix effectiveWorld =
-			RI.GetBillboardTransformMatrix(mCamera.Rotation);
+		const FMatrix effectiveWorld = RI.GetTransformMatrix(mCamera.Rotation);
 
 		const FBoundingBox worldBounds =
 			RI.ePrimitive == EPrimitive::EP_BillboardQuad
 			? TransformBoundingBox(RI.LocalBounds, effectiveWorld)
 			: RI.WorldBounds;
 
-		// 1. 월드 AABB로 대부분 제거: 역행렬/삼각형 검사도 안 함
+		// 월드 AABB 검사
 		if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
 		{
 			continue;
 		}
 
-		const FMatrix WorldToLocal = RI.GetBillboardTransformMatrix(mCamera.Rotation).Inverse();
-
-
-		if (WorldToLocal == FMatrix::Zero)
-		{
-			continue;
-		}
+		const FMatrix WorldToLocal = effectiveWorld.Inverse();
 
 		//역행렬이 존재하지 않으면(스케일이 작아 det이 0에 가까운 경우) Racast 대상에서 제외
 		if (WorldToLocal == FMatrix::Zero) continue;
