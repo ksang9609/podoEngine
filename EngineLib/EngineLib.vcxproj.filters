@@ -183,7 +183,7 @@
     <ClCompile Include="Editor\EditorUIManager.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\FTextMesh.cpp">
+    <ClCompile Include="Rendering\TextMesh.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
   </ItemGroup>
@@ -384,7 +384,7 @@
     <ClInclude Include="Editor\EditorUIManager.h">
       <Filter>Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\FTextMesh.h">
+    <ClInclude Include="Rendering\TextMesh.h">
       <Filter>Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\VertexType.h">

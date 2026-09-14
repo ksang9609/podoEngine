@@ -2,7 +2,7 @@
 
 #include <functional>
 
-#include "Rendering/FTextMesh.h"
+#include "Rendering/TextMesh.h"
 #include "Rendering/FontResource.h"
 
 #include "BillboardComponent.h"
