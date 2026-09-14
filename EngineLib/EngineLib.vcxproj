@@ -247,6 +247,7 @@
     <ClCompile Include="Engine\Components\BillboardComponent.cpp" />
     <ClCompile Include="Engine\Components\CubeComponent.cpp" />
     <ClCompile Include="Engine\Components\NameComponent.cpp" />
+    <ClCompile Include="Engine\Components\ParticleSubUVComponent.cpp" />
     <ClCompile Include="Engine\Components\PrimitiveComponent.cpp" />
     <ClCompile Include="Engine\Components\SceneComponent.cpp" />
     <ClCompile Include="Engine\Components\SphereComponent.cpp" />
