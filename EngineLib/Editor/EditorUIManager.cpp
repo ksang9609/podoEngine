@@ -552,6 +552,11 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 				//	UObject* object = mGuiInputField.SortedObjectLists[objectsIndex];
 				for (const UObject* object : mGuiInputField.SortedObjectLists)
 				{
+					if (!object->IsA<AActor>())
+					{
+						continue;
+					}
+
 					bool bSelected = false;
 					ImGui::PushID(object->UUID); // Ensure unique ID for each child
 

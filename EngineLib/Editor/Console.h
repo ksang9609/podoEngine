@@ -64,7 +64,7 @@ public:
 	void Clear();
 	void Draw(float panelWidth);
 
-	static constexpr float HEIGHT_RATIO = 0.3f;
+	static constexpr float HEIGHT_RATIO = 0.25f;
 
 private:
 	FString mTitle;
