@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <functional>
 
@@ -13,9 +13,13 @@ namespace json { class JSON; }
 class UObject;
 class AActor;
 class FClassInfo;
+struct FFontResource;
 
 struct FObjectFactory
 {
+	// TODO?: Rename?
+	static void Initialize(const FFontResource& defaultFontResource);
+
 	static UObject* ConstructUnInitializedObject(const FClassInfo* classInfo);
 	static UObject* LoadObject(const FClassInfo* classInfo, const json::JSON& inJson);
 
@@ -50,6 +54,9 @@ struct FObjectFactory
 private:
 	// TODO: Automate the registration of class info for all UObject-derived classes.
 	static TMap<FString, std::function<const FClassInfo* ()>> mClassInfoMap;
+
+	// TODO?: Does really need a default font resource?
+	static const FFontResource* mDefaultFontResource;
 };
 
 

@@ -1,10 +1,12 @@
-#include "Actor.h"
+﻿#include "Actor.h"
 
 #include <format>
 
 #include "Core/IO/JsonUtil.h"
 #include "Rendering/RenderInfo.h"
 #include "Engine/Components/SceneComponent.h"
+
+#include "Components/NameComponent.h"
 
 IMPLEMENT_CLASS(AActor, UObject);
 
@@ -25,6 +27,19 @@ void AActor::Initialize()
 
 	mbPressed = false;
 	mbStarted = false;
+}
+
+void AActor::SetName(const FName& name)
+{
+	UObject::SetName(name);
+
+	// NOTE: Only the first UNameComponent will be updated.
+	// If there are multiple UNameComponents, consider updating all of them
+	UNameComponent* nameComponent = GetComponentByType<UNameComponent>();
+	if (nameComponent)
+	{
+		nameComponent->SetNameText(name.ToString());
+	}
 }
 
 void AActor::SerializeClass(json::JSON& outJson) const
@@ -217,7 +232,7 @@ void AActor::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const
 	}
 }
 
-bool AActor::GetFirstRenderInfo(FRenderInfo &outRenderInfo) const
+bool AActor::GetFirstRenderInfo(FRenderInfo& outRenderInfo) const
 {
 	TArray<FRenderInfo> renderInfos;
 	GetRenderInfos(&renderInfos);

@@ -2,12 +2,14 @@
 
 IMPLEMENT_CLASS(UNameComponent, UBillboardComponent)
 
-void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOffset)
+void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOffset, const FFontResource& fontResourceRef)
 {
 	UBillboardComponent::Initialize(worldPositionOffset, FRotator(), FVector(0));
 
 	mNameText = nameText;
+	mFontResourceRef = &fontResourceRef;
 
+	mTextMesh.SetText(mNameText, *mFontResourceRef);
 }
 
 void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
@@ -26,9 +28,22 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 	ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
 	// Remove primitive flags and add billboardtext flags
-	renderFlags = (renderFlags & ~ERenderFlags::RF_SimplePrimitive) | ERenderFlags::RF_BillboardText;
+	renderFlags = renderFlags
+		& ~ERenderFlags::RF_Primitive
+		& ~ERenderFlags::RF_BoundingBox
+		| ERenderFlags::RF_BillboardText;
 
 	renderInfo.eRenderFlags = renderFlags;
+	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for name text
+	renderInfo.Textmesh = &mTextMesh;
 
 	return renderInfo;
+}
+
+void UNameComponent::SetNameText(const FString& nameText)
+{
+	mNameText = nameText;
+
+	// TODO: Optimize this by updating in the GetRenderInfos function instead of recreating the FTextMesh every time.
+	mTextMesh.SetText(mNameText, *mFontResourceRef);
 }
