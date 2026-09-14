@@ -318,7 +318,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 
 	// 같은 프리미티브끼리 World, Tint를 모은다.
 	TMap<EPrimitive, TArray<FInstanceData>> batches;
-
+	
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		if (!renderInfo)
@@ -334,6 +334,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 	// 모든 인스턴스가 공유하는 카메라 행렬.
 	// Prepare()에서 계산한 ViewProjection을 사용한다.
 	// 개별 World와 Tint는 위의 인스턴스 배열로 전달한다.
+	mRenderer->PrepareSimpleInstanced();
 	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
 
 	//  프리미티브 종류마다 한 번씩 그린다.
@@ -951,7 +952,7 @@ void FGraphicsManager::RenderInstancingTest()
 
 		instances.Add(instance);
 	}
-
+	mRenderer->PrepareSimpleInstanced();
 	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
 
 	// 한 번의 호출로 큐브 1만개 그리기
