@@ -260,20 +260,15 @@ bool URenderer::RenderSimpleInstanced(
 	const UINT instanceStride = sizeof(FInstanceData);
 	UINT offset = 0;
 
-	// 슬롯 0 메시의 정점 데이터
-	DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &vertexStride, &offset);
-	// 슬롯 1인스턴스별 데이터
-	DeviceContext->IASetVertexBuffers(1, 1, &InstanceBuffer, &instanceStride, &offset);
+	ID3D11Buffer* vbs[2] = { vertexBuffer, InstanceBuffer }; // VertexBuffer와 InstanceBuffer 각각의 슬롯 0,1에 삽입
+	UINT strides[2] = { vertexStride, instanceStride };
+	UINT offsets[2] = { 0, 0 };
+	DeviceContext->IASetVertexBuffers(0, 2, vbs, strides, offsets);
 
 
 	// 인덱스 버퍼는 정점 버퍼 슬롯과 별도로 연결
 	DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	DeviceContext->IASetInputLayout(InstancedInputLayout);
 
-	DeviceContext->VSSetShader(InstancedVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
-
-	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
 
 	// indexCount: 인스턴스 하나를 그리는 데 사용할 인덱스 개수
 	DeviceContext->DrawIndexedInstanced(indexCount,	instanceCount, 0, 0, 0);
@@ -501,6 +496,12 @@ void URenderer::Release()
 	releaseFontBuffers();
 	//ReleaseTestTexture();
 	releaseDeviceAndSwapChain();
+
+	if (InstanceBuffer)
+	{
+		InstanceBuffer->Release();
+		InstanceBuffer = nullptr;
+	}
 }
 
 void URenderer::SwapBuffer()
@@ -863,6 +864,28 @@ void URenderer::PrepareHighlight()
 	// Always render solid
 	DeviceContext->RSSetState(RasterizerState[0]);
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+}
+
+void URenderer::PrepareSimpleInstanced()
+{
+	prepareInstancedShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
+	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+}
+
+void URenderer::prepareInstancedShader()
+{
+	DeviceContext->VSSetShader(InstancedVertexShader, nullptr, 0);
+	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
+	DeviceContext->IASetInputLayout(InstancedInputLayout);
+
+	if (ConstantBuffer)
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+	}
 }
 
 void URenderer::prepareSimpleShader()
