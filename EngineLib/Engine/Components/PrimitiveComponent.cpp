@@ -101,6 +101,7 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 		{ mOwner->UUID, mOwner->InternalIndex },
 		FVector4(0, 0, 0, 0),
 		renderFlags,
+		nullptr,
 	};
 }
 

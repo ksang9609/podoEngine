@@ -216,7 +216,7 @@ void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& r
 {
 	FMatrix viewProjection = mViewUnifiedProjectionMatrix;
 
-	mRenderer->PrepareSimpleShader();
+	mRenderer->PrepareSimplePrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
@@ -233,7 +233,7 @@ void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& r
 
 void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
-	mRenderer->PrepareTextureShader();
+	mRenderer->PrepareTexturedPrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
@@ -275,12 +275,15 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 {
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
-	
+	mRenderer->PrepareFont();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->GetBillboardTransformMatrix(camera.Rotation);
 		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		mRenderer->RenderFontTexture(worldTransform, mViewUnifiedProjectionMatrix);
+		mRenderer->UpdateFontBuffer(
+			renderInfo->Textmesh->Vertices, renderInfo->Textmesh->Indices,
+			renderInfo->Textmesh->TextNum);
+		mRenderer->RenderFontTexture(renderInfo->Textmesh->TextNum);
 	}
 }
 
@@ -437,16 +440,10 @@ void FGraphicsManager::FlushLines()
 {
 	if (mLineVertices.Num() == 0) return;
 
+	mRenderer->PrepareLine();
+
 	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
 	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
-	//if (mbPerspectiveProjection)
-	//{
-	//	mRenderer->UpdateConstant(FMatrix::Identity, mViewProjectionMatrix, FVector4(0, 0, 0, 0));
-	//}
-	//else
-	//{
-	//	mRenderer->UpdateConstant(FMatrix::Identity, mViewOrthogonalProjectionMatrix, FVector4(0, 0, 0, 0));
-	//}
 	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
@@ -454,21 +451,6 @@ void FGraphicsManager::FlushLines()
 	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
 	mLineIndices.Reset(LINE_INDEX_CAPACITY);
 }
-
-//void FGraphicsManager::RenderOverlay(const TArray<FRenderInfo> renderInfos, const FCamera& camera) //깊이버퍼 초기화
-//{
-//	mRenderer->ClearDepth();
-//	RenderSimplePrimitive(renderInfos, camera);
-//}
-/*
-void GraphicsManager::Render(FTransform worldTransformMatrix, EPrimitive ePrimitive)
-{
-	mRenderer->UpdateConstant(worldTransformMatrix.MakeMatrix(), mViewProjectionMatrix);
-
-	FBuffer vertexBuffer = mBufferMap[ePrimitive];
-	mRenderer->RenderPrimitive(vertexBuffer.Buffer, vertexBuffer.SourceNum);
-}
-*/
 
 void FGraphicsManager::Display()
 {
@@ -484,33 +466,33 @@ void FGraphicsManager::Update(float deltaTime)
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 
 	// 테스트용: deltaTime이 초 단위라는 전제
-	static float elapsed = 0.0f;
-	static size_t index = 0;
+	//static float elapsed = 0.0f;
+	//static size_t index = 0;
 
-	static std::string testTexts[] = {
-		"ABC",
-		"XYZ",
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-		"Hi",
-		"",
-		"Back!",
-		"sdffffffffffffffffffffffffffffffffffffffffffffff"
-	};
+	//static std::string testTexts[] = {
+	//	"ABC",
+	//	"XYZ",
+	//	"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	//	"Hi",
+	//	"",
+	//	"Back!",
+	//	"sdffffffffffffffffffffffffffffffffffffffffffffff"
+	//};
 
-	elapsed += deltaTime;
+	//elapsed += deltaTime;
 
-	if (elapsed >= 1.0f)
-	{
-		elapsed = 0.0f;
+	//if (elapsed >= 1.0f)
+	//{
+	//	elapsed = 0.0f;
 
-		if (!mRenderer->CreateFontAtlasQuad(&testTexts[index]))
-		{
-			UE_LOG(Error, Render, "Failed to update font text.");
-		}
+	//	if (!mRenderer->CreateFontAtlasQuad(&testTexts[index]))
+	//	{
+	//		UE_LOG(Error, Render, "Failed to update font text.");
+	//	}
 
-		index = (index + 1)
-			% (sizeof(testTexts) / sizeof(testTexts[0]));
-	}
+	//	index = (index + 1)
+	//		% (sizeof(testTexts) / sizeof(testTexts[0]));
+	//}
 }
 
 bool FGraphicsManager::IsPerspectiveProjection() const
@@ -665,6 +647,8 @@ void  FGraphicsManager::SetGridWidth(float width)
 
 void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
+	mRenderer->PrepareHighlight();
+
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
 	FMatrix worldTransformMatrix = RI.GetBillboardTransformMatrix(camera.Rotation);

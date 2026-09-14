@@ -6,7 +6,7 @@
 FTextMesh::FTextMesh(const FString& text, const FFontResource& fontResource)
 {
 	generateMesh(text, fontResource);
-}	
+}
 
 void FTextMesh::SetText(const FString& text, const FFontResource& fontResource)
 {
@@ -42,13 +42,14 @@ void FTextMesh::generateMesh(const FString& text, const FFontResource& fontResou
 		const float v1 = charInfo->V + charInfo->UVHeight;
 
 		// Local position of the character quad
-		const float left = static_cast<float>(i) * charInfo->Advance;
+		const float advance = charInfo->Width * charInfo->Advance;
+		const float left = static_cast<float>(i) * advance;
 		const float right = left + charInfo->Width;
 		const float top = 0.0f;
 		const float bottom = top - charInfo->Height;
 
 		// Update total width and max height
-		textTotalWidth += charInfo->Advance;
+		textTotalWidth += advance;
 		textMaxHeight = FMath::Max(textMaxHeight, charInfo->Height);
 
 		// Add vertices for the character quad

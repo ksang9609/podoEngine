@@ -40,11 +40,11 @@ public:
 
 	//ID3D11ShaderResourceView* TestTextureSRV = nullptr;
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
-	ID3D11Buffer* FontTextureBuffer = nullptr;
-	ID3D11VertexShader* TextureVertexShader = nullptr;
-	ID3D11PixelShader* TexturePixelShader = nullptr;
-	ID3D11InputLayout* TextureInputLayout = nullptr;
-	ID3D11SamplerState* TextureSamplerState = nullptr;
+	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
+	ID3D11VertexShader* FontVertexShader = nullptr;
+	ID3D11PixelShader* FontPixelShader = nullptr;
+	ID3D11InputLayout* FontInputLayout = nullptr;
+	ID3D11SamplerState* FontSamplerState = nullptr;
 	ID3D11BlendState* FontBlendState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
 
@@ -147,12 +147,25 @@ public:
 	void PrepareSimpleShader();
 	void PrepareTextureShader();
 	void PrepareLineShader();
+	void PrepareFontShader();
+
+	/* Prepare methods for each rendering type */
+	void PrepareSimplePrimitive();
+	void PrepareTexturedPrimitive();
+	void PrepareLine();
+	void PrepareFont();
+	void PrepareGizmo();
+	void PrepareHighlight();
 
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
+	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
 		ID3D11ShaderResourceView* texture, ID3D11SamplerState* samplerState, ID3D11Buffer* indexBuffer = nullptr);
+	// Render Text in the FontTextureBuffer and FontIndexBuffer.
+	// It doesn't recieve buffer parameters since it use the internal buffers.
+	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
 
@@ -172,5 +185,8 @@ private:
 	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
 	UINT mTextIndexCount = 0;
 	UINT mTextIndexCapacity = 0;
+
+	/* Internal global rendering state */
+	bool mbWireFrame = false;
 };
 

@@ -3,6 +3,7 @@
 #include "Core/Math/Transform.h"
 #include "Core/Object/Object.h"
 
+struct FTextMesh;
 struct FRenderInfo
 {
 	EPrimitive ePrimitive;
@@ -10,6 +11,7 @@ struct FRenderInfo
 	FObjectID ObejctID;
 	FVector4 Color;
 	ERenderFlags eRenderFlags;
+	const FTextMesh* Textmesh;
 
 	// Return world matrix for billboard quads to face the camera
 	// Get FRotator input because current camera rotation is stored in FRotator.
