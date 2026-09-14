@@ -1,13 +1,16 @@
 ﻿#include "NameComponent.h"
 #include "Core/IO/JsonUtil.h"
 
+#include <format>
+
+#include "Engine/Actor.h"
+
 IMPLEMENT_CLASS(UNameComponent, UBillboardComponent)
 
 void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOffset, const FFontResource& fontResourceRef)
 {
 	UBillboardComponent::Initialize(worldPositionOffset, FRotator(), FVector(0));
 
-	mNameText = nameText;
 	mFontResourceRef = &fontResourceRef;
 
 	mTextMesh.SetText(mNameText, *mFontResourceRef);
@@ -65,10 +68,30 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 
 void UNameComponent::SetNameText(const FString& nameText)
 {
-	mNameText = nameText;
+	assert(mOwner);
+
+	FString text = FString(std::format("Name: {}, UUID: {}", nameText, mOwner->UUID));
+	mNameText = text;
 
 	// TODO: Optimize this by updating in the GetRenderInfos function instead of recreating the FTextMesh every time.
 	mTextMesh.SetText(mNameText, *mFontResourceRef);
+}
+//
+//void UNameComponent::SetNameText(FString&& nameText)
+//{//
+//	// TODO: Optimize this by updating in the GetRenderInfos function instead of recreating the FTextMesh every time.
+//	mTextMesh.SetText(mNameText, *mFontResourceRef);
+//}
+
+bool UNameComponent::AttachTo(USceneComponent& parent)
+{
+	if (!UBillboardComponent::AttachTo(parent))
+	{
+		return false;
+	}
+
+	SetNameText(mOwner->GetName().ToString());
+	return true;
 }
 
 UNameComponent::~UNameComponent()
