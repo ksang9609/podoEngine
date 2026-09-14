@@ -30,6 +30,13 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 FGraphicsManager::~FGraphicsManager()
 {
+	// 인스턴스 테스트용 버퍼 해제
+	if (mTestInstanceIndexBuffer)
+	{
+		mTestInstanceIndexBuffer->Release();
+		mTestInstanceIndexBuffer = nullptr;
+	}
+
 	for (auto& buffer : mBufferMap)
 	{
 		buffer.second.Buffer->Release();
@@ -179,9 +186,11 @@ void FGraphicsManager::Render(
 
 	Prepare(&camera);
 
-	
+	// 인스턴스 테스트용(큐브 1만개 출력)
+	RenderInstancingTest();
+	renderSimplePrimitiveInstanced(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
 
-	renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
+	//renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
 	renderTexturedPrimitive(renderQueueMap[ERenderFlags::RF_TexturedPrimitive], camera);
 	renderBillboardText(renderQueueMap[ERenderFlags::RF_BillboardText], camera);
 
@@ -278,6 +287,83 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 			texture->SRV,
 			texture->Sampler,
 			indexBuffer, indexCount); // 마지막 인수에 전달
+	}
+}
+
+// 인스턴싱 적용한 심플 프리미티브 출력
+void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+{
+	if (renderInfos.IsEmpty())
+		return;
+
+	// 같은 프리미티브끼리 World, Tint를 모은다.
+	TMap<EPrimitive, TArray<FInstanceData>> batches;
+
+	for (const FRenderInfo* renderInfo : renderInfos)
+	{
+		if (!renderInfo)
+			continue;
+
+		FInstanceData instance{};
+		instance.World = renderInfo->WorldTransformMatrix;
+		instance.Tint = renderInfo->Color;
+
+		batches[renderInfo->ePrimitive].Add(instance);
+	}
+
+	// 모든 인스턴스가 공유하는 카메라 행렬.
+	// Prepare()에서 계산한 ViewProjection을 사용한다.
+	// 개별 World와 Tint는 위의 인스턴스 배열로 전달한다.
+	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
+
+	//  프리미티브 종류마다 한 번씩 그린다.
+	for (auto& [primitiveType, instances] : batches)
+	{
+		FBuffer* mesh = mBufferMap.Find(primitiveType);
+
+		if (!mesh || !mesh->Buffer || mesh->SourceNum == 0)
+		{
+			UE_LOG(Error, Render, "Primitive vertex buffer not found.");
+			continue;
+		}
+
+		// 기존 일반 프리미티브는 Draw()용 정점 배열
+		// DrawIndexedInstanced()에 연결하기 위해
+		// 0, 1, 2, ... 순서의 인덱스를 최초 한 번만 생성
+		if (!mesh->IndexBuffer)
+		{
+			TArray<UINT> indices;
+			indices.Reserve(mesh->SourceNum);
+
+			for (UINT i = 0; i < mesh->SourceNum; ++i)
+			{
+				indices.Add(i);
+			}
+
+			mesh->IndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(&indices[0],	mesh->SourceNum);
+
+			if (!mesh->IndexBuffer)
+			{
+				UE_LOG(Error, Render, "Primitive index buffer creation failed.");
+				continue;
+			}
+
+			mesh->IndexCount = mesh->SourceNum;
+		}
+
+		// 함수 내부에서 인스턴스 버퍼 업로드와
+		// 인스턴싱 셰이더 바인딩까지 처리한다.
+		const bool success = mRenderer->RenderSimpleInstanced(
+			mesh->Buffer,
+			mesh->IndexBuffer,
+			mesh->IndexCount,
+			&instances[0],
+			static_cast<UINT>(instances.Num()));
+
+		if (!success)
+		{
+			UE_LOG(Error, Render, "Instanced primitive rendering failed.");
+		}
 	}
 }
 
@@ -802,4 +888,68 @@ void FGraphicsManager::CalculateLineBuffer(const TArray<const FRenderInfo*>& ren
 	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 + renderInfos.Num() * 8;
 	mLineIndices.Reserve(countIndices);
 	mLineVertices.Reserve(countvertices);
+}
+
+
+// 인스턴스 테스트용 큐브 출력 함수(1만개)
+void FGraphicsManager::RenderInstancingTest()
+{
+	FBuffer* cube = mBufferMap.Find(EPrimitive::EP_Cube);
+	if (!cube || !cube->Buffer)
+		return;
+
+	// 기존 색상 큐브는 정점 36개이므로 0~35 순서로 연결.
+	// 인덱스 버퍼는 최초 한 번만 생성.
+	if (!mTestInstanceIndexBuffer)
+	{
+		UINT indices[36];
+		for (UINT i = 0; i < 36; ++i)
+			indices[i] = i;
+
+		mTestInstanceIndexBuffer =	mRenderer->CreatePrimitiveIndexBuffer(indices, 36);
+
+		if (!mTestInstanceIndexBuffer)
+			return;
+	}
+
+	TArray<FInstanceData> instances;
+
+	instances.Reserve(10000);
+
+	/// 큐브 배치 관련
+	const int32 ColumnCount = 100;
+	const float Spacing = 2.5f;
+
+	// 전체 격자를 원점 중심으로 맞추기 위한 오프셋
+	const float HalfWidth = (ColumnCount - 1) * Spacing * 0.5f;
+
+	// 원점 주변, 지면 위에 큐브 10000개 배치
+	for (UINT i = 0; i < 10000; ++i)
+	{
+		const int32 xIndex = i % ColumnCount;
+		const int32 yIndex = i / ColumnCount;
+
+		const float x = xIndex * Spacing - HalfWidth;
+		const float y = yIndex * Spacing - HalfWidth;
+
+		FInstanceData instance = {};
+
+		instance.World = FMatrix::Translation(FVector(x, y, 1.0f));
+
+		//instance.Tint = FVector4(1, 1, 1, 1);
+
+		// 3가지 색
+		float r = static_cast<float>(i % 3 == 0);
+		float g = static_cast<float>(i % 3 == 1);
+		float b = static_cast<float>(i % 3 == 2);
+
+		instance.Tint = FVector4(r, g, b, 1.0f);
+
+		instances.Add(instance);
+	}
+
+	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
+
+	// 한 번의 호출로 큐브 1만개 그리기
+	mRenderer->RenderSimpleInstanced(cube->Buffer, mTestInstanceIndexBuffer, 36, &instances[0], 10000);
 }

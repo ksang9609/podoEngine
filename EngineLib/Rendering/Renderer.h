@@ -32,7 +32,12 @@ struct FVertexTextured
 	float u, v;
 };
 
-
+// intancing 용
+struct FInstanceData
+{
+	FMatrix World;
+	FVector4 Tint;
+};
 
 class URenderer
 {
@@ -128,6 +133,13 @@ public:
 
 	ID3D11Buffer* CreatePrimitiveIndexBuffer(const UINT* indices, UINT indexCount);
 
+	// 인스턴싱
+	bool RenderSimpleInstanced(
+		ID3D11Buffer* vertexBuffer,
+		ID3D11Buffer* indexBuffer,
+		UINT indexCount,
+		const FInstanceData* instances,
+		UINT instanceCount);
 	// texturedPrimitive용
 	//void RenderTexture(const FMatrix& world, const FMatrix& viewProjection);
 
@@ -189,5 +201,13 @@ private:
 	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
 	UINT mTextIndexCount = 0;
 	UINT mTextIndexCapacity = 0;
+
+	ID3D11Buffer* InstanceBuffer = nullptr;
+	UINT InstanceCapacity = 0;
+
+	ID3D11VertexShader* InstancedVertexShader = nullptr; // 인스턴싱용 버텍스 셰이더
+	ID3D11InputLayout* InstancedInputLayout = nullptr;
+
+	bool EnsureInstanceCapacity(UINT count);
 };
 

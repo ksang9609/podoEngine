@@ -327,6 +327,131 @@ void URenderer::ReleaseFontAtlasQuad()
 	mTextVertexCapacity = 0;
 }
 
+// 인스턴스 사용하여 렌더링(텍스쳐 X)
+bool URenderer::RenderSimpleInstanced(
+	ID3D11Buffer* vertexBuffer,
+	ID3D11Buffer* indexBuffer,
+	UINT indexCount,
+	const FInstanceData* instances,
+	UINT instanceCount)
+{
+	if (instanceCount == 0)
+		return true;
+
+	if (!DeviceContext ||
+		!vertexBuffer ||
+		!instances ||
+		!indexBuffer ||
+		indexCount == 0 ||
+		!ConstantBuffer ||
+		!InstancedVertexShader ||
+		!InstancedInputLayout ||
+		!SimplePixelShader)
+	{
+		return false;
+	}
+
+	if (!EnsureInstanceCapacity(instanceCount))
+		return false;
+
+	// CPU의 인스턴스 배열을 GPU 버퍼에 복사
+	// Map / Unmap은 “CPU가 쓸 수 있게 잠깐 문 열어주는 것”
+	D3D11_MAPPED_SUBRESOURCE mapped{};
+
+	HRESULT hr = DeviceContext->Map(InstanceBuffer,	0,	D3D11_MAP_WRITE_DISCARD, 0,	&mapped);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	std::memcpy(mapped.pData, instances, static_cast<size_t>(instanceCount) * sizeof(FInstanceData));
+	DeviceContext->Unmap(InstanceBuffer, 0);
+
+	const UINT vertexStride = sizeof(FVertexSimple);
+	const UINT instanceStride = sizeof(FInstanceData);
+	UINT offset = 0;
+
+	// 슬롯 0 메시의 정점 데이터
+	DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &vertexStride, &offset);
+	// 슬롯 1인스턴스별 데이터
+	DeviceContext->IASetVertexBuffers(1, 1, &InstanceBuffer, &instanceStride, &offset);
+
+
+	// 인덱스 버퍼는 정점 버퍼 슬롯과 별도로 연결
+	DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	DeviceContext->IASetInputLayout(InstancedInputLayout);
+
+	DeviceContext->VSSetShader(InstancedVertexShader, nullptr, 0);
+	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
+
+	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+
+	// indexCount: 인스턴스 하나를 그리는 데 사용할 인덱스 개수
+	DeviceContext->DrawIndexedInstanced(indexCount,	instanceCount, 0, 0, 0);
+
+	return true;
+
+}
+
+// 인스턴스 버퍼의 크기를 확인하고 필요하면 증가
+bool URenderer::EnsureInstanceCapacity(UINT count)
+{
+	if (count == 0)
+		return true;
+
+	const UINT maxCount = 100000; // 10만개(임의로 정함)
+	const UINT instanceSize = static_cast<UINT>(sizeof(FInstanceData));
+
+	// 기존 버퍼가 충분하면 그대로 사용한다.
+	if (InstanceBuffer && count <= InstanceCapacity)
+		return true;
+
+	// 최대용량 초과시
+	if (count > maxCount)
+		return false;
+
+	if (!Device)
+		return false;
+
+	UINT newCapacity = InstanceCapacity > 0 ? InstanceCapacity : 256;
+
+	while (newCapacity < count)
+	{
+		if (newCapacity > maxCount / 2)
+		{
+			newCapacity = count;
+			break;
+		}
+
+		newCapacity *= 2;
+	}
+
+	D3D11_BUFFER_DESC desc{};
+	desc.ByteWidth = newCapacity * instanceSize;
+	desc.Usage = D3D11_USAGE_DYNAMIC; // 동적
+	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER; // 인스턴스 버퍼도 일단 버텍스 버퍼
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	ID3D11Buffer* newBuffer = nullptr;
+
+	HRESULT hr = Device->CreateBuffer(&desc, nullptr, &newBuffer);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// 새 버퍼 생성이 성공한 뒤 기존 버퍼를 해제한다.
+	if (InstanceBuffer)
+		InstanceBuffer->Release();
+
+	InstanceBuffer = newBuffer;
+	InstanceCapacity = newCapacity;
+
+	return true;
+}
+
 /// 
 ID3D11Buffer* URenderer::CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth)
 {
@@ -491,6 +616,7 @@ void URenderer::CreateShader()
 	ID3DBlob* LinepixelshaderCSO;
 	ID3DBlob* primitiveTextureVertexShaderCSO;
 	ID3DBlob* primitiveTexturePixelShaderCSO;
+	ID3DBlob* instancedVertexShaderCS0;
 
 
 	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vertexshaderCSO, nullptr);
@@ -517,6 +643,10 @@ void URenderer::CreateShader()
 
 	Device->CreatePixelShader(primitiveTexturePixelShaderCSO->GetBufferPointer(), primitiveTexturePixelShaderCSO->GetBufferSize(), nullptr, &PrimitiveTexturePixelShader);
 
+	// 인스턴싱
+	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVSInstanced", "vs_5_0", 0, 0, &instancedVertexShaderCS0, nullptr);
+
+	Device->CreateVertexShader(instancedVertexShaderCS0->GetBufferPointer(), instancedVertexShaderCS0->GetBufferSize(), nullptr, &InstancedVertexShader);
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -536,9 +666,27 @@ void URenderer::CreateShader()
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0	}// float u, v;    // 12바이트 위치부터 시작
 	};
 
+	const D3D11_INPUT_ELEMENT_DESC layoutInstanced[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,  0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,  0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+		 // 슬롯 1: 인스턴스의 World 행렬(행렬을 한꺼번에 넣는 건 불가능, 한줄 씩 넣는다)
+		{ "INSTANCE_WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCE_WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 16: 내부 오프셋
+		{ "INSTANCE_WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 32: 내부 오프셋
+		{ "INSTANCE_WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 48: 내부 오프셋
+
+		//// 슬롯 1: 인스턴스의 Tint
+		{ "INSTANCE_TINT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	};
+
+
 	Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
 	Device->CreateInputLayout(Linelayout, ARRAYSIZE(Linelayout), LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), &LineSimpleInputLayout);
 	Device->CreateInputLayout(primitiveTextureLayout,ARRAYSIZE(primitiveTextureLayout), primitiveTextureVertexShaderCSO->GetBufferPointer(), primitiveTextureVertexShaderCSO->GetBufferSize(), &PrimitiveTextureLayout);
+
+	Device->CreateInputLayout(layoutInstanced, ARRAYSIZE(layoutInstanced), instancedVertexShaderCS0->GetBufferPointer(), instancedVertexShaderCS0->GetBufferSize(), &InstancedInputLayout);
 
 	StrideSimple = sizeof(FVertexSimple);
 	StrideTextured = sizeof(FVertexTextured);
@@ -549,7 +697,7 @@ void URenderer::CreateShader()
 	LinepixelshaderCSO->Release();
 	primitiveTextureVertexShaderCSO->Release();
 	primitiveTexturePixelShaderCSO->Release();
-
+	instancedVertexShaderCS0->Release();
 
 }
 
@@ -759,6 +907,19 @@ void URenderer::ReleaseShader()
 		PrimitiveTextureVertexShader->Release();
 		PrimitiveTextureVertexShader = nullptr;
 	}
+
+	/*Instancing*/
+	if (InstancedInputLayout)
+	{
+		InstancedInputLayout->Release();
+		InstancedInputLayout = nullptr;
+	}
+
+	if (InstancedVertexShader)
+	{
+		InstancedVertexShader->Release();
+		InstancedVertexShader = nullptr;
+	}
 }
 
 // 개별 이미지: 지정된 파일을 로딩해서 결과를 반환
@@ -892,6 +1053,8 @@ void URenderer::RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
 	else
 		DeviceContext->Draw(numVertices, 0);
 }
+
+
 
 //void URenderer::RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer,	UINT numVertices)
 //{
