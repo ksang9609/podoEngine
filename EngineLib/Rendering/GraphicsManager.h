@@ -160,4 +160,6 @@ private:
 	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);
 	void renderGrid();
+
+	void CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos);
 };

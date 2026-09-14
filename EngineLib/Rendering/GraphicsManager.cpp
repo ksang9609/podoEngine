@@ -179,12 +179,17 @@ void FGraphicsManager::Render(
 
 	Prepare(&camera);
 
+	
+
 	renderSimplePrimitive(renderQueueMap[ERenderFlags::RF_SimplePrimitive], camera);
 	renderTexturedPrimitive(renderQueueMap[ERenderFlags::RF_TexturedPrimitive], camera);
 	renderBillboardText(renderQueueMap[ERenderFlags::RF_BillboardText], camera);
-	renderWorldAxis(renderQueueMap[ERenderFlags::RF_WorldAxis]);
+
+	// Line Buffer에 넣기전에 Buffer의 용량을 미리 지정하여 동적할당 방지
+	CalculateLineBuffer(renderQueueMap[ERenderFlags::RF_BoundingBox]);
 
 	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
+	renderWorldAxis(renderQueueMap[ERenderFlags::RF_WorldAxis]);
 	renderGrid();
 	renderBoundingBox(renderQueueMap[ERenderFlags::RF_BoundingBox], camera.GetRotation());
 	FlushLines();
@@ -777,4 +782,12 @@ void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
 		SetWireFrame(true);
 		break;
 	}
+}
+
+void FGraphicsManager::CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos)
+{
+	uint32 countIndices = 6 + (mgridExtent / mgridSpacing) * 2 * 2 + renderInfos.Num() * 24;
+	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 + renderInfos.Num() * 8;
+	mLineIndices.Reserve(countIndices);
+	mLineVertices.Reserve(countvertices);
 }
