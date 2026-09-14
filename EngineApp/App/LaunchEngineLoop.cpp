@@ -128,7 +128,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices)); */
 
 	TArray<FVertexTextured> sphereIndexVertices;
-	TArray<unsigned int> sphereIndices;
+	TArray<UINT> sphereIndices;
 
 	BuildSphereTextureMeshIndices(Sphere_vertices, sphereIndexVertices, sphereIndices);
 	mGraphicsManager->CreateTexturedBuffer(
