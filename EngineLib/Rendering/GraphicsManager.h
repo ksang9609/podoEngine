@@ -159,7 +159,7 @@ private:
 
 	void updateRenderQueue(
 		const TArray<FRenderInfo>& renderInfos,
-		TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap,
+		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
 		const FFrustum* frustum);
 
 	/* Rendering Functions */

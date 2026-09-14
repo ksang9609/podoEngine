@@ -113,7 +113,7 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 
 void FGraphicsManager::updateRenderQueue(
 	const TArray<FRenderInfo>& renderInfos,
-	TMap<ERenderFlags, TArray<const FRenderInfo*>>& outRenderQueueMap,
+	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
 	const FFrustum* frustum)
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
@@ -176,7 +176,7 @@ void FGraphicsManager::Render(
 	// Prepare Render queue
 	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
 	// Each render info is splitted into different render queues
-	TMap<ERenderFlags, TArray<const FRenderInfo*>> renderQueueMap;
+	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
 	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum);
 	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr);
 	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr);
