@@ -1,8 +1,9 @@
 ﻿#pragma once
 
+#include "Core/Math/Color.h"
+#include "Core/Math/FBoundingBox.h"
 #include "Core/Math/Transform.h"
 #include "Core/Object/Object.h"
-#include "Core/Math/FBoundingBox.h"
 
 struct FTextMesh;
 struct FSubUVMesh;
@@ -11,7 +12,7 @@ struct FRenderInfo
 	EPrimitive ePrimitive;
 	FMatrix WorldTransformMatrix;
 	FObjectID ObejctID;
-	FVector4 Color;
+	FLinearColor Color;
 	ERenderFlags eRenderFlags;
 	const FTextMesh* Textmesh;
 	const FSubUVMesh* SubUVMesh; 

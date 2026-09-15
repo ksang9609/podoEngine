@@ -13,6 +13,7 @@ void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOf
 
 	mFontResourceRef = &fontResourceRef;
 	mNameText = nameText;
+	mColor = FLinearColor(1.f, 1.f, 1.f, 1.f); // Set default color to white
 }
 
 void UNameComponent::SerializeClass(json::JSON& outJson) const
@@ -67,7 +68,6 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 		| ERenderFlags::RF_Text;
 
 	renderInfo.eRenderFlags = renderFlags;
-	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for name text
 	renderInfo.Textmesh = &mTextMesh;
 
 	return renderInfo;

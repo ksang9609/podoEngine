@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Core/Math/Color.h"
+
 #include "SceneComponent.h"
 
 class UPrimitiveComponent : public USceneComponent
@@ -28,11 +30,15 @@ public:
 	void SetUseTexture(bool value) { mbUseTexture = value; }
 	bool GetUseTexture() const { return mbUseTexture; }
 
+	const FLinearColor& GetColor() const { return mColor; }
+	void SetColor(const FLinearColor& color) { mColor = color; }
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const;
 	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
+	FLinearColor mColor{ 1.f, 1.f, 1.f, 1.f };
+
 	FBoundingBox mLocalBounds{};
 	FBoundingBox mWocalBounds{};
 

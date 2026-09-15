@@ -16,6 +16,21 @@ inline FVertexTextured QuadTextureVertices[] =
 	{ 0.5f, -0.5f, 0.0f,   1.0f, 1.0f },
 };
 
+inline FVertexTextured QuadTextureIndexedVertices[] =
+{
+	// x      y      z       u     v
+	{ 0.0f, -0.5f, +0.5f,   0.0f, 0.0f }, // left-top
+	{ 0.0f, +0.5f, +0.5f,   1.0f, 0.0f }, // right-top
+	{ 0.0f, +0.5f, -0.5f,   1.0f, 1.0f }, // right-bottom
+	{ 0.0f, -0.5f, -0.5f,   0.0f, 1.0f }, // left-bottom
+};
+
+inline uint32 QuadTextureIndices[] =
+{
+	0, 1, 2, // right-top triangle
+	0, 2, 3  // left-bottom triangle
+};
+
 // 삼각형: 정점 3개
 inline FVertexTextured TriangleTextureVertices[] =
 {

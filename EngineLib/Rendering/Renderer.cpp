@@ -473,23 +473,29 @@ void URenderer::createParticleVertexBuffer()
 {
 	D3D11_BUFFER_DESC vertexbufferdesc = {};
 	// Assume particle is a quad
-	vertexbufferdesc.ByteWidth = 4 * sizeof(FVertexTextured);
-	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexbufferdesc.ByteWidth = sizeof(QuadTextureIndexedVertices);
+	vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;
 	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vertexbufferdesc.CPUAccessFlags = 0;
 
-	Device->CreateBuffer(&vertexbufferdesc, nullptr, &ParticleVertexBuffer);
+	D3D11_SUBRESOURCE_DATA vertexbufferSRD = {};
+	vertexbufferSRD.pSysMem = QuadTextureIndexedVertices;
+
+	Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &ParticleVertexBuffer);
 }
 
 void URenderer::createParticleIndexBuffer()
 {
 	D3D11_BUFFER_DESC indexbufferdesc = {};
-	indexbufferdesc.ByteWidth = 6 * sizeof(uint32);
-	indexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	indexbufferdesc.ByteWidth = sizeof(QuadTextureIndices);
+	indexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;
 	indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	indexbufferdesc.CPUAccessFlags = 0;
 
-	Device->CreateBuffer(&indexbufferdesc, nullptr, &ParticleIndexBuffer);
+	D3D11_SUBRESOURCE_DATA indexbufferSRD = {};
+	indexbufferSRD.pSysMem = QuadTextureIndices;
+
+	Device->CreateBuffer(&indexbufferdesc, &indexbufferSRD, &ParticleIndexBuffer);
 }
 
 void URenderer::releaseLineIndexBuffer()
@@ -1092,9 +1098,9 @@ void URenderer::prepareInstancedShader()
 	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(InstancedInputLayout);
 
-	if (ConstantBuffer)
+	if (ConstantBuffer[CBT_Simple])
 	{
-		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
 	}
 }
 
@@ -1104,9 +1110,9 @@ void URenderer::prepareSimpleShader()
 	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(SimpleInputLayout);
 
-	if (ConstantBuffer)
+	if (ConstantBuffer[CBT_Simple])
 	{
-		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
 	}
 }
 
@@ -1116,9 +1122,10 @@ void URenderer::prepareTextureShader()
 	DeviceContext->PSSetShader(PrimitiveTexturePixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
 
-	if (ConstantBuffer)
+	if (ConstantBuffer[CBT_Texture])
 	{
-		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Texture]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Texture]);
 	}
 }
 
@@ -1128,9 +1135,9 @@ void URenderer::prepareLineShader()
 	DeviceContext->PSSetShader(LineSimplePixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(LineSimpleInputLayout);
 
-	if (ConstantBuffer)
+	if (ConstantBuffer[CBT_Simple])
 	{
-		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
 	}
 }
 
@@ -1139,10 +1146,10 @@ void URenderer::prepareFontShader()
 	DeviceContext->VSSetShader(FontVertexShader, nullptr, 0);
 	DeviceContext->PSSetShader(FontPixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(FontInputLayout);
-	if (ConstantBuffer)
+	if (ConstantBuffer[CBT_Simple])
 	{
-		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
 	}
 }
 
@@ -1154,8 +1161,8 @@ void URenderer::prepareUnicodeFontShader()
 	// MSDF 전용 픽셀 셰이더
 	DeviceContext->PSSetShader(UnicodeFontPixelShader, nullptr, 0);
 
-	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-	DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
+	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
+	DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
 
 	// b1: DistanceRange
 	DeviceContext->PSSetConstantBuffers(1, 1, &UnicodeFontConstantBuffer);
@@ -1357,13 +1364,13 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 	//     (b)의 != 1 조건을 통과해 버려서 겹친 영역 전체가 단색으로 칠해진다.
 	DeviceContext->OMSetBlendState(BlendState[BST_NoColorWrite], nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_StencilMark], 1);
-	UpdateConstant(originalMatrix, mViewProjectionMatrix);
+	UpdateSimpleConstant(originalMatrix, mViewProjectionMatrix);
 	RenderSimplePrimitive(pBuffer, Num);
 
 	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
 	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_StencilOutline], 1);
-	UpdateConstant(OutlineMatrix, mViewProjectionMatrix, FVector4(1.f, 0.6f, 0.f, 1.f));
+	UpdateSimpleConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f));
 	RenderSimplePrimitive(pBuffer, Num);
 }
 
@@ -1372,21 +1379,34 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 
 void URenderer::createConstantBuffer()
 {
-	D3D11_BUFFER_DESC constantbufferdesc = {};
-	constantbufferdesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
-	constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
-	constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	D3D11_BUFFER_DESC desc[2] = {};
 
-	Device->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
+	// Simple Primitive용 상수 버퍼
+	desc[CBT_Simple].ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
+	desc[CBT_Simple].Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+	desc[CBT_Simple].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc[CBT_Simple].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	Device->CreateBuffer(&desc[CBT_Simple], nullptr, &ConstantBuffer[CBT_Simple]);
+
+	// Texture Primitive용 상수 버퍼
+	desc[CBT_Texture].ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
+	desc[CBT_Texture].Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+	desc[CBT_Texture].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc[CBT_Texture].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	Device->CreateBuffer(&desc[CBT_Texture], nullptr, &ConstantBuffer[CBT_Texture]);
 }
 
 void URenderer::releaseConstantBuffer()
 {
-	if (ConstantBuffer)
+	for (auto& buffer : ConstantBuffer)
 	{
-		ConstantBuffer->Release();
-		ConstantBuffer = nullptr;
+		if (buffer)
+		{
+			buffer->Release();
+			buffer = nullptr;
+		}
 	}
 }
 
@@ -1544,20 +1564,39 @@ void URenderer::releaseDepthStencilState()
 	}
 }
 
-void URenderer::UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint)
+void URenderer::UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint)
 {
-	if (ConstantBuffer)
+	if (ConstantBuffer[CBT_Simple])
 	{
 		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
 
-		DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+		DeviceContext->Map(ConstantBuffer[CBT_Simple], 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
 		FConstants* constants = (FConstants*)constantbufferMSR.pData;
 		{
 			constants->World = world;
 			constants->ViewProjection = viewProjection;
 			constants->Tint = tint;
 		}
-		DeviceContext->Unmap(ConstantBuffer, 0);
+		DeviceContext->Unmap(ConstantBuffer[CBT_Simple], 0);
+	}
+}
+
+void URenderer::UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint,
+	FVector2 uvScale, FVector2 uvOffset)
+{
+	if (ConstantBuffer[CBT_Texture])
+	{
+		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+		DeviceContext->Map(ConstantBuffer[CBT_Texture], 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+		FTextureConstants* constants = (FTextureConstants*)constantbufferMSR.pData;
+		{
+			constants->World = world;
+			constants->ViewProjection = viewProjection;
+			constants->Tint = tint;
+			constants->UVOffset = uvOffset;
+			constants->UVScale = uvScale;
+		}
+		DeviceContext->Unmap(ConstantBuffer[CBT_Texture], 0);
 	}
 }
 
@@ -1707,24 +1746,24 @@ bool URenderer::UpdateUnicodeFontBuffer(const FTextMesh& textMesh)
 
 
 
-void URenderer::UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices)
-{
-	assert(ParticleVertexBuffer || BlendState[BST_Additive]);
-
-	const uint32 numVertices = vertices.Num();
-
-	// Map the vertex buffer and copy the vertex data
-	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-	DeviceContext->Map(ParticleVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	memcpy(mappedResource.pData, vertices.GetData(), numVertices * sizeof(FVertexTextured));
-	DeviceContext->Unmap(ParticleVertexBuffer, 0);
-
-	// Map the index buffer and copy the index data
-	D3D11_MAPPED_SUBRESOURCE mappedIndexResource = {};
-	DeviceContext->Map(ParticleIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedIndexResource);
-	memcpy(mappedIndexResource.pData, indices.GetData(), indices.Num() * sizeof(uint32));
-	DeviceContext->Unmap(ParticleIndexBuffer, 0);
-}
+//void URenderer::UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices)
+//{
+//	assert(ParticleVertexBuffer || BlendState[BST_Additive]);
+//
+//	const uint32 numVertices = vertices.Num();
+//
+//	// Map the vertex buffer and copy the vertex data
+//	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+//	DeviceContext->Map(ParticleVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+//	memcpy(mappedResource.pData, vertices.GetData(), numVertices * sizeof(FVertexTextured));
+//	DeviceContext->Unmap(ParticleVertexBuffer, 0);
+//
+//	// Map the index buffer and copy the index data
+//	D3D11_MAPPED_SUBRESOURCE mappedIndexResource = {};
+//	DeviceContext->Map(ParticleIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedIndexResource);
+//	memcpy(mappedIndexResource.pData, indices.GetData(), indices.Num() * sizeof(uint32));
+//	DeviceContext->Unmap(ParticleIndexBuffer, 0);
+//}
 
 void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight)
 {
