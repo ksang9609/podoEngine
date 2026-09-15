@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <span>
 #include "SceneComponent.h"
 
 class UPrimitiveComponent : public USceneComponent
@@ -25,6 +26,8 @@ public:
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const override final;
 	void SetUseTexture(bool value) { mbUseTexture = value; }
 	bool GetUseTexture() const { return mbUseTexture; }
+
+	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const;

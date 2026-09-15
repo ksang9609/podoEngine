@@ -22,14 +22,6 @@ USceneComponent::~USceneComponent()
 {
 }
 
-//void USceneComponent::SerializeClass(json::JSON& outJson) const
-//{
-//	UActorComponent::SerializeClass(outJson);
-//	outJson["Properties"]["mRelativeLocation"] = FVectorToJson(mRelativeLocation);
-//	outJson["Properties"]["mRelativeRotation"] = FRotatorToJson(mRelativeRotation);
-//	outJson["Properties"]["mRelativeScale3D"] = FVectorToJson(mRelativeScale3D);
-//}
-
 void USceneComponent::SerializeClass(json::JSON& outJson) const
 {
 	UActorComponent::SerializeClass(outJson);
@@ -41,56 +33,38 @@ void USceneComponent::SerializeClass(json::JSON& outJson) const
 			this,
 			outJson["Properties"]);
 	}
+	outJson["ParentUUID"] = mParent != nullptr ? mParent->UUID : -1;
 }
 
 void USceneComponent::DeserializeClass(const json::JSON& inJson)
 {
 	UActorComponent::DeserializeClass(inJson);
-
 	const json::JSON& propertiesJson = inJson.at("Properties");
 
-	if (!propertiesJson.hasKey("mRelativeLocation")
-		|| propertiesJson.at("mRelativeLocation").JSONType() != json::JSON::Class::Array
-		|| propertiesJson.at("mRelativeLocation").length() != 3)
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
 	{
-		throw std::runtime_error(std::format("{}: mRelativeLocation property requires an array of length 3", GetRuntimeClass()->Name));
+		Property.Deserialize(
+			Property,
+			this,
+			propertiesJson);
 	}
 
-	if (!propertiesJson.hasKey("mRelativeRotation")
-		|| propertiesJson.at("mRelativeRotation").JSONType() != json::JSON::Class::Array
-		|| propertiesJson.at("mRelativeRotation").length() != 3)
+	if (inJson.hasKey("ParentUUID"))
 	{
-		throw std::runtime_error(std::format("{}: mRelativeRotation property requires an array of length 3", GetRuntimeClass()->Name));
-	}
+		if (inJson.at("ParentUUID").JSONType() != json::JSON::Class::Integral)
+		{
+			throw std::runtime_error("ParentUUID requires int32");
+		}
 
-	if (!propertiesJson.hasKey("mRelativeScale3D")
-		|| propertiesJson.at("mRelativeScale3D").JSONType() != json::JSON::Class::Array
-		|| propertiesJson.at("mRelativeScale3D").length() != 3)
+		mSerializedParentUUID = static_cast<int32>(inJson.at("ParentUUID").ToInt());
+	}
+	else
 	{
-		throw std::runtime_error(std::format("{}: mRelativeScale3D property requires an array of length 3", GetRuntimeClass()->Name));
+		mSerializedParentUUID = -1;
 	}
-
-	mRelativeLocation = FVectorFromJson(propertiesJson.at("mRelativeLocation"));
-	mRelativeRotation = FRotatorFromJson(propertiesJson.at("mRelativeRotation"));
-	mRelativeScale3D = FVectorFromJson(propertiesJson.at("mRelativeScale3D"));
 
 	updateComponentToWorld();
 }
-
-//void USceneComponent::DeserializeClass(const json::JSON& inJson)
-//{
-//	UActorComponent::DeserializeClass(inJson);
-//
-//	const json::JSON& propertiesJson = inJson.at("Properties");
-//
-//	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
-//	{
-//		Property.Deserialize(
-//			Property,
-//			this,
-//			propertiesJson);
-//	}
-//}
 
 // Attach this component to a parent scene component
 bool USceneComponent::AttachTo(USceneComponent& parent)
@@ -255,8 +229,7 @@ bool USceneComponent::isChildOf(const USceneComponent& component) const
 	return false;
 }
 
-std::span<const FPropertyInfo>
-USceneComponent::GetDeclaredProperties()
+std::span<const FPropertyInfo> USceneComponent::GetDeclaredProperties()
 {
 	static const FPropertyInfo Properties[] =
 	{

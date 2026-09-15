@@ -19,7 +19,7 @@
 static FBoundingBox CalculateBounds(const FVertexSimple* vertices, uint32 count);
 static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive);
 
-IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent);
+IMPLEMENT_CLASS_WITH_PROPERTIES(UPrimitiveComponent, USceneComponent);
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -63,20 +63,29 @@ UPrimitiveComponent::~UPrimitiveComponent()
 void UPrimitiveComponent::SerializeClass(json::JSON& outJson) const
 {
 	USceneComponent::SerializeClass(outJson);
-	outJson["Properties"]["mePrimitiveType"] = EPrimitiveToJson(mePrimitive);
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Serialize(
+			Property,
+			this,
+			outJson["Properties"]);
+	}
 }
 
 void UPrimitiveComponent::DeserializeClass(const json::JSON& inJson)
 {
 	USceneComponent::DeserializeClass(inJson);
-
 	const json::JSON& propertiesJson = inJson.at("Properties");
-	if (!propertiesJson.hasKey("mePrimitiveType") || propertiesJson.at("mePrimitiveType").JSONType() != json::JSON::Class::String)
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
 	{
-		throw std::runtime_error(std::format("{}: mePrimitiveType property requires a string", GetRuntimeClass()->Name));
+		Property.Deserialize(
+			Property,
+			this,
+			propertiesJson);
 	}
 
-	mePrimitive = EPrimitiveFromJson(propertiesJson.at("mePrimitiveType"));
 	mLocalBounds = GetPrimitiveLocalBounds(mePrimitive);
 }
 
@@ -198,4 +207,24 @@ static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive)
 
 	static const FBoundingBox emptyBounds{};
 	return emptyBounds;
+}
+
+std::span<const FPropertyInfo>
+UPrimitiveComponent::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		MakeProperty<
+			UPrimitiveComponent,
+			EPrimitive,
+			&UPrimitiveComponent::mePrimitive>(
+				"mePrimitiveType")
+		/*MakeProperty<
+			UPrimitiveComponent,
+			FBoundingBox,
+			&UPrimitiveComponent::mLocalBounds>(
+				"mLocalBounds")*/
+	};
+
+	return Properties;
 }

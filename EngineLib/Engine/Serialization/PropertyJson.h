@@ -2,6 +2,7 @@
 
 #include "ThirdParty/Json/json.hpp"
 #include "Core/IO/JsonUtil.h"
+#include "Core/Name.h"
 
 
 template<typename T>
@@ -92,7 +93,7 @@ struct TPropertyJsonSerializer<FVector>
 
 		const json::JSON& Value = InJson.at(Key);
 
-		if (Value.JSONType() != json::JSON::Class::Object)
+		if (Value.JSONType() != json::JSON::Class::Array)
 		{
 			throw std::runtime_error("Property requires FVector");
 		}
@@ -124,11 +125,76 @@ struct TPropertyJsonSerializer<FRotator>
 
 		const json::JSON& Value = InJson.at(Key);
 
-		if (Value.JSONType() != json::JSON::Class::Object)
+		if (Value.JSONType() != json::JSON::Class::Array)
 		{
 			throw std::runtime_error("Property requires FRotator");
 		}
 
 		OutValue = FRotatorFromJson(Value);
+	}
+};
+
+template<>
+struct TPropertyJsonSerializer<EPrimitive>
+{
+	static void Serialize(
+		json::JSON& OutJson,
+		const char* Key,
+		const EPrimitive& Value)
+	{
+		OutJson[Key] = EPrimitiveToJson(Value);
+	}
+
+	static void Deserialize(
+		const json::JSON& InJson,
+		const char* Key,
+		EPrimitive& OutValue)
+	{
+		if (!InJson.hasKey(Key))
+		{
+			throw std::runtime_error("Missing EPrimitive property");
+		}
+
+		const json::JSON& Value = InJson.at(Key);
+
+		if (Value.JSONType() != json::JSON::Class::String)
+		{
+			throw std::runtime_error("Property requires EPrimitive");
+		}
+
+		OutValue = EPrimitiveFromJson(Value);
+	}
+};
+
+template<>
+struct TPropertyJsonSerializer<FName>
+{
+	static void Serialize(
+		json::JSON& OutJson,
+		const char* Key,
+		const FName& Value)
+	{
+		OutJson[Key] = Value.ToString();
+	}
+
+	static void Deserialize(
+		const json::JSON& InJson,
+		const char* Key,
+		FName& OutValue)
+	{
+		if (!InJson.hasKey(Key))
+		{
+			throw std::runtime_error("Missing FName property");
+		}
+
+		const json::JSON& Value = InJson.at(Key);
+
+		if (Value.JSONType() != json::JSON::Class::String)
+		{
+			throw std::runtime_error("Property requires FName");
+		}
+
+		const FString LoadedName(Value.ToString());
+		OutValue = FName(LoadedName);
 	}
 };
