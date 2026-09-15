@@ -35,6 +35,7 @@ protected:
 	EPrimitive mePrimitive;
 	FBoundingBox mLocalBounds{};
 	FBoundingBox mWocalBounds{};
+
 	bool mbUseTexture = false;
 	bool mbShowBoundingBox = true;
 };
