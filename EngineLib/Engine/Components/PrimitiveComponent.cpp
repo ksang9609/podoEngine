@@ -214,16 +214,20 @@ UPrimitiveComponent::GetDeclaredProperties()
 {
 	static const FPropertyInfo Properties[] =
 	{
-		MakeProperty<
+		REFLECT_PROPERTY(
+		UPrimitiveComponent,
+		mePrimitive,
+		"mePrimitiveType"),
+
+		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			EPrimitive,
-			&UPrimitiveComponent::mePrimitive>(
-				"mePrimitiveType")
-		/*MakeProperty<
+			mbUseTexture,
+			"mbUseTexture"),
+
+		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			FBoundingBox,
-			&UPrimitiveComponent::mLocalBounds>(
-				"mLocalBounds")*/
+			mbShowBoundingBox,
+			"mbShowBoundingBox"),
 	};
 
 	return Properties;

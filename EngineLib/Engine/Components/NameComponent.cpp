@@ -109,11 +109,10 @@ std::span<const FPropertyInfo> UNameComponent::GetDeclaredProperties()
 {
 	static const FPropertyInfo Properties[] =
 	{
-		MakeProperty<
+		REFLECT_PROPERTY(
 			UNameComponent,
-			FString,
-			&UNameComponent::mNameText>(
-				"mNameText")
+			mNameText,
+			"mNameText"),
 	};
 
 	return Properties;

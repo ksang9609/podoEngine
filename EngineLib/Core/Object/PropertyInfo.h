@@ -24,6 +24,13 @@ struct FPropertyInfo
 		const json::JSON& InProperties) = nullptr;
 };
 
+#define REFLECT_PROPERTY(OwnerType, MemberName, JsonKey)        \
+    MakeProperty<                                               \
+        OwnerType,                                              \
+        decltype(OwnerType::MemberName),                        \
+        &OwnerType::MemberName                                  \
+>(JsonKey)
+
 template<
 	typename TOwner,
 	typename TValue,
@@ -39,11 +46,9 @@ FPropertyInfo MakeProperty(const char* JsonKey)
 			const UObject* Object,
 			json::JSON& OutJson)
 		{
-			const TOwner* Owner =
-				static_cast<const TOwner*>(Object);
+			const TOwner* Owner = static_cast<const TOwner*>(Object);
 
-			const TValue& Value =
-				Owner->*Member;
+			const TValue& Value = Owner->*Member;
 
 			TPropertyJsonSerializer<TValue>::Serialize(
 				OutJson,
@@ -56,11 +61,9 @@ FPropertyInfo MakeProperty(const char* JsonKey)
 			UObject* Object,
 			const json::JSON& InJson)
 		{
-			TOwner* Owner =
-				static_cast<TOwner*>(Object);
+			TOwner* Owner = static_cast<TOwner*>(Object);
 
-			TValue& Value =
-				Owner->*Member;
+			TValue& Value = Owner->*Member;
 
 			TPropertyJsonSerializer<TValue>::Deserialize(
 				InJson,

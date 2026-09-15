@@ -46,8 +46,7 @@ void UParticleSubUVComponent::DeserializeClass(const json::JSON& inJson)
 			this,
 			propertiesJson);
 	}
-	mElapsedTime = 0.0f;
-	mCurrentFrameIndex = 0;
+
 	mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0);
 }
 
@@ -60,7 +59,7 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRe
 	{
 		return; // Stop updating if not looping and the animation has finished
 	}
-
+	
 	mElapsedTime += deltaTime;
 	float frameDuration = mFrameDuration / mPlayRate;
 	if (mElapsedTime >= frameDuration)
@@ -99,35 +98,26 @@ std::span<const FPropertyInfo> UParticleSubUVComponent::GetDeclaredProperties()
 {
 	static const FPropertyInfo Properties[] =
 	{
-		MakeProperty<
+		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			uint32,
-			&UParticleSubUVComponent::mNumRows>(
-				"mNumRows"),
-
-		MakeProperty<
+			mNumRows,
+			"mNumRows"),
+		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			uint32,
-			&UParticleSubUVComponent::mNumCols>(
-				"mNumCols"),
-
-		MakeProperty<
+			mNumCols,
+			"mNumCols"),
+		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			bool,
-			&UParticleSubUVComponent::mbLooping>(
-				"mbLooping"),
-
-		MakeProperty<
+			mbLooping,
+			"mbLooping"),
+		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			float,
-			&UParticleSubUVComponent::mPlayRate>(
-				"mPlayRate"),
-
-		MakeProperty<
+			mPlayRate,
+			"mPlayRate"),
+		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			float,
-			&UParticleSubUVComponent::mFrameDuration>(
-				"mFrameDuration"),
+			mFrameDuration,
+			"mFrameDuration")
 	};
 
 	return Properties;
