@@ -40,6 +40,12 @@ struct FInstanceData
 	FLinearColor Tint;
 };
 
+// HLSL의 b1에 전달할 데이터
+struct FUnicodeFontConstants
+{
+	float DistanceRange = 4.0f;
+	float Padding[3] = {};
+};
 enum EDepthStencilStateType
 {
 	DSS_Default,
@@ -80,6 +86,7 @@ public:
 	ID3D11DepthStencilState* DepthStencilState[4] = {};	// 깊이 테스트용 상태
 	ID3D11BlendState* BlendState[4] = {}; // 블렌딩 상태
 
+	// 기존의 ASCII 폰트
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
 	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
 	ID3D11VertexShader* FontVertexShader = nullptr;
@@ -87,6 +94,15 @@ public:
 	ID3D11InputLayout* FontInputLayout = nullptr;
 	ID3D11SamplerState* FontSamplerState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
+
+	// 유니코드 폰트
+	ID3D11ShaderResourceView* UnicodeFontAtlasSRV = nullptr;
+	ID3D11PixelShader* UnicodeFontPixelShader = nullptr;
+	ID3D11Buffer* UnicodeFontVertexBuffer = nullptr;
+	ID3D11Buffer* UnicodeFontIndexBuffer = nullptr;
+	ID3D11Buffer* UnicodeFontConstantBuffer = nullptr;
+	uint32 UnicodeFontVertexCapacity = 0;
+	uint32 UnicodeFontIndexCapacity = 0;
 
 	ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
@@ -143,6 +159,9 @@ public:
 	
 	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices, ID3D11ShaderResourceView* textureSRV);
 
+	// PNG·MSDF 셰이더·필요 리소스 준비
+	bool InitializeUnicodeFont(const wchar_t* atlasPath, float distanceRange);
+
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
 	
 	void ReleasePrimitiveTextureResources(
@@ -165,12 +184,15 @@ public:
 	void PrepareFont();
 	void PrepareGizmo();
 	void PrepareHighlight();
-	void PrepareParticle();
+	// 셰이더, 입력 레이아웃, 블렌딩 상태 설정
+	void PrepareUnicodeFont();
+  void PrepareParticle();
 
 	void UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0));
 	void UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0),
 		FVector2 uvScale = { 1.0f, 1.0f }, FVector2 uvOffset = { 0.0f, 0.0f });
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
+	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
 	//void UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
@@ -181,7 +203,8 @@ public:
 	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
-	void RenderParticle(ID3D11ShaderResourceView* texture);
+  void RenderUnicodeFontTexture(uint32 indexCount);
+  void RenderParticle(ID3D11ShaderResourceView* texture);
 
 	void SwapBuffer();
 
@@ -197,6 +220,8 @@ private:
 	bool ensureFontIndexBuffer(UINT fontCount);
 	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
 	UINT mTextIndexCapacity = 0;
+
+	bool ensureUnicodeFontIndexBuffer(UINT quadCount);
 
 
 	ID3D11Buffer* InstanceBuffer = nullptr;
@@ -234,6 +259,7 @@ private:
 	void prepareTextureShader();
 	void prepareLineShader();
 	void prepareFontShader();
+	void prepareUnicodeFontShader();
 
 	/* Release methods for all resources */
 	void releaseDeviceAndSwapChain();
@@ -249,5 +275,7 @@ private:
 	void releaseBlendState();
 	void releaseFontTexture();
 	void releaseFontAtlasTexture();
+	void releaseUnicodeFontAtlasTexture();
+	void releaseUnicodeFontBuffers();
 };
 

@@ -186,6 +186,9 @@
     <ClCompile Include="Rendering\TextMesh.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\FontResource.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
     <ClCompile Include="Rendering\SubUVMesh.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
@@ -423,6 +426,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderW0.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderFontMSDF.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
