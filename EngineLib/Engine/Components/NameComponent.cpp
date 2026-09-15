@@ -54,6 +54,7 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 
 	// Remove primitive flags and add billboardtext flags
 	renderFlags = renderFlags
+		& ~ERenderFlags::RF_Raycastable
 		& ~ERenderFlags::RF_Primitive
 		& ~ERenderFlags::RF_BoundingBox
 		| ERenderFlags::RF_Billboard

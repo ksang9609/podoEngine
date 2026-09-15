@@ -58,6 +58,7 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 	renderInfo.SubUVMesh = &mSubUVMesh;
 
 	renderInfo.eRenderFlags =
+		ERenderFlags::RF_Raycastable |
 		ERenderFlags::RF_Billboard |
 		ERenderFlags::RF_Particle;
 	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for the particle

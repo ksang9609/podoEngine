@@ -31,6 +31,7 @@ protected:
 	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
 	FBoundingBox mLocalBounds{};
+
 	bool mbUseTexture = false;
 	bool mbShowBoundingBox = true;
 };
