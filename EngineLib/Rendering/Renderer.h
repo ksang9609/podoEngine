@@ -31,6 +31,16 @@ struct FInstanceData
 	FVector4 Tint;
 };
 
+enum EDepthStencilStateType
+{
+	DSS_Default,
+	DSS_NoWrite,
+
+	// For hightlighting selected object
+	DSS_StencilMark,
+	DSS_StencilOutline,
+};
+
 class URenderer
 {
 public:
@@ -44,9 +54,7 @@ public:
     ID3D11Buffer* ConstantBuffer = nullptr;
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
-	ID3D11DepthStencilState* DepthStencilState = nullptr;	// 깊이 테스트용 상태
-	ID3D11DepthStencilState* StencilMarkState = nullptr;	// 스텐실에 1 마킹용 상태
-	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
+	ID3D11DepthStencilState* DepthStencilState[4] = {};	// 깊이 테스트용 상태
 	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
 
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
@@ -192,8 +200,6 @@ private:
 	void createDepthStencilBuffer(UINT width, UINT height);
 
 	void createDepthStencilState();
-	void createStencilMarkState();
-	void createStencilOutlineState();
 	void createNoColorWriteBlendState();
 	bool createFontAtlasTexture();
 	bool createFontSamplerState();
