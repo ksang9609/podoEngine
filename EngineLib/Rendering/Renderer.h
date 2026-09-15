@@ -24,6 +24,15 @@ struct FConstants
 	FVector4 Tint;          // rgb = 색, a = 섞는 비율
 };
 
+struct FTextureConstants
+{
+	FMatrix World; //Model
+	FMatrix ViewProjection;
+	FVector4 Tint;          // rgb = 색, a = 섞는 비율
+	FVector2 UVScale;       // 텍스처 좌표 스케일
+	FVector2 UVOffset;      // 텍스처 좌표 오프셋
+};
+
 // intancing 용
 struct FInstanceData
 {
@@ -49,6 +58,12 @@ enum EBlendStateType
 	BST_NoColorWrite,
 };
 
+enum EContantBufferType
+{
+	CBT_Simple,
+	CBT_Texture,
+};
+
 class URenderer
 {
 public:
@@ -59,7 +74,7 @@ public:
     ID3D11Texture2D* FrameBuffer = nullptr;
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 	ID3D11RasterizerState* RasterizerState[2] = {};
-    ID3D11Buffer* ConstantBuffer = nullptr;
+    ID3D11Buffer* ConstantBuffer[2] = {};
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
 	ID3D11DepthStencilState* DepthStencilState[4] = {};	// 깊이 테스트용 상태
@@ -152,9 +167,11 @@ public:
 	void PrepareHighlight();
 	void PrepareParticle();
 
-	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
+	void UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
+	void UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0),
+		FVector2 uvScale = { 1.0f, 1.0f }, FVector2 uvOffset = { 0.0f, 0.0f });
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
-	void UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices);
+	//void UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,

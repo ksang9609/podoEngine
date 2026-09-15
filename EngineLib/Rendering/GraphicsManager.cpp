@@ -233,7 +233,7 @@ void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& r
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -250,7 +250,7 @@ void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -267,8 +267,10 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		mRenderer->UpdateParticleBuffer(renderInfo->SubUVMesh->Vertices, renderInfo->SubUVMesh->Indices);
+		//mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
+			renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
+		//mRenderer->UpdateParticleBuffer(renderInfo->SubUVMesh->Vertices, renderInfo->SubUVMesh->Indices);
 
 		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
 		if (texture == nullptr)
@@ -288,7 +290,7 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -359,7 +361,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 	// Prepare()에서 계산한 ViewProjection을 사용한다.
 	// 개별 World와 Tint는 위의 인스턴스 배열로 전달한다.
 	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
 
 	//  프리미티브 종류마다 한 번씩 그린다.
 	for (auto& [primitiveType, instances] : batches)
@@ -418,7 +420,7 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		mRenderer->UpdateFontBuffer(
 			renderInfo->Textmesh->Vertices, renderInfo->Textmesh->Indices,
 			renderInfo->Textmesh->TextNum);
@@ -576,7 +578,7 @@ void FGraphicsManager::FlushLines()
 
 	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
 	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
-	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
@@ -975,7 +977,7 @@ void FGraphicsManager::RenderInstancingTest()
 		instances.Add(instance);
 	}
 	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
 
 	// 한 번의 호출로 큐브 1만개 그리기
 	mRenderer->RenderSimpleInstanced(cube->Buffer, mTestInstanceIndexBuffer, 36, &instances[0], 10000);
