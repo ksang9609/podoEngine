@@ -5,6 +5,8 @@
 #include "Engine/Actor.h"
 #include "Engine/Components/PrimitiveComponent.h"
 #include "Engine/Components/NameComponent.h"
+#include "Engine/Components/ParticleSubUVComponent.h"
+
 #include "Rendering/FontResource.h"
 
 #include "Object.h"
@@ -67,6 +69,23 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
 		actor->GetName().ToString(), FVector3{0, 0, 1}, *mDefaultFontResource);
 	billboardComponent.AttachTo(*component);
+	return actor;
+}
+
+AActor* FObjectFactory::SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale)
+{
+	FName ParticleName("Particle");
+	AActor* actor = ConstructObjectWithName<AActor>(ParticleName);
+
+	UParticleSubUVComponent* component = ConstructObject<UParticleSubUVComponent>(
+		Location, Rotation, Scale, 6, 6, true, 1.0f, 0.1f);
+	actor->AddRootSceneComponent(component);
+
+	/* DEBUG */
+	//assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnParticleActor.");
+	//UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
+	//	actor->GetName().ToString(), FVector3{ 0, 0, 1 }, *mDefaultFontResource);
+	//billboardComponent.AttachTo(*component);
 	return actor;
 }
 

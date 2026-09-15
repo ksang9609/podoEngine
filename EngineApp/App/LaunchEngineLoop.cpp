@@ -232,22 +232,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	//	cubeActor->AddComponent(cubeComonent);
 	//	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
 	//}
-	{
-		UParticleSubUVComponent* particle =
-			FObjectFactory::ConstructObject<UParticleSubUVComponent>(
-				FVector(0.0f, 0.0f, 0.0f),
-				FRotator(0.0f, 0.0f, 0.0f),
-				FVector(1.0f, 1.0f, 1.0f),
-				6, 6, true, 1.0f, 0.1f);
-
-		AActor* actor =
-			FObjectFactory::ConstructObject<AActor>();
-
-		actor->AddRootSceneComponent(particle);
-		mSceneManager->GetCurrentWorld()->AddActor(actor);
-	}
-
-
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
@@ -414,6 +398,14 @@ void FEngineLoop::processEditorCommand(const FDeleteActorCommand& command)
 	{
 		mSceneManager->RemoveActor(actor);
 	}
+}
+
+void FEngineLoop::processEditorCommand(const FSpawnParticleCommand& command)
+{
+	AActor* newActor = FObjectFactory::SpawnParticleActor(
+		FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
+	);
+	mSceneManager->GetCurrentWorld()->AddActor(newActor);
 }
 
 void FEngineLoop::processEditorCommand(const FSetActorLocationCommand& command)
