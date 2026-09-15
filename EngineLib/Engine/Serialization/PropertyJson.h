@@ -27,14 +27,111 @@ struct TPropertyJsonSerializer<int32>
 
 		const json::JSON& Value = InJson.at(Key);
 
-		// 이 부분은 네 JSON 라이브러리의
-		// 숫자 타입 enum 이름에 맞춰야 함.
 		if (Value.JSONType() != json::JSON::Class::Integral)
 		{
 			throw std::runtime_error("Property requires int32");
 		}
 
 		OutValue = static_cast<int32>(Value.ToInt());
+	}
+};
+
+template<>
+struct TPropertyJsonSerializer<bool>
+{
+	static void Serialize(json::JSON& OutJson,
+		const char* Key, const bool& Value)
+	{
+		OutJson[Key] = Value;
+	}
+
+	static void Deserialize(const json::JSON& InJson,
+		const char* Key, bool& OutValue)
+	{
+		if (!InJson.hasKey(Key))
+		{
+			throw std::runtime_error("Missing bool property");
+		}
+
+		const json::JSON& Value = InJson.at(Key);
+
+		if (Value.JSONType() != json::JSON::Class::Boolean)
+		{
+			throw std::runtime_error("Property requires bool");
+		}
+
+		OutValue = static_cast<bool>(Value.ToBool());
+	}
+};
+
+template<>
+struct TPropertyJsonSerializer<float>
+{
+	static void Serialize(
+		json::JSON& OutJson,
+		const char* Key,
+		const float& Value)
+	{
+		OutJson[Key] = Value;
+	}
+
+	static void Deserialize(
+		const json::JSON& InJson,
+		const char* Key,
+		float& OutValue)
+	{
+		if (!InJson.hasKey(Key))
+		{
+			throw std::runtime_error("Missing float property");
+		}
+
+		const json::JSON& Value = InJson.at(Key);
+
+		if (Value.JSONType() != json::JSON::Class::Floating)
+		{
+			throw std::runtime_error("Property requires float");
+		}
+
+		OutValue = static_cast<float>(Value.ToFloat());
+	}
+};
+
+template<>
+struct TPropertyJsonSerializer<uint32>
+{
+	static void Serialize(
+		json::JSON& OutJson,
+		const char* Key,
+		const uint32& Value)
+	{
+		OutJson[Key] = static_cast<int64>(Value);
+	}
+
+	static void Deserialize(
+		const json::JSON& InJson,
+		const char* Key,
+		uint32& OutValue)
+	{
+		if (!InJson.hasKey(Key))
+		{
+			throw std::runtime_error("Missing uint32 property");
+		}
+
+		const json::JSON& Value = InJson.at(Key);
+
+		if (Value.JSONType() != json::JSON::Class::Integral)
+		{
+			throw std::runtime_error("Property requires uint32");
+		}
+
+		const long LoadedValue = Value.ToInt();
+
+		if (LoadedValue < 0)
+		{
+			throw std::runtime_error("Property requires non-negative uint32");
+		}
+
+		OutValue = static_cast<uint32>(LoadedValue);
 	}
 };
 

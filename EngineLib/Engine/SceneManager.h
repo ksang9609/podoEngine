@@ -84,8 +84,5 @@ private:
 
 	const FCamera& mViewportCameraRef;
 
-	FString mOpenSceneFileDialog() const;
-	FString mSaveSceneFileDialog() const;
-
 	FEditorSetting mEditorSetting;
 };
