@@ -19,6 +19,8 @@ void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FV
 
 	// Call the base class Initialize
 	UBillboardComponent::Initialize(location, rotation, scale3D);
+
+	mColor = FLinearColor(1.f, 1.f, 1.f, 0.2f); // Set default color to white
 }
 
 void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
@@ -61,6 +63,5 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 		ERenderFlags::RF_Raycastable |
 		ERenderFlags::RF_Billboard |
 		ERenderFlags::RF_Particle;
-	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for the particle
 	return renderInfo;
 }

@@ -21,14 +21,14 @@ struct FConstants
 {
 	FMatrix World; //Model
 	FMatrix ViewProjection;
-	FVector4 Tint;          // rgb = 색, a = 섞는 비율
+	FLinearColor Tint;          // rgb = 색, a = 섞는 비율
 };
 
 struct FTextureConstants
 {
 	FMatrix World; //Model
 	FMatrix ViewProjection;
-	FVector4 Tint;          // rgb = 색, a = 섞는 비율
+	FLinearColor Tint;          // rgb = 색, a = 섞는 비율
 	FVector2 UVScale;       // 텍스처 좌표 스케일
 	FVector2 UVOffset;      // 텍스처 좌표 오프셋
 };
@@ -37,7 +37,7 @@ struct FTextureConstants
 struct FInstanceData
 {
 	FMatrix World;
-	FVector4 Tint;
+	FLinearColor Tint;
 };
 
 enum EDepthStencilStateType
@@ -167,8 +167,8 @@ public:
 	void PrepareHighlight();
 	void PrepareParticle();
 
-	void UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
-	void UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0),
+	void UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0));
+	void UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0),
 		FVector2 uvScale = { 1.0f, 1.0f }, FVector2 uvOffset = { 0.0f, 0.0f });
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	//void UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices);

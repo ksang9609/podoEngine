@@ -117,7 +117,7 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 	renderInfo.ePrimitive = mePrimitive;
 	renderInfo.WorldTransformMatrix = GetTransformMatrix();
 	renderInfo.ObejctID = { mOwner->UUID, mOwner->InternalIndex };
-	renderInfo.Color = FVector4(0, 0, 0, 0);
+	renderInfo.Color = mColor;
 	renderInfo.eRenderFlags = renderFlags;
 	renderInfo.Textmesh = nullptr;
 

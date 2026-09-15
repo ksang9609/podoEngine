@@ -975,6 +975,7 @@ void URenderer::prepareTextureShader()
 	if (ConstantBuffer[CBT_Texture])
 	{
 		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Texture]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Texture]);
 	}
 }
 
@@ -1189,7 +1190,7 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
 	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_StencilOutline], 1);
-	UpdateSimpleConstant(OutlineMatrix, mViewProjectionMatrix, FVector4(1.f, 0.6f, 0.f, 1.f));
+	UpdateSimpleConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f));
 	RenderSimplePrimitive(pBuffer, Num);
 }
 
@@ -1383,7 +1384,7 @@ void URenderer::releaseDepthStencilState()
 	}
 }
 
-void URenderer::UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FVector4 tint)
+void URenderer::UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint)
 {
 	if (ConstantBuffer[CBT_Simple])
 	{
@@ -1400,7 +1401,7 @@ void URenderer::UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FVec
 	}
 }
 
-void URenderer::UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FVector4 tint,
+void URenderer::UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint,
 	FVector2 uvScale, FVector2 uvOffset)
 {
 	if (ConstantBuffer[CBT_Texture])

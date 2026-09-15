@@ -1,5 +1,6 @@
-#include "Gizmo.h"
+﻿#include "Gizmo.h"
 
+#include "Core/Math/Color.h"
 #include "Engine/Actor.h"
 
 FVector FGizmo::AxisDirection(EGIZMO_AXIS axis) const {
@@ -387,17 +388,17 @@ FMatrix FGizmo::GetAxisMatrix(EGIZMO_AXIS axis) const // 축모양 도형을 반
 }
 
 
-FVector4 FGizmo::GetAxisColor(EGIZMO_AXIS axis) const
+FLinearColor FGizmo::GetAxisColor(EGIZMO_AXIS axis) const
 {
 	float alpha = 1.0f;
-	if (axis == eAxis) return FVector4(1.0f, 1.0f, 1.0f, 1.0f);   // 마우스가 올라간 축
+	if (axis == eAxis) return FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);   // 마우스가 올라간 축
 
 	switch (axis)
 	{
-	case X:  return FVector4(1.0f, 0.0f, 0.0f, alpha);
-	case Y:  return FVector4(0.0f, 1.0f, 0.0f, alpha);
-	case Z:  return FVector4(0.0f, 0.0f, 1.0f, alpha);
-	default: return FVector4(0.0f, 0.0f, 0.0f, alpha);
+	case X:  return FLinearColor(1.0f, 0.0f, 0.0f, alpha);
+	case Y:  return FLinearColor(0.0f, 1.0f, 0.0f, alpha);
+	case Z:  return FLinearColor(0.0f, 0.0f, 1.0f, alpha);
+	default: return FLinearColor(0.0f, 0.0f, 0.0f, alpha);
 	}
 }
 

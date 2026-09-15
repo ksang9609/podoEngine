@@ -344,7 +344,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 
 	// 같은 프리미티브끼리 World, Tint를 모은다.
 	TMap<EPrimitive, TArray<FInstanceData>> batches;
-	
+
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		if (!renderInfo)
@@ -361,7 +361,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 	// Prepare()에서 계산한 ViewProjection을 사용한다.
 	// 개별 World와 Tint는 위의 인스턴스 배열로 전달한다.
 	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
 
 	//  프리미티브 종류마다 한 번씩 그린다.
 	for (auto& [primitiveType, instances] : batches)
@@ -387,7 +387,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 				indices.Add(i);
 			}
 
-			mesh->IndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(&indices[0],	mesh->SourceNum);
+			mesh->IndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(&indices[0], mesh->SourceNum);
 
 			if (!mesh->IndexBuffer)
 			{
@@ -578,7 +578,7 @@ void FGraphicsManager::FlushLines()
 
 	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
 	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
@@ -914,7 +914,7 @@ void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
 void FGraphicsManager::CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos)
 {
 	uint32 countIndices = 6 + (mgridExtent / mgridSpacing) * 2 * 2 + renderInfos.Num() * 24;
-	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 * 2+ renderInfos.Num() * 8;
+	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 * 2 + renderInfos.Num() * 8;
 	mLineIndices.Reserve(countIndices);
 	mLineVertices.Reserve(countvertices);
 }
@@ -935,7 +935,7 @@ void FGraphicsManager::RenderInstancingTest()
 		for (UINT i = 0; i < 36; ++i)
 			indices[i] = i;
 
-		mTestInstanceIndexBuffer =	mRenderer->CreatePrimitiveIndexBuffer(indices, 36);
+		mTestInstanceIndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(indices, 36);
 
 		if (!mTestInstanceIndexBuffer)
 			return;
@@ -972,12 +972,12 @@ void FGraphicsManager::RenderInstancingTest()
 		float g = static_cast<float>(i % 3 == 1);
 		float b = static_cast<float>(i % 3 == 2);
 
-		instance.Tint = FVector4(r, g, b, 1.0f);
+		instance.Tint = FLinearColor(r, g, b, 1.0f);
 
 		instances.Add(instance);
 	}
 	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
 
 	// 한 번의 호출로 큐브 1만개 그리기
 	mRenderer->RenderSimpleInstanced(cube->Buffer, mTestInstanceIndexBuffer, 36, &instances[0], 10000);

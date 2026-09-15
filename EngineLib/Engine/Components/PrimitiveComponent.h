@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Core/Math/Color.h"
+
 #include "SceneComponent.h"
 
 class UPrimitiveComponent : public USceneComponent
@@ -33,6 +35,8 @@ protected:
 	virtual FRenderInfo makeRenderInfo() const;
 	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
+	FLinearColor mColor{ 1.f, 1.f, 1.f, 1.f };
+
 	FBoundingBox mLocalBounds{};
 	FBoundingBox mWocalBounds{};
 

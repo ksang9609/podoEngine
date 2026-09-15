@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Math/Vector.h"
 #include "Rendering/RenderInfo.h"
 #include "Core/Container/TArray.h"
 #include "Core/Math/Transform.h"
+#include "Core/Math/Color.h"
 #include "Core/enum.h"
 
 class AActor;
@@ -83,7 +84,7 @@ struct FGizmo {
 	FMatrix GetAxisMatrix(EGIZMO_AXIS axis) const; // 축모양 도형을 반환
 	
 
-	FVector4 GetAxisColor(EGIZMO_AXIS axis) const;
+	FLinearColor GetAxisColor(EGIZMO_AXIS axis) const;
 
 	FMatrix GetScaleHandleMatrix(EGIZMO_AXIS axis) const;
 

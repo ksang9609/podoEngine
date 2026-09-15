@@ -37,6 +37,6 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    
-    return Texture.Sample(TextureSampler, input.uv);
+    float4 color = Texture.Sample(TextureSampler, input.uv);
+    return color * Tint;
 }

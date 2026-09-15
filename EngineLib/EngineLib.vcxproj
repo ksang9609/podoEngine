@@ -167,6 +167,7 @@
     <ClInclude Include="Core\IO\FileManager.h" />
     <ClInclude Include="Core\IO\JsonUtil.h" />
     <ClInclude Include="Core\Math\FBoundingBox.h" />
+    <ClInclude Include="Core\Math\Color.h" />
     <ClInclude Include="Core\Math\MathUtility.h" />
     <ClInclude Include="Core\Math\Matrix.h" />
     <ClInclude Include="Core\Math\Projection.h" />
