@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <functional>
+#include <span>
+#include "PropertyInfo.h"
 
 #include "Core/Core.h"
 #include "Core/Container/TArray.h"
@@ -21,11 +23,15 @@ struct FClassInfo
 	const FClassInfo* SuperClass;
 	std::function<UObject* ()> Constructor;
 
-	FClassInfo(FString name, const FClassInfo* superClass, std::function<UObject* ()> constructor)
-		: Name(std::move(name)), SuperClass(superClass), Constructor(constructor) {
+	FClassInfo(FString name, const FClassInfo* superClass,
+		std::function<UObject* ()> constructor, std::span<const FPropertyInfo> declaredProperties = {})
+		: Name(std::move(name)), SuperClass(superClass), Constructor(std::move(constructor)),
+		DeclaredProperties(declaredProperties) {
 	}
 
 	UObject* CreateInstance() const;
+
+	std::span<const FPropertyInfo> DeclaredProperties = {};
 
 private:
 };

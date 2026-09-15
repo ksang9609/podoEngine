@@ -6,6 +6,9 @@
 #include "Core/Math/Vector.h"
 #include "Core/Container/TArray.h"
 
+#include <span>
+#include "Core/Object/PropertyInfo.h"
+
 class FTransform;
 
 class USceneComponent : public UActorComponent
@@ -41,6 +44,10 @@ public:
 	void SetRelativeTransform(const FTransform& transform);
 
 	FMatrix GetTransformMatrix() const;
+
+	//test
+	static std::span<const FPropertyInfo> GetDeclaredProperties();
+	std::span<const FPropertyInfo> DeclaredProperties{};
 
 protected:
 	FVector mRelativeLocation;

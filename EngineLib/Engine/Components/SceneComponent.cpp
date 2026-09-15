@@ -1,4 +1,4 @@
-#include "SceneComponent.h"
+﻿#include "SceneComponent.h"
 
 #include <format>
 
@@ -6,7 +6,7 @@
 #include "Core/IO/JsonUtil.h"
 #include "Engine/Actor.h"
 
-IMPLEMENT_CLASS(USceneComponent, UActorComponent);
+IMPLEMENT_CLASS_WITH_PROPERTIES(USceneComponent, UActorComponent);
 
 void USceneComponent::Initialize(FVector location, FRotator rotation, FVector scale3D)
 {
@@ -22,12 +22,25 @@ USceneComponent::~USceneComponent()
 {
 }
 
+//void USceneComponent::SerializeClass(json::JSON& outJson) const
+//{
+//	UActorComponent::SerializeClass(outJson);
+//	outJson["Properties"]["mRelativeLocation"] = FVectorToJson(mRelativeLocation);
+//	outJson["Properties"]["mRelativeRotation"] = FRotatorToJson(mRelativeRotation);
+//	outJson["Properties"]["mRelativeScale3D"] = FVectorToJson(mRelativeScale3D);
+//}
+
 void USceneComponent::SerializeClass(json::JSON& outJson) const
 {
 	UActorComponent::SerializeClass(outJson);
-	outJson["Properties"]["mRelativeLocation"] = FVectorToJson(mRelativeLocation);
-	outJson["Properties"]["mRelativeRotation"] = FRotatorToJson(mRelativeRotation);
-	outJson["Properties"]["mRelativeScale3D"] = FVectorToJson(mRelativeScale3D);
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Serialize(
+			Property,
+			this,
+			outJson["Properties"]);
+	}
 }
 
 void USceneComponent::DeserializeClass(const json::JSON& inJson)
@@ -63,6 +76,21 @@ void USceneComponent::DeserializeClass(const json::JSON& inJson)
 
 	updateComponentToWorld();
 }
+
+//void USceneComponent::DeserializeClass(const json::JSON& inJson)
+//{
+//	UActorComponent::DeserializeClass(inJson);
+//
+//	const json::JSON& propertiesJson = inJson.at("Properties");
+//
+//	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+//	{
+//		Property.Deserialize(
+//			Property,
+//			this,
+//			propertiesJson);
+//	}
+//}
 
 // Attach this component to a parent scene component
 bool USceneComponent::AttachTo(USceneComponent& parent)
@@ -225,4 +253,31 @@ bool USceneComponent::isChildOf(const USceneComponent& component) const
 		current = current->mParent;
 	}
 	return false;
+}
+
+std::span<const FPropertyInfo>
+USceneComponent::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		MakeProperty<
+			USceneComponent,
+			FVector,
+			&USceneComponent::mRelativeLocation>(
+				"mRelativeLocation"),
+
+		MakeProperty<
+			USceneComponent,
+			FRotator,
+			&USceneComponent::mRelativeRotation>(
+				"mRelativeRotation"),
+
+		MakeProperty<
+			USceneComponent,
+			FVector,
+			&USceneComponent::mRelativeScale3D>(
+				"mRelativeScale3D"),
+	};
+
+	return Properties;
 }
