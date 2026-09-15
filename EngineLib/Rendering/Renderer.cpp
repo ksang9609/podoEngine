@@ -1031,7 +1031,7 @@ void URenderer::PrepareUnicodeFont()
 	// 기존 PrepareFont와 동일하게 면으로 렌더링
 	DeviceContext->RSSetState(RasterizerState[0]);
 
-	DeviceContext->OMSetBlendState(FontBlendState, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_AlphaBlend], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareGizmo()
