@@ -48,6 +48,8 @@ struct FObjectFactory
 		FVector3 Location, FRotator Rotation, FVector3 Scale
 	);
 
+	static AActor* SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale);
+
 	static const FClassInfo* GetClassInfoByName(const FString& className);
 
 	static bool RegisterClassInfo(FString className, const FClassInfo* classInfo);

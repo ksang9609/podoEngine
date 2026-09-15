@@ -8,6 +8,7 @@
 #include "Engine/Components/PrimitiveComponent.h"
 #include "Engine/Components/NameComponent.h"
 #include "Engine/Actor.h"
+#include "Rendering/SubUVMesh.h"
 
 FGraphicsManager::FGraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
@@ -135,7 +136,8 @@ void FGraphicsManager::updateRenderQueue(
 
 		ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
-		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
+		if (HasAllRenderFlags(renderFlags,
+			ERenderFlags::RF_Primitive & ~ERenderFlags::RF_Billboard) &&
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
 			if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
@@ -147,7 +149,8 @@ void FGraphicsManager::updateRenderQueue(
 				outRenderQueueMap[RQT_SimplePrimitive].Add(&renderInfo);
 			}
 		}
-		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BillboardText) &&
+		if (HasAllRenderFlags(renderFlags,
+			ERenderFlags::RF_Billboard | ERenderFlags::RF_Text) &&
 			HasShowFlag(EEngineShowFlags::SF_BillboardText))
 		{
 			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
@@ -164,6 +167,10 @@ void FGraphicsManager::updateRenderQueue(
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox))
 		{
 			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
+		}
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Particle))
+		{
+			outRenderQueueMap[RQT_Particle].Add(&renderInfo);
 		}
 	}
 }
@@ -202,6 +209,8 @@ void FGraphicsManager::Render(
 	renderGrid();
 	renderBoundingBox(renderQueueMap[RQT_BoundingBox], camera.GetRotation());
 	FlushLines();
+
+	renderParticle(renderQueueMap[RQT_Particle], camera);
 
 	//강조
 	if (selectedActor)
@@ -249,6 +258,27 @@ void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos
 			continue;
 		}
 		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+	}
+}
+
+void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+{
+	mRenderer->PrepareParticle();
+	for (const FRenderInfo* renderInfo : renderInfos)
+	{
+		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateParticleBuffer(renderInfo->SubUVMesh->Vertices, renderInfo->SubUVMesh->Indices);
+
+		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
+		if (texture == nullptr)
+		{
+			UE_LOG(Error, Render, "Primitive texture not found for primitive type.");
+			continue;
+		}
+		//mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+		mRenderer->RenderParticle(texture->SRV);
+
 	}
 }
 

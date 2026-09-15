@@ -13,9 +13,11 @@ public:
 
 	virtual ~UBillboardComponent() = default;
 
-private:
+protected:
 	// mePrimitive = EPrimitive::BillboardQuad;
 
 	// TODO: Add a texture to render on the billboard quad.
 	// UTexture2D* mTexture;
+
+	virtual FRenderInfo makeRenderInfo() const override;
 };

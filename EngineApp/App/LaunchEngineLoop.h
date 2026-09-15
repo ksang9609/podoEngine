@@ -47,6 +47,8 @@ private:
 
 	void processEditorCommand(const FSpawnActorCommand& command);
 	void processEditorCommand(const FDeleteActorCommand& command);
+	void processEditorCommand(const FSpawnParticleCommand& command);
+
 	void processEditorCommand(const FSetActorLocationCommand& command);
 	void processEditorCommand(const FSetActorRotationCommand& command);
 	void processEditorCommand(const FSetActorScaleCommand& command);

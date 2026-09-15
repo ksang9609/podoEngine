@@ -186,6 +186,12 @@
     <ClCompile Include="Rendering\TextMesh.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\SubUVMesh.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Components\ParticleSubUVComponent.cpp">
+      <Filter>Engine\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Container\TArray.h">
@@ -396,6 +402,12 @@
     <ClInclude Include="Editor\EditorCommands.h">
       <Filter>Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\SubUVMesh.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\ParticleSubUVComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
@@ -431,6 +443,9 @@
       <Filter>Assets\Textures</Filter>
     </Image>
     <Image Include="Assets\Textures\EarthTexture.dds">
+      <Filter>Assets\Textures</Filter>
+    </Image>
+    <Image Include="Assets\Textures\Explosion.dds">
       <Filter>Assets\Textures</Filter>
     </Image>
   </ItemGroup>

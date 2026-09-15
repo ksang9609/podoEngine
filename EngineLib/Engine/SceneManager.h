@@ -46,7 +46,7 @@ public:
 	FSceneManager(const FCamera& viewportCameraRef);
 	~FSceneManager();
 
-	void Update(float delaTime);
+	void Update(float deltaTime);
 
 	const TArray<FRenderInfo>& GetRenderInfos() const;
 	const TArray<FRenderInfo>& GetAxisRenderInfos() const;

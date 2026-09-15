@@ -9,6 +9,7 @@
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
+#include "Engine/Components/ParticleSubUVComponent.h"
 #include "Engine/SceneManager.h"
 #include "Engine/World.h"
 #include "Platform/WindowApplication.h"
@@ -16,6 +17,7 @@
 #include "Rendering/Primitives/GizmoArrow.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/FontResource.h"
+
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_dx11.h"
 #include "ThirdParty/ImGui/imgui_impl_win32.h"
@@ -109,7 +111,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	BuildCubeAtlasVertices(atlasVertices, columns, rows, faceCells);
 
 	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
-
+	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_BillboardQuad, Quad_textured_vertices, sizeof(Quad_textured_vertices));
 	{
 		URenderer* renderer = mGraphicsManager->GetRenderer();
 
@@ -164,6 +166,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	// mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion.dds");
 
 	
 
@@ -229,9 +232,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	//	cubeActor->AddComponent(cubeComonent);
 	//	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
 	//}
-
-
-
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
@@ -398,6 +398,14 @@ void FEngineLoop::processEditorCommand(const FDeleteActorCommand& command)
 	{
 		mSceneManager->RemoveActor(actor);
 	}
+}
+
+void FEngineLoop::processEditorCommand(const FSpawnParticleCommand& command)
+{
+	AActor* newActor = FObjectFactory::SpawnParticleActor(
+		FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
+	);
+	mSceneManager->GetCurrentWorld()->AddActor(newActor);
 }
 
 void FEngineLoop::processEditorCommand(const FSetActorLocationCommand& command)

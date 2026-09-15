@@ -80,7 +80,7 @@ void UPrimitiveComponent::DeserializeClass(const json::JSON& inJson)
 	mLocalBounds = GetPrimitiveLocalBounds(mePrimitive);
 }
 
-void UPrimitiveComponent::Update(TArray<FRenderInfo>* outRenderInfos)
+void UPrimitiveComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 {
 	// Todo: Update coordinates here
 	{

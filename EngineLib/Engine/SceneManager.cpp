@@ -34,14 +34,14 @@ FSceneManager::~FSceneManager()
 	delete mCurrentWorld;
 }
 
-void FSceneManager::Update(float delaTime)
+void FSceneManager::Update(float deltaTime)
 {
 	// Todo: Save / Load
 	{
 
 	}
 
-	mCurrentWorld->Update();
+	mCurrentWorld->Update(deltaTime);
 }
 
 void FSceneManager::NewScene()
