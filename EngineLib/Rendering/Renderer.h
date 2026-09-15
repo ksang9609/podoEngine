@@ -49,6 +49,7 @@ public:
 	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
 	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
 
+	// 기존의 ASCII 폰트
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
 	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
 	ID3D11VertexShader* FontVertexShader = nullptr;
@@ -57,6 +58,14 @@ public:
 	ID3D11SamplerState* FontSamplerState = nullptr;
 	ID3D11BlendState* FontBlendState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
+
+	// 유니코드
+	ID3D11ShaderResourceView* UnicodeFontAtlasSRV = nullptr;
+	ID3D11PixelShader* UnicodeFontPixelShader = nullptr;
+	ID3D11Buffer* UnicodeFontVertexBuffer = nullptr;
+	ID3D11Buffer* UnicodeFontIndexBuffer = nullptr;
+	uint32 UnicodeFontVertexCapacity = 0;
+	uint32 UnicodeFontIndexCapacity = 0;
 
 	ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
 	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
@@ -109,6 +118,9 @@ public:
 	
 	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices, ID3D11ShaderResourceView* textureSRV);
 
+	// PNG·MSDF 셰이더·필요 리소스 준비
+	bool InitializeUnicodeFont(const wchar_t* atlasPath, float distanceRange);
+
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
 	
 	void ReleasePrimitiveTextureResources(
@@ -131,9 +143,12 @@ public:
 	void PrepareFont();
 	void PrepareGizmo();
 	void PrepareHighlight();
+	// 셰이더, 입력 레이아웃, 블렌딩 상태 설정
+	void PrepareUnicodeFont();
 
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
+	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
@@ -143,6 +158,7 @@ public:
 	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
+	void RenderUnicodeFontTexture(uint32 indexCount);
 
 	void SwapBuffer();
 

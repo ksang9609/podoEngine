@@ -254,6 +254,7 @@
     <ClCompile Include="Engine\World.cpp" />
     <ClCompile Include="Rendering\Camera.cpp" />
     <ClCompile Include="Rendering\TextMesh.cpp" />
+    <ClCompile Include="Rendering\FontResource.cpp" />
     <ClCompile Include="Rendering\GraphicsManager.cpp" />
     <ClCompile Include="Rendering\Renderer.cpp" />
     <ClCompile Include="Rendering\RenderInfo.cpp" />

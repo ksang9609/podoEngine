@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <vector>
 #include <directxtk/DDSTextureLoader.h>
+#include <directxtk/WICTextureLoader.h>
 
-//#include "WICTextureLoader.h"
 #include "Core/Math/MathUtility.h"
 #include "Editor/Console.h"
 #include "Rendering/Primitives/TexturedPrimitives.h"
@@ -24,8 +24,8 @@ void URenderer::Create(HWND hWindow)
 	{
 		MessageBox(
 			hWindow,
-			L"폰트 공통 자원 생성에 실패했습니다.",
-			L"Font initialization error",
+			L"영어 폰트 공통 자원 생성에 실패했습니다.",
+			L"English Font initialization error",
 			MB_OK | MB_ICONERROR
 		);
 

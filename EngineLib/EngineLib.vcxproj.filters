@@ -186,6 +186,9 @@
     <ClCompile Include="Rendering\TextMesh.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\FontResource.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Container\TArray.h">
