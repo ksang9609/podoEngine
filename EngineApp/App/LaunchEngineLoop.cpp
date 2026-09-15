@@ -221,7 +221,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 			FObjectFactory::ConstructObject<USphereComponent>(
 				FVector(0.0f, 1.5f, 0.0f),
 				FRotator(0.0f, 0.0f, -90.0f),
-				FVector(1.0f, 1.0f, 1.0f));
+				FVector(1.0f, 1.0f, 1.0f),
+				true, 90.0f);
 
 		// 구의 텍스처 버퍼와 텍스처 셰이더 사용
 		sphere->SetUseTexture(true);
