@@ -18,6 +18,12 @@ public:
 	void Initialize(FVector location, FRotator rotation, FVector scale3D,
 		bool bSpin = false, float spinSpeed = 90.0f);
 
+	bool GetSpin() const { return mbSpin; }
+	void SetSpin(bool bSpin) { mbSpin = bSpin; }
+
+	float GetSpinSpeed() const { return mSpinSpeed; }
+	void SetSpinSpeed(float spinSpeed) { mSpinSpeed = spinSpeed; }
+
 private:
 	FSubUVMesh mSubUVMesh;
 

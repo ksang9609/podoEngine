@@ -492,6 +492,32 @@ void FEngineLoop::processEditorCommand(const FSetComponentColorCommand& command)
 	}
 }
 
+void FEngineLoop::processEditorCommand(const FSetSphereComponentSpinCommand& command)
+{
+	USphereComponent* sphereComponent = UObject::GetObjectByInternalIndex<USphereComponent>(command.ObjectID.InternalIndex);
+	if (sphereComponent)
+	{
+		sphereComponent->SetSpin(command.bSpin);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a USphereComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetSphereComponentSpinSpeedCommand& command)
+{
+	USphereComponent* sphereComponent = UObject::GetObjectByInternalIndex<USphereComponent>(command.ObjectID.InternalIndex);
+	if (sphereComponent)
+	{
+		sphereComponent->SetSpinSpeed(command.SpinSpeed);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a USphereComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
 void FEngineLoop::processEditorCommand(const FSetViewModeCommand& command)
 {
 	mGraphicsManager->SetViewMode(command.ViewMode);
