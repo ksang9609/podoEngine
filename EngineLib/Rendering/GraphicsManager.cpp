@@ -290,7 +290,18 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+
+		FVector2 uvScale = renderInfo->SubUVMesh
+			? renderInfo->SubUVMesh->UVScale
+			: FVector2(1.0f, 1.0f);
+		FVector2 uvOffset = renderInfo->SubUVMesh
+			? renderInfo->SubUVMesh->UVOffset
+			: FVector2(0.0f, 0.0f);
+
+		mRenderer->UpdateTextureConstant(
+			worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
+			uvScale, uvOffset
+		);
 		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{

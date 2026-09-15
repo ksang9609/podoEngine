@@ -25,8 +25,6 @@ void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FV
 
 void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 {
-	UBillboardComponent::Update(deltaTime, outRenderInfos);
-
 	if (!mbLooping && mElapsedTime >= 1.0f / mPlayRate)
 	{
 		return; // Stop updating if not looping and the animation has finished
@@ -52,6 +50,8 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRe
 		}
 		mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
 	}
+
+	UBillboardComponent::Update(deltaTime, outRenderInfos);
 }
 
 FRenderInfo UParticleSubUVComponent::makeRenderInfo() const

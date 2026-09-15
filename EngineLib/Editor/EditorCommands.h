@@ -20,6 +20,8 @@ struct FSetSelectedActorCommand { FObjectID ObjectID; };
 
 struct FSetComponentUseTextureCommand { FObjectID ObjectID; bool bUseTexture; };
 struct FSetComponentColorCommand { FObjectID ObjectID; FLinearColor Color; };
+struct FSetSphereComponentSpinCommand { FObjectID ObjectID; bool bSpin; };
+struct FSetSphereComponentSpinSpeedCommand { FObjectID ObjectID; float SpinSpeed; };
 
 /* EditorViewportClient Commands */
 struct FSetViewModeCommand { EViewModeIndex ViewMode; };
@@ -52,6 +54,8 @@ using FEditorCommand = std::variant <
 
 	FSetComponentUseTextureCommand,
 	FSetComponentColorCommand,
+	FSetSphereComponentSpinCommand,
+	FSetSphereComponentSpinSpeedCommand,
 
 	FSetViewModeCommand,
 	FSetShowFlagCommand,
