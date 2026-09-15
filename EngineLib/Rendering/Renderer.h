@@ -37,6 +37,23 @@ struct FUnicodeFontConstants
 	float DistanceRange = 4.0f;
 	float Padding[3] = {};
 };
+enum EDepthStencilStateType
+{
+	DSS_Default,
+	DSS_NoWrite,
+
+	// For hightlighting selected object
+	DSS_StencilMark,
+	DSS_StencilOutline,
+};
+
+enum EBlendStateType
+{
+	BST_Default,
+	BST_AlphaBlend,
+	BST_Additive,
+	BST_NoColorWrite,
+};
 
 class URenderer
 {
@@ -51,10 +68,8 @@ public:
     ID3D11Buffer* ConstantBuffer = nullptr;
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
-	ID3D11DepthStencilState* DepthStencilState = nullptr;	// 깊이 테스트용 상태
-	ID3D11DepthStencilState* StencilMarkState = nullptr;	// 스텐실에 1 마킹용 상태
-	ID3D11DepthStencilState* StencilOutlineState = nullptr; // 아웃라인 그리기용
-	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
+	ID3D11DepthStencilState* DepthStencilState[4] = {};	// 깊이 테스트용 상태
+	ID3D11BlendState* BlendState[4] = {}; // 블렌딩 상태
 
 	// 기존의 ASCII 폰트
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
@@ -63,7 +78,6 @@ public:
 	ID3D11PixelShader* FontPixelShader = nullptr;
 	ID3D11InputLayout* FontInputLayout = nullptr;
 	ID3D11SamplerState* FontSamplerState = nullptr;
-	ID3D11BlendState* FontBlendState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
 
 	// 유니코드 폰트
@@ -82,6 +96,10 @@ public:
 	ID3D11Buffer* SphereIndexBuffer = nullptr;
 	UINT SphereIndexCount = 0;
 
+	/* Particle */
+	ID3D11SamplerState* ParticleSamplerState = nullptr;
+	ID3D11Buffer* ParticleVertexBuffer = nullptr;
+	ID3D11Buffer* ParticleIndexBuffer = nullptr;
 
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -153,11 +171,13 @@ public:
 	void PrepareHighlight();
 	// 셰이더, 입력 레이아웃, 블렌딩 상태 설정
 	void PrepareUnicodeFont();
-
+  void PrepareParticle();
 
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
+
+	void UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
@@ -167,7 +187,8 @@ public:
 	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
-	void RenderUnicodeFontTexture(uint32 indexCount);
+  void RenderUnicodeFontTexture(uint32 indexCount);
+  void RenderParticle(ID3D11ShaderResourceView* texture);
 
 	void SwapBuffer();
 
@@ -204,17 +225,17 @@ private:
 	void createFrameBuffer();
 	void createLineVertexBuffer(uint32 maxVertices);
 	void createLineIndexBuffer(uint32 maxIndices);
+	void createParticleVertexBuffer();
+	void createParticleIndexBuffer();
 	void createRasterizerState();
 	void createConstantBuffer();
 	void createDepthStencilBuffer(UINT width, UINT height);
 
 	void createDepthStencilState();
-	void createStencilMarkState();
-	void createStencilOutlineState();
-	void createNoColorWriteBlendState();
+	void createBlendState();
 	bool createFontAtlasTexture();
 	bool createFontSamplerState();
-	bool createFontBlendState();
+	bool createParticleStates();
 
 	/* Prepare methods for each shader */
 	void prepareSimpleShader();

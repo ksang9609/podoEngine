@@ -44,7 +44,7 @@ public:
 
 	const TArray<UActorComponent*>& GetComponents() const { return mComponents; }
 
-	virtual void Update(TArray<FRenderInfo>* outRenderInfos);
+	virtual void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos);
 	//void Render();
 
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const;

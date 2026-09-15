@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Object/Object.h"
 #include "Actor.h"
@@ -22,7 +22,7 @@ public:
 	const TArray<FRenderInfo>& GetRenderInfos();
 	TArray<AActor*>& GetActors() { return mActors; }
 
-	void Update();
+	void Update(float deltaTime);
 	//void Render();
 	void ClearRenderInfos();
 

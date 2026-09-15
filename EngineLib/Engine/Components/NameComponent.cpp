@@ -45,6 +45,11 @@ void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
 
 	FVector parentTranslation = parentTransform.GetTranslation();
 	FVector worldPosition = parentTranslation + mRelativeLocation;
+
+	if (mParent)
+	{
+		worldPosition.z = mParent->GetWorldBounds().max.z+0.2f;
+	}
 	mComponentToWorld = FTransform(worldPosition, FQuat::Identity(), mRelativeScale3D).MakeMatrix();
 }
 
@@ -55,9 +60,11 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 
 	// Remove primitive flags and add billboardtext flags
 	renderFlags = renderFlags
+		& ~ERenderFlags::RF_Raycastable
 		& ~ERenderFlags::RF_Primitive
 		& ~ERenderFlags::RF_BoundingBox
-		| ERenderFlags::RF_BillboardText;
+		| ERenderFlags::RF_Billboard
+		| ERenderFlags::RF_Text;
 
 	renderInfo.eRenderFlags = renderFlags;
 	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for name text

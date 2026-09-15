@@ -150,6 +150,11 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 	// Object 탐색
 	for (const FRenderInfo& RI : renderInfos)
 	{
+		if (!HasAllRenderFlags(RI.eRenderFlags, ERenderFlags::RF_Raycastable))
+		{
+			continue;
+		}
+
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
 		if (!GetPrimitiveMesh(RI.ePrimitive, vertices, length))
@@ -281,12 +286,8 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 
 	const bool bLeftClicked = !io.WantCaptureMouse && Input.WasPressed(VK_LBUTTON);
 
-	if (!io.WantCaptureMouse)
-	{
-		RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio, bLeftClicked);
-	}
-
-
+	RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio, bLeftClicked);
+	
 	////Editor Click 처리
 	//if (mClickedActor)
 	//{
@@ -294,7 +295,7 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	//}
 
 	// 누른 순간에만 선택을 갱신한다. 떼는 것으로는 선택이 풀리지 않는다.
-	if (!ImGui::GetIO().WantCaptureMouse && Input.WasPressed(VK_LBUTTON))
+	if (bLeftClicked)
 	{
 		AActor* Hit = nullptr;
 

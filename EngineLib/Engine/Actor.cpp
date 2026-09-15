@@ -215,11 +215,11 @@ FQuat AActor::GetRotation() const
 }
 
 
-void AActor::Update(TArray<FRenderInfo>* outRenderInfos)
+void AActor::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 {
 	for (UActorComponent* component : mComponents)
 	{
-		component->Update(outRenderInfos);
+		component->Update(deltaTime, outRenderInfos);
 	}
 }
 

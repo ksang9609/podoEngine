@@ -23,8 +23,7 @@ void URenderer::Create(HWND hWindow)
 	createFrameBuffer();
 
 	if (!createFontAtlasTexture() ||
-		!createFontSamplerState() ||
-		!createFontBlendState())
+		!createFontSamplerState())
 	{
 		MessageBox(
 			hWindow,
@@ -37,15 +36,20 @@ void URenderer::Create(HWND hWindow)
 		releaseFontAtlasTexture();
 	}
 
+	/* Create states */
 	createDepthStencilState();
-	createStencilMarkState();
-	createStencilOutlineState();
-	createNoColorWriteBlendState();
 	createRasterizerState();
+	createBlendState();
+
 	createShader();
 	createConstantBuffer();
 	createLineVertexBuffer(LINE_VERTEX_CAPACITY);
 	createLineIndexBuffer(LINE_INDEX_CAPACITY);
+
+	/* Particle */
+	createParticleStates();
+	createParticleVertexBuffer();
+	createParticleIndexBuffer();
 }
 
 void URenderer::createDeviceAndSwapChain(HWND hWindow)
@@ -192,31 +196,27 @@ bool URenderer::createFontSamplerState()
 	);
 }
 
-bool URenderer::createFontBlendState()
+bool URenderer::createParticleStates()
 {
 	if (!Device)
 		return false;
 
-	if (FontBlendState)
+	if (ParticleSamplerState)
 	{
-		FontBlendState->Release();
-		FontBlendState = nullptr;
+		ParticleSamplerState->Release();
+		ParticleSamplerState = nullptr;
 	}
 
-	D3D11_BLEND_DESC desc = {};
-	auto& rt = desc.RenderTarget[0];
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	rt.BlendEnable = TRUE;
-	rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	rt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	rt.BlendOp = D3D11_BLEND_OP_ADD;
-
-	rt.SrcBlendAlpha = D3D11_BLEND_ONE;
-	rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-	rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	return SUCCEEDED(Device->CreateBlendState(&desc, &FontBlendState));
+	return SUCCEEDED(Device->CreateSamplerState(&samplerDesc, &ParticleSamplerState));
 }
 
 // 인스턴스 사용하여 렌더링(텍스쳐 X)
@@ -469,6 +469,29 @@ void URenderer::createLineIndexBuffer(uint32 maxIndices)
 	}
 }
 
+void URenderer::createParticleVertexBuffer()
+{
+	D3D11_BUFFER_DESC vertexbufferdesc = {};
+	// Assume particle is a quad
+	vertexbufferdesc.ByteWidth = 4 * sizeof(FVertexTextured);
+	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	Device->CreateBuffer(&vertexbufferdesc, nullptr, &ParticleVertexBuffer);
+}
+
+void URenderer::createParticleIndexBuffer()
+{
+	D3D11_BUFFER_DESC indexbufferdesc = {};
+	indexbufferdesc.ByteWidth = 6 * sizeof(uint32);
+	indexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	Device->CreateBuffer(&indexbufferdesc, nullptr, &ParticleIndexBuffer);
+}
+
 void URenderer::releaseLineIndexBuffer()
 {
 	if (LineIndexBuffer)
@@ -543,6 +566,18 @@ void URenderer::Release()
 	{
 		InstanceBuffer->Release();
 		InstanceBuffer = nullptr;
+	}
+
+	/* Particle */
+	if (ParticleVertexBuffer)
+	{
+		ParticleVertexBuffer->Release();
+		ParticleVertexBuffer = nullptr;
+	}
+	if (ParticleIndexBuffer)
+	{
+		ParticleIndexBuffer->Release();
+		ParticleIndexBuffer = nullptr;
 	}
 }
 
@@ -936,9 +971,6 @@ void URenderer::Prepare(bool bWireFrame)
 
 	//세 번째 인자에 nullptr 대신 DSV를 넘긴다
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
-	//깊이 테스트 규칙 적용
-	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareSimplePrimitive()
@@ -948,7 +980,9 @@ void URenderer::PrepareSimplePrimitive()
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareTexturedPrimitive()
@@ -958,7 +992,9 @@ void URenderer::PrepareTexturedPrimitive()
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareLine()
@@ -968,7 +1004,9 @@ void URenderer::PrepareLine()
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareFont()
@@ -979,7 +1017,9 @@ void URenderer::PrepareFont()
 
 	// Always render solid
 	DeviceContext->RSSetState(RasterizerState[0]);
-	DeviceContext->OMSetBlendState(FontBlendState, nullptr, 0xffffffff);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Additive], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareUnicodeFont()
@@ -1002,7 +1042,22 @@ void URenderer::PrepareGizmo()
 
 	// Always render solid
 	DeviceContext->RSSetState(RasterizerState[0]);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
+}
+
+void URenderer::PrepareParticle()
+{
+	prepareTextureShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Always render solid
+	DeviceContext->RSSetState(RasterizerState[0]);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_NoWrite], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Additive], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareHighlight()
@@ -1013,7 +1068,10 @@ void URenderer::PrepareHighlight()
 
 	// Always render solid
 	DeviceContext->RSSetState(RasterizerState[0]);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
+	// Set depth stencil state in the RenderHighlight method
+	//DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareSimpleInstanced()
@@ -1023,7 +1081,9 @@ void URenderer::PrepareSimpleInstanced()
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::prepareInstancedShader()
@@ -1226,6 +1286,24 @@ void URenderer::RenderUnicodeFontTexture(uint32 indexCount)
 	// 이미 인덱스 개수를 받으므로 6을 곱하지 않음
 	DeviceContext->DrawIndexed(indexCount, 0, 0);
 }
+void URenderer::RenderParticle(ID3D11ShaderResourceView* texture)
+{
+	if (!ParticleVertexBuffer || texture == nullptr) return;
+	
+	UINT offset = 0;
+
+	// Bind the vertex buffer
+	DeviceContext->IASetVertexBuffers(0, 1, &ParticleVertexBuffer, &StrideTextured, &offset);
+
+	// Bind the texture resource
+	DeviceContext->PSSetShaderResources(0, 1, &texture);
+	DeviceContext->PSSetSamplers(0, 1, &ParticleSamplerState);
+
+	// Bind the index buffer
+	DeviceContext->IASetIndexBuffer(ParticleIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	DeviceContext->DrawIndexed(6, 0, 0);
+}
 
 // 쌓아둔 선분 전체를 한 번의 Draw로 그린다.
 // 토폴로지를 바꾸므로 반드시 이 함수 안에서 되돌린다. 안 그러면 뒤에 그리는 것들이 전부 깨진다.
@@ -1277,19 +1355,16 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 	// (a) 스텐실에 1 마킹. 색은 쓰지 않으므로 화면 변화 없음.
 	//     다른 오브젝트에 가려진 부분도 반드시 마킹해야 한다. 여기서 빠지면
 	//     (b)의 != 1 조건을 통과해 버려서 겹친 영역 전체가 단색으로 칠해진다.
-	DeviceContext->OMSetBlendState(NoColorWriteBlendState, nullptr, 0xffffffff);
-	DeviceContext->OMSetDepthStencilState(StencilMarkState, 1);
+	DeviceContext->OMSetBlendState(BlendState[BST_NoColorWrite], nullptr, 0xffffffff);
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_StencilMark], 1);
 	UpdateConstant(originalMatrix, mViewProjectionMatrix);
 	RenderSimplePrimitive(pBuffer, Num);
 
 	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-	DeviceContext->OMSetDepthStencilState(StencilOutlineState, 1);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_StencilOutline], 1);
 	UpdateConstant(OutlineMatrix, mViewProjectionMatrix, FVector4(1.f, 0.6f, 0.f, 1.f));
 	RenderSimplePrimitive(pBuffer, Num);
-
-	// (c) 원상복구
-	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 }
 
 
@@ -1341,71 +1416,118 @@ void URenderer::createDepthStencilBuffer(UINT width, UINT height)
 
 void URenderer::createDepthStencilState()
 {
-	D3D11_DEPTH_STENCIL_DESC desc = {};
-	desc.DepthEnable = TRUE;							 // 깊이 테스트 켜기
-	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;    // 통과한 픽셀의 z를 기록
-	desc.DepthFunc = D3D11_COMPARISON_LESS;				 // 더 가까우면(작으면) 통과
-	desc.StencilEnable = FALSE;
+	D3D11_DEPTH_STENCIL_DESC desc[4] = {};
 
-	Device->CreateDepthStencilState(&desc, &DepthStencilState);
+	// Default Depth Stencil State
+	desc[DSS_Default].DepthEnable = TRUE;							 // 깊이 테스트 켜기
+	desc[DSS_Default].DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;    // 통과한 픽셀의 z를 기록
+	desc[DSS_Default].DepthFunc = D3D11_COMPARISON_LESS;				 // 더 가까우면(작으면) 통과
+	desc[DSS_Default].StencilEnable = FALSE;
+
+	// No writing Depth Stencil State
+	desc[DSS_NoWrite].DepthEnable = TRUE;							 // 깊이 테스트 켜기
+	desc[DSS_NoWrite].DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;    // 깊이는 건드리지 않는다
+	desc[DSS_NoWrite].DepthFunc = D3D11_COMPARISON_LESS;				 // 더 가까우면(작으면) 통과
+	desc[DSS_NoWrite].StencilEnable = FALSE;
+
+	// Stencil Mark State
+	desc[DSS_StencilMark].DepthEnable = FALSE;						 // 깊이 테스트 끄기
+	desc[DSS_StencilMark].DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 깊이는 건드리지 않는다
+	desc[DSS_StencilMark].DepthFunc = D3D11_COMPARISON_ALWAYS;		 // 항상 통과
+
+	desc[DSS_StencilMark].StencilEnable = TRUE;						 // 스텐실 사용
+	desc[DSS_StencilMark].StencilReadMask = 0xFF;
+	desc[DSS_StencilMark].StencilWriteMask = 0xFF;
+
+	// 스텐실 마킹: 모든 픽셀에 StencilRef를 기록
+	desc[DSS_StencilMark].FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS; // 항상 통과
+	desc[DSS_StencilMark].FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE; // 통과하면 스텐실에 StencilRef 기록
+	desc[DSS_StencilMark].FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE; // 깊이 테스트 실패 시에도 기록
+	desc[DSS_StencilMark].FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP; // 스텐실 테스트 실패 시 기록하지 않음
+	desc[DSS_StencilMark].BackFace = desc[DSS_StencilMark].FrontFace; // 뒷면도 동일
+
+	// Stencil Outline State
+	desc[DSS_StencilOutline].DepthEnable = FALSE;						 // 깊이 테스트 끄기
+	desc[DSS_StencilOutline].DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 깊이는 건드리지 않는다
+
+	desc[DSS_StencilOutline].StencilEnable = TRUE;						 // 스텐실 사용
+	desc[DSS_StencilOutline].StencilReadMask = 0xFF;
+	desc[DSS_StencilOutline].StencilWriteMask = 0x00;					 // 읽기만, 쓰지 않는다
+
+	// 스텐실 아웃라인: 마킹된 곳(=원본 실루엣)은 통과 못 함 -> 바깥 테두리만 남는다
+	desc[DSS_StencilOutline].FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL; // 스텐실 값이 StencilRef와 다르면 통과
+	desc[DSS_StencilOutline].FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP; // 통과해도 스텐실에 기록하지 않음
+	desc[DSS_StencilOutline].FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP; // 깊이 테스트 실패 시에도 기록하지 않음
+	desc[DSS_StencilOutline].FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP; // 스텐실 테스트 실패 시 기록하지 않음
+	desc[DSS_StencilOutline].BackFace = desc[DSS_StencilOutline].FrontFace; // 뒷면도 동일
+
+
+	Device->CreateDepthStencilState(&desc[DSS_Default], &DepthStencilState[DSS_Default]);
+	Device->CreateDepthStencilState(&desc[DSS_NoWrite], &DepthStencilState[DSS_NoWrite]);
+	Device->CreateDepthStencilState(&desc[DSS_StencilMark], &DepthStencilState[DSS_StencilMark]);
+	Device->CreateDepthStencilState(&desc[DSS_StencilOutline], &DepthStencilState[DSS_StencilOutline]);
 }
 
-void URenderer::createStencilMarkState()
+void URenderer::createBlendState()
 {
-	D3D11_DEPTH_STENCIL_DESC desc = {};
-	// 아웃라인 패스가 깊이를 무시하므로 마킹도 깊이를 무시해야 짝이 맞는다.
-	// 가려진 픽셀까지 전부 마킹해야 실루엣 내부가 비지 않는다.
-	desc.DepthEnable = FALSE;
-	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;  // 깊이는 건드리지 않는다
-	desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+	D3D11_BLEND_DESC desc[4] = {};
 
-	desc.StencilEnable = TRUE;							// 스텐실 사용
-	desc.StencilReadMask = 0xFF;
-	desc.StencilWriteMask = 0xFF;
+	// Default Blend State (No Blending)
+	// Do nothing -> nullptr
 
-	// 실루엣에 덮이는 모든 픽셀에 StencilRef를 기록
-	desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-	desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
-	desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	desc.BackFace = desc.FrontFace;
+	// Standard Alpha Blending
+	{
+		auto& rt = desc[BST_AlphaBlend].RenderTarget[0];
+		rt.BlendEnable = TRUE;
 
-	Device->CreateDepthStencilState(&desc, &StencilMarkState);
-}
+		// RGB = Src.rgb * src.a + Dest.rgb * (1 - src.a)
+		rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		rt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		rt.BlendOp = D3D11_BLEND_OP_ADD;
 
-void URenderer::createStencilOutlineState()
-{
-	D3D11_DEPTH_STENCIL_DESC desc = {};
-	desc.DepthEnable = FALSE;							// 항상 위에 그린다
-	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		// Alpha = Src.a + Dest.a * (1 - src.a)
+		rt.SrcBlendAlpha = D3D11_BLEND_ONE;
+		rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	desc.StencilEnable = TRUE;
-	desc.StencilReadMask = 0xFF;
-	desc.StencilWriteMask = 0x00;						// 읽기만, 쓰지 않는다
+		Device->CreateBlendState(&desc[BST_AlphaBlend], &BlendState[BST_AlphaBlend]);
+	}
 
-	// 마킹된 곳(=원본 실루엣)은 통과 못 함 -> 바깥 테두리만 남는다
-	desc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
-	desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	desc.BackFace = desc.FrontFace;
+	// Additive Blending
+	{
+		auto& rt = desc[BST_Additive].RenderTarget[0];
+		rt.BlendEnable = TRUE;
 
-	Device->CreateDepthStencilState(&desc, &StencilOutlineState);
-}
+		// RGB = Src.rgb * src.a + Dest.rgb * 1
+		rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		rt.DestBlend = D3D11_BLEND_ONE;
+		rt.BlendOp = D3D11_BLEND_OP_ADD;
 
-// 렌더타겟에 색을 전혀 쓰지 않는 상태. 스텐실 마킹 전용 패스에 쓴다
-void URenderer::createNoColorWriteBlendState()
-{
-	D3D11_BLEND_DESC desc = {};
-	desc.RenderTarget[0].BlendEnable = FALSE;
-	desc.RenderTarget[0].RenderTargetWriteMask = 0;
+		// Alpha = Src.a + Dest.a * (1 - src.a)
+		rt.SrcBlendAlpha = D3D11_BLEND_ONE;
+		rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	Device->CreateBlendState(&desc, &NoColorWriteBlendState);
+		Device->CreateBlendState(&desc[BST_Additive], &BlendState[BST_Additive]);
+	}
+
+	// No Color Write (Stencil Marking)
+	{
+		auto& rt = desc[BST_NoColorWrite].RenderTarget[0];
+		rt.BlendEnable = FALSE;
+		rt.RenderTargetWriteMask = 0;
+		Device->CreateBlendState(&desc[BST_NoColorWrite], &BlendState[BST_NoColorWrite]);
+	}
 }
 
 void URenderer::releaseBlendState()
 {
-	if (NoColorWriteBlendState) { NoColorWriteBlendState->Release(); NoColorWriteBlendState = nullptr; }
+	for (auto& state : BlendState)
+	{
+		if (state) { state->Release(); state = nullptr; }
+	}
 }
 
 void URenderer::releaseDepthStencilBuffer()
@@ -1416,9 +1538,10 @@ void URenderer::releaseDepthStencilBuffer()
 
 void URenderer::releaseDepthStencilState()
 {
-	if (DepthStencilState) { DepthStencilState->Release();  DepthStencilState = nullptr; }
-	if (StencilMarkState) { StencilMarkState->Release();  StencilMarkState = nullptr; }
-	if (StencilOutlineState) { StencilOutlineState->Release();  StencilOutlineState = nullptr; }
+	for (auto& state : DepthStencilState)
+	{
+		if (state) { state->Release(); state = nullptr; }
+	}
 }
 
 void URenderer::UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint)
@@ -1583,6 +1706,25 @@ bool URenderer::UpdateUnicodeFontBuffer(const FTextMesh& textMesh)
 }
 
 
+
+void URenderer::UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices)
+{
+	assert(ParticleVertexBuffer || BlendState[BST_Additive]);
+
+	const uint32 numVertices = vertices.Num();
+
+	// Map the vertex buffer and copy the vertex data
+	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+	DeviceContext->Map(ParticleVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, vertices.GetData(), numVertices * sizeof(FVertexTextured));
+	DeviceContext->Unmap(ParticleVertexBuffer, 0);
+
+	// Map the index buffer and copy the index data
+	D3D11_MAPPED_SUBRESOURCE mappedIndexResource = {};
+	DeviceContext->Map(ParticleIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedIndexResource);
+	memcpy(mappedIndexResource.pData, indices.GetData(), indices.Num() * sizeof(uint32));
+	DeviceContext->Unmap(ParticleIndexBuffer, 0);
+}
 
 void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight)
 {
@@ -1777,12 +1919,6 @@ void URenderer::releaseFontTexture()
 	{
 		FontSamplerState->Release();
 		FontSamplerState = nullptr;
-	}
-
-	if (FontBlendState)
-	{
-		FontBlendState->Release();
-		FontBlendState = nullptr;
 	}
 }
 

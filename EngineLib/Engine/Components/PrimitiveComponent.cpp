@@ -80,7 +80,7 @@ void UPrimitiveComponent::DeserializeClass(const json::JSON& inJson)
 	mLocalBounds = GetPrimitiveLocalBounds(mePrimitive);
 }
 
-void UPrimitiveComponent::Update(TArray<FRenderInfo>* outRenderInfos)
+void UPrimitiveComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 {
 	// Todo: Update coordinates here
 	{
@@ -99,9 +99,14 @@ void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) co
 
 FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 {
-	ERenderFlags renderFlags = mbUseTexture
-		? ERenderFlags::RF_Texture | ERenderFlags::RF_Primitive
-		: ERenderFlags::RF_Primitive;
+	ERenderFlags renderFlags =
+		ERenderFlags::RF_Raycastable |
+		ERenderFlags::RF_Primitive;
+
+	if (mbUseTexture)
+	{
+		renderFlags = renderFlags | ERenderFlags::RF_Texture;
+	}
 
 	if (mbShowBoundingBox)
 	{
@@ -199,3 +204,9 @@ static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive)
 	static const FBoundingBox emptyBounds{};
 	return emptyBounds;
 }
+
+FBoundingBox UPrimitiveComponent::GetWorldBounds() const
+{
+	return TransformBoundingBox(mLocalBounds, GetTransformMatrix());
+}
+

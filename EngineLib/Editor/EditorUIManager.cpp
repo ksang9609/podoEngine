@@ -97,6 +97,13 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 		}
 		mGuiInputField.SpawnCount = spawnCount;
 	}
+	if (ImGui::Button("Spawn Particle"))
+	{
+		outCommands.Emplace(FSpawnParticleCommand{});
+
+
+
+	}
 
 	/* Scene Control */
 	ImGui::SeparatorText("Scene Control");
@@ -110,6 +117,7 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 		outCommands.Emplace(FNewSceneCommand{});
 		strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), "Default");
 	}
+	ImGui::SameLine();
 	if (ImGui::Button("Save scene"))
 	{
 		const FString selectedFile = saveSceneFileDialog();
@@ -126,6 +134,7 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 				sceneName.CStr());
 		}
 	}
+	ImGui::SameLine();
 	if (ImGui::Button("Load scene"))
 	{
 		const FString selectedFile = openSceneFileDialog();

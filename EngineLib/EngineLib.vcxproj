@@ -141,6 +141,7 @@
     <Image Include="Assets\Textures\CubeTextureSample.dds" />
     <Image Include="Assets\Textures\Dice.dds" />
     <Image Include="Assets\Textures\EarthTexture.dds" />
+    <Image Include="Assets\Textures\Explosion.dds" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\SceneData\Default.Scene" />
@@ -189,6 +190,7 @@
     <ClInclude Include="Engine\Components\BillboardComponent.h" />
     <ClInclude Include="Engine\Components\CubeComponent.h" />
     <ClInclude Include="Engine\Components\NameComponent.h" />
+    <ClInclude Include="Engine\Components\ParticleSubUVComponent.h" />
     <ClInclude Include="Engine\Components\PrimitiveComponent.h" />
     <ClInclude Include="Engine\Components\SceneComponent.h" />
     <ClInclude Include="Engine\Components\SphereComponent.h" />
@@ -200,6 +202,7 @@
     <ClInclude Include="Platform\WindowApplication.h" />
     <ClInclude Include="Rendering\Camera.h" />
     <ClInclude Include="Rendering\FontResource.h" />
+    <ClInclude Include="Rendering\SubUVMesh.h" />
     <ClInclude Include="Rendering\TextMesh.h" />
     <ClInclude Include="Rendering\GraphicsManager.h" />
     <ClInclude Include="Rendering\Primitives\Circle.h" />
@@ -245,6 +248,7 @@
     <ClCompile Include="Engine\Components\BillboardComponent.cpp" />
     <ClCompile Include="Engine\Components\CubeComponent.cpp" />
     <ClCompile Include="Engine\Components\NameComponent.cpp" />
+    <ClCompile Include="Engine\Components\ParticleSubUVComponent.cpp" />
     <ClCompile Include="Engine\Components\PrimitiveComponent.cpp" />
     <ClCompile Include="Engine\Components\SceneComponent.cpp" />
     <ClCompile Include="Engine\Components\SphereComponent.cpp" />
@@ -253,6 +257,7 @@
     <ClCompile Include="Engine\Serialization\SceneData.cpp" />
     <ClCompile Include="Engine\World.cpp" />
     <ClCompile Include="Rendering\Camera.cpp" />
+    <ClCompile Include="Rendering\SubUVMesh.cpp" />
     <ClCompile Include="Rendering\TextMesh.cpp" />
     <ClCompile Include="Rendering\FontResource.cpp" />
     <ClCompile Include="Rendering\GraphicsManager.cpp" />

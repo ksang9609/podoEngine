@@ -20,17 +20,22 @@ public:
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
 
+	virtual FBoundingBox GetWorldBounds() const override;
+
 	//virtual void Render();
-	void Update(TArray<FRenderInfo>* outRenderInfos) override final;
+	void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const override final;
 	void SetUseTexture(bool value) { mbUseTexture = value; }
 	bool GetUseTexture() const { return mbUseTexture; }
+
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const;
 	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
 	FBoundingBox mLocalBounds{};
+	FBoundingBox mWocalBounds{};
+
 	bool mbUseTexture = false;
 	bool mbShowBoundingBox = true;
 };
