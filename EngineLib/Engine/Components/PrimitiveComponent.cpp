@@ -46,6 +46,7 @@ void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FR
 
 	mePrimitive = ePrimitive;
 	mLocalBounds = GetPrimitiveLocalBounds(ePrimitive);
+	mColor = FLinearColor(1.f, 1.f, 1.f, 0.f);
 }
 
 void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D, bool bUseTexture)
@@ -54,6 +55,9 @@ void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FR
 	mePrimitive = ePrimitive;
 	mLocalBounds = GetPrimitiveLocalBounds(ePrimitive);
 	mbUseTexture = bUseTexture;
+	mColor = bUseTexture
+		? FLinearColor(1.f, 1.f, 1.f, 1.f)
+		: FLinearColor(1.f, 1.f, 1.f, 0.f);
 }
 
 UPrimitiveComponent::~UPrimitiveComponent()
