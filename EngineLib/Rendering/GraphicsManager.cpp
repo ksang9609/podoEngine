@@ -384,15 +384,53 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 {
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
-	mRenderer->PrepareFont();
+	//mRenderer->PrepareFont();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		mRenderer->UpdateFontBuffer(
+		const FTextMesh* textMesh = renderInfo->Textmesh;
+
+		if (textMesh == nullptr || textMesh->Indices.Num() == 0)
+		{
+			continue;
+		}
+
+		FMatrix worldTransform =
+			renderInfo->GetTransformMatrix(camera.Rotation);
+
+		mRenderer->UpdateConstant(
+			worldTransform,
+			mViewUnifiedProjectionMatrix,
+			renderInfo->Color);
+
+		if (textMesh->FontRenderMode == EFontRenderMode::MSDF)
+		{
+			mRenderer->PrepareUnicodeFont();
+
+			if (!mRenderer->UpdateUnicodeFontBuffer(*textMesh))
+			{
+				continue;
+			}
+
+			mRenderer->RenderUnicodeFontTexture(textMesh->Indices.Num());
+		}
+		// 기존 ASCII 폰트 방식
+		else
+		{
+			mRenderer->PrepareFont();
+
+			mRenderer->UpdateFontBuffer(
+				renderInfo->Textmesh->Vertices, renderInfo->Textmesh->Indices,
+				renderInfo->Textmesh->TextNum);
+
+			mRenderer->RenderFontTexture(renderInfo->Textmesh->TextNum);
+		}
+
+		/*FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);*/
+		/*mRenderer->UpdateFontBuffer(
 			renderInfo->Textmesh->Vertices, renderInfo->Textmesh->Indices,
 			renderInfo->Textmesh->TextNum);
-		mRenderer->RenderFontTexture(renderInfo->Textmesh->TextNum);
+		mRenderer->RenderFontTexture(renderInfo->Textmesh->TextNum);*/
 	}
 }
 

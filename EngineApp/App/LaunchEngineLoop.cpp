@@ -84,6 +84,14 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	/* Resource Registration */
 	mDefaultFontResource = new FFontResource();
+
+	const bool jsonLoaded = mDefaultFontResource->LoadUnicodeAtlas(
+		FString("Assets/Fonts/KoreanFullAtlas.json"));
+
+	mGraphicsManager->GetRenderer()->InitializeUnicodeFont(
+			L"Assets/Fonts/KoreanFullAtlas.png",
+		mDefaultFontResource->GetDistanceRange());
+
 	FObjectFactory::Initialize(*mDefaultFontResource);
 
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));

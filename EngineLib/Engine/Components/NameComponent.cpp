@@ -34,7 +34,8 @@ void UNameComponent::DeserializeClass(const json::JSON& inJson)
 	mNameText = FString(propertiesJson.at("mNameText").ToString());
 	mFontResourceRef = FObjectFactory::GetDefaultFontResource();
 
-	mTextMesh.SetText(mNameText, *mFontResourceRef);
+	//mTextMesh.SetText(mNameText, *mFontResourceRef);
+	mTextMesh.SetUnicodeText(mNameText, *mFontResourceRef, 0.2f);
 }
 
 void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
@@ -82,6 +83,17 @@ void UNameComponent::SetNameText(const FString& nameText)
 //	mTextMesh.SetText(mNameText, *mFontResourceRef);
 //}
 
+void UNameComponent::SetUnicodeNameText(const FString& nameText)
+{
+	assert(mOwner);
+
+	FString text = FString(std::format("Name: {}, UUID: {}", nameText, mOwner->UUID));
+	mNameText = text;
+
+	// 내부에서 FontRenderMode를 MSDF로 설정
+	mTextMesh.SetUnicodeText(mNameText,	*mFontResourceRef, 0.2f);
+}
+
 bool UNameComponent::AttachTo(USceneComponent& parent)
 {
 	if (!UBillboardComponent::AttachTo(parent))
@@ -89,7 +101,8 @@ bool UNameComponent::AttachTo(USceneComponent& parent)
 		return false;
 	}
 
-	SetNameText(mOwner->GetName().ToString());
+	//SetNameText(mOwner->GetName().ToString());
+	SetUnicodeNameText(mOwner->GetName().ToString());
 	return true;
 }
 

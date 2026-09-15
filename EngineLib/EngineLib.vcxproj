@@ -268,6 +268,9 @@
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="ShaderFontMSDF.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>

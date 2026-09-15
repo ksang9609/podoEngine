@@ -230,6 +230,8 @@ void FTextMesh::generateUnicodeMesh(
 				// 이미 범위가 있으므로 새 글자를 포함하도록 확장한다.
 				minZ = FMath::Min(minZ, bottom);
 				maxZ = FMath::Max(maxZ, top);
+
+				// ? x 방향은?
 			}
 		}
 

@@ -98,6 +98,8 @@ bool FFontResource::LoadUnicodeAtlas(const FString& jsonPath)
 		// 현재 한글 atlas 3468.0f
         const float atlasWidth = ReadNumber(atlas, "width");
         const float atlasHeight = ReadNumber(atlas, "height");
+
+		const float distanceRange = ReadNumber(atlas, "distanceRange");
 		// 나중에 texture.Left / atlasWidth를 하므로 0은 제외
         if (atlasWidth <= 0.0f || atlasHeight <= 0.0f)
             return false;
@@ -171,6 +173,7 @@ bool FFontResource::LoadUnicodeAtlas(const FString& jsonPath)
 
         // 성공한 맵으로 교체.
         mUnicodeCharacterMap = std::move(characters);
+		mDistanceRange = distanceRange;
         return true;
     }
     catch (const std::exception&)

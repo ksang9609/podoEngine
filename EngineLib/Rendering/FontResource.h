@@ -68,7 +68,13 @@ public:
 		}
 	}
 
+	float GetDistanceRange() const
+	{
+		return mDistanceRange;
+	}
+
 private:
 	TMap<char, FCharacterInfo> mCharacterMap;
 	TMap<uint32, FCharacterInfo> mUnicodeCharacterMap;
+	float mDistanceRange = 4.0f;
 };

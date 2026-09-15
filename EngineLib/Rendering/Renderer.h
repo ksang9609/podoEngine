@@ -31,6 +31,13 @@ struct FInstanceData
 	FVector4 Tint;
 };
 
+// HLSL의 b1에 전달할 데이터
+struct FUnicodeFontConstants
+{
+	float DistanceRange = 4.0f;
+	float Padding[3] = {};
+};
+
 class URenderer
 {
 public:
@@ -59,11 +66,12 @@ public:
 	ID3D11BlendState* FontBlendState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
 
-	// 유니코드
+	// 유니코드 폰트
 	ID3D11ShaderResourceView* UnicodeFontAtlasSRV = nullptr;
 	ID3D11PixelShader* UnicodeFontPixelShader = nullptr;
 	ID3D11Buffer* UnicodeFontVertexBuffer = nullptr;
 	ID3D11Buffer* UnicodeFontIndexBuffer = nullptr;
+	ID3D11Buffer* UnicodeFontConstantBuffer = nullptr;
 	uint32 UnicodeFontVertexCapacity = 0;
 	uint32 UnicodeFontIndexCapacity = 0;
 
@@ -146,6 +154,7 @@ public:
 	// 셰이더, 입력 레이아웃, 블렌딩 상태 설정
 	void PrepareUnicodeFont();
 
+
 	void UpdateConstant(FMatrix world, FMatrix viewProjection, FVector4 tint = FVector4(0, 0, 0, 0));
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
@@ -174,6 +183,8 @@ private:
 	bool ensureFontIndexBuffer(UINT fontCount);
 	UINT mTextVertexCapacity = 0; // 저장할 수 있는 최대 정점 수
 	UINT mTextIndexCapacity = 0;
+
+	bool ensureUnicodeFontIndexBuffer(UINT quadCount);
 
 
 	ID3D11Buffer* InstanceBuffer = nullptr;
@@ -211,6 +222,7 @@ private:
 	void prepareTextureShader();
 	void prepareLineShader();
 	void prepareFontShader();
+	void prepareUnicodeFontShader();
 
 	/* Release methods for all resources */
 	void releaseDeviceAndSwapChain();
@@ -226,5 +238,7 @@ private:
 	void releaseBlendState();
 	void releaseFontTexture();
 	void releaseFontAtlasTexture();
+	void releaseUnicodeFontAtlasTexture();
+	void releaseUnicodeFontBuffers();
 };
 
