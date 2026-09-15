@@ -17,6 +17,11 @@ public:
 
 	virtual void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
 
+	void SerializeClass(json::JSON& outJson) const override;
+	void DeserializeClass(const json::JSON& inJson) override;
+
+	static std::span<const FPropertyInfo> GetDeclaredProperties();
+
 private:
 	FSubUVMesh mSubUVMesh;
 

@@ -5,7 +5,7 @@
 
 #include "Engine/Actor.h"
 
-IMPLEMENT_CLASS(UNameComponent, UBillboardComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UNameComponent, UBillboardComponent);
 
 void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOffset, const FFontResource& fontResourceRef)
 {
@@ -18,22 +18,29 @@ void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOf
 void UNameComponent::SerializeClass(json::JSON& outJson) const
 {
 	UBillboardComponent::SerializeClass(outJson);
-	outJson["Properties"]["mNameText"] = mNameText.CStr();
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Serialize(
+			Property,
+			this,
+			outJson["Properties"]);
+	}
 }
 
 void UNameComponent::DeserializeClass(const json::JSON& inJson)
 {
 	UBillboardComponent::DeserializeClass(inJson);
-
 	const json::JSON& propertiesJson = inJson.at("Properties");
-	if (!propertiesJson.hasKey("mNameText") || propertiesJson.at("mNameText").JSONType() != json::JSON::Class::String)
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
 	{
-		throw std::runtime_error("UNameComponent: mNameText requires a string");
+		Property.Deserialize(
+			Property,
+			this,
+			propertiesJson);
 	}
-
-	mNameText = FString(propertiesJson.at("mNameText").ToString());
 	mFontResourceRef = FObjectFactory::GetDefaultFontResource();
-
 	mTextMesh.SetText(mNameText, *mFontResourceRef);
 }
 
@@ -98,3 +105,16 @@ UNameComponent::~UNameComponent()
 {
 }
 
+std::span<const FPropertyInfo> UNameComponent::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		MakeProperty<
+			UNameComponent,
+			FString,
+			&UNameComponent::mNameText>(
+				"mNameText")
+	};
+
+	return Properties;
+}

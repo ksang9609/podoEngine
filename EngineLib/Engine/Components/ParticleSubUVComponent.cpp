@@ -1,6 +1,6 @@
 ﻿#include "ParticleSubUVComponent.h"
 
-IMPLEMENT_CLASS(UParticleSubUVComponent, UBillboardComponent);
+IMPLEMENT_CLASS_WITH_PROPERTIES(UParticleSubUVComponent, UBillboardComponent);
 
 void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
 	uint32 numRows, uint32 numCols,
@@ -20,6 +20,37 @@ void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FV
 	// Call the base class Initialize
 	UBillboardComponent::Initialize(location, rotation, scale3D);
 }
+
+void UParticleSubUVComponent::SerializeClass(json::JSON& outJson) const
+{
+	UBillboardComponent::SerializeClass(outJson);
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Serialize(
+			Property,
+			this,
+			outJson["Properties"]);
+	}
+}
+
+void UParticleSubUVComponent::DeserializeClass(const json::JSON& inJson)
+{
+	UBillboardComponent::DeserializeClass(inJson);
+	const json::JSON& propertiesJson = inJson.at("Properties");
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Deserialize(
+			Property,
+			this,
+			propertiesJson);
+	}
+	mElapsedTime = 0.0f;
+	mCurrentFrameIndex = 0;
+	mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0);
+}
+
 
 void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 {
@@ -62,4 +93,42 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 		ERenderFlags::RF_Particle;
 	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for the particle
 	return renderInfo;
+}
+
+std::span<const FPropertyInfo> UParticleSubUVComponent::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		MakeProperty<
+			UParticleSubUVComponent,
+			uint32,
+			&UParticleSubUVComponent::mNumRows>(
+				"mNumRows"),
+
+		MakeProperty<
+			UParticleSubUVComponent,
+			uint32,
+			&UParticleSubUVComponent::mNumCols>(
+				"mNumCols"),
+
+		MakeProperty<
+			UParticleSubUVComponent,
+			bool,
+			&UParticleSubUVComponent::mbLooping>(
+				"mbLooping"),
+
+		MakeProperty<
+			UParticleSubUVComponent,
+			float,
+			&UParticleSubUVComponent::mPlayRate>(
+				"mPlayRate"),
+
+		MakeProperty<
+			UParticleSubUVComponent,
+			float,
+			&UParticleSubUVComponent::mFrameDuration>(
+				"mFrameDuration"),
+	};
+
+	return Properties;
 }

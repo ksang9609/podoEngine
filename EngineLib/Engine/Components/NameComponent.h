@@ -25,6 +25,8 @@ public:
 	void SerializeClass(json::JSON& outJson) const override;
 	void DeserializeClass(const json::JSON& inJson) override;
 
+	static std::span<const FPropertyInfo> GetDeclaredProperties();
+
 protected:
 	// NameComponent always located over the actor's world position,
 	// so we reuse mRelativeLocation as a world position offset from the actor's world position.
