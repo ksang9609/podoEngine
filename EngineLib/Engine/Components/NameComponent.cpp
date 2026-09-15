@@ -44,6 +44,11 @@ void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
 
 	FVector parentTranslation = parentTransform.GetTranslation();
 	FVector worldPosition = parentTranslation + mRelativeLocation;
+
+	if (mParent)
+	{
+		worldPosition.z = mParent->GetWorldBounds().max.z+0.2f;
+	}
 	mComponentToWorld = FTransform(worldPosition, FQuat::Identity(), mRelativeScale3D).MakeMatrix();
 }
 

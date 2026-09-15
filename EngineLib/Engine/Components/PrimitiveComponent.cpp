@@ -199,3 +199,9 @@ static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive)
 	static const FBoundingBox emptyBounds{};
 	return emptyBounds;
 }
+
+FBoundingBox UPrimitiveComponent::GetWorldBounds() const
+{
+	return TransformBoundingBox(mLocalBounds, GetTransformMatrix());
+}
+
