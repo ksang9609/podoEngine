@@ -470,6 +470,19 @@ void FEngineLoop::processEditorCommand(const FSetComponentUseTextureCommand& com
 	}
 }
 
+void FEngineLoop::processEditorCommand(const FSetComponentColorCommand& command)
+{
+	UPrimitiveComponent* component = UObject::GetObjectByInternalIndex<UPrimitiveComponent>(command.ObjectID.InternalIndex);
+	if (component)
+	{
+		component->SetColor(command.Color);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a UPrimitiveComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
 void FEngineLoop::processEditorCommand(const FSetViewModeCommand& command)
 {
 	mGraphicsManager->SetViewMode(command.ViewMode);

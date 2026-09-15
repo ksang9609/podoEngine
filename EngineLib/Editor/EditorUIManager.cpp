@@ -495,10 +495,15 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 					component->Cast<UPrimitiveComponent>())
 				{
 					bool bUseTexture = primitiveComponent->GetUseTexture();
+					FLinearColor color = primitiveComponent->GetColor();
 
 					if (ImGui::Checkbox("Use Texture", &bUseTexture))
 					{
 						outCommands.Emplace(FSetComponentUseTextureCommand{ primitiveComponent->GetObjectID(), bUseTexture });
+					}
+					if (ImGui::ColorEdit4("Color", &color.R))
+					{
+						outCommands.Emplace(FSetComponentColorCommand{ primitiveComponent->GetObjectID(), color });
 					}
 				}
 

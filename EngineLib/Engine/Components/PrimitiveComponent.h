@@ -30,6 +30,8 @@ public:
 	void SetUseTexture(bool value) { mbUseTexture = value; }
 	bool GetUseTexture() const { return mbUseTexture; }
 
+	const FLinearColor& GetColor() const { return mColor; }
+	void SetColor(const FLinearColor& color) { mColor = color; }
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const;
