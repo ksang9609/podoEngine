@@ -230,9 +230,9 @@ UPrimitiveComponent::GetDeclaredProperties()
 	static const FPropertyInfo Properties[] =
 	{
 		REFLECT_PROPERTY(
-		UPrimitiveComponent,
-		mePrimitive,
-		"mePrimitiveType"),
+			UPrimitiveComponent,
+			mePrimitive,
+			"mePrimitiveType"),
 
 		REFLECT_PROPERTY(
 			UPrimitiveComponent,
@@ -243,6 +243,10 @@ UPrimitiveComponent::GetDeclaredProperties()
 			UPrimitiveComponent,
 			mbShowBoundingBox,
 			"mbShowBoundingBox"),
+		REFLECT_PROPERTY(
+			UPrimitiveComponent,
+			mColor,
+			"mColor"),
 	};
 
 	return Properties;

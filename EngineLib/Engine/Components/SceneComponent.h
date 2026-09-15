@@ -28,8 +28,6 @@ public:
 	virtual void DetachFromParent();
 	virtual void DetachAllChildren();
 	virtual FBoundingBox GetWorldBounds() const { return FBoundingBox{}; }
-	int32 GetParentUUID() const;
-	int32 GetSerializedParentUUID() const;
 
 	FVector GetRelativeLocation() const;
 	void SetRelativeLocation(FVector location);

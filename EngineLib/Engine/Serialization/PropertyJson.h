@@ -3,6 +3,7 @@
 #include "ThirdParty/Json/json.hpp"
 #include "Core/IO/JsonUtil.h"
 #include "Core/Name.h"
+#include "Core/Math/Color.h"
 
 
 template<typename T>
@@ -293,5 +294,47 @@ struct TPropertyJsonSerializer<FName>
 
 		const FString LoadedName(Value.ToString());
 		OutValue = FName(LoadedName);
+	}
+};
+
+template<>
+struct TPropertyJsonSerializer<FLinearColor>
+{
+	static void Serialize(
+		json::JSON& OutJson,
+		const char* Key,
+		const FLinearColor& Value)
+	{
+		json::JSON colorJson = json::JSON::Make(json::JSON::Class::Array);
+		colorJson[0] = Value.R;
+		colorJson[1] = Value.G;
+		colorJson[2] = Value.B;
+		colorJson[3] = Value.A;
+
+		OutJson[Key] = std::move(colorJson);
+	}
+
+	static void Deserialize(
+		const json::JSON& InJson,
+		const char* Key,
+		FLinearColor& OutValue)
+	{
+		if (!InJson.hasKey(Key))
+		{
+			throw std::runtime_error("Missing FLinearColor property");
+		}
+
+		const json::JSON& Value = InJson.at(Key);
+		if (Value.JSONType() != json::JSON::Class::Array
+			|| Value.length() != 4)
+		{
+			throw std::runtime_error("Property requires [R, G, B, A]");
+		}
+
+		OutValue = FLinearColor(
+			static_cast<float>(Value.at(0).ToFloat()),
+			static_cast<float>(Value.at(1).ToFloat()),
+			static_cast<float>(Value.at(2).ToFloat()),
+			static_cast<float>(Value.at(3).ToFloat()));
 	}
 };
