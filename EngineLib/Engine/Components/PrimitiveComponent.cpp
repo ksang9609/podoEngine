@@ -46,6 +46,7 @@ void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FR
 
 	mePrimitive = ePrimitive;
 	mLocalBounds = GetPrimitiveLocalBounds(ePrimitive);
+	mColor = FLinearColor(1.f, 1.f, 1.f, 0.f);
 }
 
 void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D, bool bUseTexture)
@@ -54,6 +55,9 @@ void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FR
 	mePrimitive = ePrimitive;
 	mLocalBounds = GetPrimitiveLocalBounds(ePrimitive);
 	mbUseTexture = bUseTexture;
+	mColor = bUseTexture
+		? FLinearColor(1.f, 1.f, 1.f, 1.f)
+		: FLinearColor(1.f, 1.f, 1.f, 0.f);
 }
 
 UPrimitiveComponent::~UPrimitiveComponent()
@@ -108,9 +112,14 @@ void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) co
 
 FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 {
-	ERenderFlags renderFlags = mbUseTexture
-		? ERenderFlags::RF_Texture | ERenderFlags::RF_Primitive
-		: ERenderFlags::RF_Primitive;
+	ERenderFlags renderFlags =
+		ERenderFlags::RF_Raycastable |
+		ERenderFlags::RF_Primitive;
+
+	if (mbUseTexture)
+	{
+		renderFlags = renderFlags | ERenderFlags::RF_Texture;
+	}
 
 	if (mbShowBoundingBox)
 	{
@@ -121,7 +130,7 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 	renderInfo.ePrimitive = mePrimitive;
 	renderInfo.WorldTransformMatrix = GetTransformMatrix();
 	renderInfo.ObejctID = { mOwner->UUID, mOwner->InternalIndex };
-	renderInfo.Color = FVector4(0, 0, 0, 0);
+	renderInfo.Color = mColor;
 	renderInfo.eRenderFlags = renderFlags;
 	renderInfo.Textmesh = nullptr;
 
@@ -208,6 +217,12 @@ static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive)
 	static const FBoundingBox emptyBounds{};
 	return emptyBounds;
 }
+
+FBoundingBox UPrimitiveComponent::GetWorldBounds() const
+{
+	return TransformBoundingBox(mLocalBounds, GetTransformMatrix());
+}
+
 
 std::span<const FPropertyInfo>
 UPrimitiveComponent::GetDeclaredProperties()

@@ -39,14 +39,15 @@ enum class EViewModeIndex : uint32
 enum class ERenderFlags : uint32
 {
 	RF_None = 0,
-	RF_Primitive = 1 << 0,
-	RF_Texture = 1 << 1,
-	RF_Billboard = 1 << 2,
-	RF_Text = 1 << 3,
-	RF_WorldAxis = 1 << 4,
-	RF_Gizmo = 1 << 5,
-	RF_BoundingBox = 1 << 6,
-	RF_Particle = 1 << 7,
+	RF_Raycastable = 1 << 0,
+	RF_Primitive = 1 << 1,
+	RF_Texture = 1 << 2,
+	RF_Billboard = 1 << 3,
+	RF_Text = 1 << 4,
+	RF_WorldAxis = 1 << 5,
+	RF_Gizmo = 1 << 6,
+	RF_BoundingBox = 1 << 7,
+	RF_Particle = 1 << 8,
 };
 
 constexpr ERenderFlags operator|(ERenderFlags lhs, ERenderFlags rhs)
@@ -68,6 +69,12 @@ constexpr ERenderFlags operator~(ERenderFlags flag)
 constexpr bool HasAllRenderFlags(ERenderFlags flags, ERenderFlags required)
 {
 	return (flags & required) == required;
+}
+
+[[nodiscard]]
+constexpr bool HasAnyRenderFlags(ERenderFlags flags, ERenderFlags required)
+{
+	return (flags & required) != ERenderFlags::RF_None;
 }
 
 enum class EEngineShowFlags : uint32

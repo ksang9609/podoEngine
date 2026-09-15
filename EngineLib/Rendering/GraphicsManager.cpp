@@ -136,8 +136,8 @@ void FGraphicsManager::updateRenderQueue(
 
 		ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
-		if (HasAllRenderFlags(renderFlags,
-			ERenderFlags::RF_Primitive & ~ERenderFlags::RF_Billboard) &&
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
+			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
 			if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
@@ -233,7 +233,7 @@ void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& r
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -250,7 +250,7 @@ void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -267,8 +267,10 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		mRenderer->UpdateParticleBuffer(renderInfo->SubUVMesh->Vertices, renderInfo->SubUVMesh->Indices);
+		//mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
+			renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
+		//mRenderer->UpdateParticleBuffer(renderInfo->SubUVMesh->Vertices, renderInfo->SubUVMesh->Indices);
 
 		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
 		if (texture == nullptr)
@@ -288,7 +290,18 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+
+		FVector2 uvScale = renderInfo->SubUVMesh
+			? renderInfo->SubUVMesh->UVScale
+			: FVector2(1.0f, 1.0f);
+		FVector2 uvOffset = renderInfo->SubUVMesh
+			? renderInfo->SubUVMesh->UVOffset
+			: FVector2(0.0f, 0.0f);
+
+		mRenderer->UpdateTextureConstant(
+			worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
+			uvScale, uvOffset
+		);
 		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -342,7 +355,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 
 	// 같은 프리미티브끼리 World, Tint를 모은다.
 	TMap<EPrimitive, TArray<FInstanceData>> batches;
-	
+
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		if (!renderInfo)
@@ -359,7 +372,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 	// Prepare()에서 계산한 ViewProjection을 사용한다.
 	// 개별 World와 Tint는 위의 인스턴스 배열로 전달한다.
 	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
 
 	//  프리미티브 종류마다 한 번씩 그린다.
 	for (auto& [primitiveType, instances] : batches)
@@ -385,7 +398,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 				indices.Add(i);
 			}
 
-			mesh->IndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(&indices[0],	mesh->SourceNum);
+			mesh->IndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(&indices[0], mesh->SourceNum);
 
 			if (!mesh->IndexBuffer)
 			{
@@ -414,15 +427,53 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 {
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
-	mRenderer->PrepareFont();
+	//mRenderer->PrepareFont();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
-		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		mRenderer->UpdateFontBuffer(
+		const FTextMesh* textMesh = renderInfo->Textmesh;
+
+		if (textMesh == nullptr || textMesh->Indices.Num() == 0)
+		{
+			continue;
+		}
+
+		FMatrix worldTransform =
+			renderInfo->GetTransformMatrix(camera.Rotation);
+
+		mRenderer->UpdateSimpleConstant(
+			worldTransform,
+			mViewUnifiedProjectionMatrix,
+			renderInfo->Color);
+
+		if (textMesh->FontRenderMode == EFontRenderMode::MSDF)
+		{
+			mRenderer->PrepareUnicodeFont();
+
+			if (!mRenderer->UpdateUnicodeFontBuffer(*textMesh))
+			{
+				continue;
+			}
+
+			mRenderer->RenderUnicodeFontTexture(textMesh->Indices.Num());
+		}
+		// 기존 ASCII 폰트 방식
+		else
+		{
+			mRenderer->PrepareFont();
+
+			mRenderer->UpdateFontBuffer(
+				renderInfo->Textmesh->Vertices, renderInfo->Textmesh->Indices,
+				renderInfo->Textmesh->TextNum);
+
+			mRenderer->RenderFontTexture(renderInfo->Textmesh->TextNum);
+		}
+
+		/*FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
+		mRenderer->UpdateConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);*/
+		/*mRenderer->UpdateFontBuffer(
 			renderInfo->Textmesh->Vertices, renderInfo->Textmesh->Indices,
 			renderInfo->Textmesh->TextNum);
-		mRenderer->RenderFontTexture(renderInfo->Textmesh->TextNum);
+		mRenderer->RenderFontTexture(renderInfo->Textmesh->TextNum);*/
 	}
 }
 
@@ -576,7 +627,7 @@ void FGraphicsManager::FlushLines()
 
 	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
 	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
-	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
@@ -912,7 +963,7 @@ void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
 void FGraphicsManager::CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos)
 {
 	uint32 countIndices = 6 + (mgridExtent / mgridSpacing) * 2 * 2 + renderInfos.Num() * 24;
-	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 * 2+ renderInfos.Num() * 8;
+	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 * 2 + renderInfos.Num() * 8;
 	mLineIndices.Reserve(countIndices);
 	mLineVertices.Reserve(countvertices);
 }
@@ -933,7 +984,7 @@ void FGraphicsManager::RenderInstancingTest()
 		for (UINT i = 0; i < 36; ++i)
 			indices[i] = i;
 
-		mTestInstanceIndexBuffer =	mRenderer->CreatePrimitiveIndexBuffer(indices, 36);
+		mTestInstanceIndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(indices, 36);
 
 		if (!mTestInstanceIndexBuffer)
 			return;
@@ -970,12 +1021,12 @@ void FGraphicsManager::RenderInstancingTest()
 		float g = static_cast<float>(i % 3 == 1);
 		float b = static_cast<float>(i % 3 == 2);
 
-		instance.Tint = FVector4(r, g, b, 1.0f);
+		instance.Tint = FLinearColor(r, g, b, 1.0f);
 
 		instances.Add(instance);
 	}
 	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix,	FVector4(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
 
 	// 한 번의 호출로 큐브 1만개 그리기
 	mRenderer->RenderSimpleInstanced(cube->Buffer, mTestInstanceIndexBuffer, 36, &instances[0], 10000);

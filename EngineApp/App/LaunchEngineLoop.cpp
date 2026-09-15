@@ -86,6 +86,14 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	/* Resource Registration */
 	mDefaultFontResource = new FFontResource();
+
+	const bool jsonLoaded = mDefaultFontResource->LoadUnicodeAtlas(
+		FString("Assets/Fonts/KoreanFullAtlas.json"));
+
+	mGraphicsManager->GetRenderer()->InitializeUnicodeFont(
+			L"Assets/Fonts/KoreanFullAtlas.png",
+		mDefaultFontResource->GetDistanceRange());
+
 	FObjectFactory::Initialize(*mDefaultFontResource);
 
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
@@ -213,7 +221,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 			FObjectFactory::ConstructObject<USphereComponent>(
 				FVector(0.0f, 1.5f, 0.0f),
 				FRotator(0.0f, 0.0f, -90.0f),
-				FVector(1.0f, 1.0f, 1.0f));
+				FVector(1.0f, 1.0f, 1.0f),
+				true, 90.0f);
 
 		// 구의 텍스처 버퍼와 텍스처 셰이더 사용
 		sphere->SetUseTexture(true);
@@ -467,6 +476,45 @@ void FEngineLoop::processEditorCommand(const FSetComponentUseTextureCommand& com
 	else
 	{
 		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a UPrimitiveComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetComponentColorCommand& command)
+{
+	UPrimitiveComponent* component = UObject::GetObjectByInternalIndex<UPrimitiveComponent>(command.ObjectID.InternalIndex);
+	if (component)
+	{
+		component->SetColor(command.Color);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a UPrimitiveComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetSphereComponentSpinCommand& command)
+{
+	USphereComponent* sphereComponent = UObject::GetObjectByInternalIndex<USphereComponent>(command.ObjectID.InternalIndex);
+	if (sphereComponent)
+	{
+		sphereComponent->SetSpin(command.bSpin);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a USphereComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetSphereComponentSpinSpeedCommand& command)
+{
+	USphereComponent* sphereComponent = UObject::GetObjectByInternalIndex<USphereComponent>(command.ObjectID.InternalIndex);
+	if (sphereComponent)
+	{
+		sphereComponent->SetSpinSpeed(command.SpinSpeed);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a USphereComponent.", command.ObjectID.InternalIndex);
 	}
 }
 

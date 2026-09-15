@@ -56,6 +56,9 @@ private:
 	void processEditorCommand(const FSetSelectedActorCommand& command);
 
 	void processEditorCommand(const FSetComponentUseTextureCommand& command);
+	void processEditorCommand(const FSetComponentColorCommand& command);
+	void processEditorCommand(const FSetSphereComponentSpinCommand& command);
+	void processEditorCommand(const FSetSphereComponentSpinSpeedCommand& command);
 
 	void processEditorCommand(const FSetViewModeCommand& command);
 	void processEditorCommand(const FSetShowFlagCommand& command);

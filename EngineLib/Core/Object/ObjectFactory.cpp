@@ -6,6 +6,8 @@
 #include "Engine/Components/PrimitiveComponent.h"
 #include "Engine/Components/NameComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
+#include "Engine/Components/CubeComponent.h"
+#include "Engine/Components/SphereComponent.h"
 
 #include "Rendering/FontResource.h"
 
@@ -59,8 +61,21 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 
 	AActor* actor = ConstructObjectWithName<AActor>(PrimitiveName);
 
-	UPrimitiveComponent* component = ConstructObject<UPrimitiveComponent>(
-		primitiveType, Location, Rotation, Scale);
+	UPrimitiveComponent* component = nullptr;
+
+	if (primitiveType == EPrimitive::EP_Cube)
+	{
+		component = ConstructObject<UCubeComponent>(Location, Rotation, Scale);
+	}
+	else if (primitiveType == EPrimitive::EP_Sphere)
+	{
+		component = ConstructObject<USphereComponent>(Location, Rotation, Scale);
+	}
+	else
+	{
+		component = ConstructObject<UPrimitiveComponent>(
+			primitiveType, Location, Rotation, Scale);
+	}
 
 	actor->AddRootSceneComponent(component);
 

@@ -167,6 +167,7 @@
     <ClInclude Include="Core\IO\FileManager.h" />
     <ClInclude Include="Core\IO\JsonUtil.h" />
     <ClInclude Include="Core\Math\FBoundingBox.h" />
+    <ClInclude Include="Core\Math\Color.h" />
     <ClInclude Include="Core\Math\MathUtility.h" />
     <ClInclude Include="Core\Math\Matrix.h" />
     <ClInclude Include="Core\Math\Projection.h" />
@@ -259,6 +260,7 @@
     <ClCompile Include="Rendering\Camera.cpp" />
     <ClCompile Include="Rendering\SubUVMesh.cpp" />
     <ClCompile Include="Rendering\TextMesh.cpp" />
+    <ClCompile Include="Rendering\FontResource.cpp" />
     <ClCompile Include="Rendering\GraphicsManager.cpp" />
     <ClCompile Include="Rendering\Renderer.cpp" />
     <ClCompile Include="Rendering\RenderInfo.cpp" />
@@ -272,6 +274,9 @@
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="ShaderFontMSDF.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>

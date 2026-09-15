@@ -186,6 +186,9 @@
     <ClCompile Include="Rendering\TextMesh.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\FontResource.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
     <ClCompile Include="Rendering\SubUVMesh.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
@@ -408,6 +411,9 @@
     <ClInclude Include="Engine\Components\ParticleSubUVComponent.h">
       <Filter>Engine\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Math\Color.h">
+      <Filter>Core\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
@@ -420,6 +426,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderW0.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderFontMSDF.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -13,6 +13,7 @@ void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOf
 
 	mFontResourceRef = &fontResourceRef;
 	mNameText = nameText;
+	mColor = FLinearColor(1.f, 1.f, 1.f, 1.f); // Set default color to white
 }
 
 void UNameComponent::SerializeClass(json::JSON& outJson) const
@@ -41,7 +42,9 @@ void UNameComponent::DeserializeClass(const json::JSON& inJson)
 			propertiesJson);
 	}
 	mFontResourceRef = FObjectFactory::GetDefaultFontResource();
-	mTextMesh.SetText(mNameText, *mFontResourceRef);
+
+	//mTextMesh.SetText(mNameText, *mFontResourceRef);
+	mTextMesh.SetUnicodeText(mNameText, *mFontResourceRef, 0.2f);
 }
 
 void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
@@ -51,6 +54,11 @@ void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
 
 	FVector parentTranslation = parentTransform.GetTranslation();
 	FVector worldPosition = parentTranslation + mRelativeLocation;
+
+	if (mParent)
+	{
+		worldPosition.z = mParent->GetWorldBounds().max.z+0.2f;
+	}
 	mComponentToWorld = FTransform(worldPosition, FQuat::Identity(), mRelativeScale3D).MakeMatrix();
 }
 
@@ -61,13 +69,13 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 
 	// Remove primitive flags and add billboardtext flags
 	renderFlags = renderFlags
+		& ~ERenderFlags::RF_Raycastable
 		& ~ERenderFlags::RF_Primitive
 		& ~ERenderFlags::RF_BoundingBox
 		| ERenderFlags::RF_Billboard
 		| ERenderFlags::RF_Text;
 
 	renderInfo.eRenderFlags = renderFlags;
-	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for name text
 	renderInfo.Textmesh = &mTextMesh;
 
 	return renderInfo;
@@ -90,6 +98,17 @@ void UNameComponent::SetNameText(const FString& nameText)
 //	mTextMesh.SetText(mNameText, *mFontResourceRef);
 //}
 
+void UNameComponent::SetUnicodeNameText(const FString& nameText)
+{
+	assert(mOwner);
+
+	FString text = FString(std::format("Name: {}, UUID: {}", nameText, mOwner->UUID));
+	mNameText = text;
+
+	// 내부에서 FontRenderMode를 MSDF로 설정
+	mTextMesh.SetUnicodeText(mNameText,	*mFontResourceRef, 0.2f);
+}
+
 bool UNameComponent::AttachTo(USceneComponent& parent)
 {
 	if (!UBillboardComponent::AttachTo(parent))
@@ -97,7 +116,8 @@ bool UNameComponent::AttachTo(USceneComponent& parent)
 		return false;
 	}
 
-	SetNameText(mOwner->GetName().ToString());
+	//SetNameText(mOwner->GetName().ToString());
+	SetUnicodeNameText(mOwner->GetName().ToString());
 	return true;
 }
 

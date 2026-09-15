@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Core/Math/Color.h"
+
 #include <span>
 #include "SceneComponent.h"
 
@@ -21,11 +23,16 @@ public:
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
 
+	virtual FBoundingBox GetWorldBounds() const override;
+
 	//virtual void Render();
 	void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const override final;
 	void SetUseTexture(bool value) { mbUseTexture = value; }
 	bool GetUseTexture() const { return mbUseTexture; }
+
+	const FLinearColor& GetColor() const { return mColor; }
+	void SetColor(const FLinearColor& color) { mColor = color; }
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
@@ -33,7 +40,11 @@ protected:
 	virtual FRenderInfo makeRenderInfo() const;
 	//GraphicsManager* mGraphicsManager;
 	EPrimitive mePrimitive;
+	FLinearColor mColor{ 1.f, 1.f, 1.f, 1.f };
+
 	FBoundingBox mLocalBounds{};
+	FBoundingBox mWocalBounds{};
+
 	bool mbUseTexture = false;
 	bool mbShowBoundingBox = true;
 };

@@ -1,5 +1,6 @@
 ﻿#include "Core/Core.h"
 #include "Core/enum.h"
+#include "Core/Math/Color.h"
 
 /* Editor Commands */
 /* SceneManager Commands */
@@ -18,6 +19,9 @@ struct FSetActorNameCommand { FObjectID ObjectID; FName NewName; };
 struct FSetSelectedActorCommand { FObjectID ObjectID; };
 
 struct FSetComponentUseTextureCommand { FObjectID ObjectID; bool bUseTexture; };
+struct FSetComponentColorCommand { FObjectID ObjectID; FLinearColor Color; };
+struct FSetSphereComponentSpinCommand { FObjectID ObjectID; bool bSpin; };
+struct FSetSphereComponentSpinSpeedCommand { FObjectID ObjectID; float SpinSpeed; };
 
 /* EditorViewportClient Commands */
 struct FSetViewModeCommand { EViewModeIndex ViewMode; };
@@ -49,6 +53,9 @@ using FEditorCommand = std::variant <
 	FSetSelectedActorCommand,
 
 	FSetComponentUseTextureCommand,
+	FSetComponentColorCommand,
+	FSetSphereComponentSpinCommand,
+	FSetSphereComponentSpinSpeedCommand,
 
 	FSetViewModeCommand,
 	FSetShowFlagCommand,

@@ -19,6 +19,8 @@ void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FV
 
 	// Call the base class Initialize
 	UBillboardComponent::Initialize(location, rotation, scale3D);
+
+	mColor = FLinearColor(1.f, 1.f, 1.f, 0.2f); // Set default color to white
 }
 
 void UParticleSubUVComponent::SerializeClass(json::JSON& outJson) const
@@ -53,8 +55,6 @@ void UParticleSubUVComponent::DeserializeClass(const json::JSON& inJson)
 
 void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 {
-	UBillboardComponent::Update(deltaTime, outRenderInfos);
-
 	if (!mbLooping && mElapsedTime >= 1.0f / mPlayRate)
 	{
 		return; // Stop updating if not looping and the animation has finished
@@ -80,6 +80,8 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRe
 		}
 		mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
 	}
+
+	UBillboardComponent::Update(deltaTime, outRenderInfos);
 }
 
 FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
@@ -88,9 +90,9 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 	renderInfo.SubUVMesh = &mSubUVMesh;
 
 	renderInfo.eRenderFlags =
+		ERenderFlags::RF_Raycastable |
 		ERenderFlags::RF_Billboard |
 		ERenderFlags::RF_Particle;
-	renderInfo.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // White color for the particle
 	return renderInfo;
 }
 

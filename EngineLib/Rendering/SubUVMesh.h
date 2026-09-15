@@ -6,8 +6,8 @@
 
 struct FSubUVMesh
 {
-	TArray<FVertexTextured> Vertices;
-	TArray<uint32> Indices;
+	FVector2 UVScale{ 1.0f, 1.0f };
+	FVector2 UVOffset{ 0.0f, 0.0f };
 
 	FSubUVMesh() = default;
 	FSubUVMesh(uint32 n, uint32 m);

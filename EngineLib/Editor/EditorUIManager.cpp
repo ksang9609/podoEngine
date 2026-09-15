@@ -11,6 +11,7 @@
 #include "Engine/SceneManager.h"
 #include "Engine/Components/ActorComponent.h"
 #include "Engine/Components/PrimitiveComponent.h"
+#include "Engine/Components/SphereComponent.h"
 
 /* Editor */
 #include "FEditorViewportClient.h"
@@ -495,10 +496,31 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 					component->Cast<UPrimitiveComponent>())
 				{
 					bool bUseTexture = primitiveComponent->GetUseTexture();
+					FLinearColor color = primitiveComponent->GetColor();
 
 					if (ImGui::Checkbox("Use Texture", &bUseTexture))
 					{
 						outCommands.Emplace(FSetComponentUseTextureCommand{ primitiveComponent->GetObjectID(), bUseTexture });
+					}
+					if (ImGui::ColorEdit4("Color", &color.R))
+					{
+						outCommands.Emplace(FSetComponentColorCommand{ primitiveComponent->GetObjectID(), color });
+					}
+				}
+
+				if (const USphereComponent* sphereComponent =
+					component->Cast<USphereComponent>())
+				{
+					bool bSpin = sphereComponent->GetSpin();
+					float spinSpeed = sphereComponent->GetSpinSpeed();
+
+					if (ImGui::Checkbox("Spin", &bSpin))
+					{
+						outCommands.Emplace(FSetSphereComponentSpinCommand{ sphereComponent->GetObjectID(), bSpin });
+					}
+					if (ImGui::DragFloat("Spin Speed", &spinSpeed, 0.1f, 0.0f, 3600.0f))
+					{
+						outCommands.Emplace(FSetSphereComponentSpinSpeedCommand{ sphereComponent->GetObjectID(), spinSpeed });
 					}
 				}
 

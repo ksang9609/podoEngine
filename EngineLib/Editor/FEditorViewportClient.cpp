@@ -150,6 +150,11 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 	// Object 탐색
 	for (const FRenderInfo& RI : renderInfos)
 	{
+		if (!HasAllRenderFlags(RI.eRenderFlags, ERenderFlags::RF_Raycastable))
+		{
+			continue;
+		}
+
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
 		if (!GetPrimitiveMesh(RI.ePrimitive, vertices, length))
