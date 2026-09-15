@@ -1,4 +1,4 @@
-
+﻿
 #include "Object.h"
 #include "Engine/EngineStatics.h"
 #include "ThirdParty/Json/json.hpp"
@@ -53,7 +53,8 @@ FClassInfo UObject::ClassInfo(
 	[]() -> UObject*
 	{
 		return new UObject();
-	}
+	},
+	UObject::GetDeclaredProperties()
 );
 
 const FClassInfo* UObject::GetClass()
@@ -64,10 +65,16 @@ const FClassInfo* UObject::GetClass()
 void UObject::SerializeClass(json::JSON& outJson) const
 {
 	outJson["ClassName"] = GetRuntimeClass()->Name;
-
 	json::JSON propertiesJson = json::JSON::Make(json::JSON::Class::Object);
-	propertiesJson["UUID"] = UUID;
-	propertiesJson["Name"] = mName.ToString();
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Serialize(
+			Property,
+			this,
+			propertiesJson);
+	}
+
 	outJson["Properties"] = propertiesJson;
 }
 
@@ -79,17 +86,12 @@ void UObject::DeserializeClass(const json::JSON& inJson)
 	}
 	const json::JSON& propertiesJson = inJson.at("Properties");
 
-	if (!propertiesJson.hasKey("UUID") || propertiesJson.at("UUID").JSONType() != json::JSON::Class::Integral)
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
 	{
-		throw std::runtime_error("Invalid JSON format for UUID");
-	}
-
-	UUID = propertiesJson.at("UUID").ToInt();
-	if (propertiesJson.hasKey("Name") && propertiesJson.at("Name").JSONType() == json::JSON::Class::String)
-	{
-		const FString loadedName(propertiesJson.at("Name").ToString());
-
-		mName = FName(loadedName);
+		Property.Deserialize(
+			Property,
+			this,
+			propertiesJson);
 	}
 }
 
@@ -126,4 +128,24 @@ UObject* UObject::GetObjectByInternalIndex(uint32 internalIndex)
 		return GUObjectArray[internalIndex];
 	}
 	return nullptr;
+}
+
+std::span<const FPropertyInfo> UObject::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		MakeProperty<
+			UObject,
+			int32,
+			&UObject::UUID>(
+				"UUID"),
+
+		MakeProperty<
+			UObject,
+			FName,
+			&UObject::mName>(
+				"Name")
+	};
+
+	return Properties;
 }

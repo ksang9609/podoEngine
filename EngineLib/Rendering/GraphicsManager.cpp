@@ -196,7 +196,7 @@ void FGraphicsManager::Render(
 	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr);
 	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr);
 
-	RenderInstancingTest();
+	//RenderInstancingTest();
 	renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
 	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);
 	renderBillboardText(renderQueueMap[RQT_BillboardText], camera);

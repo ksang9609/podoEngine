@@ -19,7 +19,7 @@
 static FBoundingBox CalculateBounds(const FVertexSimple* vertices, uint32 count);
 static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive);
 
-IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent);
+IMPLEMENT_CLASS_WITH_PROPERTIES(UPrimitiveComponent, USceneComponent);
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -67,20 +67,29 @@ UPrimitiveComponent::~UPrimitiveComponent()
 void UPrimitiveComponent::SerializeClass(json::JSON& outJson) const
 {
 	USceneComponent::SerializeClass(outJson);
-	outJson["Properties"]["mePrimitiveType"] = EPrimitiveToJson(mePrimitive);
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Serialize(
+			Property,
+			this,
+			outJson["Properties"]);
+	}
 }
 
 void UPrimitiveComponent::DeserializeClass(const json::JSON& inJson)
 {
 	USceneComponent::DeserializeClass(inJson);
-
 	const json::JSON& propertiesJson = inJson.at("Properties");
-	if (!propertiesJson.hasKey("mePrimitiveType") || propertiesJson.at("mePrimitiveType").JSONType() != json::JSON::Class::String)
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
 	{
-		throw std::runtime_error(std::format("{}: mePrimitiveType property requires a string", GetRuntimeClass()->Name));
+		Property.Deserialize(
+			Property,
+			this,
+			propertiesJson);
 	}
 
-	mePrimitive = EPrimitiveFromJson(propertiesJson.at("mePrimitiveType"));
 	mLocalBounds = GetPrimitiveLocalBounds(mePrimitive);
 }
 
@@ -214,3 +223,31 @@ FBoundingBox UPrimitiveComponent::GetWorldBounds() const
 	return TransformBoundingBox(mLocalBounds, GetTransformMatrix());
 }
 
+
+std::span<const FPropertyInfo>
+UPrimitiveComponent::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		REFLECT_PROPERTY(
+			UPrimitiveComponent,
+			mePrimitive,
+			"mePrimitiveType"),
+
+		REFLECT_PROPERTY(
+			UPrimitiveComponent,
+			mbUseTexture,
+			"mbUseTexture"),
+
+		REFLECT_PROPERTY(
+			UPrimitiveComponent,
+			mbShowBoundingBox,
+			"mbShowBoundingBox"),
+		REFLECT_PROPERTY(
+			UPrimitiveComponent,
+			mColor,
+			"mColor"),
+	};
+
+	return Properties;
+}

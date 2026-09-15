@@ -129,6 +129,7 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/World.h"
 #include "Engine/Components/BillboardComponent.h"
+#include "Engine/Components/ParticleSubUVComponent.h"
 
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetClass },
@@ -140,5 +141,6 @@ TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap
 	{"USphereComponent", &USphereComponent::GetClass },
 	{"UBillboardComponent", &UBillboardComponent::GetClass },
 	{"UWorld", &UWorld::GetClass },
-	{"UNameComponent",& UNameComponent::GetClass }
+	{"UNameComponent",& UNameComponent::GetClass },
+	{"UParticleSubUVComponent",&UParticleSubUVComponent::GetClass }
 };

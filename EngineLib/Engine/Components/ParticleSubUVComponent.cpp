@@ -1,6 +1,6 @@
 ﻿#include "ParticleSubUVComponent.h"
 
-IMPLEMENT_CLASS(UParticleSubUVComponent, UBillboardComponent);
+IMPLEMENT_CLASS_WITH_PROPERTIES(UParticleSubUVComponent, UBillboardComponent);
 
 void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
 	uint32 numRows, uint32 numCols,
@@ -23,13 +23,43 @@ void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FV
 	mColor = FLinearColor(1.f, 1.f, 1.f, 0.2f); // Set default color to white
 }
 
+void UParticleSubUVComponent::SerializeClass(json::JSON& outJson) const
+{
+	UBillboardComponent::SerializeClass(outJson);
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Serialize(
+			Property,
+			this,
+			outJson["Properties"]);
+	}
+}
+
+void UParticleSubUVComponent::DeserializeClass(const json::JSON& inJson)
+{
+	UBillboardComponent::DeserializeClass(inJson);
+	const json::JSON& propertiesJson = inJson.at("Properties");
+
+	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
+	{
+		Property.Deserialize(
+			Property,
+			this,
+			propertiesJson);
+	}
+
+	mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0);
+}
+
+
 void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 {
 	if (!mbLooping && mElapsedTime >= 1.0f / mPlayRate)
 	{
 		return; // Stop updating if not looping and the animation has finished
 	}
-
+	
 	mElapsedTime += deltaTime;
 	float frameDuration = mFrameDuration / mPlayRate;
 	if (mElapsedTime >= frameDuration)
@@ -64,4 +94,33 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 		ERenderFlags::RF_Billboard |
 		ERenderFlags::RF_Particle;
 	return renderInfo;
+}
+
+std::span<const FPropertyInfo> UParticleSubUVComponent::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		REFLECT_PROPERTY(
+			UParticleSubUVComponent,
+			mNumRows,
+			"mNumRows"),
+		REFLECT_PROPERTY(
+			UParticleSubUVComponent,
+			mNumCols,
+			"mNumCols"),
+		REFLECT_PROPERTY(
+			UParticleSubUVComponent,
+			mbLooping,
+			"mbLooping"),
+		REFLECT_PROPERTY(
+			UParticleSubUVComponent,
+			mPlayRate,
+			"mPlayRate"),
+		REFLECT_PROPERTY(
+			UParticleSubUVComponent,
+			mFrameDuration,
+			"mFrameDuration")
+	};
+
+	return Properties;
 }

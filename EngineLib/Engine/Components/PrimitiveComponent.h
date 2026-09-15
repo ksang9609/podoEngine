@@ -2,6 +2,7 @@
 
 #include "Core/Math/Color.h"
 
+#include <span>
 #include "SceneComponent.h"
 
 class UPrimitiveComponent : public USceneComponent
@@ -32,6 +33,8 @@ public:
 
 	const FLinearColor& GetColor() const { return mColor; }
 	void SetColor(const FLinearColor& color) { mColor = color; }
+
+	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const;

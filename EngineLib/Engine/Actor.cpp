@@ -88,6 +88,29 @@ void AActor::DeserializeClass(const json::JSON& inJson)
 		AddComponent(component);
 	}
 
+	for (UActorComponent* Component : mComponents)
+	{
+		USceneComponent* SceneComponent = Component->Cast<USceneComponent>();
+		if (SceneComponent == nullptr)
+		{
+			continue;
+		}
+
+		const int32 ParentUUID = SceneComponent->GetSerializedParentUUID();
+		if (ParentUUID == -1)
+		{
+			continue;
+		}
+
+		USceneComponent* Parent = UObject::GetObjectByUUID<USceneComponent>(ParentUUID);
+		if (Parent == nullptr)
+		{
+			throw std::runtime_error("Failed to restore component parent");
+		}
+
+		SceneComponent->AttachTo(*Parent);
+	}
+
 	if (!propertiesJson.hasKey("mRootComponentUUID") || propertiesJson.at("mRootComponentUUID").JSONType() != json::JSON::Class::Integral)
 	{
 		throw std::runtime_error(std::format("{}: mRootComponentUUID requires an integral", GetRuntimeClass()->Name));
@@ -106,7 +129,6 @@ void AActor::DeserializeClass(const json::JSON& inJson)
 		}
 		mRootComponent = static_cast<USceneComponent*>(mComponents[rootComponentIndex]);
 	}
-
 
 }
 

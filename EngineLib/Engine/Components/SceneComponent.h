@@ -6,6 +6,9 @@
 #include "Core/Math/Vector.h"
 #include "Core/Container/TArray.h"
 
+#include <span>
+#include "Core/Object/PropertyInfo.h"
+
 class FTransform;
 
 class USceneComponent : public UActorComponent
@@ -25,8 +28,6 @@ public:
 	virtual void DetachFromParent();
 	virtual void DetachAllChildren();
 	virtual FBoundingBox GetWorldBounds() const { return FBoundingBox{}; }
-	int32 GetParentUUID() const;
-	int32 GetSerializedParentUUID() const;
 
 	FVector GetRelativeLocation() const;
 	void SetRelativeLocation(FVector location);
@@ -43,6 +44,11 @@ public:
 
 	FMatrix GetTransformMatrix() const;
 
+	static std::span<const FPropertyInfo> GetDeclaredProperties();
+	int32 GetSerializedParentUUID() const { return mSerializedParentUUID; }
+
+	int32 mSerializedParentUUID = -1;
+
 protected:
 	FVector mRelativeLocation;
 	FRotator mRelativeRotation;
@@ -50,13 +56,11 @@ protected:
 
 	FMatrix mComponentToWorld;
 
-
 	// References of parent component and child components.
 	// The ownership of child components is managed by the actor, not by the parent component.
 	USceneComponent* mParent = nullptr;
 	TArray<USceneComponent*> mChildren;
-	int32 mSerializedParentUUID = -1;
-
+	
 	virtual void updateComponentToWorld(const FMatrix& parentTransform);
 	virtual void updateComponentToWorld();
 	bool isChildOf(const USceneComponent& component) const;

@@ -7,8 +7,7 @@ public:                                                                         
     static const FClassInfo* GetClass()                                          \
     {                                                                            \
         return &ClassInfo;                                                       \
-    }                                                                            \
-private:
+    }             
 
 #define IMPLEMENT_CLASS(className, superClassName)                               \
 [[maybe_unused]] static constexpr int CONCAT(RTTI_Tag_, className) = 0;          \
@@ -19,6 +18,19 @@ FClassInfo className::ClassInfo(                                                
     {                                                                            \
         return new className();                                                  \
     }                                                                            \
+);
+
+//test
+#define IMPLEMENT_CLASS_WITH_PROPERTIES(className, superClassName)               \
+[[maybe_unused]] static constexpr int CONCAT(RTTI_Tag_, className) = 0;          \
+FClassInfo className::ClassInfo(                                                 \
+    #className,                                                                  \
+    superClassName::GetClass(),                                                  \
+    []() -> UObject*                                                             \
+    {                                                                            \
+        return new className();                                                  \
+    },                                                                           \
+    className::GetDeclaredProperties()                                           \
 );
 
 template<typename TObject>
