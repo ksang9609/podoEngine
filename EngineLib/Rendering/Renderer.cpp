@@ -19,8 +19,7 @@ void URenderer::Create(HWND hWindow)
 	createFrameBuffer();
 
 	if (!createFontAtlasTexture() ||
-		!createFontSamplerState() ||
-		!createFontBlendState())
+		!createFontSamplerState())
 	{
 		MessageBox(
 			hWindow,
@@ -33,9 +32,11 @@ void URenderer::Create(HWND hWindow)
 		releaseFontAtlasTexture();
 	}
 
+	/* Create states */
 	createDepthStencilState();
-	createNoColorWriteBlendState();
 	createRasterizerState();
+	createBlendState();
+
 	createShader();
 	createConstantBuffer();
 	createLineVertexBuffer(LINE_VERTEX_CAPACITY);
@@ -191,54 +192,10 @@ bool URenderer::createFontSamplerState()
 	);
 }
 
-bool URenderer::createFontBlendState()
-{
-	if (!Device)
-		return false;
-
-	if (FontBlendState)
-	{
-		FontBlendState->Release();
-		FontBlendState = nullptr;
-	}
-
-	D3D11_BLEND_DESC desc = {};
-	auto& rt = desc.RenderTarget[0];
-
-	rt.BlendEnable = TRUE;
-	rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	rt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	rt.BlendOp = D3D11_BLEND_OP_ADD;
-
-	rt.SrcBlendAlpha = D3D11_BLEND_ONE;
-	rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-	rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	return SUCCEEDED(Device->CreateBlendState(&desc, &FontBlendState));
-}
-
 bool URenderer::createParticleStates()
 {
 	if (!Device)
 		return false;
-	if (ParticleBlendState)
-	{
-		ParticleBlendState->Release();
-		ParticleBlendState = nullptr;
-	}
-	D3D11_BLEND_DESC desc = {};
-	auto& rt = desc.RenderTarget[0];
-
-	rt.BlendEnable = TRUE;
-	rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	rt.DestBlend = D3D11_BLEND_ONE;
-	rt.BlendOp = D3D11_BLEND_OP_ADD;
-
-	rt.SrcBlendAlpha = D3D11_BLEND_ONE;
-	rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-	rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 	if (ParticleSamplerState)
 	{
@@ -255,8 +212,7 @@ bool URenderer::createParticleStates()
 	samplerDesc.MaxAnisotropy = 1;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	return SUCCEEDED(Device->CreateSamplerState(&samplerDesc, &ParticleSamplerState)) &&
-		SUCCEEDED(Device->CreateBlendState(&desc, &ParticleBlendState));
+	return SUCCEEDED(Device->CreateSamplerState(&samplerDesc, &ParticleSamplerState));
 }
 
 // 인스턴스 사용하여 렌더링(텍스쳐 X)
@@ -877,8 +833,6 @@ void URenderer::Prepare(bool bWireFrame)
 
 	//세 번째 인자에 nullptr 대신 DSV를 넘긴다
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
-	//깊이 테스트 규칙 적용
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareSimplePrimitive()
@@ -890,7 +844,7 @@ void URenderer::PrepareSimplePrimitive()
 	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
 
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareTexturedPrimitive()
@@ -902,7 +856,7 @@ void URenderer::PrepareTexturedPrimitive()
 	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
 
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareLine()
@@ -914,7 +868,7 @@ void URenderer::PrepareLine()
 	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
 
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareFont()
@@ -927,7 +881,7 @@ void URenderer::PrepareFont()
 	DeviceContext->RSSetState(RasterizerState[0]);
 
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
-	DeviceContext->OMSetBlendState(FontBlendState, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Additive], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareGizmo()
@@ -940,7 +894,7 @@ void URenderer::PrepareGizmo()
 	DeviceContext->RSSetState(RasterizerState[0]);
 
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareParticle()
@@ -953,7 +907,7 @@ void URenderer::PrepareParticle()
 	DeviceContext->RSSetState(RasterizerState[0]);
 
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_NoWrite], 0);
-	DeviceContext->OMSetBlendState(ParticleBlendState, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Additive], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareHighlight()
@@ -967,7 +921,7 @@ void URenderer::PrepareHighlight()
 
 	// Set depth stencil state in the RenderHighlight method
 	//DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::PrepareSimpleInstanced()
@@ -979,7 +933,7 @@ void URenderer::PrepareSimpleInstanced()
 	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
 
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 }
 
 void URenderer::prepareInstancedShader()
@@ -1221,13 +1175,13 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 	// (a) 스텐실에 1 마킹. 색은 쓰지 않으므로 화면 변화 없음.
 	//     다른 오브젝트에 가려진 부분도 반드시 마킹해야 한다. 여기서 빠지면
 	//     (b)의 != 1 조건을 통과해 버려서 겹친 영역 전체가 단색으로 칠해진다.
-	DeviceContext->OMSetBlendState(NoColorWriteBlendState, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_NoColorWrite], nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_StencilMark], 1);
 	UpdateConstant(originalMatrix, mViewProjectionMatrix);
 	RenderSimplePrimitive(pBuffer, Num);
 
 	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_StencilOutline], 1);
 	UpdateConstant(OutlineMatrix, mViewProjectionMatrix, FVector4(1.f, 0.6f, 0.f, 1.f));
 	RenderSimplePrimitive(pBuffer, Num);
@@ -1334,21 +1288,66 @@ void URenderer::createDepthStencilState()
 	Device->CreateDepthStencilState(&desc[DSS_StencilOutline], &DepthStencilState[DSS_StencilOutline]);
 }
 
-// 렌더타겟에 색을 전혀 쓰지 않는 상태. 스텐실 마킹 전용 패스에 쓴다
-void URenderer::createNoColorWriteBlendState()
+void URenderer::createBlendState()
 {
-	D3D11_BLEND_DESC desc = {};
-	desc.RenderTarget[0].BlendEnable = FALSE;
-	desc.RenderTarget[0].RenderTargetWriteMask = 0;
+	D3D11_BLEND_DESC desc[4] = {};
 
-	Device->CreateBlendState(&desc, &NoColorWriteBlendState);
+	// Default Blend State (No Blending)
+	// Do nothing -> nullptr
+
+	// Standard Alpha Blending
+	{
+		auto& rt = desc[BST_AlphaBlend].RenderTarget[0];
+		rt.BlendEnable = TRUE;
+
+		// RGB = Src.rgb * src.a + Dest.rgb * (1 - src.a)
+		rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		rt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		rt.BlendOp = D3D11_BLEND_OP_ADD;
+
+		// Alpha = Src.a + Dest.a * (1 - src.a)
+		rt.SrcBlendAlpha = D3D11_BLEND_ONE;
+		rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		Device->CreateBlendState(&desc[BST_AlphaBlend], &BlendState[BST_AlphaBlend]);
+	}
+
+	// Additive Blending
+	{
+		auto& rt = desc[BST_Additive].RenderTarget[0];
+		rt.BlendEnable = TRUE;
+
+		// RGB = Src.rgb * src.a + Dest.rgb * 1
+		rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		rt.DestBlend = D3D11_BLEND_ONE;
+		rt.BlendOp = D3D11_BLEND_OP_ADD;
+
+		// Alpha = Src.a + Dest.a * (1 - src.a)
+		rt.SrcBlendAlpha = D3D11_BLEND_ONE;
+		rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		Device->CreateBlendState(&desc[BST_Additive], &BlendState[BST_Additive]);
+	}
+
+	// No Color Write (Stencil Marking)
+	{
+		auto& rt = desc[BST_NoColorWrite].RenderTarget[0];
+		rt.BlendEnable = FALSE;
+		rt.RenderTargetWriteMask = 0;
+		Device->CreateBlendState(&desc[BST_NoColorWrite], &BlendState[BST_NoColorWrite]);
+	}
 }
 
 void URenderer::releaseBlendState()
 {
-	if (NoColorWriteBlendState) { NoColorWriteBlendState->Release(); NoColorWriteBlendState = nullptr; }
-	if (FontBlendState) { FontBlendState->Release(); FontBlendState = nullptr; }
-	if (ParticleBlendState) { ParticleBlendState->Release(); ParticleBlendState = nullptr; }
+	for (auto& state : BlendState)
+	{
+		if (state) { state->Release(); state = nullptr; }
+	}
 }
 
 void URenderer::releaseDepthStencilBuffer()
@@ -1427,7 +1426,7 @@ void URenderer::UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const 
 
 void URenderer::UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices)
 {
-	assert(ParticleVertexBuffer && ParticleBlendState);
+	assert(ParticleVertexBuffer || BlendState[BST_Additive]);
 
 	const uint32 numVertices = vertices.Num();
 
@@ -1551,12 +1550,6 @@ void URenderer::releaseFontTexture()
 	{
 		FontSamplerState->Release();
 		FontSamplerState = nullptr;
-	}
-
-	if (FontBlendState)
-	{
-		FontBlendState->Release();
-		FontBlendState = nullptr;
 	}
 }
 

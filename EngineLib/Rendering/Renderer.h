@@ -41,6 +41,14 @@ enum EDepthStencilStateType
 	DSS_StencilOutline,
 };
 
+enum EBlendStateType
+{
+	BST_Default,
+	BST_AlphaBlend,
+	BST_Additive,
+	BST_NoColorWrite,
+};
+
 class URenderer
 {
 public:
@@ -55,7 +63,7 @@ public:
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
 	ID3D11DepthStencilState* DepthStencilState[4] = {};	// 깊이 테스트용 상태
-	ID3D11BlendState* NoColorWriteBlendState = nullptr;		// 스텐실만 찍고 색은 쓰지 않는 상태
+	ID3D11BlendState* BlendState[4] = {}; // 블렌딩 상태
 
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
 	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
@@ -63,7 +71,6 @@ public:
 	ID3D11PixelShader* FontPixelShader = nullptr;
 	ID3D11InputLayout* FontInputLayout = nullptr;
 	ID3D11SamplerState* FontSamplerState = nullptr;
-	ID3D11BlendState* FontBlendState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
 
 	ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
@@ -75,7 +82,6 @@ public:
 
 	/* Particle */
 	ID3D11SamplerState* ParticleSamplerState = nullptr;
-	ID3D11BlendState* ParticleBlendState = nullptr;
 	ID3D11Buffer* ParticleVertexBuffer = nullptr;
 	ID3D11Buffer* ParticleIndexBuffer = nullptr;
 
@@ -200,10 +206,9 @@ private:
 	void createDepthStencilBuffer(UINT width, UINT height);
 
 	void createDepthStencilState();
-	void createNoColorWriteBlendState();
+	void createBlendState();
 	bool createFontAtlasTexture();
 	bool createFontSamplerState();
-	bool createFontBlendState();
 	bool createParticleStates();
 
 	/* Prepare methods for each shader */
