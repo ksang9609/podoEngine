@@ -136,8 +136,8 @@ void FGraphicsManager::updateRenderQueue(
 
 		ERenderFlags renderFlags = renderInfo.eRenderFlags;
 
-		if (HasAllRenderFlags(renderFlags,
-			ERenderFlags::RF_Primitive & ~ERenderFlags::RF_Billboard) &&
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
+			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
 			if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
