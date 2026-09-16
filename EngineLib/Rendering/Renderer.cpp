@@ -1078,7 +1078,7 @@ void URenderer::PrepareGizmo()
 
 void URenderer::PrepareParticle()
 {
-	prepareBillboardTextureShader();
+	prepareParticleShader();
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1718,6 +1718,32 @@ void URenderer::UpdateFontConstant(FVector3 location, FVector3 scale, FMatrix vi
 	}
 	DeviceContext->Unmap(ConstantBuffer[CBT_Font], 0);
 
+}
+
+void URenderer::UpdateParticleConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+	FVector3 cameraRight, FVector3 cameraUp,
+	int32 numRows, int32 numCols, int32 currentFrame, int32 nextFrame, float frameRatio,
+	FLinearColor tint
+)
+{
+	assert(ConstantBuffer[CBT_Particle]);
+	D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+	DeviceContext->Map(ConstantBuffer[CBT_Particle], 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+	FParticleConstants* constants = (FParticleConstants*)constantbufferMSR.pData;
+	{
+		constants->Location = location;
+		constants->Scale = scale;
+		constants->ViewProjection = viewProjection;
+		constants->Tint = tint;
+		constants->CameraRight = cameraRight;
+		constants->CameraUp = cameraUp;
+		constants->NumRows = numRows;
+		constants->NumCols = numCols;
+		constants->CurrentFrame = currentFrame;
+		constants->NextFrame = nextFrame;
+		constants->FrameRatio = frameRatio;
+	}
+	DeviceContext->Unmap(ConstantBuffer[CBT_Particle], 0);
 }
 
 void URenderer::UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter)

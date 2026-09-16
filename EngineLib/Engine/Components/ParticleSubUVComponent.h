@@ -46,6 +46,7 @@ private:
 	//float mElapsedTime = 0.0f; // Time elapsed since the last frame change
 	float mElapsedFrameRatio = 0.0f; // Ratio of elapsed time to frame duration (0.0 to 1.0)
 	uint32 mCurrentFrameIndex = 0;
+	uint32 mNextFrameIndex = 0;
 	bool mbIsFinished = false;
 
 	virtual FRenderInfo makeRenderInfo() const override;

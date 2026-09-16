@@ -19,6 +19,13 @@ struct FRenderInfo
 	const FTextMesh* Textmesh;
 	const FSubUVMesh* SubUVMesh;
 
+	// For particle rendering
+	int32 numRows;
+	int32 numCols;
+	int32 currentFrame;
+	int32 nextFrame;
+	float frameRatio;
+
 	// For billboard rendering
 
 	FBoundingBox LocalBounds{};

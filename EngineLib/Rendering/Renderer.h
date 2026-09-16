@@ -69,12 +69,12 @@ struct alignas(16) FParticleConstants
 
 	FLinearColor Tint;
 	
-	int32 numRows;
-	int32 numCols;
-	int32 currentFrame;
-	int32 nextFrame;
+	int32 NumRows;
+	int32 NumCols;
+	int32 CurrentFrame;
+	int32 NextFrame;
 
-	float frameRatio;
+	float FrameRatio;
 	float pad[3] = {};
 };
 
@@ -236,6 +236,12 @@ public:
 	void UpdateFontConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
 		FVector3 cameraRight, FVector3 cameraUp,
 		FLinearColor tint = FLinearColor(0, 0, 0, 0));
+	void UpdateParticleConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+		FVector3 cameraRight, FVector3 cameraUp,
+		int32 numRows = 1, int32 numCols = 1, int32 currentFrame = 0, int32 nextFrame = 0, float frameRatio = 0.0f,
+		FLinearColor tint = FLinearColor(0, 0, 0, 0)
+	);
+
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
 
@@ -309,6 +315,7 @@ private:
 	void prepareLineShader();
 	void prepareFontShader();
 	void prepareUnicodeFontShader();
+	void prepareParticleShader();
 
 	/* Release methods for all resources */
 	void releaseDeviceAndSwapChain();
