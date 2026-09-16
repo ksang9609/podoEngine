@@ -32,6 +32,31 @@ FClassInfo className::ClassInfo(                                                
     className::GetDeclaredProperties()                                           \
 );
 
+#define DECLARE_SERIALIZATION()                                                  \
+public:                                                                          \
+    virtual void SerializeClass(json::JSON& outJson) const override;             \
+    virtual void DeserializeClass(const json::JSON& inJson) override;            \
+    virtual void PostDeserialize() override;
+
+#define IMPLEMENT_SERIALIZATION(className, superClassName, postCode)                       \
+void className::SerializeClass(json::JSON& outJson) const                        \
+{                                                                                \
+    superClassName::SerializeClass(outJson);                                     \
+    for (const FPropertyInfo& p : ClassInfo.DeclaredProperties)                  \
+        p.Serialize(p, this, outJson["Properties"]);                             \
+}                                                                                \
+void className::DeserializeClass(const json::JSON& inJson)                       \
+{                                                                                \
+    superClassName::DeserializeClass(inJson);                                    \
+    const auto& properties = inJson.at("Properties");                            \
+    for (const FPropertyInfo& p : ClassInfo.DeclaredProperties)                  \
+        p.Deserialize(p, this, properties);                                      \
+}                                                                                \
+void className::PostDeserialize()                                                \
+{                                                                                \
+    superClassName::PostDeserialize();                                           \
+    postCode                                                                     \
+}
 
 
 template<typename TObject>

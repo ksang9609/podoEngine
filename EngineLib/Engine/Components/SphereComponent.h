@@ -8,6 +8,8 @@
 class USphereComponent : public UPrimitiveComponent
 {
 	DECLARE_OBJECT(USphereComponent, UPrimitiveComponent)
+	DECLARE_SERIALIZATION()
+
 public:
 	USphereComponent();
 	virtual ~USphereComponent();
@@ -23,6 +25,8 @@ public:
 
 	float GetSpinSpeed() const { return mSpinSpeed; }
 	void SetSpinSpeed(float spinSpeed) { mSpinSpeed = spinSpeed; }
+
+	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 private:
 	FSubUVMesh mSubUVMesh;

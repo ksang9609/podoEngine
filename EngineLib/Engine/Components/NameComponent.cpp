@@ -6,6 +6,12 @@
 #include "Engine/Actor.h"
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UNameComponent, UBillboardComponent);
+IMPLEMENT_SERIALIZATION(UNameComponent, UBillboardComponent,
+	{
+		mFontResourceRef = FObjectFactory::GetDefaultFontResource();
+		mTextMesh.SetUnicodeText(mNameText, *mFontResourceRef, 0.2f);
+	}
+)
 
 void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOffset, const FFontResource& fontResourceRef)
 {
@@ -14,35 +20,6 @@ void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOf
 	mFontResourceRef = &fontResourceRef;
 	mNameText = nameText;
 	mColor = FLinearColor(1.f, 1.f, 1.f, 1.f); // Set default color to white
-}
-
-void UNameComponent::SerializeClass(json::JSON& outJson) const
-{
-	UBillboardComponent::SerializeClass(outJson);
-
-	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
-	{
-		Property.Serialize(
-			Property,
-			this,
-			outJson["Properties"]);
-	}
-}
-
-void UNameComponent::DeserializeClass(const json::JSON& inJson)
-{
-	UBillboardComponent::DeserializeClass(inJson);
-	const json::JSON& propertiesJson = inJson.at("Properties");
-
-	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
-	{
-		Property.Deserialize(
-			Property,
-			this,
-			propertiesJson);
-	}
-	mFontResourceRef = FObjectFactory::GetDefaultFontResource();
-	mTextMesh.SetUnicodeText(mNameText, *mFontResourceRef, 0.2f);
 }
 
 void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
@@ -129,8 +106,7 @@ std::span<const FPropertyInfo> UNameComponent::GetDeclaredProperties()
 	{
 		REFLECT_PROPERTY(
 			UNameComponent,
-			mNameText,
-			"mNameText"),
+			mNameText),
 	};
 
 	return Properties;

@@ -8,11 +8,10 @@
 class UPrimitiveComponent : public USceneComponent
 {
 	DECLARE_OBJECT(UPrimitiveComponent, USceneComponent)
+	DECLARE_SERIALIZATION()
+
 public:
 	UPrimitiveComponent();
-
-	//void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive);
-	//void Initialize(GraphicsManager* graphicsManager, EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D);
 
 	void Initialize(EPrimitive ePrimitive);
 	void Initialize(EPrimitive ePrimitive, FVector location, FRotator rotation, FVector scale3D);
@@ -20,12 +19,8 @@ public:
 
 	virtual ~UPrimitiveComponent();
 
-	virtual void SerializeClass(json::JSON& outJson) const override;
-	virtual void DeserializeClass(const json::JSON& inJson) override;
-
 	virtual FBoundingBox GetWorldBounds() const override;
 
-	//virtual void Render();
 	void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
 	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const override final;
 	void SetUseTexture(bool value) { mbUseTexture = value; }
@@ -38,7 +33,7 @@ public:
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const;
-	//GraphicsManager* mGraphicsManager;
+
 	EPrimitive mePrimitive;
 	FLinearColor mColor{ 1.f, 1.f, 1.f, 1.f };
 

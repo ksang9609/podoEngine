@@ -24,12 +24,12 @@ struct FPropertyInfo
 		const json::JSON& InProperties) = nullptr;
 };
 
-#define REFLECT_PROPERTY(OwnerType, MemberName, JsonKey)        \
+#define REFLECT_PROPERTY(OwnerType, MemberName)                 \
     MakeProperty<                                               \
         OwnerType,                                              \
         decltype(OwnerType::MemberName),                        \
         &OwnerType::MemberName                                  \
->(JsonKey)
+>(#MemberName)
 
 template<
 	typename TOwner,

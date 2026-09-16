@@ -7,6 +7,7 @@
 class UParticleSubUVComponent : public UBillboardComponent
 {
 	DECLARE_OBJECT(UParticleSubUVComponent, UBillboardComponent)
+	DECLARE_SERIALIZATION()
 
 public:
 	UParticleSubUVComponent() = default;
@@ -16,9 +17,6 @@ public:
 		bool bLooping = true, float playRate = 1.0f, float frameDuration = 1.0f);
 
 	virtual void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
-
-	void SerializeClass(json::JSON& outJson) const override;
-	void DeserializeClass(const json::JSON& inJson) override;
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 

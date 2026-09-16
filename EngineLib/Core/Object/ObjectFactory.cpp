@@ -49,6 +49,7 @@ UObject* FObjectFactory::LoadObject(const FClassInfo* classInfo, const json::JSO
 	if (instance)
 	{
 		instance->DeserializeClass(inJson);
+		instance->PostDeserialize();
 	}
 	return instance;
 }
@@ -130,6 +131,7 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "Engine/World.h"
 #include "Engine/Components/BillboardComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
+#include "Engine/Components/SphereComponent.h"
 
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetClass },
@@ -142,5 +144,6 @@ TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap
 	{"UBillboardComponent", &UBillboardComponent::GetClass },
 	{"UWorld", &UWorld::GetClass },
 	{"UNameComponent",& UNameComponent::GetClass },
-	{"UParticleSubUVComponent",&UParticleSubUVComponent::GetClass }
+	{"UParticleSubUVComponent",&UParticleSubUVComponent::GetClass },
+	{ "USphereComponent",&USphereComponent::GetClass }
 };

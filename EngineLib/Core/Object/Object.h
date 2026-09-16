@@ -80,6 +80,8 @@ public:
 	virtual void SerializeClass(json::JSON& outJson) const;
 	virtual void DeserializeClass(const json::JSON& inJson);
 
+	virtual void PostDeserialize() {}
+
 	template<typename TObject>
 		requires std::derived_from<TObject, UObject>
 	bool IsA() const;

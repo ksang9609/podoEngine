@@ -20,6 +20,8 @@ static FBoundingBox CalculateBounds(const FVertexSimple* vertices, uint32 count)
 static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive);
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UPrimitiveComponent, USceneComponent);
+IMPLEMENT_SERIALIZATION(UPrimitiveComponent, USceneComponent,
+	{ mLocalBounds = GetPrimitiveLocalBounds(mePrimitive); })
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -62,35 +64,6 @@ void UPrimitiveComponent::Initialize(EPrimitive ePrimitive, FVector location, FR
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
-}
-
-void UPrimitiveComponent::SerializeClass(json::JSON& outJson) const
-{
-	USceneComponent::SerializeClass(outJson);
-
-	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
-	{
-		Property.Serialize(
-			Property,
-			this,
-			outJson["Properties"]);
-	}
-}
-
-void UPrimitiveComponent::DeserializeClass(const json::JSON& inJson)
-{
-	USceneComponent::DeserializeClass(inJson);
-	const json::JSON& propertiesJson = inJson.at("Properties");
-
-	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
-	{
-		Property.Deserialize(
-			Property,
-			this,
-			propertiesJson);
-	}
-
-	mLocalBounds = GetPrimitiveLocalBounds(mePrimitive);
 }
 
 void UPrimitiveComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
@@ -231,22 +204,19 @@ UPrimitiveComponent::GetDeclaredProperties()
 	{
 		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			mePrimitive,
-			"mePrimitiveType"),
+			mePrimitive),
 
 		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			mbUseTexture,
-			"mbUseTexture"),
+			mbUseTexture),
 
 		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			mbShowBoundingBox,
-			"mbShowBoundingBox"),
+			mbShowBoundingBox),
+
 		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			mColor,
-			"mColor"),
+			mColor),
 	};
 
 	return Properties;

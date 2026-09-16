@@ -2,7 +2,9 @@
 
 #include "Rendering/RenderInfo.h"
 
-IMPLEMENT_CLASS(USphereComponent, UPrimitiveComponent);
+IMPLEMENT_CLASS_WITH_PROPERTIES(USphereComponent, UPrimitiveComponent);
+
+IMPLEMENT_SERIALIZATION(USphereComponent, UPrimitiveComponent, {})
 
 USphereComponent::USphereComponent()
 {
@@ -60,4 +62,20 @@ FRenderInfo USphereComponent::makeRenderInfo() const
 	renderInfo.SubUVMesh = mbUseTexture ? &mSubUVMesh : nullptr;
 
 	return renderInfo;
+}
+
+std::span<const FPropertyInfo>
+USphereComponent::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		REFLECT_PROPERTY(
+			USphereComponent,
+			mbSpin),
+		REFLECT_PROPERTY(
+			USphereComponent,
+			mSpinSpeed)
+	};
+
+	return Properties;
 }

@@ -11,6 +11,7 @@
 class UNameComponent : public UBillboardComponent
 {
 	DECLARE_OBJECT(UNameComponent, UBillboardComponent)
+	DECLARE_SERIALIZATION()
 
 public:
 	UNameComponent() = default;
@@ -22,9 +23,6 @@ public:
 	void SetUnicodeNameText(const FString& nameText);
 
 	virtual bool AttachTo(USceneComponent& parent) override;
-
-	void SerializeClass(json::JSON& outJson) const override;
-	void DeserializeClass(const json::JSON& inJson) override;
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 

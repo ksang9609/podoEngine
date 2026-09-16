@@ -85,6 +85,7 @@ void AActor::DeserializeClass(const json::JSON& inJson)
 			throw std::runtime_error(std::format("{}: Unknown class name: {}", GetRuntimeClass()->Name, className));
 		}
 		UActorComponent* component = static_cast<UActorComponent*>(FObjectFactory::LoadObject(classInfo, componentJson));
+		component->PostDeserialize();
 		AddComponent(component);
 	}
 

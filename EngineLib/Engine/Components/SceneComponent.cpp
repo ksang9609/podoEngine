@@ -235,16 +235,13 @@ std::span<const FPropertyInfo> USceneComponent::GetDeclaredProperties()
 	{
 		REFLECT_PROPERTY(
 			USceneComponent,
-			mRelativeLocation,
-			"mRelativeLocation"),
+			mRelativeLocation),
 		REFLECT_PROPERTY(
 			USceneComponent,
-			mRelativeRotation,
-			"mRelativeRotation"),
+			mRelativeRotation),
 		REFLECT_PROPERTY(
 			USceneComponent,
-			mRelativeScale3D,
-			"mRelativeScale3D")
+			mRelativeScale3D)
 	};
 
 	return Properties;
