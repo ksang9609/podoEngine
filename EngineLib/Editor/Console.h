@@ -10,6 +10,8 @@
 enum class ELogLevel { Log, Warning, Error, Fatal };
 enum class ELogCategory { Core, Editor, Render, Physics, Etc };
 
+struct ImFont;
+
 struct FConsoleMessage
 {
 	FString Time;
@@ -91,4 +93,6 @@ private:
 	size_t mReadBufferIndex = 1;
 
 	std::mutex mPendingMutex;
+
+	ImFont* mFont = nullptr;
 };

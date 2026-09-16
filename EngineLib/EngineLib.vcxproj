@@ -304,6 +304,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="Assets\Fonts\consola.ttf" />
+    <Font Include="Assets\Fonts\consolab.ttf" />
+    <Font Include="Assets\Fonts\consolai.ttf" />
+    <Font Include="Assets\Fonts\consolaz.ttf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

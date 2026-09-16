@@ -493,4 +493,18 @@
       <Filter>Core\Object</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="Assets\Fonts\consola.ttf">
+      <Filter>Assets\Fonts</Filter>
+    </Font>
+    <Font Include="Assets\Fonts\consolab.ttf">
+      <Filter>Assets\Fonts</Filter>
+    </Font>
+    <Font Include="Assets\Fonts\consolai.ttf">
+      <Filter>Assets\Fonts</Filter>
+    </Font>
+    <Font Include="Assets\Fonts\consolaz.ttf">
+      <Filter>Assets\Fonts</Filter>
+    </Font>
+  </ItemGroup>
 </Project>

@@ -104,6 +104,9 @@ void ConsoleWindow::Init(std::string_view title, int capacity)
 
 	mPendingBuffers[0].Reserve(64);
 	mPendingBuffers[1].Reserve(64);
+
+	ImGuiIO& io = ImGui::GetIO();
+	mFont = io.Fonts->AddFontFromFileTTF("Assets/Fonts/consola.ttf", 16.0f);
 }
 
 void ConsoleWindow::Draw(float panelWidth)
@@ -111,6 +114,12 @@ void ConsoleWindow::Draw(float panelWidth)
 	FlushPending();
 
 	ImGuiIO& io = ImGui::GetIO();
+
+	// Set Font
+	if (mFont)
+	{
+		ImGui::PushFont(mFont);
+	}
 
 	float consolHeight = io.DisplaySize.y * HEIGHT_RATIO;
 
@@ -168,6 +177,11 @@ void ConsoleWindow::Draw(float panelWidth)
 
 
 	ImGui::End();
+
+	if (mFont)
+	{
+		ImGui::PopFont();
+	}
 }
 
 void ConsoleWindow::AddLog(ELogLevel Level, ELogCategory Category, std::string_view Text)
