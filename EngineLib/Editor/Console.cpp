@@ -1,4 +1,4 @@
-#include <format>
+﻿#include <format>
 
 #include "ThirdParty/ImGui/imgui.h"
 #include "Console.h"
@@ -269,6 +269,13 @@ void ConsoleWindow::ExecuteCommand( const char* Input)
 			ELogLevel::Log,
 			ELogCategory::Core,
 			Text);
+	}
+	else if (Command == "PODO")
+	{
+		AddLog(
+			ELogLevel::Fatal,
+			ELogCategory::Etc,
+			"haha");
 	}
 	else
 	{
