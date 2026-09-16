@@ -30,8 +30,8 @@ struct VS_INPUT
 struct PS_INPUT
 {
     float4 position : SV_Position;
-    float2 currentUV : TEXCOORD;
-    float2 nextUV : TEXCOORD;
+    float2 currentUV : TEXCOORD0;
+    float2 nextUV : TEXCOORD1;
 };
 
 PS_INPUT mainVS(VS_INPUT input)
