@@ -293,6 +293,58 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 	//{
 	//	mClickedActor->BeginFrame();
 	//}
+	if (sceneManager->GetSelectedActor())
+	{
+		if (Input.IsDown(VK_CONTROL) && Input.WasPressed('C'))
+		{
+			sceneManager->GetSelectedActor()->SerializeClass(mActorClipBoard);
+		}
+	}
+
+	if (!mActorClipBoard.IsNull() && Input.IsDown(VK_CONTROL) && Input.WasPressed('V'))
+	{
+		copyObject = mActorClipBoard;
+		UUIDChangeMap.Reset(); // UUID Map 리셋
+		UUIDChangeMap.Reserve(copyObject["Properties"]["mComponents"].length()); // Component 개수만큼 Map 미리 Reserve
+		copyObject["Properties"]["UUID"] = UEngineStatics::GenerateUUID(); // Actor UUID 발급
+
+		for (int i = 0;i < copyObject["Properties"]["mComponents"].length();i++)
+		{
+			int32 oldUUID = copyObject["Properties"]["mComponents"][i]["Properties"]["UUID"].ToInt();
+			int newUUID = UEngineStatics::GenerateUUID(); // 연결된 Component마다 UUID 발급
+			UUIDChangeMap[oldUUID] = newUUID; // 예전 UUID와 새 UUID를 연결할수 있도록 UUIDChangeMap에 매핑
+			copyObject["Properties"]["mComponents"][i]["Properties"]["UUID"] = newUUID;
+		}
+		int32 oldRoot = copyObject["Properties"]["mRootComponentUUID"].ToInt();
+		copyObject["Properties"]["mRootComponentUUID"] = UUIDChangeMap[oldRoot]; // 위에서 Mapping 해놨기 때문에 Mapping 값 맞춰서 Root가 업데이트 됨
+		for (int i = 1;i < copyObject["Properties"]["mComponents"].length();i++)
+		{
+			int32 oldParent = copyObject["Properties"]["mComponents"][i]["ParentUUID"].ToInt();
+			copyObject["Properties"]["mComponents"][i]["ParentUUID"] = UUIDChangeMap[oldParent]; // 위에서 Mapping 해놨기 때문에 Mapping 값 맞춰서 Parent가 업데이트 됨
+		}
+		FString className(copyObject["ClassName"].ToString());
+		const FClassInfo* classinfo = FObjectFactory::GetClassInfoByName(className); // Actor Class 이름을 읽어서 classinfo 가져옴
+		if (classinfo == nullptr)
+		{
+			return;
+		}
+		UObject* LoadActor = FObjectFactory::LoadObject(classinfo,copyObject); // classinfo 바탕으로 object 생성
+		if (LoadActor == nullptr)
+		{
+			return;
+		}
+		AActor* NewActor = LoadActor->Cast<AActor>(); // AActor로 캐스팅 => 실제 하는 작업은 다 AActor를 이용하는 작업
+		if (NewActor == nullptr)
+		{
+			LoadActor->Destroy();
+			return;
+		}
+		UWorld * CurrentWorld = sceneManager->GetCurrentWorld();
+		CurrentWorld->AddActor(NewActor);
+		NewActor->SetName(NewActor->GetName()); // UUID 바뀌었기 때문에 이름 다시 설정
+		NewActor->SetLocation(NewActor->GetTransform().Location + FVector(1.0f, 1.0f, 0.0f)); // 겹치지 않게 위치 변경
+		sceneManager->SetSelectedActor(NewActor); // Select 변경
+	}
 
 	// 누른 순간에만 선택을 갱신한다. 떼는 것으로는 선택이 풀리지 않는다.
 	if (bLeftClicked)
