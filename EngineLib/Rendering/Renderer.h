@@ -53,6 +53,17 @@ struct FBillboardConstants
 	float Pad3 = 0;
 };
 
+struct alignas(32) FParticleConstants
+{
+	float numRows;
+	float numCols;
+	int currentFrame;
+	int nextFrame;
+
+	float frameRatio;
+	float pad[3] = {};
+};
+
 // intancing 용
 struct FInstanceData
 {

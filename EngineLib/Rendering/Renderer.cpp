@@ -1431,6 +1431,14 @@ void URenderer::createConstantBuffer()
 	desc[CBT_Font].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	Device->CreateBuffer(&desc[CBT_Font], nullptr, &ConstantBuffer[CBT_Font]);
+
+	// Particle
+	desc[CBT_Particle].ByteWidth = sizeof(FParticleConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
+	desc[CBT_Particle].Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+	desc[CBT_Particle].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc[CBT_Particle].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	Device->CreateBuffer(&desc[CBT_Particle], nullptr, &ConstantBuffer[CBT_Particle]);
 }
 
 void URenderer::releaseConstantBuffer()
