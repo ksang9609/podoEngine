@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Core/enum.h"
 #include "Core/Math/Color.h"
 #include "Core/Math/FBoundingBox.h"
 #include "Core/Math/Transform.h"
@@ -22,6 +23,8 @@ struct FRenderInfo
 
 	FBoundingBox LocalBounds{};
 	FBoundingBox WorldBounds{};
+
+	EBlendStateType BlendStateType = EBlendStateType::BST_Default;
 
 	// Return world matrix for billboard quads to face the camera
 	// Get FRotator input because current camera rotation is stored in FRotator.

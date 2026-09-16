@@ -1,14 +1,16 @@
 ﻿#include "GraphicsManager.h"
-#include "Core/Math/Frustum.h" 
 
-#include "Renderer.h"
-#include "Camera.h"
-#include "Editor/Console.h"
 #include "Core/Container/TQueue.h"
-#include "Engine/Components/PrimitiveComponent.h"
-#include "Engine/Components/NameComponent.h"
+#include "Core/Math/Frustum.h" 
+#include "Core/enum.h"
+#include "Editor/Console.h"
 #include "Engine/Actor.h"
+#include "Engine/Components/NameComponent.h"
+#include "Engine/Components/PrimitiveComponent.h"
 #include "Rendering/SubUVMesh.h"
+
+#include "Camera.h"
+#include "Renderer.h"
 
 FGraphicsManager::FGraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
@@ -275,6 +277,8 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 			cameraRight, cameraUp,
 			renderInfo->Color,
 			renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
+
+		mRenderer->UpdateBlendState(renderInfo->BlendStateType);
 
 		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
 		if (texture == nullptr)

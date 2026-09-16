@@ -1789,6 +1789,15 @@ bool URenderer::UpdateUnicodeFontBuffer(const FTextMesh& textMesh)
 	return true;
 }
 
+void URenderer::UpdateBlendState(EBlendStateType blendState)
+{
+	if (!DeviceContext || blendState >= EBlendStateType::BST_Count)
+	{
+		return;
+	}
+	DeviceContext->OMSetBlendState(BlendState[blendState], nullptr, 0xffffffff);
+}
+
 
 
 //void URenderer::UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices)
