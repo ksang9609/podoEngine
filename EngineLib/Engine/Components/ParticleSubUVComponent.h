@@ -22,6 +22,12 @@ public:
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
+	bool IsLooping() const { return mbLooping; }
+	void SetLooping(bool bLooping) { mbLooping = bLooping; }
+
+	float GetPlayRate() const { return mPlayRate; }
+	void SetPlayRate(float playRate) { mPlayRate = playRate; }
+
 private:
 	FSubUVMesh mSubUVMesh;
 

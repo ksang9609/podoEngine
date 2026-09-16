@@ -518,6 +518,32 @@ void FEngineLoop::processEditorCommand(const FSetSphereComponentSpinSpeedCommand
 	}
 }
 
+void FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentLoopingCommand& command)
+{
+	UParticleSubUVComponent* particleComponent = UObject::GetObjectByInternalIndex<UParticleSubUVComponent>(command.ObjectID.InternalIndex);
+	if (particleComponent)
+	{
+		particleComponent->SetLooping(command.bLooping);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a UParticleSubUVComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
+void  FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentPlayRateCommand& command)
+{
+	UParticleSubUVComponent* particleComponent = UObject::GetObjectByInternalIndex<UParticleSubUVComponent>(command.ObjectID.InternalIndex);
+	if (particleComponent)
+	{
+		particleComponent->SetPlayRate(command.PlayRate);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a UParticleSubUVComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
 void FEngineLoop::processEditorCommand(const FSetViewModeCommand& command)
 {
 	mGraphicsManager->SetViewMode(command.ViewMode);
