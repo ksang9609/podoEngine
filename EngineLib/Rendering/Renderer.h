@@ -67,6 +67,22 @@ struct FUnicodeFontConstants
 	float Padding[3] = {};
 };
 
+struct FFontConstants
+{
+	FVector3 Location;
+	float Pad0 = 0;
+	FVector3 Scale;
+	float Pad1 = 0;
+
+	FVector3 CameraRight;
+	float Pad2 = 0;
+	FVector3 CameraUp;
+	float Pad3 = 0;
+
+	FMatrix ViewProjection;
+	FLinearColor Tint;
+};
+
 class URenderer
 {
 public:
@@ -192,6 +208,9 @@ public:
 		FVector3 cameraRight, FVector3 cameraUp,
 		FLinearColor tint = FLinearColor(0, 0, 0, 0),
 		FVector2 uvScale = { 1.0f, 1.0f }, FVector2 uvOffset = { 0.0f, 0.0f });
+	void UpdateFontConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+		FVector3 cameraRight, FVector3 cameraUp,
+		FLinearColor tint = FLinearColor(0, 0, 0, 0));
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
 

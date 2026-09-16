@@ -15,7 +15,7 @@ IMPLEMENT_SERIALIZATION(UNameComponent, UBillboardComponent,
 
 void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOffset, const FFontResource& fontResourceRef)
 {
-	UBillboardComponent::Initialize(worldPositionOffset, FRotator(), FVector(0));
+	UBillboardComponent::Initialize(worldPositionOffset, FRotator(), FVector(1));
 
 	mFontResourceRef = &fontResourceRef;
 	mNameText = nameText;

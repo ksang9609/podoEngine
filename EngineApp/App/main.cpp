@@ -1,4 +1,4 @@
-#include <windows.h>
+﻿#include <windows.h>
 
 #include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Renderer.h"
