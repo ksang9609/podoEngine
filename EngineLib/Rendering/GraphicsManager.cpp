@@ -304,12 +304,20 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 	FVector3 cameraUp = camera.GetUpVector();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		mRenderer->UpdateBillboardConstant(
+		//mRenderer->UpdateBillboardConstant(
+		//	renderInfo->GetLocation(), renderInfo->GetScale(),
+		//	mViewUnifiedProjectionMatrix,
+		//	cameraRight, cameraUp,
+		//	renderInfo->Color,
+		//	renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
+		mRenderer->UpdateParticleConstant(
 			renderInfo->GetLocation(), renderInfo->GetScale(),
 			mViewUnifiedProjectionMatrix,
 			cameraRight, cameraUp,
-			renderInfo->Color,
-			renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
+			renderInfo->numRows, renderInfo->numCols,
+			renderInfo->currentFrame, renderInfo->nextFrame, renderInfo->frameRatio,
+			renderInfo->Color
+		);
 
 		mRenderer->UpdateBlendState(renderInfo->BlendStateType);
 

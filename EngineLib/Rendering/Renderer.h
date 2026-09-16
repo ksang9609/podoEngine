@@ -53,6 +53,31 @@ struct FBillboardConstants
 	float Pad3 = 0;
 };
 
+struct alignas(16) FParticleConstants
+{
+	FVector3 Location;
+	float pad0 = 0;
+	FVector3 Scale;
+	float pad1 = 0;
+
+	FMatrix ViewProjection;
+
+	FVector3 CameraRight;
+	float pad2 = 0;
+	FVector3 CameraUp;
+	float pad3 = 0;
+
+	FLinearColor Tint;
+	
+	int32 NumRows;
+	int32 NumCols;
+	int32 CurrentFrame;
+	int32 NextFrame;
+
+	float FrameRatio;
+	float pad[3] = {};
+};
+
 // intancing 용
 struct FInstanceData
 {
@@ -211,6 +236,12 @@ public:
 	void UpdateFontConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
 		FVector3 cameraRight, FVector3 cameraUp,
 		FLinearColor tint = FLinearColor(0, 0, 0, 0));
+	void UpdateParticleConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+		FVector3 cameraRight, FVector3 cameraUp,
+		int32 numRows = 1, int32 numCols = 1, int32 currentFrame = 0, int32 nextFrame = 0, float frameRatio = 0.0f,
+		FLinearColor tint = FLinearColor(0, 0, 0, 0)
+	);
+
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
 
@@ -284,6 +315,7 @@ private:
 	void prepareLineShader();
 	void prepareFontShader();
 	void prepareUnicodeFontShader();
+	void prepareParticleShader();
 
 	/* Release methods for all resources */
 	void releaseDeviceAndSwapChain();

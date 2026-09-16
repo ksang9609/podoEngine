@@ -4,9 +4,9 @@ IMPLEMENT_CLASS_WITH_PROPERTIES(UParticleSubUVComponent, UBillboardComponent);
 IMPLEMENT_SERIALIZATION(UParticleSubUVComponent, UBillboardComponent,
 	{ mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0); })
 
-void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
-	uint32 numRows, uint32 numCols,
-	bool bLooping, float playRate, float frameDuration)
+	void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
+		uint32 numRows, uint32 numCols,
+		bool bLooping, float playRate, float frameDuration)
 {
 	mNumRows = numRows;
 	mNumCols = numCols;
@@ -36,6 +36,7 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRe
 	{
 		mbIsFinished = false;
 		mCurrentFrameIndex = 0;
+		mNextFrameIndex = 1;
 		mElapsedFrameRatio = 0;
 
 		mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
@@ -73,6 +74,7 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRe
 				break;
 			}
 		}
+		mNextFrameIndex = (mCurrentFrameIndex + 1) % totalFrames;
 
 		if (mCurrentFrameIndex != previousFrameIndex)
 		{
@@ -98,6 +100,12 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 		: mColor; // Use the component's color if not finished
 
 	renderInfo.BlendStateType = static_cast<EBlendStateType>(mBlendStateType);
+
+	renderInfo.numRows = mNumRows;
+	renderInfo.numCols = mNumCols;
+	renderInfo.currentFrame = mCurrentFrameIndex;
+	renderInfo.nextFrame = mNextFrameIndex;
+	renderInfo.frameRatio = mElapsedFrameRatio;
 	return renderInfo;
 }
 

@@ -696,6 +696,23 @@ void URenderer::createShader()
 		pixelShaderCSO[PST_UnicodeFont]->GetBufferSize(), nullptr,
 		&PixelShader[PST_UnicodeFont]);
 
+	// Particle
+	D3DCompileFromFile(L"Shaders/ShaderParticle.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Particle], nullptr);
+
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Particle]->GetBufferPointer(),
+		vertexShaderCSO[VST_Particle]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Particle]);
+
+	D3DCompileFromFile(L"Shaders/ShaderParticle.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_Particle], nullptr);
+
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_Particle]->GetBufferPointer(),
+		pixelShaderCSO[PST_Particle]->GetBufferSize(), nullptr,
+		&PixelShader[PST_Particle]);
+
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -1061,7 +1078,7 @@ void URenderer::PrepareGizmo()
 
 void URenderer::PrepareParticle()
 {
-	prepareBillboardTextureShader();
+	prepareParticleShader();
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1185,6 +1202,18 @@ void URenderer::prepareUnicodeFontShader()
 
 	// b1: DistanceRange
 	DeviceContext->PSSetConstantBuffers(1, 1, &UnicodeFontConstantBuffer);
+}
+
+void URenderer::prepareParticleShader()
+{
+	DeviceContext->VSSetShader(VertexShader[VST_Particle], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Particle], nullptr, 0);
+	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
+	if (ConstantBuffer[CBT_Particle])
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Particle]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Particle]);
+	}
 }
 
 void URenderer::RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
@@ -1431,6 +1460,14 @@ void URenderer::createConstantBuffer()
 	desc[CBT_Font].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	Device->CreateBuffer(&desc[CBT_Font], nullptr, &ConstantBuffer[CBT_Font]);
+
+	// Particle
+	desc[CBT_Particle].ByteWidth = sizeof(FParticleConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
+	desc[CBT_Particle].Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+	desc[CBT_Particle].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc[CBT_Particle].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	Device->CreateBuffer(&desc[CBT_Particle], nullptr, &ConstantBuffer[CBT_Particle]);
 }
 
 void URenderer::releaseConstantBuffer()
@@ -1681,6 +1718,32 @@ void URenderer::UpdateFontConstant(FVector3 location, FVector3 scale, FMatrix vi
 	}
 	DeviceContext->Unmap(ConstantBuffer[CBT_Font], 0);
 
+}
+
+void URenderer::UpdateParticleConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+	FVector3 cameraRight, FVector3 cameraUp,
+	int32 numRows, int32 numCols, int32 currentFrame, int32 nextFrame, float frameRatio,
+	FLinearColor tint
+)
+{
+	assert(ConstantBuffer[CBT_Particle]);
+	D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+	DeviceContext->Map(ConstantBuffer[CBT_Particle], 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+	FParticleConstants* constants = (FParticleConstants*)constantbufferMSR.pData;
+	{
+		constants->Location = location;
+		constants->Scale = scale;
+		constants->ViewProjection = viewProjection;
+		constants->Tint = tint;
+		constants->CameraRight = cameraRight;
+		constants->CameraUp = cameraUp;
+		constants->NumRows = numRows;
+		constants->NumCols = numCols;
+		constants->CurrentFrame = currentFrame;
+		constants->NextFrame = nextFrame;
+		constants->FrameRatio = frameRatio;
+	}
+	DeviceContext->Unmap(ConstantBuffer[CBT_Particle], 0);
 }
 
 void URenderer::UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter)
