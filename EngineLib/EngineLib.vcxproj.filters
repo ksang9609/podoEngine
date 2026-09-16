@@ -506,5 +506,14 @@
     <Font Include="Assets\Fonts\consolaz.ttf">
       <Filter>Assets\Fonts</Filter>
     </Font>
+    <Font Include="Assets\Fonts\malgun.ttf">
+      <Filter>Assets\Fonts</Filter>
+    </Font>
+    <Font Include="Assets\Fonts\malgunbd.ttf">
+      <Filter>Assets\Fonts</Filter>
+    </Font>
+    <Font Include="Assets\Fonts\malgunsl.ttf">
+      <Filter>Assets\Fonts</Filter>
+    </Font>
   </ItemGroup>
 </Project>

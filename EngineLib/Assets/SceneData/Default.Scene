@@ -1,5 +1,5 @@
 {
-  "NextUUID" : 5,
+  "NextUUID" : 4,
   "Version" : 0,
   "World" : {
     "ClassName" : "UWorld",
@@ -9,38 +9,41 @@
       "mActors" : [{
           "ClassName" : "AActor",
           "Properties" : {
-            "Name" : "Cube",
+            "Name" : "Earth",
             "UUID" : 1,
             "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
+                "ClassName" : "USphereComponent",
+                "ParentUUID" : -1,
                 "Properties" : {
-                  "Name" : "UPrimitiveComponent",
+                  "Name" : "USphereComponent",
                   "UUID" : 2,
-                  "mRelativeLocation" : [4.464537, 0.000000, 0.000000],
+                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.134642],
+                  "mRelativeRotation" : [0.000000, 0.000000, -90.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mSpinSpeed" : 90.000000,
+                  "mbShowBoundingBox" : true,
+                  "mbSpin" : true,
+                  "mbUseTexture" : true,
+                  "mePrimitive" : "Sphere"
+                }
+              }, {
+                "ClassName" : "UNameComponent",
+                "ParentUUID" : 2,
+                "Properties" : {
+                  "Name" : "UNameComponent",
+                  "UUID" : 3,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mNameText" : "Name: Earth, UUID: 1",
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Cube"
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
                 }
               }],
             "mRootComponentUUID" : 2
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "Cube",
-            "UUID" : 3,
-            "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
-                "Properties" : {
-                  "Name" : "UPrimitiveComponent",
-                  "UUID" : 4,
-                  "mRelativeLocation" : [0.000000, -5.713292, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Cube"
-                }
-              }],
-            "mRootComponentUUID" : 4
           }
         }]
     }

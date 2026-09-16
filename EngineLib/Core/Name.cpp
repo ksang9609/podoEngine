@@ -1,4 +1,4 @@
-#include "Core.h"
+﻿#include "Core.h"
 #include "Core/Container/TArray.h"
 #include "Core/Container/TMap.h"
 #include "Name.h"
@@ -9,11 +9,20 @@
 
 namespace
 {
-	TArray<FString> GDisplayNamePool;
-	TArray<FString> GComparisonNamePool;
+	struct FNameStorage
+	{
+		TArray<FString> DisplayPool;
+		TArray<FString> ComparisonPool;
+		TMap<FString, int32> DisplayLookup;
+		TMap<FString, int32> ComparisonLookup;
+	};
 
-	TMap<FString, int32> GDisplayNamePoolLookup;
-	TMap<FString, int32> GComparisonNamePoolLookup;
+	FNameStorage& GetNameStorage()
+	{
+		// FName can be constructed by static initializers in other translation units.
+		static FNameStorage Storage;
+		return Storage;
+	}
 
 	static FString ToLower(FString str)
 	{
@@ -52,11 +61,12 @@ FName::FName()
 
 FName::FName(const char* pStr)
 {
+	auto& Storage = GetNameStorage();
 	FString DisplayName = pStr;
 	FString ComparisonName = ToLower(DisplayName);
 
-	DisplayIndex = FindOrAdd(GDisplayNamePool, GDisplayNamePoolLookup, DisplayName);
-	ComparisonIndex = FindOrAdd(GComparisonNamePool, GComparisonNamePoolLookup, ComparisonName);
+	DisplayIndex = FindOrAdd(Storage.DisplayPool, Storage.DisplayLookup, DisplayName);
+	ComparisonIndex = FindOrAdd(Storage.ComparisonPool, Storage.ComparisonLookup, ComparisonName);
 }
 
 FName::FName(const FString& str)
@@ -66,12 +76,13 @@ FName::FName(const FString& str)
 
 FString FName::ToString() const
 {
-	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(GDisplayNamePool.Num()))
+	auto& Storage = GetNameStorage();
+	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(Storage.DisplayPool.Num()))
 	{
 		return FString("None");
 	}
 
-	return FString(GDisplayNamePool[DisplayIndex]);
+	return FString(Storage.DisplayPool[DisplayIndex]);
 }
 
 
@@ -82,8 +93,9 @@ bool FName::operator==(const FName& Other) const
 
 int32 FName::Compare(const FName& Other) const
 {
-	const FString& A = GComparisonNamePool[ComparisonIndex];
-	const FString& B = GComparisonNamePool[Other.ComparisonIndex];
+	auto& Storage = GetNameStorage();
+	const FString& A = Storage.ComparisonPool[ComparisonIndex];
+	const FString& B = Storage.ComparisonPool[Other.ComparisonIndex];
 
 	int Result = std::strcmp(A.CStr(), B.CStr());
 

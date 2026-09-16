@@ -9,53 +9,66 @@
       "mActors" : [{
           "ClassName" : "AActor",
           "Properties" : {
-            "Name" : "AActor",
-            "UUID" : 2,
-            "mComponents" : [{
-                "ClassName" : "UCubeComponent",
-                "Properties" : {
-                  "Name" : "UCubeComponent",
-                  "UUID" : 1,
-                  "mRelativeLocation" : [0.000000, 8.002071, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Cube"
-                }
-              }],
-            "mRootComponentUUID" : 1
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "AActor",
-            "UUID" : 4,
-            "mComponents" : [{
-                "ClassName" : "UCubeComponent",
-                "Properties" : {
-                  "Name" : "UCubeComponent",
-                  "UUID" : 3,
-                  "mRelativeLocation" : [0.000000, 9.455903, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Cube"
-                }
-              }],
-            "mRootComponentUUID" : 3
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "AActor",
-            "UUID" : 6,
+            "Name" : "Earth",
+            "UUID" : 1,
             "mComponents" : [{
                 "ClassName" : "USphereComponent",
+                "ParentUUID" : -1,
                 "Properties" : {
                   "Name" : "USphereComponent",
-                  "UUID" : 5,
-                  "mRelativeLocation" : [0.000000, 5.014287, 0.000000],
+                  "UUID" : 2,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.134642],
                   "mRelativeRotation" : [0.000000, 0.000000, -90.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Sphere"
+                  "mSpinSpeed" : 90.000000,
+                  "mbShowBoundingBox" : true,
+                  "mbSpin" : true,
+                  "mbUseTexture" : true,
+                  "mePrimitive" : "Sphere"
+                }
+              }, {
+                "ClassName" : "UNameComponent",
+                "ParentUUID" : 2,
+                "Properties" : {
+                  "Name" : "UNameComponent",
+                  "UUID" : 3,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mNameText" : "Name: Earth, UUID: 1",
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
+                }
+              }],
+            "mRootComponentUUID" : 2
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "Particle",
+            "UUID" : 4,
+            "mComponents" : [{
+                "ClassName" : "UParticleSubUVComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "UParticleSubUVComponent",
+                  "UUID" : 5,
+                  "mBlendStateType" : 1,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mFrameDuration" : 0.100000,
+                  "mNumCols" : 6,
+                  "mNumRows" : 6,
+                  "mPlayRate" : 1.000000,
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbLooping" : true,
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
                 }
               }],
             "mRootComponentUUID" : 5
@@ -63,31 +76,58 @@
         }, {
           "ClassName" : "AActor",
           "Properties" : {
-            "Name" : "Cube",
-            "UUID" : 7,
+            "Name" : "Particle",
+            "UUID" : 6,
             "mComponents" : [{
-                "ClassName" : "UPrimitiveComponent",
+                "ClassName" : "UParticleSubUVComponent",
+                "ParentUUID" : -1,
                 "Properties" : {
-                  "Name" : "UPrimitiveComponent",
-                  "UUID" : 8,
-                  "mRelativeLocation" : [0.000000, 6.689194, 0.000000],
+                  "Name" : "UParticleSubUVComponent",
+                  "UUID" : 7,
+                  "mBlendStateType" : 1,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mFrameDuration" : 0.100000,
+                  "mNumCols" : 6,
+                  "mNumRows" : 6,
+                  "mPlayRate" : 1.000000,
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mePrimitiveType" : "Cube"
-                }
-              }, {
-                "ClassName" : "UNameComponent",
-                "Properties" : {
-                  "Name" : "UNameComponent",
-                  "UUID" : 9,
-                  "mNameText" : "Name: Cube, UUID: 7",
-                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [0.000000, 0.000000, 0.000000],
-                  "mePrimitiveType" : "BillboardQuad"
+                  "mbLooping" : true,
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
                 }
               }],
-            "mRootComponentUUID" : 8
+            "mRootComponentUUID" : 7
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "Particle",
+            "UUID" : 8,
+            "mComponents" : [{
+                "ClassName" : "UParticleSubUVComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "UParticleSubUVComponent",
+                  "UUID" : 9,
+                  "mBlendStateType" : 1,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mFrameDuration" : 0.100000,
+                  "mNumCols" : 6,
+                  "mNumRows" : 6,
+                  "mPlayRate" : 1.000000,
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbLooping" : true,
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
+                }
+              }],
+            "mRootComponentUUID" : 9
           }
         }]
     }

@@ -184,53 +184,12 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
 	mSceneManager->NewScene();
-	{
-		UCubeComponent* cube =
-			FObjectFactory::ConstructObject<UCubeComponent>(
-				FVector(0.0f, -1.5f, 0.0f),
-				FRotator(0.0f, 0.0f, 0.0f),
-				FVector(1.0f, 1.0f, 1.0f));
-
-		cube->SetUseTexture(true);
-
-		AActor* actor =
-			FObjectFactory::ConstructObject<AActor>();
-
-		actor->AddRootSceneComponent(cube);
-		mSceneManager->GetCurrentWorld()->AddActor(actor);
-	}
 
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
 	FEditorCommands startupCommands;
 	mEditorUIManager->LoadSettings(startupCommands);
 	processEditorCommands(startupCommands);
-
-	{
-		USphereComponent* sphere =
-			FObjectFactory::ConstructObject<USphereComponent>(
-				FVector(0.0f, 1.5f, 0.0f),
-				FRotator(0.0f, 0.0f, -90.0f),
-				FVector(1.0f, 1.0f, 1.0f),
-				true, 90.0f);
-
-		// 구의 텍스처 버퍼와 텍스처 셰이더 사용
-		sphere->SetUseTexture(true);
-
-		AActor* actor =
-			FObjectFactory::ConstructObject<AActor>();
-
-		actor->AddRootSceneComponent(sphere);
-
-		mSceneManager->GetCurrentWorld()->AddActor(actor);
-	}
-	//test code
-	//{
-	//	UCubeComponent* cubeComonent = FObjectFactory::ConstructObject<UCubeComponent>(FVector(0), FRotator(), FVector(1));
-	//	AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
-	//	cubeActor->AddComponent(cubeComonent);
-	//	mSceneManager.GetCurrentWorld()->AddActor(cubeActor);
-	//}
 }
 
 void FEngineLoop::Tick(bool bPumpMessages)
