@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Core/enum.h"
 #include "Core/Math/Color.h"
 #include "Core/Math/FBoundingBox.h"
 #include "Core/Math/Transform.h"
@@ -14,11 +15,16 @@ struct FRenderInfo
 	FObjectID ObejctID;
 	FLinearColor Color;
 	ERenderFlags eRenderFlags;
+
 	const FTextMesh* Textmesh;
-	const FSubUVMesh* SubUVMesh; 
+	const FSubUVMesh* SubUVMesh;
+
+	// For billboard rendering
 
 	FBoundingBox LocalBounds{};
 	FBoundingBox WorldBounds{};
+
+	EBlendStateType BlendStateType = EBlendStateType::BST_Default;
 
 	// Return world matrix for billboard quads to face the camera
 	// Get FRotator input because current camera rotation is stored in FRotator.
@@ -38,5 +44,23 @@ struct FRenderInfo
 		//};
 		const FVector scale = FVector(1); // Billboard quad should not be scaled by world matrix, keep it uniform scale
 		return FMatrix::Scale(scale) * FMatrix::Rotate(cameraRotation) * FMatrix::Translation(location);
+	}
+
+	FVector3 GetLocation() const
+	{
+		return FVector3(
+			WorldTransformMatrix.M[3][0],
+			WorldTransformMatrix.M[3][1],
+			WorldTransformMatrix.M[3][2]
+		);
+	}
+
+	FVector3 GetScale() const
+	{
+		return FVector3(
+			WorldTransformMatrix.GetUnitAxis(EAxis::X).Length(),
+			WorldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
+			WorldTransformMatrix.GetUnitAxis(EAxis::Z).Length()
+		);
 	}
 };

@@ -22,6 +22,9 @@ struct FSetComponentUseTextureCommand { FObjectID ObjectID; bool bUseTexture; };
 struct FSetComponentColorCommand { FObjectID ObjectID; FLinearColor Color; };
 struct FSetSphereComponentSpinCommand { FObjectID ObjectID; bool bSpin; };
 struct FSetSphereComponentSpinSpeedCommand { FObjectID ObjectID; float SpinSpeed; };
+struct FSetParticleSubUVComponentLoopingCommand { FObjectID ObjectID; bool bLooping; };
+struct FSetParticleSubUVComponentPlayRateCommand { FObjectID ObjectID; float PlayRate; };
+struct FSetParticleSubUVComponentBlendStateTypeCommand { FObjectID ObjectID; EBlendStateType BlendStateType; };
 
 /* EditorViewportClient Commands */
 struct FSetViewModeCommand { EViewModeIndex ViewMode; };
@@ -56,6 +59,9 @@ using FEditorCommand = std::variant <
 	FSetComponentColorCommand,
 	FSetSphereComponentSpinCommand,
 	FSetSphereComponentSpinSpeedCommand,
+	FSetParticleSubUVComponentLoopingCommand,
+	FSetParticleSubUVComponentPlayRateCommand,
+	FSetParticleSubUVComponentBlendStateTypeCommand,
 
 	FSetViewModeCommand,
 	FSetShowFlagCommand,

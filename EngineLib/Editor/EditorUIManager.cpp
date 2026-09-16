@@ -12,6 +12,7 @@
 #include "Engine/Components/ActorComponent.h"
 #include "Engine/Components/PrimitiveComponent.h"
 #include "Engine/Components/SphereComponent.h"
+#include "Engine/Components/ParticleSubUVComponent.h"
 
 /* Editor */
 #include "FEditorViewportClient.h"
@@ -548,6 +549,27 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 					if (ImGui::DragFloat("Spin Speed", &spinSpeed, 0.1f, 0.0f, 3600.0f))
 					{
 						outCommands.Emplace(FSetSphereComponentSpinSpeedCommand{ sphereComponent->GetObjectID(), spinSpeed });
+					}
+				}
+
+				if (const UParticleSubUVComponent* particleSubUVComponent =
+					component->Cast<UParticleSubUVComponent>())
+				{
+					bool bLooping = particleSubUVComponent->IsLooping();
+					float playRate = particleSubUVComponent->GetPlayRate();
+					bool bUseAddtiveBlend = particleSubUVComponent->GetBlendStateType() == EBlendStateType::BST_Additive;
+
+					if (ImGui::Checkbox("Looping", &bLooping))
+					{
+						outCommands.Emplace(FSetParticleSubUVComponentLoopingCommand{ particleSubUVComponent->GetObjectID(), bLooping });
+					}
+					if (ImGui::DragFloat("Play Rate", &playRate, 0.1f, 0.0f, 10.0f))
+					{
+						outCommands.Emplace(FSetParticleSubUVComponentPlayRateCommand{ particleSubUVComponent->GetObjectID(), playRate });
+					}
+					if (ImGui::Checkbox("Additive Blend", &bUseAddtiveBlend))
+					{
+						outCommands.Emplace(FSetParticleSubUVComponentBlendStateTypeCommand{ particleSubUVComponent->GetObjectID(), bUseAddtiveBlend ? EBlendStateType::BST_Additive : EBlendStateType::BST_AlphaBlend });
 					}
 				}
 

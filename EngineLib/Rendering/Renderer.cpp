@@ -145,7 +145,7 @@ bool URenderer::createFontAtlasTexture()
 	}
 
 	// 함수가 다시 호출되는 경우 기존 텍스처 해제
-	
+
 	releaseFontAtlasTexture();
 
 	// 추후 동적으로 텍스쳐 로드하자 
@@ -238,9 +238,9 @@ bool URenderer::RenderSimpleInstanced(
 		!indexBuffer ||
 		indexCount == 0 ||
 		!ConstantBuffer ||
-		!InstancedVertexShader ||
+		!VertexShader[VST_Instanced] ||
 		!InstancedInputLayout ||
-		!SimplePixelShader)
+		!PixelShader[PST_Simple])
 	{
 		return false;
 	}
@@ -252,7 +252,7 @@ bool URenderer::RenderSimpleInstanced(
 	// Map / Unmap은 “CPU가 쓸 수 있게 잠깐 문 열어주는 것”
 	D3D11_MAPPED_SUBRESOURCE mapped{};
 
-	HRESULT hr = DeviceContext->Map(InstanceBuffer,	0,	D3D11_MAP_WRITE_DISCARD, 0,	&mapped);
+	HRESULT hr = DeviceContext->Map(InstanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 
 	if (FAILED(hr))
 	{
@@ -277,7 +277,7 @@ bool URenderer::RenderSimpleInstanced(
 
 
 	// indexCount: 인스턴스 하나를 그리는 데 사용할 인덱스 개수
-	DeviceContext->DrawIndexedInstanced(indexCount,	instanceCount, 0, 0, 0);
+	DeviceContext->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
 
 	return true;
 
@@ -596,59 +596,105 @@ void URenderer::SwapBuffer()
 
 void URenderer::createShader()
 {
-	ID3DBlob* vertexshaderCSO;
-	ID3DBlob* pixelshaderCSO;
-	ID3DBlob* LinevertexshaderCSO;
-	ID3DBlob* LinepixelshaderCSO;
-	ID3DBlob* primitiveTextureVertexShaderCSO;
-	ID3DBlob* primitiveTexturePixelShaderCSO;
-	ID3DBlob* instancedVertexShaderCS0;
-	ID3DBlob* fontVertexShaderCSO;
-	ID3DBlob* fontPixelShaderCSO;
-	ID3DBlob* unicodePixelShaderCSO;
+	ID3DBlob* vertexShaderCSO[VST_Count] = {};
+	ID3DBlob* pixelShaderCSO[PST_Count] = {};
 
+	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Simple], nullptr);
 
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Simple]->GetBufferPointer(),
+		vertexShaderCSO[VST_Simple]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Simple]);
 
-	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &vertexshaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_Simple], nullptr);
 
-	Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), nullptr, &SimpleVertexShader);
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_Simple]->GetBufferPointer(),
+		pixelShaderCSO[PST_Simple]->GetBufferSize(), nullptr,
+		&PixelShader[PST_Simple]);
 
-	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &pixelshaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderLine.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Line], nullptr);
 
-	Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(), pixelshaderCSO->GetBufferSize(), nullptr, &SimplePixelShader);
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Line]->GetBufferPointer(),
+		vertexShaderCSO[VST_Line]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Line]);
 
-	D3DCompileFromFile(L"Shaders/ShaderLine.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &LinevertexshaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderLine.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_Line], nullptr);
 
-	Device->CreateVertexShader(LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), nullptr, &LineSimpleVertexShader);
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_Line]->GetBufferPointer(),
+		pixelShaderCSO[PST_Line]->GetBufferSize(), nullptr,
+		&PixelShader[PST_Line]);
 
-	D3DCompileFromFile(L"Shaders/ShaderLine.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &LinepixelshaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Texture], nullptr);
 
-	Device->CreatePixelShader(LinepixelshaderCSO->GetBufferPointer(), LinepixelshaderCSO->GetBufferSize(), nullptr, &LineSimplePixelShader);
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Texture]->GetBufferPointer(),
+		vertexShaderCSO[VST_Texture]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Texture]);
 
-	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl",nullptr,	nullptr,"mainVS","vs_5_0",0,0,	&primitiveTextureVertexShaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr, nullptr, "billboardVS", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Billboard], nullptr);
 
-	Device->CreateVertexShader(primitiveTextureVertexShaderCSO->GetBufferPointer(), primitiveTextureVertexShaderCSO->GetBufferSize(), nullptr,	&PrimitiveTextureVertexShader);
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Billboard]->GetBufferPointer(),
+		vertexShaderCSO[VST_Billboard]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Billboard]);
 
-	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr,	nullptr,"mainPS", "ps_5_0",	0,	0,	&primitiveTexturePixelShaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr, nullptr, "billboardPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_Billboard], nullptr);
 
-	Device->CreatePixelShader(primitiveTexturePixelShaderCSO->GetBufferPointer(), primitiveTexturePixelShaderCSO->GetBufferSize(), nullptr, &PrimitiveTexturePixelShader);
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_Billboard]->GetBufferPointer(),
+		pixelShaderCSO[PST_Billboard]->GetBufferSize(), nullptr,
+		&PixelShader[PST_Billboard]);
+
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_Texture], nullptr);
+
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_Texture]->GetBufferPointer(),
+		pixelShaderCSO[PST_Texture]->GetBufferSize(), nullptr,
+		&PixelShader[PST_Texture]);
 
 	// 인스턴싱
-	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVSInstanced", "vs_5_0", 0, 0, &instancedVertexShaderCS0, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderW0.hlsl", nullptr, nullptr, "mainVSInstanced", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Instanced], nullptr);
 
-	Device->CreateVertexShader(instancedVertexShaderCS0->GetBufferPointer(), instancedVertexShaderCS0->GetBufferSize(), nullptr, &InstancedVertexShader);
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Instanced]->GetBufferPointer(),
+		vertexShaderCSO[VST_Instanced]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Instanced]);
 
-	D3DCompileFromFile(L"Shaders/ShaderFont.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &fontVertexShaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderFont.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Font], nullptr);
 
-	Device->CreateVertexShader(fontVertexShaderCSO->GetBufferPointer(), fontVertexShaderCSO->GetBufferSize(), nullptr, &FontVertexShader);
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Font]->GetBufferPointer(),
+		vertexShaderCSO[VST_Font]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Font]);
 
-	D3DCompileFromFile(L"Shaders/ShaderFont.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &fontPixelShaderCSO, nullptr);
+	D3DCompileFromFile(L"Shaders/ShaderFont.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_Font], nullptr);
 
-	Device->CreatePixelShader(fontPixelShaderCSO->GetBufferPointer(), fontPixelShaderCSO->GetBufferSize(), nullptr, &FontPixelShader);
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_Font]->GetBufferPointer(),
+		pixelShaderCSO[PST_Font]->GetBufferSize(), nullptr,
+		&PixelShader[PST_Font]);
 
-	D3DCompileFromFile(L"ShaderFontMSDF.hlsl",nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &unicodePixelShaderCSO, nullptr);
+	D3DCompileFromFile(L"ShaderFontMSDF.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_UnicodeFont], nullptr);
 
-	Device->CreatePixelShader(unicodePixelShaderCSO->GetBufferPointer(), unicodePixelShaderCSO->GetBufferSize(), nullptr, &UnicodeFontPixelShader);
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_UnicodeFont]->GetBufferPointer(),
+		pixelShaderCSO[PST_UnicodeFont]->GetBufferSize(), nullptr,
+		&PixelShader[PST_UnicodeFont]);
 
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -665,8 +711,8 @@ void URenderer::createShader()
 
 	D3D11_INPUT_ELEMENT_DESC primitiveTextureLayout[] =
 	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0	}// float u, v;    // 12바이트 위치부터 시작
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }// float u, v;    // 12바이트 위치부터 시작
 	};
 
 	const D3D11_INPUT_ELEMENT_DESC layoutInstanced[] =
@@ -674,37 +720,41 @@ void URenderer::createShader()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,  0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,  0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
-		 // 슬롯 1: 인스턴스의 World 행렬(행렬을 한꺼번에 넣는 건 불가능, 한줄 씩 넣는다)
-		{ "INSTANCE_WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-		{ "INSTANCE_WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 16: 내부 오프셋
-		{ "INSTANCE_WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 32: 내부 오프셋
-		{ "INSTANCE_WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 48: 내부 오프셋
+		// 슬롯 1: 인스턴스의 World 행렬(행렬을 한꺼번에 넣는 건 불가능, 한줄 씩 넣는다)
+	   { "INSTANCE_WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	   { "INSTANCE_WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 16: 내부 오프셋
+	   { "INSTANCE_WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 32: 내부 오프셋
+	   { "INSTANCE_WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 48: 내부 오프셋
 
-		//// 슬롯 1: 인스턴스의 Tint
-		{ "INSTANCE_TINT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	   //// 슬롯 1: 인스턴스의 Tint
+	   { "INSTANCE_TINT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 	};
 
 
-	Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
-	Device->CreateInputLayout(Linelayout, ARRAYSIZE(Linelayout), LinevertexshaderCSO->GetBufferPointer(), LinevertexshaderCSO->GetBufferSize(), &LineSimpleInputLayout);
-	Device->CreateInputLayout(primitiveTextureLayout,ARRAYSIZE(primitiveTextureLayout), primitiveTextureVertexShaderCSO->GetBufferPointer(), primitiveTextureVertexShaderCSO->GetBufferSize(), &PrimitiveTextureLayout);
-	Device->CreateInputLayout(primitiveTextureLayout, ARRAYSIZE(primitiveTextureLayout), fontVertexShaderCSO->GetBufferPointer(), fontVertexShaderCSO->GetBufferSize(), &FontInputLayout);
+	Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexShaderCSO[VST_Simple]->GetBufferPointer(), vertexShaderCSO[VST_Simple]->GetBufferSize(), &SimpleInputLayout);
+	Device->CreateInputLayout(Linelayout, ARRAYSIZE(Linelayout), vertexShaderCSO[VST_Line]->GetBufferPointer(), vertexShaderCSO[VST_Line]->GetBufferSize(), &LineSimpleInputLayout);
+	Device->CreateInputLayout(primitiveTextureLayout, ARRAYSIZE(primitiveTextureLayout), vertexShaderCSO[VST_Texture]->GetBufferPointer(), vertexShaderCSO[VST_Texture]->GetBufferSize(), &PrimitiveTextureLayout);
+	Device->CreateInputLayout(primitiveTextureLayout, ARRAYSIZE(primitiveTextureLayout), vertexShaderCSO[VST_Font]->GetBufferPointer(), vertexShaderCSO[VST_Font]->GetBufferSize(), &FontInputLayout);
 
-	Device->CreateInputLayout(layoutInstanced, ARRAYSIZE(layoutInstanced), instancedVertexShaderCS0->GetBufferPointer(), instancedVertexShaderCS0->GetBufferSize(), &InstancedInputLayout);
+	Device->CreateInputLayout(layoutInstanced, ARRAYSIZE(layoutInstanced), vertexShaderCSO[VST_Instanced]->GetBufferPointer(), vertexShaderCSO[VST_Instanced]->GetBufferSize(), &InstancedInputLayout);
 
 	StrideSimple = sizeof(FVertexSimple);
 	StrideTextured = sizeof(FVertexTextured);
 
-	vertexshaderCSO->Release();
-	pixelshaderCSO->Release();
-	LinevertexshaderCSO->Release();
-	LinepixelshaderCSO->Release();
-	primitiveTextureVertexShaderCSO->Release();
-	primitiveTexturePixelShaderCSO->Release();
-	instancedVertexShaderCS0->Release();
-	fontVertexShaderCSO->Release();
-	fontPixelShaderCSO->Release();
-	unicodePixelShaderCSO->Release();
+	for (auto& blob : vertexShaderCSO)
+	{
+		if (blob)
+		{
+			blob->Release();
+		}
+	}
+	for (auto& blob : pixelShaderCSO)
+	{
+		if (blob)
+		{
+			blob->Release();
+		}
+	}
 }
 
 // 유니코드 준비
@@ -713,7 +763,7 @@ bool URenderer::InitializeUnicodeFont(const wchar_t* atlasPath, float distanceRa
 	//  기존 스마트포인터와 같이 참조횟수가 0이 되면 메모리에서 해제
 	using Microsoft::WRL::ComPtr;
 
-	if(Device == nullptr
+	if (Device == nullptr
 		|| atlasPath == nullptr
 		|| atlasPath[0] == L'\0'
 		|| !std::isfinite(distanceRange)
@@ -816,35 +866,11 @@ void URenderer::releaseShader()
 		SimpleInputLayout = nullptr;
 	}
 
-	if (SimplePixelShader)
-	{
-		SimplePixelShader->Release();
-		SimplePixelShader = nullptr;
-	}
-
-	if (SimpleVertexShader)
-	{
-		SimpleVertexShader->Release();
-		SimpleVertexShader = nullptr;
-	}
-
 	/* Line Shader */
 	if (LineSimpleInputLayout)
 	{
 		LineSimpleInputLayout->Release();
 		LineSimpleInputLayout = nullptr;
-	}
-
-	if (LineSimplePixelShader)
-	{
-		LineSimplePixelShader->Release();
-		LineSimplePixelShader = nullptr;
-	}
-
-	if (LineSimpleVertexShader)
-	{
-		LineSimpleVertexShader->Release();
-		LineSimpleVertexShader = nullptr;
 	}
 
 	/* Texture Shader */
@@ -854,35 +880,11 @@ void URenderer::releaseShader()
 		FontInputLayout = nullptr;
 	}
 
-	if (FontPixelShader)
-	{
-		FontPixelShader->Release();
-		FontPixelShader = nullptr;
-	}
-
-	if (FontVertexShader)
-	{
-		FontVertexShader->Release();
-		FontVertexShader = nullptr;
-	}
-
 	/* Primitive Texture Shader */
 	if (PrimitiveTextureLayout)
 	{
 		PrimitiveTextureLayout->Release();
 		PrimitiveTextureLayout = nullptr;
-	}
-
-	if (PrimitiveTexturePixelShader)
-	{
-		PrimitiveTexturePixelShader->Release();
-		PrimitiveTexturePixelShader = nullptr;
-	}
-
-	if (PrimitiveTextureVertexShader)
-	{
-		PrimitiveTextureVertexShader->Release();
-		PrimitiveTextureVertexShader = nullptr;
 	}
 
 	/*Instancing*/
@@ -891,35 +893,30 @@ void URenderer::releaseShader()
 		InstancedInputLayout->Release();
 		InstancedInputLayout = nullptr;
 	}
-
-	if (InstancedVertexShader)
-	{
-		InstancedVertexShader->Release();
-		InstancedVertexShader = nullptr;
-	}
 	/* Font Shader */
-	if (FontVertexShader)
-	{
-		FontVertexShader->Release();
-		FontVertexShader = nullptr;
-	}
-
-	if (FontPixelShader)
-	{
-		FontPixelShader->Release();
-		FontPixelShader = nullptr;
-	}
-
 	if (FontInputLayout)
 	{
 		FontInputLayout->Release();
 		FontInputLayout = nullptr;
 	}
 
-	if (UnicodeFontPixelShader)
+
+	for (auto& vs : VertexShader)
 	{
-		UnicodeFontPixelShader->Release();
-		UnicodeFontPixelShader = nullptr;
+		if (vs)
+		{
+			vs->Release();
+			vs = nullptr;
+		}
+	}
+
+	for (auto& ps : PixelShader)
+	{
+		if (ps)
+		{
+			ps->Release();
+			ps = nullptr;
+		}
 	}
 }
 
@@ -1064,7 +1061,7 @@ void URenderer::PrepareGizmo()
 
 void URenderer::PrepareParticle()
 {
-	prepareTextureShader();
+	prepareBillboardTextureShader();
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1103,8 +1100,8 @@ void URenderer::PrepareSimpleInstanced()
 
 void URenderer::prepareInstancedShader()
 {
-	DeviceContext->VSSetShader(InstancedVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
+	DeviceContext->VSSetShader(VertexShader[VST_Instanced], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Simple], nullptr, 0);
 	DeviceContext->IASetInputLayout(InstancedInputLayout);
 
 	if (ConstantBuffer[CBT_Simple])
@@ -1115,8 +1112,8 @@ void URenderer::prepareInstancedShader()
 
 void URenderer::prepareSimpleShader()
 {
-	DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
+	DeviceContext->VSSetShader(VertexShader[VST_Simple], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Simple], nullptr, 0);
 	DeviceContext->IASetInputLayout(SimpleInputLayout);
 
 	if (ConstantBuffer[CBT_Simple])
@@ -1127,8 +1124,8 @@ void URenderer::prepareSimpleShader()
 
 void URenderer::prepareTextureShader()
 {
-	DeviceContext->VSSetShader(PrimitiveTextureVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(PrimitiveTexturePixelShader, nullptr, 0);
+	DeviceContext->VSSetShader(VertexShader[VST_Texture], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Texture], nullptr, 0);
 	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
 
 	if (ConstantBuffer[CBT_Texture])
@@ -1138,10 +1135,23 @@ void URenderer::prepareTextureShader()
 	}
 }
 
+void URenderer::prepareBillboardTextureShader()
+{
+	DeviceContext->VSSetShader(VertexShader[VST_Billboard], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Billboard], nullptr, 0);
+	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
+
+	if (ConstantBuffer[CBT_BillboardTexture])
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_BillboardTexture]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_BillboardTexture]);
+	}
+}
+
 void URenderer::prepareLineShader()
 {
-	DeviceContext->VSSetShader(LineSimpleVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(LineSimplePixelShader, nullptr, 0);
+	DeviceContext->VSSetShader(VertexShader[VST_Line], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Line], nullptr, 0);
 	DeviceContext->IASetInputLayout(LineSimpleInputLayout);
 
 	if (ConstantBuffer[CBT_Simple])
@@ -1152,8 +1162,8 @@ void URenderer::prepareLineShader()
 
 void URenderer::prepareFontShader()
 {
-	DeviceContext->VSSetShader(FontVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(FontPixelShader, nullptr, 0);
+	DeviceContext->VSSetShader(VertexShader[VST_Font], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Font], nullptr, 0);
 	DeviceContext->IASetInputLayout(FontInputLayout);
 	if (ConstantBuffer[CBT_Simple])
 	{
@@ -1164,11 +1174,11 @@ void URenderer::prepareFontShader()
 
 void URenderer::prepareUnicodeFontShader()
 {
-	DeviceContext->VSSetShader(FontVertexShader, nullptr, 0);
+	DeviceContext->VSSetShader(VertexShader[VST_Font], nullptr, 0);
 	DeviceContext->IASetInputLayout(FontInputLayout);
 
 	// MSDF 전용 픽셀 셰이더
-	DeviceContext->PSSetShader(UnicodeFontPixelShader, nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_UnicodeFont], nullptr, 0);
 
 	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
 	DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
@@ -1305,7 +1315,7 @@ void URenderer::RenderUnicodeFontTexture(uint32 indexCount)
 void URenderer::RenderParticle(ID3D11ShaderResourceView* texture)
 {
 	if (!ParticleVertexBuffer || texture == nullptr) return;
-	
+
 	UINT offset = 0;
 
 	// Bind the vertex buffer
@@ -1388,7 +1398,7 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 
 void URenderer::createConstantBuffer()
 {
-	D3D11_BUFFER_DESC desc[2] = {};
+	D3D11_BUFFER_DESC desc[CBT_Count] = {};
 
 	// Simple Primitive용 상수 버퍼
 	desc[CBT_Simple].ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
@@ -1405,6 +1415,14 @@ void URenderer::createConstantBuffer()
 	desc[CBT_Texture].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	Device->CreateBuffer(&desc[CBT_Texture], nullptr, &ConstantBuffer[CBT_Texture]);
+
+	// Billboard Texture
+	desc[CBT_BillboardTexture].ByteWidth = sizeof(FBillboardConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
+	desc[CBT_BillboardTexture].Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+	desc[CBT_BillboardTexture].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc[CBT_BillboardTexture].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	Device->CreateBuffer(&desc[CBT_BillboardTexture], nullptr, &ConstantBuffer[CBT_BillboardTexture]);
 }
 
 void URenderer::releaseConstantBuffer()
@@ -1609,6 +1627,33 @@ void URenderer::UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLi
 	}
 }
 
+void URenderer::UpdateBillboardConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+	FVector3 cameraRight, FVector3 cameraUp,
+	FLinearColor tint,
+	FVector2 uvScale, FVector2 uvOffset)
+{
+	if (ConstantBuffer[CBT_BillboardTexture])
+	{
+		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+		DeviceContext->Map(ConstantBuffer[CBT_BillboardTexture], 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+		FBillboardConstants* constants = (FBillboardConstants*)constantbufferMSR.pData;
+		{
+			constants->Location = location;
+			constants->Scale = scale;
+
+			constants->ViewProjection = viewProjection;
+			constants->Tint = tint;
+
+			constants->UVOffset = uvOffset;
+			constants->UVScale = uvScale;
+
+			constants->CameraRight = cameraRight;
+			constants->CameraUp = cameraUp;
+		}
+		DeviceContext->Unmap(ConstantBuffer[CBT_BillboardTexture], 0);
+	}
+}
+
 void URenderer::UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter)
 {
 	const uint32 numVertices = vertices.Num();
@@ -1751,6 +1796,15 @@ bool URenderer::UpdateUnicodeFontBuffer(const FTextMesh& textMesh)
 	DeviceContext->Unmap(UnicodeFontVertexBuffer, 0);
 
 	return true;
+}
+
+void URenderer::UpdateBlendState(EBlendStateType blendState)
+{
+	if (!DeviceContext || blendState >= EBlendStateType::BST_Count)
+	{
+		return;
+	}
+	DeviceContext->OMSetBlendState(BlendState[blendState], nullptr, 0xffffffff);
 }
 
 
@@ -1941,16 +1995,16 @@ bool URenderer::ensureFontIndexBuffer(UINT fontCpunt)
 		indices.push_back(base + 0);
 	}
 
-/*	D3D11_BUFFER_DESC desc = {};
-	desc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(UINT));
-	desc.Usage = D3D11_USAGE_IMMUTABLE; // 
-	desc.BindFlags = D3D11_BIND_INDEX_BUFFER; // 인덱스 버퍼라고 명시
+	/*	D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(UINT));
+		desc.Usage = D3D11_USAGE_IMMUTABLE; //
+		desc.BindFlags = D3D11_BIND_INDEX_BUFFER; // 인덱스 버퍼라고 명시
 
-	D3D11_SUBRESOURCE_DATA data = {};
-	data.pSysMem = indices.data();
+		D3D11_SUBRESOURCE_DATA data = {};
+		data.pSysMem = indices.data();
 
-	ID3D11Buffer* newBuffer = nullptr;
-	HRESULT hr = Device->CreateBuffer(&desc, &data, &newBuffer);*/
+		ID3D11Buffer* newBuffer = nullptr;
+		HRESULT hr = Device->CreateBuffer(&desc, &data, &newBuffer);*/
 
 	ID3D11Buffer* newBuffer = CreatePrimitiveIndexBuffer(indices.data(), static_cast<UINT>(indices.size())
 	);

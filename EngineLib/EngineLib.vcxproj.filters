@@ -463,6 +463,9 @@
     <Image Include="Assets\Textures\LoadingScreen.dds">
       <Filter>Assets\Textures</Filter>
     </Image>
+    <Image Include="Assets\Textures\Explosion_Alpha.dds">
+      <Filter>Assets\Textures</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\SceneData\Default.Scene">

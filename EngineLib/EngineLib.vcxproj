@@ -143,6 +143,7 @@
     <Image Include="Assets\Textures\EarthTexture.dds" />
     <Image Include="Assets\Textures\Explosion.dds" />
     <Image Include="Assets\Textures\LoadingScreen.dds" />
+    <Image Include="Assets\Textures\Explosion_Alpha.dds" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\SceneData\Default.Scene" />

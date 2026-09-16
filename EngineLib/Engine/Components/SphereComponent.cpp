@@ -37,7 +37,7 @@ void USphereComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInf
 		}
 
 		// Update sub uv instead of the rotation of the sphere component
-		mSubUVMesh.UVOffset.x = mElapsedDegrees / 360.f; // Assuming the texture is a horizontal strip of frames
+		mSubUVMesh.UVOffset.x = -mElapsedDegrees / 360.f; // Assuming the texture is a horizontal strip of frames
 	}
 
 	UPrimitiveComponent::Update(deltaTime, outRenderInfos);

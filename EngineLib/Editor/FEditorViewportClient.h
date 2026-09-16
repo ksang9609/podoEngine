@@ -3,10 +3,12 @@
 
 #include <d3d11.h>
 #include "Engine/World.h"
+#include "Engine/EngineStatics.h"
 #include "Rendering/Camera.h"
 #include "Rendering/RenderInfo.h"
 #include "Gizmo.h"
 #include "Core/Math/FBoundingBox.h"
+
 
 class AActor;
 class FSceneManager;
@@ -65,8 +67,14 @@ private:
 	);
 
 	bool bMouseHit = false;
+
 	
 	// RayCast가 이번 프레임에 쏜 광선. 기즈모 드래그가 같은 광선을 다시 쓴다
 	FVector mRayNear;
 	FVector mRayFar;
+
+	// 복사용 클립보드
+	TMap<int32, int32> UUIDChangeMap;
+	json::JSON mActorClipBoard;
+	json::JSON copyObject;
 };
