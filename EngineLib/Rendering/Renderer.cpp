@@ -979,6 +979,13 @@ void URenderer::Prepare(bool bWireFrame)
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
 }
 
+void URenderer::PrepareForUI()
+{
+	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
+	DeviceContext->RSSetViewports(1, &ViewportInfo);
+	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
+}
+
 void URenderer::PrepareSimplePrimitive()
 {
 	prepareSimpleShader();

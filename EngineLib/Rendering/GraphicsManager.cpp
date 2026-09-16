@@ -85,6 +85,11 @@ void FGraphicsManager::Prepare(const FCamera* mCamera)
 	//mRenderer->UpdateConstantViewProjection(viewProjection);
 }
 
+void FGraphicsManager::PrepareForUI()
+{
+	mRenderer->PrepareForUI();
+}
+
 //// TODO: remove outBillboardRenderQueue
 //void QueueRenderQueue(
 //	const TArray<FRenderInfo>& renderInfos,

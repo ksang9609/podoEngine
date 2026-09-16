@@ -51,6 +51,38 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorComma
 FString saveSceneFileDialog();
 FString openSceneFileDialog();
 
+void FEditorUIManager::RenderLoadingScreen(FGraphicsManager& graphicsManager)
+{
+	graphicsManager.PrepareForUI();
+
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(displaySize);
+
+	 graphicsManager.GetRenderer()->LoadTexture(L"Assets/Textures/LoadingScreen.dds",
+	     &mLoadingScreenSRV);
+
+	ImGui::Begin(
+		"Loading",
+		nullptr,
+		ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoSavedSettings);
+
+	ImGui::Image(reinterpret_cast<ImTextureID>(mLoadingScreenSRV), displaySize);
+
+	ImGui::End();
+
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	graphicsManager.Display();
+}
+
 void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands)
 {
 	/* Set ImGui Window Setting */
@@ -100,9 +132,6 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	if (ImGui::Button("Spawn Particle"))
 	{
 		outCommands.Emplace(FSpawnParticleCommand{});
-
-
-
 	}
 
 	/* Scene Control */

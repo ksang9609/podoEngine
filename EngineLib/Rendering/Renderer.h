@@ -175,6 +175,7 @@ public:
 
 	// Gloabal prepare method
 	void Prepare(bool bWireFrame);
+	void PrepareForUI();
 
 	/* Prepare methods for each rendering type */
 	void PrepareSimplePrimitive();

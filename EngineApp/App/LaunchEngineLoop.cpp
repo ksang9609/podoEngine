@@ -6,6 +6,7 @@
 #include "Core/Object/Object.h"
 #include "Core/Object/ObjectFactory.h"
 #include "Editor/Console.h"
+#include "Editor/EditorUIManager.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
@@ -81,9 +82,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesKorean());
 
-
-
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
+	mEditorUIManager->RenderLoadingScreen(*mGraphicsManager);
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
@@ -182,7 +182,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
-
 
 	mSceneManager->NewScene();
 	{

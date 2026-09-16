@@ -49,6 +49,7 @@ public:
 
 	//void Prepare(const Camera* mCamera);
 	void Prepare(const FCamera* mCamera);
+	void PrepareForUI();
 
 	/* Rendering functions */
 	void Render(
