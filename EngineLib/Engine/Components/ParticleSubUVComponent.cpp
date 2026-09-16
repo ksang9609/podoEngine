@@ -22,8 +22,8 @@ void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FV
 	// Call the base class Initialize
 	UBillboardComponent::Initialize(location, rotation, scale3D);
 
-	mColor = FLinearColor(1.f, 1.f, 1.f, 0.2f); // Set default color to white
-	mBlendStateType = EBlendStateType::BST_Additive; // Set default blend state to additive
+	mColor = FLinearColor(1.f, 1.f, 1.f, 1.f); // Set default color to white
+	mBlendStateType = EBlendStateType::BST_AlphaBlend; // Set default blend state to alpha blend
 }
 
 void UParticleSubUVComponent::SerializeClass(json::JSON& outJson) const
@@ -125,7 +125,7 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 		? FLinearColor(1.f, 1.f, 1.f, 0.0f) // Fully transparent if finished
 		: mColor; // Use the component's color if not finished
 
-	renderInfo.BlendStateType = mBlendStateType;
+	renderInfo.BlendStateType = static_cast<EBlendStateType>(mBlendStateType);
 	return renderInfo;
 }
 
@@ -152,7 +152,11 @@ std::span<const FPropertyInfo> UParticleSubUVComponent::GetDeclaredProperties()
 		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
 			mFrameDuration,
-			"mFrameDuration")
+			"mFrameDuration"),
+		REFLECT_PROPERTY(
+			UParticleSubUVComponent,
+			mBlendStateType,
+			"mBlendStateType")
 	};
 
 	return Properties;
