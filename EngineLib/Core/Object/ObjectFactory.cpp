@@ -49,7 +49,6 @@ UObject* FObjectFactory::LoadObject(const FClassInfo* classInfo, const json::JSO
 	if (instance)
 	{
 		instance->DeserializeClass(inJson);
-		instance->PostDeserialize();
 	}
 	return instance;
 }
@@ -107,21 +106,25 @@ AActor* FObjectFactory::SpawnParticleActor(FVector3 Location, FRotator Rotation,
 
 const FClassInfo* FObjectFactory::GetClassInfoByName(const FString& className)
 {
-	if (!mClassInfoMap.Contains(className))
+	const FName classKey(className);
+
+	if (!mClassInfoMap.Contains(classKey))
 	{
 		return nullptr;
 	}
 
-	return mClassInfoMap[className]();
+	return mClassInfoMap[classKey]();
 }
 
 bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* classInfo)
 {
-	if (mClassInfoMap.Contains(className))
+	const FName classKey(className);
+
+	if (mClassInfoMap.Contains(classKey))
 	{
 		return false;
 	}
-	mClassInfoMap.Add(className, [classInfo]() -> const FClassInfo* { return classInfo; });
+	mClassInfoMap.Add(classKey, [classInfo]() -> const FClassInfo* { return classInfo; });
 	return true;
 }
 
@@ -133,7 +136,7 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "Engine/Components/ParticleSubUVComponent.h"
 #include "Engine/Components/SphereComponent.h"
 
-TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
+TMap<FName, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetClass },
 	{"AActor", &AActor::GetClass },
 	{"UActorComponent", &UActorComponent::GetClass },

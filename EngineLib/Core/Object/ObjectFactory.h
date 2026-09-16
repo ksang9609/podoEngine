@@ -56,7 +56,7 @@ struct FObjectFactory
 
 private:
 	// TODO: Automate the registration of class info for all UObject-derived classes.
-	static TMap<FString, std::function<const FClassInfo* ()>> mClassInfoMap;
+	static TMap<FName, std::function<const FClassInfo* ()>> mClassInfoMap;
 
 	// TODO?: Does really need a default font resource?
 	static const FFontResource* mDefaultFontResource;
