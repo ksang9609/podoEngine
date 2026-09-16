@@ -23,6 +23,7 @@ void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FV
 	UBillboardComponent::Initialize(location, rotation, scale3D);
 
 	mColor = FLinearColor(1.f, 1.f, 1.f, 0.2f); // Set default color to white
+	mBlendStateType = EBlendStateType::BST_Additive; // Set default blend state to additive
 }
 
 void UParticleSubUVComponent::SerializeClass(json::JSON& outJson) const
@@ -123,6 +124,8 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 	renderInfo.Color = mbIsFinished
 		? FLinearColor(1.f, 1.f, 1.f, 0.0f) // Fully transparent if finished
 		: mColor; // Use the component's color if not finished
+
+	renderInfo.BlendStateType = mBlendStateType;
 	return renderInfo;
 }
 

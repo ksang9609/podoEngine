@@ -178,7 +178,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion.dds");
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion_Alpha.dds");
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽

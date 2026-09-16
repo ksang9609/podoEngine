@@ -2,6 +2,7 @@
 
 #include "BillboardComponent.h"
 
+#include "Core/enum.h"
 #include "Rendering/SubUVMesh.h"
 
 class UParticleSubUVComponent : public UBillboardComponent
@@ -28,6 +29,9 @@ public:
 	float GetPlayRate() const { return mPlayRate; }
 	void SetPlayRate(float playRate) { mPlayRate = playRate; }
 
+	EBlendStateType GetBlendStateType() const { return mBlendStateType; }
+	void SetBlendStateType(EBlendStateType blendStateType) { mBlendStateType = blendStateType; }
+
 private:
 	FSubUVMesh mSubUVMesh;
 
@@ -38,6 +42,7 @@ private:
 	bool mbLooping = true;
 	float mPlayRate = 1.0f; // Play speed multiplier
 	float mFrameDuration = 1.0f; // Duration of each frame in seconds
+	EBlendStateType mBlendStateType = EBlendStateType::BST_Additive;
 
 	/* Internal State */
 	//float mElapsedTime = 0.0f; // Time elapsed since the last frame change
