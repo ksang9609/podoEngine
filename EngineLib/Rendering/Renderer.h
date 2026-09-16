@@ -33,6 +33,21 @@ struct FTextureConstants
 	FVector2 UVOffset;      // 텍스처 좌표 오프셋
 };
 
+struct FBillboardConstants
+{
+	FVector3 Location;
+	FVector3 Scale;
+
+	FMatrix ViewProjection;
+	FLinearColor Tint;
+
+	FVector2 UVScale;
+	FVector2 UVOffset;
+
+	FVector3 CameraRight;
+	FVector3 CameraUp;
+};
+
 // intancing 용
 struct FInstanceData
 {

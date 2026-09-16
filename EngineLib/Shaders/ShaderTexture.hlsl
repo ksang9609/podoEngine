@@ -12,6 +12,21 @@ cbuffer textureConstants : register(b0)
     float2 UVOffset;
 }
 
+cbuffer billboardTextureConstants : register(b0)
+{
+    float3 BLocation;
+    float3 BScale;
+    
+    row_major float4x4 BViewProjection;
+    float4 BTint;
+
+    float2 BUVScale;
+    float2 BUVOffset;
+
+    float3 BCameraRight;
+    float3 BCameraUp;
+}
+
 
 struct VS_INPUT
 {
@@ -31,6 +46,22 @@ PS_INPUT mainVS(VS_INPUT input)
 
     output.position = mul(mul(float4(input.position.xyz, 1.0f), World), ViewProjection);
     output.uv = input.uv * UVScale + UVOffset;
+
+    return output;
+}
+
+PS_INPUT billboardVS(VS_INPUT input)
+{
+    PS_INPUT output;
+
+    float2 corner = input.position.yz;
+
+    output.position =
+        BLocation
+        + BCameraRight * corner.x * BScale.x
+        + BCameraUp * corner.y * BScale.y;
+
+    output.uv = input.uv * BUVScale + BUVOffset;
 
     return output;
 }
