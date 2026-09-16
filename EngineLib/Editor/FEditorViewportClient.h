@@ -77,5 +77,4 @@ private:
 	TMap<int32, int32> UUIDChangeMap;
 	json::JSON mActorClipBoard;
 	json::JSON copyObject;
-	bool isCopied = false;
 };
