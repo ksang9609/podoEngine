@@ -81,7 +81,9 @@ enum class EEngineShowFlags : uint32
 {
 	SF_Primitives = 1 << 0,
 	SF_BillboardText = 1 << 1,
-	SF_WorldAxis = 1 << 2
+	SF_WorldAxis = 1 << 2,
+	SF_BoundingBox = 1 << 3,
+	SF_Grid = 1 << 4,
 };
 
 constexpr EEngineShowFlags operator|(EEngineShowFlags lhs, EEngineShowFlags rhs)
