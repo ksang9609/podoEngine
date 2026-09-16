@@ -54,12 +54,14 @@ PS_INPUT billboardVS(VS_INPUT input)
 {
     PS_INPUT output;
 
+    // Quad is defined in yz-plane
     float2 corner = input.position.yz;
+    float2 scale = BScale.yz;
 
     float3 worldPosition =
         BLocation
-        + BCameraRight * corner.x * BScale.x
-        + BCameraUp * corner.y * BScale.y;
+        + BCameraRight * corner.x * scale.x
+        + BCameraUp * corner.y * scale.y;
 
     output.position = mul(float4(worldPosition, 1.0f), BViewProjection);
 
@@ -72,4 +74,10 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float4 color = Texture.Sample(TextureSampler, input.uv);
     return color * Tint;
+}
+
+float4 billboardPS(PS_INPUT input) : SV_TARGET
+{
+    float4 color = Texture.Sample(TextureSampler, input.uv);
+    return color * BTint;
 }

@@ -36,7 +36,9 @@ struct FTextureConstants
 struct FBillboardConstants
 {
 	FVector3 Location;
+	float Pad0 = 0;
 	FVector3 Scale;
+	float Pad1 = 0;
 
 	FMatrix ViewProjection;
 	FLinearColor Tint;
@@ -45,7 +47,9 @@ struct FBillboardConstants
 	FVector2 UVOffset;
 
 	FVector3 CameraRight;
+	float Pad2 = 0;
 	FVector3 CameraUp;
+	float Pad3 = 0;
 };
 
 // intancing 용
@@ -83,6 +87,8 @@ enum EContantBufferType
 {
 	CBT_Simple,
 	CBT_Texture,
+	CBT_BillboardTexture,
+	CBT_Count,
 };
 
 enum EVertexShaderType
@@ -92,6 +98,7 @@ enum EVertexShaderType
 	VST_Texture,
 	VST_Instanced,
 	VST_Font,
+	VST_Billboard,
 	VST_Count,
 };
 
@@ -102,20 +109,21 @@ enum EPixelShaderType
 	PST_Texture,
 	PST_Font,
 	PST_UnicodeFont,
+	PST_Billboard,
 	PST_Count,
 };
 
 class URenderer
 {
 public:
-    ID3D11Device* Device = nullptr;
-    ID3D11DeviceContext* DeviceContext = nullptr;
-    IDXGISwapChain* SwapChain = nullptr;
+	ID3D11Device* Device = nullptr;
+	ID3D11DeviceContext* DeviceContext = nullptr;
+	IDXGISwapChain* SwapChain = nullptr;
 
-    ID3D11Texture2D* FrameBuffer = nullptr;
-    ID3D11RenderTargetView* FrameBufferRTV = nullptr;
+	ID3D11Texture2D* FrameBuffer = nullptr;
+	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 	ID3D11RasterizerState* RasterizerState[2] = {};
-    ID3D11Buffer* ConstantBuffer[2] = {};
+	ID3D11Buffer* ConstantBuffer[CBT_Count] = {};
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
 	ID3D11DepthStencilState* DepthStencilState[4] = {};	// 깊이 테스트용 상태
@@ -154,11 +162,11 @@ public:
 	ID3D11Buffer* ParticleIndexBuffer = nullptr;
 
 
-    FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
-    D3D11_VIEWPORT ViewportInfo;
-    //ID3D11VertexShader* SimpleVertexShader;
-    //ID3D11PixelShader* SimplePixelShader;
-    ID3D11InputLayout* SimpleInputLayout;
+	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
+	D3D11_VIEWPORT ViewportInfo;
+	//ID3D11VertexShader* SimpleVertexShader;
+	//ID3D11PixelShader* SimplePixelShader;
+	ID3D11InputLayout* SimpleInputLayout;
 	//ID3D11VertexShader* LineSimpleVertexShader;
 	//ID3D11PixelShader* LineSimplePixelShader;
 	ID3D11InputLayout* LineSimpleInputLayout;
@@ -170,8 +178,8 @@ public:
 	ID3D11Buffer* LineIndexBuffer = nullptr;
 	uint32 LineIndexCapacity = 0;
 
-    unsigned int StrideSimple;
-    unsigned int StrideTextured;
+	unsigned int StrideSimple;
+	unsigned int StrideTextured;
 
 public:
 	/* Create */
@@ -193,14 +201,14 @@ public:
 	// texturedPrimitive용
 	//void RenderTexture(const FMatrix& world, const FMatrix& viewProjection);
 
-	
+
 	//void RenderTexturedPrimitive(ID3D11Buffer* vertexBuffer, UINT numVertices, ID3D11ShaderResourceView* textureSRV);
 
 	// PNG·MSDF 셰이더·필요 리소스 준비
 	bool InitializeUnicodeFont(const wchar_t* atlasPath, float distanceRange);
 
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
-	
+
 	void ReleasePrimitiveTextureResources(
 		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
 
@@ -223,10 +231,14 @@ public:
 	void PrepareHighlight();
 	// 셰이더, 입력 레이아웃, 블렌딩 상태 설정
 	void PrepareUnicodeFont();
-  void PrepareParticle();
+	void PrepareParticle();
 
 	void UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0));
 	void UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0),
+		FVector2 uvScale = { 1.0f, 1.0f }, FVector2 uvOffset = { 0.0f, 0.0f });
+	void UpdateBillboardConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+		FVector3 cameraRight, FVector3 cameraUp,
+		FLinearColor tint = FLinearColor(0, 0, 0, 0),
 		FVector2 uvScale = { 1.0f, 1.0f }, FVector2 uvOffset = { 0.0f, 0.0f });
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
@@ -240,15 +252,15 @@ public:
 	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
-  void RenderUnicodeFontTexture(uint32 indexCount);
-  void RenderParticle(ID3D11ShaderResourceView* texture);
+	void RenderUnicodeFontTexture(uint32 indexCount);
+	void RenderParticle(ID3D11ShaderResourceView* texture);
 
 	void SwapBuffer();
 
 
 	//Initialize
 	void ClearDepth();
-    //=============================================
+	//=============================================
 	//해상도 변경 시 호출
 	//void OnResize(UINT Width, UINT Height);
 	void OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight);
@@ -294,6 +306,7 @@ private:
 	void prepareSimpleShader();
 	void prepareInstancedShader();
 	void prepareTextureShader();
+	void prepareBillboardTextureShader();
 	void prepareLineShader();
 	void prepareFontShader();
 	void prepareUnicodeFontShader();

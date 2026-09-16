@@ -143,7 +143,7 @@ bool URenderer::createFontAtlasTexture()
 	}
 
 	// 함수가 다시 호출되는 경우 기존 텍스처 해제
-	
+
 	releaseFontAtlasTexture();
 
 	// 추후 동적으로 텍스쳐 로드하자 
@@ -250,7 +250,7 @@ bool URenderer::RenderSimpleInstanced(
 	// Map / Unmap은 “CPU가 쓸 수 있게 잠깐 문 열어주는 것”
 	D3D11_MAPPED_SUBRESOURCE mapped{};
 
-	HRESULT hr = DeviceContext->Map(InstanceBuffer,	0,	D3D11_MAP_WRITE_DISCARD, 0,	&mapped);
+	HRESULT hr = DeviceContext->Map(InstanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 
 	if (FAILED(hr))
 	{
@@ -275,7 +275,7 @@ bool URenderer::RenderSimpleInstanced(
 
 
 	// indexCount: 인스턴스 하나를 그리는 데 사용할 인덱스 개수
-	DeviceContext->DrawIndexedInstanced(indexCount,	instanceCount, 0, 0, 0);
+	DeviceContext->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
 
 	return true;
 
@@ -629,7 +629,7 @@ void URenderer::createShader()
 		pixelShaderCSO[PST_Line]->GetBufferSize(), nullptr,
 		&PixelShader[PST_Line]);
 
-	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl",nullptr,	nullptr,"mainVS","vs_5_0",0,0,
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
 		&vertexShaderCSO[VST_Texture], nullptr);
 
 	Device->CreateVertexShader(
@@ -637,7 +637,23 @@ void URenderer::createShader()
 		vertexShaderCSO[VST_Texture]->GetBufferSize(), nullptr,
 		&VertexShader[VST_Texture]);
 
-	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr,	nullptr,"mainPS", "ps_5_0",	0,	0,
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr, nullptr, "billboardVS", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Billboard], nullptr);
+
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Billboard]->GetBufferPointer(),
+		vertexShaderCSO[VST_Billboard]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Billboard]);
+
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr, nullptr, "billboardPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_Billboard], nullptr);
+
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_Billboard]->GetBufferPointer(),
+		pixelShaderCSO[PST_Billboard]->GetBufferSize(), nullptr,
+		&PixelShader[PST_Billboard]);
+
+	D3DCompileFromFile(L"Shaders/ShaderTexture.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
 		&pixelShaderCSO[PST_Texture], nullptr);
 
 	Device->CreatePixelShader(
@@ -670,7 +686,7 @@ void URenderer::createShader()
 		pixelShaderCSO[PST_Font]->GetBufferSize(), nullptr,
 		&PixelShader[PST_Font]);
 
-	D3DCompileFromFile(L"ShaderFontMSDF.hlsl",nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+	D3DCompileFromFile(L"ShaderFontMSDF.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
 		&pixelShaderCSO[PST_UnicodeFont], nullptr);
 
 	Device->CreatePixelShader(
@@ -693,8 +709,8 @@ void URenderer::createShader()
 
 	D3D11_INPUT_ELEMENT_DESC primitiveTextureLayout[] =
 	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0	}// float u, v;    // 12바이트 위치부터 시작
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }// float u, v;    // 12바이트 위치부터 시작
 	};
 
 	const D3D11_INPUT_ELEMENT_DESC layoutInstanced[] =
@@ -702,20 +718,20 @@ void URenderer::createShader()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,  0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,  0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
-		 // 슬롯 1: 인스턴스의 World 행렬(행렬을 한꺼번에 넣는 건 불가능, 한줄 씩 넣는다)
-		{ "INSTANCE_WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-		{ "INSTANCE_WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 16: 내부 오프셋
-		{ "INSTANCE_WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 32: 내부 오프셋
-		{ "INSTANCE_WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 48: 내부 오프셋
+		// 슬롯 1: 인스턴스의 World 행렬(행렬을 한꺼번에 넣는 건 불가능, 한줄 씩 넣는다)
+	   { "INSTANCE_WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	   { "INSTANCE_WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 16: 내부 오프셋
+	   { "INSTANCE_WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 32: 내부 오프셋
+	   { "INSTANCE_WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 }, // 48: 내부 오프셋
 
-		//// 슬롯 1: 인스턴스의 Tint
-		{ "INSTANCE_TINT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	   //// 슬롯 1: 인스턴스의 Tint
+	   { "INSTANCE_TINT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 	};
 
 
 	Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexShaderCSO[VST_Simple]->GetBufferPointer(), vertexShaderCSO[VST_Simple]->GetBufferSize(), &SimpleInputLayout);
 	Device->CreateInputLayout(Linelayout, ARRAYSIZE(Linelayout), vertexShaderCSO[VST_Line]->GetBufferPointer(), vertexShaderCSO[VST_Line]->GetBufferSize(), &LineSimpleInputLayout);
-	Device->CreateInputLayout(primitiveTextureLayout,ARRAYSIZE(primitiveTextureLayout), vertexShaderCSO[VST_Texture]->GetBufferPointer(), vertexShaderCSO[VST_Texture]->GetBufferSize(), &PrimitiveTextureLayout);
+	Device->CreateInputLayout(primitiveTextureLayout, ARRAYSIZE(primitiveTextureLayout), vertexShaderCSO[VST_Texture]->GetBufferPointer(), vertexShaderCSO[VST_Texture]->GetBufferSize(), &PrimitiveTextureLayout);
 	Device->CreateInputLayout(primitiveTextureLayout, ARRAYSIZE(primitiveTextureLayout), vertexShaderCSO[VST_Font]->GetBufferPointer(), vertexShaderCSO[VST_Font]->GetBufferSize(), &FontInputLayout);
 
 	Device->CreateInputLayout(layoutInstanced, ARRAYSIZE(layoutInstanced), vertexShaderCSO[VST_Instanced]->GetBufferPointer(), vertexShaderCSO[VST_Instanced]->GetBufferSize(), &InstancedInputLayout);
@@ -745,7 +761,7 @@ bool URenderer::InitializeUnicodeFont(const wchar_t* atlasPath, float distanceRa
 	//  기존 스마트포인터와 같이 참조횟수가 0이 되면 메모리에서 해제
 	using Microsoft::WRL::ComPtr;
 
-	if(Device == nullptr
+	if (Device == nullptr
 		|| atlasPath == nullptr
 		|| atlasPath[0] == L'\0'
 		|| !std::isfinite(distanceRange)
@@ -1036,7 +1052,7 @@ void URenderer::PrepareGizmo()
 
 void URenderer::PrepareParticle()
 {
-	prepareTextureShader();
+	prepareBillboardTextureShader();
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1107,6 +1123,19 @@ void URenderer::prepareTextureShader()
 	{
 		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Texture]);
 		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Texture]);
+	}
+}
+
+void URenderer::prepareBillboardTextureShader()
+{
+	DeviceContext->VSSetShader(VertexShader[VST_Billboard], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Billboard], nullptr, 0);
+	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
+
+	if (ConstantBuffer[CBT_BillboardTexture])
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_BillboardTexture]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_BillboardTexture]);
 	}
 }
 
@@ -1277,7 +1306,7 @@ void URenderer::RenderUnicodeFontTexture(uint32 indexCount)
 void URenderer::RenderParticle(ID3D11ShaderResourceView* texture)
 {
 	if (!ParticleVertexBuffer || texture == nullptr) return;
-	
+
 	UINT offset = 0;
 
 	// Bind the vertex buffer
@@ -1360,7 +1389,7 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 
 void URenderer::createConstantBuffer()
 {
-	D3D11_BUFFER_DESC desc[2] = {};
+	D3D11_BUFFER_DESC desc[CBT_Count] = {};
 
 	// Simple Primitive용 상수 버퍼
 	desc[CBT_Simple].ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
@@ -1377,6 +1406,14 @@ void URenderer::createConstantBuffer()
 	desc[CBT_Texture].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	Device->CreateBuffer(&desc[CBT_Texture], nullptr, &ConstantBuffer[CBT_Texture]);
+
+	// Billboard Texture
+	desc[CBT_BillboardTexture].ByteWidth = sizeof(FBillboardConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
+	desc[CBT_BillboardTexture].Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+	desc[CBT_BillboardTexture].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc[CBT_BillboardTexture].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	Device->CreateBuffer(&desc[CBT_BillboardTexture], nullptr, &ConstantBuffer[CBT_BillboardTexture]);
 }
 
 void URenderer::releaseConstantBuffer()
@@ -1578,6 +1615,33 @@ void URenderer::UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLi
 			constants->UVScale = uvScale;
 		}
 		DeviceContext->Unmap(ConstantBuffer[CBT_Texture], 0);
+	}
+}
+
+void URenderer::UpdateBillboardConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+	FVector3 cameraRight, FVector3 cameraUp,
+	FLinearColor tint,
+	FVector2 uvScale, FVector2 uvOffset)
+{
+	if (ConstantBuffer[CBT_BillboardTexture])
+	{
+		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+		DeviceContext->Map(ConstantBuffer[CBT_BillboardTexture], 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+		FBillboardConstants* constants = (FBillboardConstants*)constantbufferMSR.pData;
+		{
+			constants->Location = location;
+			constants->Scale = scale;
+
+			constants->ViewProjection = viewProjection;
+			constants->Tint = tint;
+
+			constants->UVOffset = uvOffset;
+			constants->UVScale = uvScale;
+
+			constants->CameraRight = cameraRight;
+			constants->CameraUp = cameraUp;
+		}
+		DeviceContext->Unmap(ConstantBuffer[CBT_BillboardTexture], 0);
 	}
 }
 
@@ -1819,16 +1883,16 @@ bool URenderer::ensureFontIndexBuffer(UINT fontCpunt)
 		indices.push_back(base + 0);
 	}
 
-/*	D3D11_BUFFER_DESC desc = {};
-	desc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(UINT));
-	desc.Usage = D3D11_USAGE_IMMUTABLE; // 
-	desc.BindFlags = D3D11_BIND_INDEX_BUFFER; // 인덱스 버퍼라고 명시
+	/*	D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(UINT));
+		desc.Usage = D3D11_USAGE_IMMUTABLE; //
+		desc.BindFlags = D3D11_BIND_INDEX_BUFFER; // 인덱스 버퍼라고 명시
 
-	D3D11_SUBRESOURCE_DATA data = {};
-	data.pSysMem = indices.data();
+		D3D11_SUBRESOURCE_DATA data = {};
+		data.pSysMem = indices.data();
 
-	ID3D11Buffer* newBuffer = nullptr;
-	HRESULT hr = Device->CreateBuffer(&desc, &data, &newBuffer);*/
+		ID3D11Buffer* newBuffer = nullptr;
+		HRESULT hr = Device->CreateBuffer(&desc, &data, &newBuffer);*/
 
 	ID3D11Buffer* newBuffer = CreatePrimitiveIndexBuffer(indices.data(), static_cast<UINT>(indices.size())
 	);

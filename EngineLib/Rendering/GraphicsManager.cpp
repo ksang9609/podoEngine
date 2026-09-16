@@ -266,9 +266,16 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 	mRenderer->PrepareParticle();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
+		//FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
+		//FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		//mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
+		//mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
+		//	renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
+		mRenderer->UpdateBillboardConstant(
+			renderInfo->GetLocation(), renderInfo->GetScale(),
+			mViewUnifiedProjectionMatrix,
+			camera.GetRightVector(), camera.GetUpVector(),
+			renderInfo->Color,
 			renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
 		//mRenderer->UpdateParticleBuffer(renderInfo->SubUVMesh->Vertices, renderInfo->SubUVMesh->Indices);
 
