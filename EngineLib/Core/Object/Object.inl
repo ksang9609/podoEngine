@@ -38,7 +38,7 @@ public:                                                                         
     virtual void DeserializeClass(const json::JSON& inJson) override;            \
     virtual void PostDeserialize() override;
 
-#define IMPLEMENT_SERIALIZATION(className, superClassName, postCode)                       \
+#define IMPLEMENT_SERIALIZATION(className, superClassName, postCode)             \
 void className::SerializeClass(json::JSON& outJson) const                        \
 {                                                                                \
     superClassName::SerializeClass(outJson);                                     \
