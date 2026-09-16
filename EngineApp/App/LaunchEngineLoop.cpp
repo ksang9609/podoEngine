@@ -34,7 +34,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 {
 	// Initialize window infos
 	WCHAR WindowClass[] = L"JungleWindowClass";
-	WCHAR Title[] = L"Game Tech Lab";
+	WCHAR Title[] = L"PODO";
 	WNDCLASSW wndclass = { 0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
 	RegisterClassW(&wndclass);
 
@@ -77,6 +77,11 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	ImGui_ImplWin32_Init((void*)hWnd);
 	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
 	ImGui::GetIO().IniFilename = "Config/imgui.ini";
+
+	ImGuiIO& io = ImGui::GetIO();
+	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesKorean());
+
+
 
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
@@ -171,19 +176,15 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		}
 	}
 
-	// mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion.dds");
-
-	
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
 
 	mSceneManager->NewScene();
-	// mSceneManager->LoadScene("TestScene", *mFileManager);
 	{
 		UCubeComponent* cube =
 			FObjectFactory::ConstructObject<UCubeComponent>(
@@ -192,22 +193,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 				FVector(1.0f, 1.0f, 1.0f));
 
 		cube->SetUseTexture(true);
-
-		AActor* actor =
-			FObjectFactory::ConstructObject<AActor>();
-
-		actor->AddRootSceneComponent(cube);
-		mSceneManager->GetCurrentWorld()->AddActor(actor);
-	}
-
-	{
-		UCubeComponent* cube =
-			FObjectFactory::ConstructObject<UCubeComponent>(
-				FVector(0.0f, 1.5f, 0.0f),
-				FRotator(0.0f, 0.0f, 0.0f),
-				FVector(1.0f, 1.0f, 1.0f));
-
-		cube->SetUseTexture(false);
 
 		AActor* actor =
 			FObjectFactory::ConstructObject<AActor>();

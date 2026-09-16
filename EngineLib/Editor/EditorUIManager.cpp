@@ -68,10 +68,9 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
 
 	/* Begin ImGui Window */
-	ImGui::Begin("Jungle Control Panel", nullptr, flags);
+	ImGui::Begin("PODO", nullptr, flags);
 	mPanelWidth = ImGui::GetWindowWidth();
 
-	ImGui::Text("Hello Jungle World!");
 	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
 	/* Spawn Actor */
@@ -592,7 +591,7 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 
 				//UObject* bDeleteActorOrNull = nullptr;
 
-				static char NameBuffer[128] = {};
+				static char NameBuffer[384] = {};
 				static int32 CachedSelectedUUID = -1;
 
 				//for (unsigned int objectsIndex = 0; objectsIndex < mGuiInputField.SortedObjectLists.Num(); ++objectsIndex)
