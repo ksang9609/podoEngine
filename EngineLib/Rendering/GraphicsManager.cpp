@@ -264,6 +264,9 @@ void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos
 void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
 	mRenderer->PrepareParticle();
+
+	FVector3 cameraRight = camera.GetRightVector();
+	FVector3 cameraUp = camera.GetUpVector();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		//FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
@@ -274,7 +277,7 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 		mRenderer->UpdateBillboardConstant(
 			renderInfo->GetLocation(), renderInfo->GetScale(),
 			mViewUnifiedProjectionMatrix,
-			camera.GetRightVector(), camera.GetUpVector(),
+			cameraRight, cameraUp,
 			renderInfo->Color,
 			renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
 		//mRenderer->UpdateParticleBuffer(renderInfo->SubUVMesh->Vertices, renderInfo->SubUVMesh->Indices);
