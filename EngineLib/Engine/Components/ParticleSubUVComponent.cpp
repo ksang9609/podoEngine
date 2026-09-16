@@ -16,6 +16,7 @@ IMPLEMENT_SERIALIZATION(UParticleSubUVComponent, UBillboardComponent,
 
 	mElapsedFrameRatio = 0.0f;
 	mCurrentFrameIndex = 0;
+	mNextFrameIndex = 1;
 	mbIsFinished = false;
 
 	// Initialize the sub UV mesh
@@ -74,7 +75,9 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRe
 				break;
 			}
 		}
-		mNextFrameIndex = (mCurrentFrameIndex + 1) % totalFrames;
+		mNextFrameIndex = mbLooping
+			? (mCurrentFrameIndex + 1) % totalFrames
+			: FMath::Min(mCurrentFrameIndex + 1, totalFrames - 1);
 
 		if (mCurrentFrameIndex != previousFrameIndex)
 		{
