@@ -463,6 +463,8 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
 	//mRenderer->PrepareFont();
+	FVector3 cameraRight = camera.GetRightVector();
+	FVector3 cameraUp = camera.GetUpVector();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		const FTextMesh* textMesh = renderInfo->Textmesh;
@@ -472,13 +474,12 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 			continue;
 		}
 
-		FMatrix worldTransform =
-			renderInfo->GetTransformMatrix(camera.Rotation);
-
-		mRenderer->UpdateSimpleConstant(
-			worldTransform,
+		mRenderer->UpdateFontConstant(
+			renderInfo->GetLocation(), renderInfo->GetScale(),
 			mViewUnifiedProjectionMatrix,
-			renderInfo->Color);
+			cameraRight, cameraUp,
+			renderInfo->Color
+		);
 
 		if (textMesh->FontRenderMode == EFontRenderMode::MSDF)
 		{

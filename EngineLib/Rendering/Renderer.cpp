@@ -688,7 +688,7 @@ void URenderer::createShader()
 		pixelShaderCSO[PST_Font]->GetBufferSize(), nullptr,
 		&PixelShader[PST_Font]);
 
-	D3DCompileFromFile(L"ShaderFontMSDF.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+	D3DCompileFromFile(L"Shaders/ShaderFontMSDF.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
 		&pixelShaderCSO[PST_UnicodeFont], nullptr);
 
 	Device->CreatePixelShader(
@@ -1165,10 +1165,10 @@ void URenderer::prepareFontShader()
 	DeviceContext->VSSetShader(VertexShader[VST_Font], nullptr, 0);
 	DeviceContext->PSSetShader(PixelShader[PST_Font], nullptr, 0);
 	DeviceContext->IASetInputLayout(FontInputLayout);
-	if (ConstantBuffer[CBT_Simple])
+	if (ConstantBuffer[CBT_Font])
 	{
-		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
-		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Font]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Font]);
 	}
 }
 
@@ -1180,8 +1180,8 @@ void URenderer::prepareUnicodeFontShader()
 	// MSDF 전용 픽셀 셰이더
 	DeviceContext->PSSetShader(PixelShader[PST_UnicodeFont], nullptr, 0);
 
-	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
-	DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Simple]);
+	DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Font]);
+	DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Font]);
 
 	// b1: DistanceRange
 	DeviceContext->PSSetConstantBuffers(1, 1, &UnicodeFontConstantBuffer);
@@ -1423,6 +1423,14 @@ void URenderer::createConstantBuffer()
 	desc[CBT_BillboardTexture].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	Device->CreateBuffer(&desc[CBT_BillboardTexture], nullptr, &ConstantBuffer[CBT_BillboardTexture]);
+
+	// Font
+	desc[CBT_Font].ByteWidth = sizeof(FFontConstants) + 0xf & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
+	desc[CBT_Font].Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+	desc[CBT_Font].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc[CBT_Font].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	Device->CreateBuffer(&desc[CBT_Font], nullptr, &ConstantBuffer[CBT_Font]);
 }
 
 void URenderer::releaseConstantBuffer()
@@ -1652,6 +1660,27 @@ void URenderer::UpdateBillboardConstant(FVector3 location, FVector3 scale, FMatr
 		}
 		DeviceContext->Unmap(ConstantBuffer[CBT_BillboardTexture], 0);
 	}
+}
+
+void URenderer::UpdateFontConstant(FVector3 location, FVector3 scale, FMatrix viewProjection,
+	FVector3 cameraRight, FVector3 cameraUp,
+	FLinearColor tint)
+{
+	assert(ConstantBuffer[CBT_Font]);
+
+	D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+	DeviceContext->Map(ConstantBuffer[CBT_Font], 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+	FFontConstants* constants = (FFontConstants*)constantbufferMSR.pData;
+	{
+		constants->Location = location;
+		constants->Scale = scale;
+		constants->ViewProjection = viewProjection;
+		constants->Tint = tint;
+		constants->CameraRight = cameraRight;
+		constants->CameraUp = cameraUp;
+	}
+	DeviceContext->Unmap(ConstantBuffer[CBT_Font], 0);
+
 }
 
 void URenderer::UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter)
