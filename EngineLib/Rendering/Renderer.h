@@ -134,23 +134,18 @@ public:
 	// 기존의 ASCII 폰트
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
 	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
-	//ID3D11VertexShader* FontVertexShader = nullptr;
-	//ID3D11PixelShader* FontPixelShader = nullptr;
 	ID3D11InputLayout* FontInputLayout = nullptr;
 	ID3D11SamplerState* FontSamplerState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
 
 	// 유니코드 폰트
 	ID3D11ShaderResourceView* UnicodeFontAtlasSRV = nullptr;
-	//ID3D11PixelShader* UnicodeFontPixelShader = nullptr;
 	ID3D11Buffer* UnicodeFontVertexBuffer = nullptr;
 	ID3D11Buffer* UnicodeFontIndexBuffer = nullptr;
 	ID3D11Buffer* UnicodeFontConstantBuffer = nullptr;
 	uint32 UnicodeFontVertexCapacity = 0;
 	uint32 UnicodeFontIndexCapacity = 0;
 
-	//ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
-	//ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
 	ID3D11Buffer* CubeIndexBuffer = nullptr;     // 큐브 인덱스 저장
 	ID3D11Buffer* SphereIndexBuffer = nullptr;
@@ -164,11 +159,7 @@ public:
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT ViewportInfo;
-	//ID3D11VertexShader* SimpleVertexShader;
-	//ID3D11PixelShader* SimplePixelShader;
 	ID3D11InputLayout* SimpleInputLayout;
-	//ID3D11VertexShader* LineSimpleVertexShader;
-	//ID3D11PixelShader* LineSimplePixelShader;
 	ID3D11InputLayout* LineSimpleInputLayout;
 
 	// 매 프레임 내용이 바뀌는 선분용. 메시 버퍼와 달리 IMMUTABLE이 아니라 DYNAMIC이다
@@ -242,7 +233,6 @@ public:
 		FVector2 uvScale = { 1.0f, 1.0f }, FVector2 uvOffset = { 0.0f, 0.0f });
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
-	//void UpdateParticleBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,
@@ -276,7 +266,6 @@ private:
 	ID3D11Buffer* InstanceBuffer = nullptr;
 	UINT InstanceCapacity = 0;
 
-	//ID3D11VertexShader* InstancedVertexShader = nullptr; // 인스턴싱용 버텍스 셰이더
 	ID3D11InputLayout* InstancedInputLayout = nullptr;
 
 	bool EnsureInstanceCapacity(UINT count);

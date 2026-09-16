@@ -269,18 +269,12 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 	FVector3 cameraUp = camera.GetUpVector();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		//FMatrix worldTransform = renderInfo->GetTransformMatrix(camera.Rotation);
-		//FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		//mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		//mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
-		//	renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
 		mRenderer->UpdateBillboardConstant(
 			renderInfo->GetLocation(), renderInfo->GetScale(),
 			mViewUnifiedProjectionMatrix,
 			cameraRight, cameraUp,
 			renderInfo->Color,
 			renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
-		//mRenderer->UpdateParticleBuffer(renderInfo->SubUVMesh->Vertices, renderInfo->SubUVMesh->Indices);
 
 		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
 		if (texture == nullptr)
@@ -288,7 +282,6 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 			UE_LOG(Error, Render, "Primitive texture not found for primitive type.");
 			continue;
 		}
-		//mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
 		mRenderer->RenderParticle(texture->SRV);
 
 	}
