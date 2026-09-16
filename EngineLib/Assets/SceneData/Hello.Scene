@@ -1,0 +1,93 @@
+{
+  "NextUUID" : 8,
+  "Version" : 0,
+  "World" : {
+    "ClassName" : "UWorld",
+    "Properties" : {
+      "Name" : "UWorld",
+      "UUID" : 0,
+      "mActors" : [{
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "AActor",
+            "UUID" : 2,
+            "mComponents" : [{
+                "ClassName" : "UCubeComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "UCubeComponent",
+                  "UUID" : 1,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
+                  "mRelativeLocation" : [0.000000, -1.500000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : true,
+                  "mePrimitiveType" : "Cube"
+                }
+              }],
+            "mRootComponentUUID" : 1
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "AActor",
+            "UUID" : 4,
+            "mComponents" : [{
+                "ClassName" : "USphereComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "USphereComponent",
+                  "UUID" : 3,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
+                  "mRelativeLocation" : [0.000000, 1.500000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, -90.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : true,
+                  "mePrimitiveType" : "Sphere"
+                }
+              }],
+            "mRootComponentUUID" : 3
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "Sphere",
+            "UUID" : 5,
+            "mComponents" : [{
+                "ClassName" : "USphereComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "USphereComponent",
+                  "UUID" : 6,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
+                  "mRelativeLocation" : [0.000000, 5.212491, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : true,
+                  "mePrimitiveType" : "Sphere"
+                }
+              }, {
+                "ClassName" : "UNameComponent",
+                "ParentUUID" : 6,
+                "Properties" : {
+                  "Name" : "UNameComponent",
+                  "UUID" : 7,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mNameText" : "Name: Sphere, UUID: 5",
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [0.000000, 0.000000, 0.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitiveType" : "BillboardQuad"
+                }
+              }],
+            "mRootComponentUUID" : 6
+          }
+        }]
+    }
+  }
+}
