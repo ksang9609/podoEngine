@@ -96,7 +96,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		FString("Assets/Fonts/KoreanFullAtlas.json"));
 
 	mGraphicsManager->GetRenderer()->InitializeUnicodeFont(
-			L"Assets/Fonts/KoreanFullAtlas.png",
+		L"Assets/Fonts/KoreanFullAtlas.png",
 		mDefaultFontResource->GetDistanceRange());
 
 	FObjectFactory::Initialize(*mDefaultFontResource);
@@ -178,7 +178,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
 	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion.dds");
+	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion_Alpha.dds");
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
@@ -516,12 +516,25 @@ void FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentLoopingCo
 	}
 }
 
-void  FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentPlayRateCommand& command)
+void FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentPlayRateCommand& command)
 {
 	UParticleSubUVComponent* particleComponent = UObject::GetObjectByInternalIndex<UParticleSubUVComponent>(command.ObjectID.InternalIndex);
 	if (particleComponent)
 	{
 		particleComponent->SetPlayRate(command.PlayRate);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a UParticleSubUVComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentBlendStateTypeCommand& command)
+{
+	UParticleSubUVComponent* particleComponent = UObject::GetObjectByInternalIndex<UParticleSubUVComponent>(command.ObjectID.InternalIndex);
+	if (particleComponent)
+	{
+		particleComponent->SetBlendStateType(command.BlendStateType);
 	}
 	else
 	{

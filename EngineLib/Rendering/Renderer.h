@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
+#include "Core/enum.h"
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector.h"
 
@@ -64,53 +65,6 @@ struct FUnicodeFontConstants
 {
 	float DistanceRange = 4.0f;
 	float Padding[3] = {};
-};
-enum EDepthStencilStateType
-{
-	DSS_Default,
-	DSS_NoWrite,
-
-	// For hightlighting selected object
-	DSS_StencilMark,
-	DSS_StencilOutline,
-};
-
-enum EBlendStateType
-{
-	BST_Default,
-	BST_AlphaBlend,
-	BST_Additive,
-	BST_NoColorWrite,
-};
-
-enum EContantBufferType
-{
-	CBT_Simple,
-	CBT_Texture,
-	CBT_BillboardTexture,
-	CBT_Count,
-};
-
-enum EVertexShaderType
-{
-	VST_Simple,
-	VST_Line,
-	VST_Texture,
-	VST_Instanced,
-	VST_Font,
-	VST_Billboard,
-	VST_Count,
-};
-
-enum EPixelShaderType
-{
-	PST_Simple,
-	PST_Line,
-	PST_Texture,
-	PST_Font,
-	PST_UnicodeFont,
-	PST_Billboard,
-	PST_Count,
 };
 
 class URenderer
@@ -233,6 +187,8 @@ public:
 		FVector2 uvScale = { 1.0f, 1.0f }, FVector2 uvOffset = { 0.0f, 0.0f });
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
+
+	void UpdateBlendState(EBlendStateType blendStateType);
 
 	void RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 	void RenderTexturePrimitive(ID3D11Buffer* pBuffer, UINT numVertices,

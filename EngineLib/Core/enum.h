@@ -152,3 +152,52 @@ inline const char* PrimitiveToString(EPrimitive primitiveType)
 		return "Unknown";
 	}
 }
+
+enum EDepthStencilStateType
+{
+	DSS_Default,
+	DSS_NoWrite,
+
+	// For hightlighting selected object
+	DSS_StencilMark,
+	DSS_StencilOutline,
+};
+
+enum EBlendStateType
+{
+	BST_Default,
+	BST_AlphaBlend,
+	BST_Additive,
+	BST_NoColorWrite,
+	BST_Count,
+};
+
+enum EContantBufferType
+{
+	CBT_Simple,
+	CBT_Texture,
+	CBT_BillboardTexture,
+	CBT_Count,
+};
+
+enum EVertexShaderType
+{
+	VST_Simple,
+	VST_Line,
+	VST_Texture,
+	VST_Instanced,
+	VST_Font,
+	VST_Billboard,
+	VST_Count,
+};
+
+enum EPixelShaderType
+{
+	PST_Simple,
+	PST_Line,
+	PST_Texture,
+	PST_Font,
+	PST_UnicodeFont,
+	PST_Billboard,
+	PST_Count,
+};
