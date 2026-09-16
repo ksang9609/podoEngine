@@ -85,8 +85,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesKorean());
 
-	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
-
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 	console.Init("Jungle Console Window", clientWidth);
@@ -201,6 +199,12 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		actor->AddRootSceneComponent(cube);
 		mSceneManager->GetCurrentWorld()->AddActor(actor);
 	}
+
+	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
+
+	FEditorCommands startupCommands;
+	mEditorUIManager->LoadSettings(startupCommands);
+	processEditorCommands(startupCommands);
 
 	{
 		USphereComponent* sphere =

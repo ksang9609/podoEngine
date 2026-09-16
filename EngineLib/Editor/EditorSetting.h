@@ -14,7 +14,7 @@ struct FEditorSetting
 
 		if (!File.is_open())
 		{
-			return;
+			throw std::runtime_error("Load failed");
 		}
 
 		std::string Key;
@@ -39,7 +39,7 @@ struct FEditorSetting
 
 		if (!File.is_open())
 		{
-			return;
+			throw std::runtime_error("Save failed");
 		}
 
 		File << "CameraSensitivity " << CameraSensitivity << '\n';
