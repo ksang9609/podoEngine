@@ -76,7 +76,7 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	// NOTE: This name array must be edited when adding new primitive types to EPrimitive enum.
 	ImGui::SeparatorText("Spawn Actor");
 
-	const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle", "GizmoArrow", "Circle", "BillboardQuad" };
+	const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle" };
 	int32 primitiveTypeIndex = static_cast<int32>(mGuiInputField.PrimitiveType);
 	int32 spawnCount = mGuiInputField.SpawnCount;
 
@@ -188,6 +188,18 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 			bShowFlagsChanged = true;
 		}
 
+		bool bShowBoundingBox = showFlags & static_cast<uint32>(EEngineShowFlags::SF_BoundingBox);
+		if (ImGui::Checkbox("Bounding Box", &bShowBoundingBox))
+		{
+			bShowFlagsChanged = true;
+		}
+
+		bool bShowGrid = showFlags & static_cast<uint32>(EEngineShowFlags::SF_Grid);
+		if (ImGui::Checkbox("Grid", &bShowGrid))
+		{
+			bShowFlagsChanged = true;
+		}
+
 		// Set the show flags based on the checkbox values
 		if (bShowFlagsChanged)
 		{
@@ -195,6 +207,8 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 			showFlags += bPrimitives ? static_cast<uint32>(EEngineShowFlags::SF_Primitives) : 0;
 			showFlags += bBillboardText ? static_cast<uint32>(EEngineShowFlags::SF_BillboardText) : 0;
 			showFlags += bShowWorldAxis ? static_cast<uint32>(EEngineShowFlags::SF_WorldAxis) : 0;
+			showFlags += bShowBoundingBox ? static_cast<uint32>(EEngineShowFlags::SF_BoundingBox) : 0;
+			showFlags += bShowGrid ? static_cast<uint32>(EEngineShowFlags::SF_Grid) : 0;
 
 			outCommands.Emplace(FSetShowFlagCommand{ showFlags });
 		}

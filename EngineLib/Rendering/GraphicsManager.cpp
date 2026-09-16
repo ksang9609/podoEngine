@@ -178,7 +178,8 @@ void FGraphicsManager::updateRenderQueue(
 		{
 			outRenderQueueMap[RQT_Gizmo].Add(&renderInfo);
 		}
-		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox))
+		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox) &&
+			HasShowFlag(EEngineShowFlags::SF_BoundingBox))
 		{
 			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
 		}
@@ -236,7 +237,11 @@ void FGraphicsManager::Render(
 
 	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
 	renderWorldAxis(renderQueueMap[RQT_WorldAxis]);
-	renderGrid();
+
+	if (HasShowFlag(EEngineShowFlags::SF_Grid))
+	{
+		renderGrid();
+	}
 	renderBoundingBox(renderQueueMap[RQT_BoundingBox], camera.GetRotation());
 	FlushLines();
 
@@ -626,20 +631,20 @@ void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& rende
 {
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		if (renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad)
-		{
-			if (!HasShowFlag(EEngineShowFlags::SF_BillboardText))
-			{
-				continue;
-			}
-		}
-		else
-		{
-			if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
-			{
-				continue;
-			}
-		}
+		//if (renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad)
+		//{
+		//	if (!HasShowFlag(EEngineShowFlags::SF_BillboardText))
+		//	{
+		//		continue;
+		//	}
+		//}
+		//else
+		//{
+		//	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
+		//	{
+		//		continue;
+		//	}
+		//}
 
 		// Billboard는 카메라 회전이 실제 렌더 행렬에 포함되므로(카메라 방향에 따라 월드 변환이 바뀜)
 		// 현재 카메라 기준으로 WorldBounds를 갱신
