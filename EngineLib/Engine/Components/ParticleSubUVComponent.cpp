@@ -11,8 +11,10 @@ void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FV
 	mbLooping = bLooping;
 	mPlayRate = playRate;
 	mFrameDuration = frameDuration;
-	mElapsedTime = 0.0f;
+
+	mElapsedFrameRatio = 0.0f;
 	mCurrentFrameIndex = 0;
+	mbIsFinished = false;
 
 	// Initialize the sub UV mesh
 	mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0);
@@ -55,30 +57,54 @@ void UParticleSubUVComponent::DeserializeClass(const json::JSON& inJson)
 
 void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 {
-	if (!mbLooping && mElapsedTime >= 1.0f / mPlayRate)
+	bool restarted = false;
+
+	if (mbIsFinished && mbLooping)
 	{
-		return; // Stop updating if not looping and the animation has finished
+		mbIsFinished = false;
+		mCurrentFrameIndex = 0;
+		mElapsedFrameRatio = 0;
+
+		mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
+		restarted = true;
 	}
-	
-	mElapsedTime += deltaTime;
-	float frameDuration = mFrameDuration / mPlayRate;
-	if (mElapsedTime >= frameDuration)
+
+	if (!mbIsFinished && !restarted &&
+		mNumRows > 0 && mNumCols > 0 && mFrameDuration > 0.0f)
 	{
-		mElapsedTime -= frameDuration;
-		mCurrentFrameIndex++;
-		if (mCurrentFrameIndex >= mNumRows * mNumCols)
+		const uint32 totalFrames = mNumRows * mNumCols;
+		const uint32 previousFrameIndex = mCurrentFrameIndex;
+
+		if (deltaTime > 0.0f && mPlayRate > 0.0f)
 		{
-			if (mbLooping)
+			mElapsedFrameRatio += (deltaTime * mPlayRate) / mFrameDuration;
+		}
+
+		while (mElapsedFrameRatio >= 1.0f)
+		{
+			mElapsedFrameRatio -= 1.0f;
+
+			if (mCurrentFrameIndex + 1 < totalFrames)
+			{
+				++mCurrentFrameIndex;
+			}
+			else if (mbLooping)
 			{
 				mCurrentFrameIndex = 0;
 			}
 			else
 			{
-				// Clamp to the last frame if not looping
-				mCurrentFrameIndex = mNumRows * mNumCols - 1;
+				mbIsFinished = true;
+				mElapsedFrameRatio = 0.0f;
+
+				break;
 			}
 		}
-		mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
+
+		if (mCurrentFrameIndex != previousFrameIndex)
+		{
+			mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
+		}
 	}
 
 	UBillboardComponent::Update(deltaTime, outRenderInfos);
@@ -93,6 +119,10 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 		ERenderFlags::RF_Raycastable |
 		ERenderFlags::RF_Billboard |
 		ERenderFlags::RF_Particle;
+
+	renderInfo.Color = mbIsFinished
+		? FLinearColor(1.f, 1.f, 1.f, 0.0f) // Fully transparent if finished
+		: mColor; // Use the component's color if not finished
 	return renderInfo;
 }
 

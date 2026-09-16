@@ -59,6 +59,8 @@ private:
 	void processEditorCommand(const FSetComponentColorCommand& command);
 	void processEditorCommand(const FSetSphereComponentSpinCommand& command);
 	void processEditorCommand(const FSetSphereComponentSpinSpeedCommand& command);
+	void processEditorCommand(const FSetParticleSubUVComponentLoopingCommand& command);
+	void processEditorCommand(const FSetParticleSubUVComponentPlayRateCommand& command);
 
 	void processEditorCommand(const FSetViewModeCommand& command);
 	void processEditorCommand(const FSetShowFlagCommand& command);
