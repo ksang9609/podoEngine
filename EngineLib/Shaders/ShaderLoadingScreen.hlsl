@@ -24,7 +24,7 @@ PS_INPUT mainVS(VS_INPUT input)
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float3 color = LoadingTexture.Sample(LoadingSampler, input.uv).rgb;
-
-    // DDS의 알파를 무시하고 완전 불투명으로 출력
+    color = pow(color, 3.0f);
+    
     return float4(color, 1.0f);
 }

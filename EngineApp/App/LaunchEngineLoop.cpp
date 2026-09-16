@@ -65,7 +65,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	rid.hwndTarget = hWnd;
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
-
 	/* Init Managers */
 	mGraphicsManager = new FGraphicsManager(hWnd);
 	FrameTimer = new FFrameTimer(120);
@@ -73,19 +72,20 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
 	mFileManager = new FFileManager();
 
+	mGraphicsManager->InitializeLoadingScreen();
+	mGraphicsManager->RenderLoadingScreen();
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
 	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
 	ImGui::GetIO().IniFilename = "Config/imgui.ini";
 
+
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesKorean());
 
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
-
-	mGraphicsManager->InitializeLoadingScreen();
-	mGraphicsManager->RenderLoadingScreen();
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();

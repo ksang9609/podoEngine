@@ -1819,21 +1819,13 @@ void URenderer::CreateLoadingScreenResources()
 
 	D3DCompileFromFile(L"Shaders/ShaderLoadingScreen.hlsl", nullptr, nullptr, "mainVS", "vs_5_0",
 		0, 0, &vertexShaderBlob, nullptr);
-
-	Device->CreateVertexShader(
-		vertexShaderBlob->GetBufferPointer(),
-		vertexShaderBlob->GetBufferSize(),
-		nullptr,
-		&LoadingScreenVertexShader);
+	Device->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(),
+		nullptr, &LoadingScreenVertexShader);
 
 	D3DCompileFromFile(L"Shaders/ShaderLoadingScreen.hlsl", nullptr, nullptr, "mainPS", "ps_5_0",
 		0, 0, &pixelShaderBlob, nullptr);
-
-	Device->CreatePixelShader(
-		pixelShaderBlob->GetBufferPointer(),
-		pixelShaderBlob->GetBufferSize(),
-		nullptr,
-		&LoadingScreenPixelShader);
+	Device->CreatePixelShader(pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize(),
+		nullptr, &LoadingScreenPixelShader);
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -1871,13 +1863,10 @@ void URenderer::CreateLoadingScreenResources()
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	Device->CreateSamplerState(
-		&samplerDesc,
-		&LoadingScreenSampler);
+	Device->CreateSamplerState(&samplerDesc, &LoadingScreenSampler);
 
 	if (vertexShaderBlob)
 		vertexShaderBlob->Release();
-
 	if (pixelShaderBlob)
 		pixelShaderBlob->Release();
 }
