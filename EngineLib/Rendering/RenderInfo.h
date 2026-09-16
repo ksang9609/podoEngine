@@ -14,8 +14,12 @@ struct FRenderInfo
 	FObjectID ObejctID;
 	FLinearColor Color;
 	ERenderFlags eRenderFlags;
+
 	const FTextMesh* Textmesh;
-	const FSubUVMesh* SubUVMesh; 
+	const FSubUVMesh* SubUVMesh;
+
+	// For billboard rendering
+
 
 	FBoundingBox LocalBounds{};
 	FBoundingBox WorldBounds{};

@@ -85,6 +85,26 @@ enum EContantBufferType
 	CBT_Texture,
 };
 
+enum EVertexShaderType
+{
+	VST_Simple,
+	VST_Line,
+	VST_Texture,
+	VST_Instanced,
+	VST_Font,
+	VST_Count,
+};
+
+enum EPixelShaderType
+{
+	PST_Simple,
+	PST_Line,
+	PST_Texture,
+	PST_Font,
+	PST_UnicodeFont,
+	PST_Count,
+};
+
 class URenderer
 {
 public:
@@ -100,27 +120,29 @@ public:
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
 	ID3D11DepthStencilState* DepthStencilState[4] = {};	// 깊이 테스트용 상태
 	ID3D11BlendState* BlendState[4] = {}; // 블렌딩 상태
+	ID3D11VertexShader* VertexShader[VST_Count] = {};
+	ID3D11PixelShader* PixelShader[PST_Count] = {};
 
 	// 기존의 ASCII 폰트
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
 	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
-	ID3D11VertexShader* FontVertexShader = nullptr;
-	ID3D11PixelShader* FontPixelShader = nullptr;
+	//ID3D11VertexShader* FontVertexShader = nullptr;
+	//ID3D11PixelShader* FontPixelShader = nullptr;
 	ID3D11InputLayout* FontInputLayout = nullptr;
 	ID3D11SamplerState* FontSamplerState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
 
 	// 유니코드 폰트
 	ID3D11ShaderResourceView* UnicodeFontAtlasSRV = nullptr;
-	ID3D11PixelShader* UnicodeFontPixelShader = nullptr;
+	//ID3D11PixelShader* UnicodeFontPixelShader = nullptr;
 	ID3D11Buffer* UnicodeFontVertexBuffer = nullptr;
 	ID3D11Buffer* UnicodeFontIndexBuffer = nullptr;
 	ID3D11Buffer* UnicodeFontConstantBuffer = nullptr;
 	uint32 UnicodeFontVertexCapacity = 0;
 	uint32 UnicodeFontIndexCapacity = 0;
 
-	ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
-	ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
+	//ID3D11VertexShader* PrimitiveTextureVertexShader = nullptr;
+	//ID3D11PixelShader* PrimitiveTexturePixelShader = nullptr;
 	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
 	ID3D11Buffer* CubeIndexBuffer = nullptr;     // 큐브 인덱스 저장
 	ID3D11Buffer* SphereIndexBuffer = nullptr;
@@ -134,11 +156,11 @@ public:
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
     D3D11_VIEWPORT ViewportInfo;
-    ID3D11VertexShader* SimpleVertexShader;
-    ID3D11PixelShader* SimplePixelShader;
+    //ID3D11VertexShader* SimpleVertexShader;
+    //ID3D11PixelShader* SimplePixelShader;
     ID3D11InputLayout* SimpleInputLayout;
-	ID3D11VertexShader* LineSimpleVertexShader;
-	ID3D11PixelShader* LineSimplePixelShader;
+	//ID3D11VertexShader* LineSimpleVertexShader;
+	//ID3D11PixelShader* LineSimplePixelShader;
 	ID3D11InputLayout* LineSimpleInputLayout;
 
 	// 매 프레임 내용이 바뀌는 선분용. 메시 버퍼와 달리 IMMUTABLE이 아니라 DYNAMIC이다

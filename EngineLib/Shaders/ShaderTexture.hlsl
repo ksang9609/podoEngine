@@ -56,10 +56,12 @@ PS_INPUT billboardVS(VS_INPUT input)
 
     float2 corner = input.position.yz;
 
-    output.position =
+    float3 worldPosition =
         BLocation
         + BCameraRight * corner.x * BScale.x
         + BCameraUp * corner.y * BScale.y;
+
+    output.position = mul(float4(worldPosition, 1.0f), BViewProjection);
 
     output.uv = input.uv * BUVScale + BUVOffset;
 
