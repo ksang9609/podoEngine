@@ -42,10 +42,7 @@ void UNameComponent::DeserializeClass(const json::JSON& inJson)
 			propertiesJson);
 	}
 	mFontResourceRef = FObjectFactory::GetDefaultFontResource();
-
-	//mTextMesh.SetText(mNameText, *mFontResourceRef);
 	mTextMesh.SetUnicodeText(mNameText, *mFontResourceRef, 0.2f);
-
 }
 
 void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
