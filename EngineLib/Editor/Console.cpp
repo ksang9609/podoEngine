@@ -289,7 +289,14 @@ void ConsoleWindow::ExecuteCommand( const char* Input)
 		AddLog(
 			ELogLevel::Fatal,
 			ELogCategory::Etc,
-			"haha");
+			"***** PODO ENGINE *****\n"
+			"\n"
+			"******* WEEK  1 *******\n"
+			"*** LKH LSE KDH KSH ***\n"
+			"******* WEEK  2 *******\n"
+			"*** KSH KHW CHS LJY ***\n"
+			"***********************\n");
+
 	}
 	else
 	{
