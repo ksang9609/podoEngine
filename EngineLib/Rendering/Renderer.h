@@ -276,7 +276,7 @@ private:
 	ID3D11Buffer* InstanceBuffer = nullptr;
 	UINT InstanceCapacity = 0;
 
-	ID3D11VertexShader* InstancedVertexShader = nullptr; // 인스턴싱용 버텍스 셰이더
+	//ID3D11VertexShader* InstancedVertexShader = nullptr; // 인스턴싱용 버텍스 셰이더
 	ID3D11InputLayout* InstancedInputLayout = nullptr;
 
 	bool EnsureInstanceCapacity(UINT count);

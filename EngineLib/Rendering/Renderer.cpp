@@ -236,9 +236,9 @@ bool URenderer::RenderSimpleInstanced(
 		!indexBuffer ||
 		indexCount == 0 ||
 		!ConstantBuffer ||
-		!InstancedVertexShader ||
+		!VertexShader[VST_Instanced] ||
 		!InstancedInputLayout ||
-		!PixelShader[VST_Instanced])
+		!PixelShader[PST_Simple])
 	{
 		return false;
 	}
@@ -1091,7 +1091,7 @@ void URenderer::PrepareSimpleInstanced()
 
 void URenderer::prepareInstancedShader()
 {
-	DeviceContext->VSSetShader(InstancedVertexShader, nullptr, 0);
+	DeviceContext->VSSetShader(VertexShader[VST_Instanced], nullptr, 0);
 	DeviceContext->PSSetShader(PixelShader[PST_Simple], nullptr, 0);
 	DeviceContext->IASetInputLayout(InstancedInputLayout);
 
