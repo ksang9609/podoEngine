@@ -696,6 +696,23 @@ void URenderer::createShader()
 		pixelShaderCSO[PST_UnicodeFont]->GetBufferSize(), nullptr,
 		&PixelShader[PST_UnicodeFont]);
 
+	// Particle
+	D3DCompileFromFile(L"Shaders/ShaderParticle.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&vertexShaderCSO[VST_Particle], nullptr);
+
+	Device->CreateVertexShader(
+		vertexShaderCSO[VST_Particle]->GetBufferPointer(),
+		vertexShaderCSO[VST_Particle]->GetBufferSize(), nullptr,
+		&VertexShader[VST_Particle]);
+
+	D3DCompileFromFile(L"Shaders/ShaderParticle.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&pixelShaderCSO[PST_Particle], nullptr);
+
+	Device->CreatePixelShader(
+		pixelShaderCSO[PST_Particle]->GetBufferPointer(),
+		pixelShaderCSO[PST_Particle]->GetBufferSize(), nullptr,
+		&PixelShader[PST_Particle]);
+
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -1185,6 +1202,18 @@ void URenderer::prepareUnicodeFontShader()
 
 	// b1: DistanceRange
 	DeviceContext->PSSetConstantBuffers(1, 1, &UnicodeFontConstantBuffer);
+}
+
+void URenderer::prepareParticleShader()
+{
+	DeviceContext->VSSetShader(VertexShader[VST_Particle], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_Particle], nullptr, 0);
+	DeviceContext->IASetInputLayout(PrimitiveTextureLayout);
+	if (ConstantBuffer[CBT_Particle])
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Particle]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Particle]);
+	}
 }
 
 void URenderer::RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices)

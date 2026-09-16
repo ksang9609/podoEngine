@@ -53,12 +53,26 @@ struct FBillboardConstants
 	float Pad3 = 0;
 };
 
-struct alignas(32) FParticleConstants
+struct alignas(16) FParticleConstants
 {
-	float numRows;
-	float numCols;
-	int currentFrame;
-	int nextFrame;
+	FVector3 Location;
+	float pad0 = 0;
+	FVector3 Scale;
+	float pad1 = 0;
+
+	FMatrix ViewProjection;
+
+	FVector3 CameraRight;
+	float pad2 = 0;
+	FVector3 CameraUp;
+	float pad3 = 0;
+
+	FLinearColor Tint;
+	
+	int32 numRows;
+	int32 numCols;
+	int32 currentFrame;
+	int32 nextFrame;
 
 	float frameRatio;
 	float pad[3] = {};
