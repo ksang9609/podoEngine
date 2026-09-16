@@ -1,7 +1,13 @@
 // ShaderFontMSDF.hlsl
 cbuffer constants : register(b0)
 {
-    row_major float4x4 World;
+    // row_major float4x4 World;
+    float3 Location;
+    float3 Scale;
+
+    float3 CameraRight;
+    float3 CameraUp;
+    
     row_major float4x4 ViewProjection;
     float4 Tint;
 }
@@ -70,7 +76,18 @@ float ScreenPxRange(float2 uv)
 PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
-    output.position = mul(mul(float4(input.position, 1.0f), World), ViewProjection);
+    // output.position = mul(mul(float4(input.position, 1.0f), World), ViewProjection);
+
+    float2 corner = input.position.yz;
+    float2 scale = Scale.yz;
+
+    float3 worldPosition =
+        Location
+        + CameraRight * corner.x * scale.x
+        + CameraUp * corner.y * scale.y;
+
+    output.position = mul(float4(worldPosition, 1.0f), ViewProjection);
+    
     output.texCoord = input.texCoord;
     return output;
 }
