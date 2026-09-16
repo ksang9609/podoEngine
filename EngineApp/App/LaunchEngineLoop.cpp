@@ -83,7 +83,9 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesKorean());
 
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
-	mEditorUIManager->RenderLoadingScreen(*mGraphicsManager);
+
+	mGraphicsManager->InitializeLoadingScreen();
+	mGraphicsManager->RenderLoadingScreen();
 
 	/* Console Window */
 	ConsoleWindow& console = ConsoleWindow::GetInstance();

@@ -20,7 +20,6 @@ FClassInfo className::ClassInfo(                                                
     }                                                                            \
 );
 
-//test
 #define IMPLEMENT_CLASS_WITH_PROPERTIES(className, superClassName)               \
 [[maybe_unused]] static constexpr int CONCAT(RTTI_Tag_, className) = 0;          \
 FClassInfo className::ClassInfo(                                                 \
@@ -32,6 +31,8 @@ FClassInfo className::ClassInfo(                                                
     },                                                                           \
     className::GetDeclaredProperties()                                           \
 );
+
+
 
 template<typename TObject>
 	requires std::derived_from<TObject, UObject>

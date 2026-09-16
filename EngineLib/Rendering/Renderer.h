@@ -136,6 +136,12 @@ public:
     unsigned int StrideSimple;
     unsigned int StrideTextured;
 
+	ID3D11VertexShader* LoadingScreenVertexShader = nullptr;
+	ID3D11PixelShader* LoadingScreenPixelShader = nullptr;
+	ID3D11InputLayout* LoadingScreenInputLayout = nullptr;
+	ID3D11Buffer* LoadingScreenVertexBuffer = nullptr;
+	ID3D11SamplerState* LoadingScreenSampler = nullptr;
+
 public:
 	/* Create */
 	void Create(HWND hWindow);
@@ -187,7 +193,7 @@ public:
 	void PrepareHighlight();
 	// 셰이더, 입력 레이아웃, 블렌딩 상태 설정
 	void PrepareUnicodeFont();
-  void PrepareParticle();
+    void PrepareParticle();
 
 	void UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0));
 	void UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0),
@@ -216,6 +222,9 @@ public:
 	//해상도 변경 시 호출
 	//void OnResize(UINT Width, UINT Height);
 	void OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight);
+
+	void CreateLoadingScreenResources();
+	void RenderFullscreenTexture(ID3D11ShaderResourceView* texture);
 
 private:
 	bool ensureFontIndexBuffer(UINT fontCount);

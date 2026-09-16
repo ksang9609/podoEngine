@@ -92,6 +92,9 @@ public:
 	void DrawAABBLine(const FBoundingBox& bounds, const FVector4& color);
 	void FlushLines();
 
+	void InitializeLoadingScreen();
+	void RenderLoadingScreen();
+
 	bool GetShowWorldAxis() const { return mbShowWorldAxis; }
 	void SetShowWorldAxis(bool bShow) { mbShowWorldAxis = bShow; }
 
@@ -114,6 +117,8 @@ public:
 private:
 	URenderer* mRenderer;
 	FMatrix mViewUnifiedProjectionMatrix;
+
+	ID3D11ShaderResourceView* mLoadingScreenSRV = nullptr;
 
 	// Prepare에서 갱신. 하이라이트 두께의 픽셀 → 월드 환산에 쓴다
 	FVector mCameraLocation;

@@ -50,6 +50,8 @@ void URenderer::Create(HWND hWindow)
 	createParticleStates();
 	createParticleVertexBuffer();
 	createParticleIndexBuffer();
+
+	CreateLoadingScreenResources();
 }
 
 void URenderer::createDeviceAndSwapChain(HWND hWindow)
@@ -1793,6 +1795,111 @@ void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float vie
 	//상태는 이전에 생성한 걸 그대로 재사용
 	createFrameBuffer();
 	createDepthStencilBuffer(width, height);
+}
+
+void URenderer::CreateLoadingScreenResources()
+{
+	const FVertexTextured vertices[] =
+	{
+		{ -1.0f,  1.0f, 0.0f, 0.0f, 0.0f },
+		{ 1.0f,  1.0f, 0.0f, 1.0f, 0.0f },
+		{ -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+
+		{ -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+		{ 1.0f,  1.0f, 0.0f, 1.0f, 0.0f },
+		{ 1.0f, -1.0f, 0.0f, 1.0f, 1.0f },
+	};
+
+	LoadingScreenVertexBuffer = CreateVertexBuffer(
+		vertices,
+		sizeof(vertices));
+
+	ID3DBlob* vertexShaderBlob = nullptr;
+	ID3DBlob* pixelShaderBlob = nullptr;
+
+	D3DCompileFromFile(L"Shaders/ShaderLoadingScreen.hlsl", nullptr, nullptr, "mainVS", "vs_5_0",
+		0, 0, &vertexShaderBlob, nullptr);
+
+	Device->CreateVertexShader(
+		vertexShaderBlob->GetBufferPointer(),
+		vertexShaderBlob->GetBufferSize(),
+		nullptr,
+		&LoadingScreenVertexShader);
+
+	D3DCompileFromFile(L"Shaders/ShaderLoadingScreen.hlsl", nullptr, nullptr, "mainPS", "ps_5_0",
+		0, 0, &pixelShaderBlob, nullptr);
+
+	Device->CreatePixelShader(
+		pixelShaderBlob->GetBufferPointer(),
+		pixelShaderBlob->GetBufferSize(),
+		nullptr,
+		&LoadingScreenPixelShader);
+
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{
+			"POSITION",
+			0,
+			DXGI_FORMAT_R32G32B32_FLOAT,
+			0,
+			0,
+			D3D11_INPUT_PER_VERTEX_DATA,
+			0
+		},
+		{
+			"TEXCOORD",
+			0,
+			DXGI_FORMAT_R32G32_FLOAT,
+			0,
+			12,
+			D3D11_INPUT_PER_VERTEX_DATA,
+			0
+		}
+	};
+
+	Device->CreateInputLayout(
+		layout,
+		ARRAYSIZE(layout),
+		vertexShaderBlob->GetBufferPointer(),
+		vertexShaderBlob->GetBufferSize(),
+		&LoadingScreenInputLayout);
+
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	Device->CreateSamplerState(
+		&samplerDesc,
+		&LoadingScreenSampler);
+
+	if (vertexShaderBlob)
+		vertexShaderBlob->Release();
+
+	if (pixelShaderBlob)
+		pixelShaderBlob->Release();
+}
+
+void URenderer::RenderFullscreenTexture(ID3D11ShaderResourceView* texture)
+{
+	UINT stride = sizeof(FVertexTextured);
+	UINT offset = 0;
+
+	DeviceContext->IASetVertexBuffers(
+		0, 1, &LoadingScreenVertexBuffer, &stride, &offset);
+	DeviceContext->IASetInputLayout(LoadingScreenInputLayout);
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	DeviceContext->VSSetShader(LoadingScreenVertexShader, nullptr, 0);
+	DeviceContext->PSSetShader(LoadingScreenPixelShader, nullptr, 0);
+	DeviceContext->PSSetShaderResources(0, 1, &texture);
+	DeviceContext->PSSetSamplers(0, 1, &LoadingScreenSampler);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
+
+	DeviceContext->OMSetDepthStencilState(nullptr, 0);
+	DeviceContext->Draw(6, 0);
 }
 
 void URenderer::ClearDepth()

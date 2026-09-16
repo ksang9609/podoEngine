@@ -58,6 +58,11 @@ FGraphicsManager::~FGraphicsManager()
 	delete mRenderer;
 }
 
+void FGraphicsManager::InitializeLoadingScreen()
+{
+	mRenderer->LoadTexture(L"Assets/Textures/LoadingScreen.dds",&mLoadingScreenSRV);
+}
+
 void FGraphicsManager::Prepare(const FCamera* mCamera)
 {
 	mRenderer->Prepare(mbWireFrame);
@@ -638,6 +643,13 @@ void FGraphicsManager::FlushLines()
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
 	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
 	mLineIndices.Reset(LINE_INDEX_CAPACITY);
+}
+
+void FGraphicsManager::RenderLoadingScreen()
+{
+	GetRenderer()->PrepareForUI();
+	GetRenderer()->RenderFullscreenTexture(mLoadingScreenSRV);
+	Display();
 }
 
 void FGraphicsManager::Display()

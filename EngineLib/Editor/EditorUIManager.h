@@ -52,7 +52,7 @@ public:
 	void LoadSettings(FEditorCommands& outCommands);
 
 	void UpdateGui(const FGuiReference& guiReference, FEditorCommands& outCommands);
-	void RenderLoadingScreen(FGraphicsManager& graphicsManager);
+	/*void RenderLoadingScreen(FGraphicsManager& graphicsManager);*/
 
 private:
 	// Internal state for ImGui input fields and other GUI elements
@@ -60,7 +60,7 @@ private:
 	FEditorSetting mEditorSetting;
 
 	const ImGuiIO& mImGuiIO;
-	ID3D11ShaderResourceView* mLoadingScreenSRV = nullptr;
+	/*ID3D11ShaderResourceView* mLoadingScreenSRV = nullptr;*/
 
 	float mPanelWidth = 300.0f; // Default width for the property and object list panels
 
