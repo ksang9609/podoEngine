@@ -96,7 +96,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		FString("Assets/Fonts/KoreanFullAtlas.json"));
 
 	mGraphicsManager->GetRenderer()->InitializeUnicodeFont(
-			L"Assets/Fonts/KoreanFullAtlas.png",
+		L"Assets/Fonts/KoreanFullAtlas.png",
 		mDefaultFontResource->GetDistanceRange());
 
 	FObjectFactory::Initialize(*mDefaultFontResource);
@@ -516,12 +516,25 @@ void FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentLoopingCo
 	}
 }
 
-void  FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentPlayRateCommand& command)
+void FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentPlayRateCommand& command)
 {
 	UParticleSubUVComponent* particleComponent = UObject::GetObjectByInternalIndex<UParticleSubUVComponent>(command.ObjectID.InternalIndex);
 	if (particleComponent)
 	{
 		particleComponent->SetPlayRate(command.PlayRate);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Component with ObjectID {} is not a UParticleSubUVComponent.", command.ObjectID.InternalIndex);
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentBlendStateTypeCommand& command)
+{
+	UParticleSubUVComponent* particleComponent = UObject::GetObjectByInternalIndex<UParticleSubUVComponent>(command.ObjectID.InternalIndex);
+	if (particleComponent)
+	{
+		particleComponent->SetBlendStateType(command.BlendStateType);
 	}
 	else
 	{

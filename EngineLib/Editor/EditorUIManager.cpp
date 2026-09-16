@@ -529,6 +529,7 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 				{
 					bool bLooping = particleSubUVComponent->IsLooping();
 					float playRate = particleSubUVComponent->GetPlayRate();
+					bool bUseAddtiveBlend = particleSubUVComponent->GetBlendStateType() == EBlendStateType::BST_Additive;
 
 					if (ImGui::Checkbox("Looping", &bLooping))
 					{
@@ -537,6 +538,10 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 					if (ImGui::DragFloat("Play Rate", &playRate, 0.1f, 0.0f, 10.0f))
 					{
 						outCommands.Emplace(FSetParticleSubUVComponentPlayRateCommand{ particleSubUVComponent->GetObjectID(), playRate });
+					}
+					if (ImGui::Checkbox("Additive Blend", &bUseAddtiveBlend))
+					{
+						outCommands.Emplace(FSetParticleSubUVComponentBlendStateTypeCommand{ particleSubUVComponent->GetObjectID(), bUseAddtiveBlend ? EBlendStateType::BST_Additive : EBlendStateType::BST_AlphaBlend });
 					}
 				}
 
