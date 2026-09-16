@@ -1,5 +1,7 @@
 ﻿#include "GraphicsManager.h"
 
+#include <algorithm>
+
 #include "Core/Container/TQueue.h"
 #include "Core/Math/Frustum.h" 
 #include "Core/enum.h"
@@ -177,6 +179,20 @@ void FGraphicsManager::updateRenderQueue(
 	}
 }
 
+void sortRenderQueueByDistance(TArray<const FRenderInfo*>& renderQueue, const FVector& cameraLocation, const FVector3& cameraForward)
+{
+	auto compare = [&cameraLocation, &cameraForward](const FRenderInfo* a, const FRenderInfo* b) {
+		FVector3 toA = a->GetLocation() - cameraLocation;
+		FVector3 toB = b->GetLocation() - cameraLocation;
+		float distanceA = FVector3::dot(toA, cameraForward);
+		float distanceB = FVector3::dot(toB, cameraForward);
+		return distanceA > distanceB; // Sort in descending order of distance
+		};
+
+
+	std::sort(renderQueue.begin(), renderQueue.end(), compare);
+}
+
 void FGraphicsManager::Render(
 	const TArray<FRenderInfo>& scenerRenderInfos,
 	const TArray<FRenderInfo>& gizmoRenderInfos,
@@ -197,6 +213,8 @@ void FGraphicsManager::Render(
 	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum);
 	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr);
 	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr);
+
+	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], mCameraLocation, mCameraForward);
 
 	//RenderInstancingTest();
 	renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
