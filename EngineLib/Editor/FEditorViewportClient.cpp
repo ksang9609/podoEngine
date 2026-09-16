@@ -322,7 +322,6 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 			int32 oldParent = copyObject["Properties"]["mComponents"][i]["ParentUUID"].ToInt();
 			copyObject["Properties"]["mComponents"][i]["ParentUUID"] = UUIDChangeMap[oldParent]; // 위에서 Mapping 해놨기 때문에 Mapping 값 맞춰서 Parent가 업데이트 됨
 		}
-		UE_LOG_F(Log, Core, "{}", copyObject.dump(1, "  "));
 		FString className(copyObject["ClassName"].ToString());
 		const FClassInfo* classinfo = FObjectFactory::GetClassInfoByName(className); // Actor Class 이름을 읽어서 classinfo 가져옴
 		if (classinfo == nullptr)
