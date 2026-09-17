@@ -239,9 +239,9 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	bool bCameraLocationChanged = false;
 	bool bCameraRotationChanged = false;
 
-	ImGui::Text("FOV      ");
+	ImGui::Text("FOV       ");
 	ImGui::SameLine();
-	if (ImGui::SliderFloat("##FOV", &cameraFov, 0.0f, 180.0f))
+	if (ImGui::SliderFloat("##FOV", &cameraFov, 5.0f, 175.0f))
 	{
 		outCommands.Emplace(FSetCameraFovCommand{ cameraFov });
 	}
