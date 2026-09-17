@@ -52,6 +52,7 @@ public:
 	void LoadSettings(FEditorCommands& outCommands);
 
 	void UpdateGui(const FGuiReference& guiReference, FEditorCommands& outCommands);
+	float GetPanelWidth() const { return mPanelWidth; }
 	/*void RenderLoadingScreen(FGraphicsManager& graphicsManager);*/
 
 private:

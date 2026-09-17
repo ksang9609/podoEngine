@@ -402,3 +402,8 @@ FodyWeavers.xsd
 
 #### Custom additions ####
 imgui.ini
+
+*.sln
+*.slnx
+*.vcxproj
+*.vcxproj.*

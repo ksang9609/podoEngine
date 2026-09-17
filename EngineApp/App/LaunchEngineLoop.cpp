@@ -239,7 +239,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	{
 		if (WindowApplication.bPendingResize)
 		{
-			float viewportWidth = mSceneManager->GetPanelWidth();
+			float viewportWidth = mEditorUIManager->GetPanelWidth();
 			float viewportHeight = (1.f - ConsoleWindow::HEIGHT_RATIO) * WindowApplication.PendingHeight;
 
 			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight, viewportWidth, viewportHeight);
