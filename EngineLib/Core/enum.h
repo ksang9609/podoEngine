@@ -13,6 +13,7 @@ enum class EPrimitive
 	EP_GizmoArrow,
 	EP_Circle,
 	EP_BillboardQuad,
+	EP_StaticMesh,
 };
 
 enum EGIZMO_AXIS //어떤축이 선택되었는지

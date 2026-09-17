@@ -18,19 +18,20 @@ struct FStaticMesh
 class UStaticMesh : public UObject
 {
 	DECLARE_OBJECT(UStaticMesh, UObject)
+	DECLARE_SERIALIZATION()
 public:
 
 	const FString& GetAssetPathFileName() const
 	{
-		return StaticMeshAsset->PathFileName;
+		return mStaticMeshAssetRef->PathFileName;
 	}
 
 	void SetStaticMeshAsset(FStaticMesh* inStaticMesh)
 	{
-		StaticMeshAsset = inStaticMesh;
+		mStaticMeshAssetRef = inStaticMesh;
 	}
 
 private:
-	FStaticMesh* StaticMeshAsset;
+	FStaticMesh* mStaticMeshAssetRef;
 };
 

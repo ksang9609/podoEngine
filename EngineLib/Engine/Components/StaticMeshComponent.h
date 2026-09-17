@@ -1,14 +1,15 @@
 ﻿#include "MeshComponent.h"
 
-#include <memory>
-
 #include "Rendering/Mesh/StaticMesh.h"
 
 class UStaticMeshComponent : public UMeshComponent
 {
 	DECLARE_OBJECT(UStaticMeshComponent, UMeshComponent)
+	DECLARE_SERIALIZATION()
 
+	void Initialize(FVector location, FRotator rotation, FVector scale3D,
+		UStaticMesh* staticMeshRef, bool bUseTexture = false);
 
 private:
-	std::shared_ptr<UStaticMesh> mStaticMesh;
+	UStaticMesh* mStaticMeshRef;
 };

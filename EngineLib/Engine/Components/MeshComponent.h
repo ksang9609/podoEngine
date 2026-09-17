@@ -6,4 +6,5 @@
 class UMeshComponent : public UPrimitiveComponent
 {
 	DECLARE_OBJECT(UMeshComponent, UPrimitiveComponent)
+	DECLARE_SERIALIZATION()
 };
