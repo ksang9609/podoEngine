@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include<wrl/client.h>
+
 #include "Core/Math/Matrix.h"
 #include "Core/enum.h"
 
@@ -10,6 +12,7 @@
 #include "RenderInfo.h"
 #include "Core/Math/Vector.h"
 #include "Core/Math/FBoundingBox.h"
+#include "Rendering/Mesh/StaticMesh.h"
 
 struct FFrustum;
 
@@ -26,8 +29,8 @@ struct FBuffer
 
 struct FTexture
 {
-	ID3D11ShaderResourceView* SRV;
-	ID3D11SamplerState* Sampler;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> Sampler;
 };
 
 enum ERenderQueueType
@@ -39,6 +42,7 @@ enum ERenderQueueType
 	RQT_Gizmo,
 	RQT_BoundingBox,
 	RQT_Particle,
+	RQT_StaticMesh,
 };
 
 class FGraphicsManager
@@ -80,6 +84,8 @@ public:
 
 	// Todo: Change name
 	void CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize);
+	// temp
+	void CreateStaticMeshBuffer(const FStaticMesh& staticMesh);
 	void CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize);
 	void CreatePrimitiveTexture(EPrimitive ePrimitive, const wchar_t* texturePath);
 
@@ -133,6 +139,10 @@ private:
 
 	// Texture sub resource view and sampler for each primitive type
 	TMap<EPrimitive, FTexture> mPrimitiveTextureMap;
+	std::unique_ptr<FTexture> mDefaultWhiteTexture;
+
+	// Debug for static mesh
+	TMap<const FStaticMesh*, FBuffer> mStaticMeshBuffer;
 
 	// Graphics config
 	// 이번 프레임에 쌓인 선분. 정점 2개가 선분 하나
@@ -184,6 +194,7 @@ private:
 	void renderGrid();
 	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 
 	void CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos);
 

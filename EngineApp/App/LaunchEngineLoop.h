@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <Windows.h>
+#include <memory>
 
 #include "Core/FrameTimer.h"
 #include "Core/IO/FileManager.h"
@@ -10,6 +11,7 @@
 #include "Engine/World.h"
 #include "Rendering/Camera.h"
 #include "Rendering/Renderer.h"
+#include "Rendering/FontResource.h"
 
 #include <d3d11.h>
 
@@ -37,7 +39,7 @@ private:
 	FFileManager* mFileManager;
 	FEditorUIManager* mEditorUIManager;
 
-	FFontResource* mDefaultFontResource;
+	std::unique_ptr<FFontResource> mDefaultFontResource;
 
 	/* Editor Command */
 	void processEditorCommands(const FEditorCommands& commands);

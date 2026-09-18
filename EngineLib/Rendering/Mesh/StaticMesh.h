@@ -31,6 +31,11 @@ public:
 		mStaticMeshAssetRef = inStaticMesh;
 	}
 
+	const FStaticMesh* GetStaticMeshAsset() const
+	{
+		return mStaticMeshAssetRef;
+	}
+
 private:
 	FStaticMesh* mStaticMeshAssetRef;
 };

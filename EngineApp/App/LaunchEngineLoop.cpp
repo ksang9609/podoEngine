@@ -11,6 +11,7 @@
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
+#include "Engine/Components/StaticMeshComponent.h"
 #include "Engine/SceneManager.h"
 #include "Engine/World.h"
 #include "Platform/WindowApplication.h"
@@ -90,7 +91,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	console.Init("Jungle Console Window", clientWidth);
 
 	/* Resource Registration */
-	mDefaultFontResource = new FFontResource();
+	mDefaultFontResource = std::make_unique<FFontResource>();
 
 	const bool jsonLoaded = mDefaultFontResource->LoadUnicodeAtlas(
 		FString("Assets/Fonts/KoreanFullAtlas.json"));
@@ -184,6 +185,52 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
 	mSceneManager->NewScene();
+
+	// Test: static mesh
+	{
+		FStaticMesh* quadMesh = new FStaticMesh();
+		FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
+		quadMesh->Vertices = {
+			{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
+			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {1, 0, 1, 1}, FVector2(0, 0)},
+			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {0, 1, 1, 1}, FVector2(1, 0)},
+			{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
+		};
+		quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
+		mGraphicsManager->CreateStaticMeshBuffer(*quadMesh);
+
+		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		staticMeshAsset->SetStaticMeshAsset(quadMesh);
+
+		AActor* quadActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			*staticMeshAsset);
+		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
+	}
+	{
+		FStaticMesh* cubeMesh = new FStaticMesh(CubeMesh);
+		mGraphicsManager->CreateStaticMeshBuffer(*cubeMesh);
+
+		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		staticMeshAsset->SetStaticMeshAsset(cubeMesh);
+
+		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			*staticMeshAsset);
+		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
+	}
+	{
+		FStaticMesh* sphereMesh = new FStaticMesh(SphereMesh);
+		mGraphicsManager->CreateStaticMeshBuffer(*sphereMesh);
+
+		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		staticMeshAsset->SetStaticMeshAsset(sphereMesh);
+
+		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			*staticMeshAsset);
+		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
+	}
 
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
@@ -288,7 +335,6 @@ void FEngineLoop::End()
 	delete FrameTimer;
 	delete mSceneManager;
 	delete mFileManager;
-	delete mDefaultFontResource;
 	delete mGraphicsManager;
 }
 

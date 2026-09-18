@@ -14,6 +14,7 @@ class UObject;
 class AActor;
 class FClassInfo;
 class FFontResource;
+class UStaticMesh;
 
 struct FObjectFactory
 {
@@ -47,6 +48,10 @@ struct FObjectFactory
 	static AActor* SpawnPrimitiveActor(EPrimitive primitiveType,
 		FVector3 Location, FRotator Rotation, FVector3 Scale
 	);
+
+	static AActor* SpawnStaticMeshActor(
+		FVector3 location, FRotator rotation, FVector3 scale,
+		const UStaticMesh& staticMesh);
 
 	static AActor* SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale);
 

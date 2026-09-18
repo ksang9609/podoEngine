@@ -8,6 +8,7 @@
 #include "Engine/Components/ParticleSubUVComponent.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
+#include "Engine/Components/StaticMeshComponent.h"
 
 #include "Rendering/FontResource.h"
 
@@ -83,6 +84,25 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnPrimitiveActor.");
 	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
 		actor->GetName().ToString(), FVector3{0, 0, 1}, *mDefaultFontResource);
+	billboardComponent.AttachTo(*component);
+	return actor;
+}
+
+AActor* FObjectFactory::SpawnStaticMeshActor(
+	FVector3 location, FRotator rotation, FVector3 scale,
+	const UStaticMesh& staticMesh)
+{
+	FName StaticMeshName("StaticMesh");
+	AActor* actor = ConstructObjectWithName<AActor>(StaticMeshName);
+	UStaticMeshComponent* component = ConstructObject<UStaticMeshComponent>(
+		location, rotation, scale,
+		&staticMesh);
+	actor->AddRootSceneComponent(component);
+
+	// Add name component
+	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
+	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
+		actor->GetName().ToString(), FVector3{ 0, 0, 1 }, *mDefaultFontResource);
 	billboardComponent.AttachTo(*component);
 	return actor;
 }
