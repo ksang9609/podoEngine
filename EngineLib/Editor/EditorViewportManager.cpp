@@ -1,31 +1,115 @@
 ﻿#include "EditorViewportManager.h"
+#include "FEditorViewportClient.h"
 
-uint8_t FEditorViewportManager::addViewport()
+//Todo : 종료하기전 패널 모드를 유지해서 불러와야함
+bool FEditorViewportManager::Initialize()
 {
-	const uint8_t viewportId = allocateViewportId();
-	if (viewportId <= 0)
+	if (!Viewports.IsEmpty())
 	{
-		return 0;
+		return true;
 	}
-	auto newViewport = std::make_unique<FViewportEntry>(viewportId, mSharedSettings);
-	Viewports.Add(std::move(newViewport));
+	return addViewport() != invalidViewportId;
+}
 
+FViewport* FEditorViewportManager::getActiveViewport()
+{
+	return findViewport(activeViewportId);
+}
+const FViewport* FEditorViewportManager::getActiveViewport() const
+{
+	return findViewport(activeViewportId);
+}
+FViewport* FEditorViewportManager::getViewportAt(uint8 index)
+{
+	if (index >= static_cast<uint8>(Viewports.Num()))
+	{
+		return nullptr;
+	}
+	return Viewports[index].get();
+}
+const FViewport* FEditorViewportManager::getViewportAt(uint8 index) const
+{
+	if (index >= static_cast<uint8>(Viewports.Num()))
+	{
+		return nullptr;
+	}
+	return Viewports[index].get();
+}
+bool FEditorViewportManager::setActiveViewport(uint8 viewportId)
+{
+	if (findViewport(viewportId) == nullptr)
+	{
+		return false;
+	}
+	activeViewportId = viewportId;
+	return true;
+}
+EViewportLayoutMode FEditorViewportManager::getLayoutMode() const
+{
+	return layoutMode;
+}
+uint8 FEditorViewportManager::getViewportCount() const
+{
+	return Viewports.Num();
+}
+std::unique_ptr<SWindow> FEditorViewportManager::makeViewportPanel(uint8 index)
+{
+	if (index >= static_cast<uint8>(Viewports.Num()))
+	{
+		return nullptr;
+	}
+	return std::make_unique<SViewportPanel>(*Viewports[index]);
+}
+std::unique_ptr<SWindow> FEditorViewportManager::makeSingleLayout()
+{
+	return makeViewportPanel(0);
+}
+std::unique_ptr<SWindow> FEditorViewportManager::makeTwoPaneLayout()
+{
+	return std::make_unique<SSplitterV>(makeViewportPanel(0), makeViewportPanel(1), 0.5);
+}
+std::unique_ptr<SWindow> FEditorViewportManager::makeThreePaneLayout()
+{
+	auto rightSide = std::make_unique<SSplitterH>(makeViewportPanel(1), makeViewportPanel(2), 0.5f);
+	return std::make_unique<SSplitterV>(makeViewportPanel(0), std::move(rightSide), 0.5f);
+}
+std::unique_ptr<SWindow> FEditorViewportManager::makeFourPaneLayout()
+{
+	auto top = std::make_unique<SSplitterV>(makeViewportPanel(0), makeViewportPanel(1), 0.5f);
+	auto bottom = std::make_unique<SSplitterV>(makeViewportPanel(2), makeViewportPanel(3), 0.5f);
+	return std::make_unique<SSplitterH>(std::move(top), std::move(bottom), 0.5f);
+}
+uint8 FEditorViewportManager::addViewport()
+{
+	const uint8 viewportId = allocateViewportId();
+	if (viewportId <= invalidViewportId)
+	{
+		return invalidViewportId;
+	}
+	// 뷰포트 추가시 시점 선정 순서 선언
+	static constexpr EViewportType defaultTypes[] =
+	{
+		EViewportType::Perspective,
+		EViewportType::Top,
+		EViewportType::Front,
+		EViewportType::Right
+	};
+	
+	Viewports.Add(std::make_unique<FViewport>(viewportId,defaultTypes[viewportId-1],mSharedSettings));
+	if (activeViewportId == invalidViewportId)
+	{
+		activeViewportId = viewportId;
+	}
+	rebuildLayout();
 	return viewportId;
 }
-uint8_t FEditorViewportManager::allocateViewportId() const
+uint8 FEditorViewportManager::allocateViewportId() const
 {
-	if (Viewports.Num() >= maxId)
+	if (Viewports.Num() >= maxViewportCount)
 	{
-		return 0;
+		return invalidViewportId;
 	}
-	for (uint8_t id = 1; id <= maxId; id++)
-	{
-		if (findViewport(id) == nullptr)
-		{
-			return id;
-		}
-	}
-	return 0;
+	return static_cast<uint8>(Viewports.Num() + 1);
 }
 bool FEditorViewportManager::removeViewport(uint8_t viewportId)
 {
@@ -38,43 +122,147 @@ bool FEditorViewportManager::removeViewport(uint8_t viewportId)
 	{
 		return false;
 	}
-	Viewports.RemoveAt(static_cast<uint32_t>(index), 1);
+	FViewport* activeViewport = getActiveViewport();
+	const bool removedActive = activeViewport == Viewports[index].get();
+
+	draggingSplitter = nullptr;
+	layoutRoot.reset();
+	Viewports.RemoveAt(static_cast<uint8>(index), 1);
+	reindexViewports();
+
+	if (removedActive)
+	{
+		activeViewportId = 1;
+	}
+	else if (activeViewport != nullptr)
+	{
+		activeViewportId = activeViewport->getId();
+	}
+
+	rebuildLayout();
+
 	return true;
 }
-FViewportEntry* FEditorViewportManager::findViewport(uint8_t viewportId)
+void FEditorViewportManager::reindexViewports()
 {
-	const int8_t index = findViewportIndex(viewportId);
+	for (uint32 index = 0; index < Viewports.Num(); index++)
+	{
+		// 뷰포트 id는 1,2,3,4 이므로 index에 1을 더함
+		Viewports[index]->setId(static_cast<uint8>(index + 1)); 
+	}
+}
+FViewport* FEditorViewportManager::findViewport(uint8 viewportId)
+{
+	const int8 index = findViewportIndex(viewportId);
 	if (index < 0)
 	{
 		return nullptr;
 	}
 	return Viewports[index].get();
 }
-const FViewportEntry* FEditorViewportManager::findViewport(uint8_t viewportId) const
+const FViewport* FEditorViewportManager::findViewport(uint8 viewportId) const
 {
-	const int8_t index = findViewportIndex(viewportId);
+	const int8 index = findViewportIndex(viewportId);
 	if (index < 0)
 	{
 		return nullptr;
 	}
 	return Viewports[index].get();
 }
-int8_t FEditorViewportManager::findViewportIndex(uint8_t viewportId) const
+int8 FEditorViewportManager::findViewportIndex(uint8 viewportId) const
 {
-	if (viewportId == 0)
+	if (viewportId == invalidViewportId)
 	{
 		return -1;
 	}
-	for (uint8_t index = 0; index < Viewports.Num(); index++)
+	for (int8 index = 0; index < Viewports.Num(); index++)
 	{
-		const FViewportEntry& entry = Viewports[index];
-		if (entry && entry.Id == viewportId)
+		const std::unique_ptr<FViewport>& viewport = Viewports[index];
+		if (viewport && viewport->getId() == viewportId)
 		{
 			return index;
 		}
 	}
 	return -1;
 }
+void FEditorViewportManager::rebuildLayout()
+{
+	draggingSplitter = nullptr;
+	layoutRoot.reset();
+
+	const uint8 viewportCount = Viewports.Num();
+
+	switch (viewportCount)
+	{
+	case 1 :
+		layoutMode = EViewportLayoutMode::SinglePane;
+		layoutRoot = makeSingleLayout();
+		break;
+	case 2 :
+		layoutMode = EViewportLayoutMode::TwoPane;
+		layoutRoot = makeTwoPaneLayout();
+		break;
+	case 3 :
+		layoutMode = EViewportLayoutMode::ThreePane;
+		layoutRoot = makeThreePaneLayout();
+		break;
+	case 4 :
+		layoutMode = EViewportLayoutMode::FourPane;
+		layoutRoot = makeFourPaneLayout();
+		break;
+	default:
+		layoutRoot.reset();
+		break;
+	}
+}
+void FEditorViewportManager::arrangeLayout(const FRect& hostRect)
+{
+	if (layoutRoot == nullptr)
+	{
+		return;
+	}
+	if (hostRect.getWidth() <= 0.0f || hostRect.getHeight() <= 0.0f)
+	{
+		return;
+	}
+
+	layoutRoot->Arrange(hostRect);
+}
+void FEditorViewportManager::setCameraSpeed(float speed)
+{
+	mSharedSettings.cameraSpeed = speed;
+}
+void FEditorViewportManager::setSnapPreset(uint8_t presetIndex)
+{
+	if (presetIndex >= FViewportSharedSettings::snapPresets.size()) { return; }
+	mSharedSettings.snapPresetIndex = presetIndex;
+}
+bool FEditorViewportManager::beginSplitterDrag(const FPoint& point)
+{
+	if (layoutRoot == nullptr)
+	{
+		draggingSplitter = nullptr;
+		return false;
+	}
+
+	// 반드시 arrangeLayout()이 한 번 호출된 뒤 사용해야 한다.
+	draggingSplitter = layoutRoot->findSplitter(point);
+
+	return draggingSplitter != nullptr;
+}
+void FEditorViewportManager::updateSplitterDrag(const FPoint& point)
+{
+	if (draggingSplitter == nullptr)
+	{
+		return;
+	}
+	draggingSplitter->updateSplitFromPoint(point);
+}
+void FEditorViewportManager::endSplitterDrag()
+{
+	draggingSplitter = nullptr;
+}
+/*
 void FEditorViewportManager::updateViewports(float deltaTime, FSceneManager& sceneManager)
 {
 
@@ -83,11 +271,4 @@ void FEditorViewportManager::renderViewports(FGraphicsManager& graphicsManager, 
 {
 
 }
-void FEditorViewportManager::setCameraSpeed(float speed)
-{
-	mSharedSettings.cameraSpeed = speed;
-}
-void FEditorViewportManager::setSnapPreset(uint8_t presetIndex)
-{
-	mSharedSettings.snapPresetIndex = presetIndex;
-}
+*/

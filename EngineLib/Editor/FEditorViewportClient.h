@@ -12,10 +12,16 @@
 
 class AActor;
 class FSceneManager;
+struct FViewportSharedSettings;
 
 struct FEditorViewportClient
 {
 public:
+
+	explicit FEditorViewportClient(FViewportSharedSettings& sharedSettings) :
+		mSharedSettings(sharedSettings)
+	{ }
+
 	bool RaycastBounds(
 		const FVector& rayStart,
 		const FVector& rayEnd,
@@ -77,4 +83,6 @@ private:
 	TMap<int32, int32> UUIDChangeMap;
 	json::JSON mActorClipBoard;
 	json::JSON copyObject;
+
+	FViewportSharedSettings& mSharedSettings;
 };

@@ -1,4 +1,7 @@
-﻿#include "../Core/Container/TArray.h"
+﻿#pragma once
+#include "../Core/Container/TArray.h"
+#include "Viewport.h"
+#include "ViewportLayout.h"
 
 #include <memory>
 
@@ -6,57 +9,62 @@ class FEditorViewportClient;
 class FGraphicsManager;
 class FSceneManager;
 
-struct FViewportSharedSettings
-{
-	inline static constexpr std::array<float, 4> snapPresets{ 0.01f, 0.1f, 1.0f, 5.0f };
-	uint8_t snapPresetIndex = 1;
-	float cameraSpeed = 5.0f;
-	float GetSnapSize() const { return snapPresets[snapPresetIndex]; }
-};
-
-struct FViewportEntry
-{
-	FViewportEntry(uint8_t id, FViewportSharedSettings& sharedSettings)
-		:Id(id), Client(std::make_unique<FEditorViewportClient>(sharedSettings))
-	{};
-	~FViewportEntry();
-
-	uint8_t Id = 0;
-	std::unique_ptr<FEditorViewportClient> Client = nullptr;
-};
-
-enum paneMode
-{
-	SinglePane,
-	TwoPane,
-	ThreePane,
-	FourPane
-};
-
 class FEditorViewportManager
 {
 private :
 	FViewportSharedSettings mSharedSettings;
-	paneMode mPaneMode = SinglePane;
-	TArray<std::unique_ptr<FViewportEntry>> Viewports;
-	const uint8_t maxId = 4;
+	TArray<std::unique_ptr<FViewport>> Viewports;
+
+	EViewportLayoutMode layoutMode = EViewportLayoutMode::SinglePane;
+	uint8 activeViewportId = invalidViewportId;
+
+	std::unique_ptr<SWindow> layoutRoot;
+	SSplitter* draggingSplitter = nullptr;
 public :
 	FEditorViewportManager() = default;
 	~FEditorViewportManager() = default;
 
-	uint8_t addViewport();
-	uint8_t allocateViewportId() const;
-	bool removeViewport(uint8_t viewportId);
+	bool Initialize();
 
-	FViewportEntry* findViewport(uint8_t viewportId);
-	const FViewportEntry* findViewport(uint8_t viewportId) const;
+	FViewport* findViewport(uint8 viewportId);
+	const FViewport* findViewport(uint8 viewportId) const;
 
-	int8_t findViewportIndex(uint8_t viewportId) const;
+	FViewport* getViewportAt(uint8 index);
+	const FViewport* getViewportAt(uint8 index) const;
 
-	void updateViewports(float deltaTime, FSceneManager& sceneManager);
-	void renderViewports(FGraphicsManager& graphicsManager, FSceneManager& sceneManager);
+	FViewport* getActiveViewport();
+	const FViewport* getActiveViewport() const;
 
-	const FViewportSharedSettings& getSharedSettings() const { return mSharedSettings;  }
+	bool setActiveViewport(uint8 viewportId);
+
+	uint8 getViewportCount() const;
+	EViewportLayoutMode getLayoutMode() const;
+
+	uint8 addViewport();
+	bool removeViewport(uint8 viewportId);
+
+	void arrangeLayout(const FRect& hostRect);
+
+	bool beginSplitterDrag(const FPoint& point);
+	void updateSplitterDrag(const FPoint& point);
+	void endSplitterDrag();
+
+	inline const FViewportSharedSettings& getSharedSettings() const { return mSharedSettings;  }
+
 	void setCameraSpeed(float speed);
-	void setSnapPreset(uint8_t presetIndex);
+	void setSnapPreset(uint8 presetIndex);
+
+private:
+	uint8 allocateViewportId() const;
+	int8 findViewportIndex(uint8 viewportId) const;
+	void reindexViewports();
+
+	void rebuildLayout();
+
+	std::unique_ptr<SWindow> makeViewportPanel(uint8 index);
+
+	std::unique_ptr<SWindow> makeSingleLayout();
+	std::unique_ptr<SWindow> makeTwoPaneLayout();
+	std::unique_ptr<SWindow> makeThreePaneLayout();
+	std::unique_ptr<SWindow> makeFourPaneLayout();
 };

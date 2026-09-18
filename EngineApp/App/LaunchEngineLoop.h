@@ -15,6 +15,7 @@
 
 class Sphere;
 class FGraphicsManager;
+class FEditorViewportManager;
 class FEngineLoop
 {
 public:
@@ -30,12 +31,13 @@ private:
 	// Todo: Make as pointer
 	FFrameTimer* FrameTimer;
 	bool GInTick = false;
-	FEditorViewportClient* ViewportClient;
 
 	FGraphicsManager* mGraphicsManager;
 	FSceneManager* mSceneManager;
 	FFileManager* mFileManager;
 	FEditorUIManager* mEditorUIManager;
+	FEditorViewportManager* mEditorViewportManager;
+	FEditorViewportClient* viewportClient = nullptr;
 
 	FFontResource* mDefaultFontResource;
 

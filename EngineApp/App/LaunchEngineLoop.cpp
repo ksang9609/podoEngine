@@ -7,6 +7,8 @@
 #include "Core/Object/ObjectFactory.h"
 #include "Editor/Console.h"
 #include "Editor/EditorUIManager.h"
+#include "Editor/EditorViewportManager.h"
+#include "Editor/Viewport.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
@@ -68,9 +70,15 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	/* Init Managers */
 	mGraphicsManager = new FGraphicsManager(hWnd);
 	FrameTimer = new FFrameTimer(120);
-	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
-	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
+
+	mEditorViewportManager = new FEditorViewportManager();
+	const bool initialized = mEditorViewportManager->Initialize();
+	FViewport* initialViewport = mEditorViewportManager->getActiveViewport();
+	viewportClient = &initialViewport->getClient();
+
+	mSceneManager = new FSceneManager(viewportClient->GetCamera());
 	mFileManager = new FFileManager();
+
 
 	mGraphicsManager->InitializeLoadingScreen();
 	mGraphicsManager->RenderLoadingScreen();
@@ -213,14 +221,15 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		mEditorUIManager->UpdateGui({
 			*FrameTimer,
 			*mSceneManager,
-			*ViewportClient,
+			*viewportClient,
 			*mGraphicsManager,
 			*mFileManager,
+			*mEditorViewportManager,
 			}, editorCommands);
 		processEditorCommands(editorCommands);
 
 		mGraphicsManager->UpdateProjectionTransition(deltaTime);
-		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->GetPerspectiveRatio());
+		viewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->GetPerspectiveRatio());
 	}
 
 	//Physics Threads
@@ -250,9 +259,9 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 		mGraphicsManager->Render(
 			mSceneManager->GetRenderInfos(),
-			ViewportClient->mGizmo.GetGizmoRenderInfo(),
+			viewportClient->mGizmo.GetGizmoRenderInfo(),
 			mSceneManager->GetAxisRenderInfos(),
-			ViewportClient->GetCamera(),
+			viewportClient->GetCamera(),
 			mSceneManager->GetSelectedActor()
 		);
 
@@ -283,10 +292,10 @@ void FEngineLoop::End()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	delete ViewportClient;
 	delete mEditorUIManager;
 	delete FrameTimer;
 	delete mSceneManager;
+	delete mEditorViewportManager;
 	delete mFileManager;
 	delete mDefaultFontResource;
 	delete mGraphicsManager;
@@ -518,32 +527,32 @@ void FEngineLoop::processEditorCommand(const FSetShowFlagCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSetCameraSensitivityCommand& command)
 {
-	ViewportClient->GetCamera().SetCameraSensitivity(command.Sensitivity);
+	viewportClient->GetCamera().SetCameraSensitivity(command.Sensitivity);
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraFovCommand& command)
 {
-	ViewportClient->GetCamera().mFovDegree = command.Fov;
+	viewportClient->GetCamera().mFovDegree = command.Fov;
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraLocationCommand& command)
 {
-	ViewportClient->GetCamera().Location = command.Location;
+	viewportClient->GetCamera().Location = command.Location;
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraRotationCommand& command)
 {
-	ViewportClient->GetCamera().Rotation = command.Rotation;
+	viewportClient->GetCamera().Rotation = command.Rotation;
 }
 
 void FEngineLoop::processEditorCommand(const FSetGizmoModeCommand& command)
 {
-	ViewportClient->mGizmo.SetGizmoType(command.GizmoMode);
+	viewportClient->mGizmo.SetGizmoType(command.GizmoMode);
 }
 
 void FEngineLoop::processEditorCommand(const FCycleGizmoModeCommand& command)
 {
-	ViewportClient->mGizmo.CycleGizmoType();
+	viewportClient->mGizmo.CycleGizmoType();
 }
 
 void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
@@ -556,9 +565,9 @@ void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& 
 	AActor* selectedActor = mSceneManager->GetSelectedActor();
 	if (selectedActor && command.bOrthographic && mGraphicsManager->GetPerspectiveRatio() == 1.0f)
 	{
-		const FVector offset = selectedActor->GetTransform().Location - ViewportClient->GetCamera().Location;
-		const float depth = FVector::dot(offset, ViewportClient->GetCamera().GetForwardVector());
-		ViewportClient->GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
+		const FVector offset = selectedActor->GetTransform().Location - viewportClient->GetCamera().Location;
+		const float depth = FVector::dot(offset, viewportClient->GetCamera().GetForwardVector());
+		viewportClient->GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
 	}
 	mGraphicsManager->StartProjectionTransition(command.bOrthographic);
 }

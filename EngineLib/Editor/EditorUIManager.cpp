@@ -16,8 +16,46 @@
 
 /* Editor */
 #include "FEditorViewportClient.h"
+#include "EditorViewportManager.h"
+#include "Viewport.h"
 #include "Console.h"
 
+#include <algorithm>
+#include <cstdio>
+
+namespace
+{
+	const char* getViewportTypeName(
+		EViewportType type)
+	{
+		switch (type)
+		{
+		case EViewportType::Perspective:
+			return "Perspective";
+
+		case EViewportType::Top:
+			return "Top";
+
+		case EViewportType::Bottom:
+			return "Bottom";
+
+		case EViewportType::Left:
+			return "Left";
+
+		case EViewportType::Right:
+			return "Right";
+
+		case EViewportType::Front:
+			return "Front";
+
+		case EViewportType::Back:
+			return "Back";
+
+		default:
+			return "Unknown";
+		}
+	}
+}
 
 FEditorUIManager::FEditorUIManager(const ImGuiIO& io)
 	: mGuiInputField()
@@ -45,6 +83,7 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorComma
 	updateControlPanelGUI(guiReference, outCommands);
 	updatePropertyWindowGUI(guiReference, outCommands);
 	updateObjectListPanelGUI(guiReference, outCommands);
+	updateViewportLayoutPanelGUI(guiReference.ViewportManager);
 
 	ConsoleWindow::GetInstance().Draw(mPanelWidth);
 }
@@ -714,5 +753,264 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 		}
 		
 	}
+	ImGui::End();
+}
+
+void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager)
+{
+	const float consoleHeight =
+		mImGuiIO.DisplaySize.y *
+		ConsoleWindow::HEIGHT_RATIO;
+
+	const float hostWidth = (std::max)(mImGuiIO.DisplaySize.x - mPanelWidth,0.0f);
+	const float hostHeight = (std::max)(mImGuiIO.DisplaySize.y - consoleHeight,0.0f);
+
+	if (hostWidth <= 0.0f ||
+		hostHeight <= 0.0f)
+	{
+		return;
+	}
+
+	// 기존 왼쪽 Editor 패널 오른쪽,
+	// Console 위쪽에 배치한다.
+	ImGui::SetNextWindowPos(
+		ImVec2(mPanelWidth, 0.0f),
+		ImGuiCond_Always);
+
+	ImGui::SetNextWindowSize(
+		ImVec2(hostWidth, hostHeight),
+		ImGuiCond_Always);
+
+	const ImGuiWindowFlags windowFlags =
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse;
+
+	ImGui::Begin(
+		"Viewport Layout Debug",
+		nullptr,
+		windowFlags);
+
+	// --------------------------------------------------------
+	// 테스트용 Viewport 추가/삭제 버튼
+	// --------------------------------------------------------
+
+	const int32 viewportCount =
+		viewportManager.getViewportCount();
+
+	ImGui::BeginDisabled(
+		viewportCount >= maxViewportCount);
+
+	if (ImGui::Button("+ Viewport"))
+	{
+		viewportManager.addViewport();
+	}
+
+	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+
+	ImGui::BeginDisabled(
+		viewportCount <= 1);
+
+	if (ImGui::Button("- Last Viewport"))
+	{
+		// 현재 EngineLoop가 첫 번째 ViewportClient를 사용하므로
+		// 임시 테스트에서는 마지막 Viewport만 삭제한다.
+		const uint8 lastViewportId =
+			static_cast<uint8>(
+				viewportManager.getViewportCount());
+
+		viewportManager.removeViewport(
+			lastViewportId);
+	}
+
+	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+
+	ImGui::Text(
+		"Count: %d / %d",
+		viewportManager.getViewportCount(),
+		static_cast<int32>(maxViewportCount));
+
+	ImGui::Separator();
+
+	// --------------------------------------------------------
+	// 실제 Viewport Layout이 들어갈 Host 영역 계산
+	// --------------------------------------------------------
+
+	const ImVec2 hostMin =
+		ImGui::GetCursorScreenPos();
+
+	const ImVec2 availableSize =
+		ImGui::GetContentRegionAvail();
+
+	const ImVec2 hostMax = {
+		hostMin.x + availableSize.x,
+		hostMin.y + availableSize.y
+	};
+
+	const FRect hostRect = {
+		hostMin.x,
+		hostMin.y,
+		hostMax.x,
+		hostMax.y
+	};
+
+	// Layout 트리 전체 배치.
+	// 이 호출로 각 Viewport의 panelRect가 갱신된다.
+	viewportManager.arrangeLayout(hostRect);
+
+	// --------------------------------------------------------
+	// Splitter 마우스 입력
+	// --------------------------------------------------------
+
+	const ImVec2 mousePosition =
+		ImGui::GetIO().MousePos;
+
+	const FPoint mousePoint = {
+		mousePosition.x,
+		mousePosition.y
+	};
+
+	const bool mouseInsideHost =
+		hostRect.contains(mousePoint);
+
+	if (mouseInsideHost &&
+		ImGui::IsMouseClicked(
+			ImGuiMouseButton_Left))
+	{
+		viewportManager.beginSplitterDrag(
+			mousePoint);
+	}
+
+	// 드래그 도중 Host 바깥으로 나가도 계속 갱신한다.
+	// clampSplitRatio()가 최소 크기를 제한한다.
+	if (ImGui::IsMouseDown(
+		ImGuiMouseButton_Left))
+	{
+		viewportManager.updateSplitterDrag(
+			mousePoint);
+	}
+
+	if (ImGui::IsMouseReleased(
+		ImGuiMouseButton_Left))
+	{
+		viewportManager.endSplitterDrag();
+	}
+
+	// --------------------------------------------------------
+	// 디버그 화면 그리기
+	// --------------------------------------------------------
+
+	ImDrawList* drawList =
+		ImGui::GetWindowDrawList();
+
+	drawList->PushClipRect(
+		hostMin,
+		hostMax,
+		true);
+
+	// 먼저 전체 Host를 Splitter 색으로 채운다.
+	// 그 위에 패널을 그리면, 패널 사이에 남은 영역이
+	// 자연스럽게 Splitter 선으로 보인다.
+	const ImU32 splitterColor =
+		IM_COL32(45, 45, 50, 255);
+
+	drawList->AddRectFilled(
+		hostMin,
+		hostMax,
+		splitterColor);
+
+	static constexpr ImU32 panelColors[] =
+	{
+		IM_COL32(55, 85, 120, 255),
+		IM_COL32(80, 105, 70, 255),
+		IM_COL32(110, 75, 80, 255),
+		IM_COL32(90, 75, 120, 255)
+	};
+
+	const FViewport* activeViewport =
+		viewportManager.getActiveViewport();
+
+	for (int32 index = 0;
+		index < viewportManager.getViewportCount();
+		++index)
+	{
+		const FViewport* viewport =
+			viewportManager.getViewportAt(
+				static_cast<uint8>(index));
+
+		if (viewport == nullptr)
+		{
+			continue;
+		}
+
+		const FRect& panelRect =
+			viewport->getWindowState().panelRect;
+
+		const ImVec2 panelMin = {
+			panelRect.Left,
+			panelRect.Top
+		};
+
+		const ImVec2 panelMax = {
+			panelRect.Right,
+			panelRect.Bottom
+		};
+
+		const ImU32 panelColor =
+			panelColors[
+				index %
+					IM_ARRAYSIZE(panelColors)];
+
+		drawList->AddRectFilled(
+			panelMin,
+			panelMax,
+			panelColor);
+
+		const bool isActive =
+			activeViewport == viewport;
+
+		const ImU32 borderColor =
+			isActive
+			? IM_COL32(255, 210, 70, 255)
+			: IM_COL32(150, 150, 160, 255);
+
+		drawList->AddRect(
+			panelMin,
+			panelMax,
+			borderColor,
+			0.0f,
+			0,
+			isActive ? 3.0f : 1.0f);
+
+		char label[128] = {};
+
+		std::snprintf(
+			label,
+			sizeof(label),
+			"Viewport %u\n%s",
+			static_cast<unsigned>(
+				viewport->getId()),
+			getViewportTypeName(
+				viewport->getType()));
+
+		drawList->AddText(
+			ImVec2(
+				panelRect.Left + 10.0f,
+				panelRect.Top + 10.0f),
+			IM_COL32(255, 255, 255, 255),
+			label);
+	}
+
+	drawList->PopClipRect();
+
+	// ImGui에게 해당 영역이 실제 콘텐츠로 사용됐음을 알려준다.
+	ImGui::Dummy(availableSize);
+
 	ImGui::End();
 }

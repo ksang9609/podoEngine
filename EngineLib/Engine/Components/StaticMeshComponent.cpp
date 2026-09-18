@@ -18,5 +18,5 @@ void UStaticMeshComponent::Initialize(FVector location, FRotator rotation, FVect
 FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 {
 	FRenderInfo renderInfo = UMeshComponent::makeRenderInfo();
-
+	return renderInfo;
 }

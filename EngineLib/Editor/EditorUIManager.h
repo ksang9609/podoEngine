@@ -17,6 +17,7 @@ class FGraphicsManager;
 class FEditorViewportClient;
 class FFileManager;
 class FSceneManager;
+class FEditorViewportManager;
 
 struct ID3D11ShaderResourceView;
 
@@ -27,6 +28,7 @@ struct FGuiReference
 	const FEditorViewportClient& ViewportClient;
 	const FGraphicsManager& GraphicsManager;
 	const FFileManager& FileManager;
+	FEditorViewportManager& ViewportManager;
 };
 
 struct FGuiInputField
@@ -74,4 +76,5 @@ private:
 	void updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updateObjectListPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
+	void updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager);
 };

@@ -35,6 +35,7 @@ public:
 	void SetNum(int32 NewNum, bool bAllowShrinking = true);
 
 	uint32 Add(const T& data);
+	uint32 Add(T&& data);
 	uint32 Emplace(const T& data);
 	uint32 Insert(const T& data, uint32 index);
 	void Reserve(uint32 Number);
@@ -154,6 +155,14 @@ inline uint32 TArray<T>::Add(const T& data)
 }
 
 template<typename T>
+inline uint32 TArray<T>::Add(T&& data)
+{
+	mDatas.push_back(std::move(data));
+
+	return static_cast<uint32>(mDatas.size() - 1);
+}
+
+template<typename T>
 inline uint32 TArray<T>::Emplace(const T& data)
 {
 	mDatas.emplace_back(data);
@@ -227,8 +236,8 @@ inline void TArray<T>::RemoveAtSwap(uint32 index)
 	assert(mDatas.empty() == false);
 	assert(index < mDatas.size());
 
-	T moveData = mDatas.back();
-	mDatas[index] = moveData;
+	mDatas[index] = std::move(mDatas.back());
+	mDatas.pop_back();
 
 	RemoveLast();
 }
