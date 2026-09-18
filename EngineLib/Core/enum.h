@@ -13,6 +13,7 @@ enum class EPrimitive
 	EP_GizmoArrow,
 	EP_Circle,
 	EP_BillboardQuad,
+	EP_StaticMesh,
 };
 
 enum EGIZMO_AXIS //어떤축이 선택되었는지
@@ -193,6 +194,7 @@ enum EVertexShaderType
 	VST_Font,
 	VST_Billboard,
 	VST_Particle,
+	VST_StaticMesh,
 	VST_Count,
 };
 
@@ -205,5 +207,15 @@ enum EPixelShaderType
 	PST_UnicodeFont,
 	PST_Billboard,
 	PST_Particle,
+	PST_StaticMesh,
 	PST_Count,
+};
+
+enum EInputLayoutType
+{
+	ILT_PositionColor,
+	ILT_PositionTexture,
+	ILT_PositionColorMatrixTint,
+	ILT_PositionNormalColorTexture,
+	ILT_Count,
 };

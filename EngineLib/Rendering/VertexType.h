@@ -2,6 +2,7 @@
 
 #include "Core/Core.h"
 #include "Core/Math/Vector.h"
+#include "Core/Math/Color.h"
 
 struct FVertexSimple
 {
@@ -15,4 +16,12 @@ struct FVertexTextured
 {
 	float x, y, z;
 	float u, v;
+};
+
+struct FNormalVertex
+{
+	FVector pos;		// xyz
+	FVector normal;		// normal
+	FLinearColor color;	// RGBA
+	FVector2 tex;		// uv
 };
