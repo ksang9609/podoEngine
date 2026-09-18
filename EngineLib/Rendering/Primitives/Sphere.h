@@ -1,6 +1,7 @@
 ﻿#pragma once
 // © 2024 KRAFTON, Inc. ALL RIGHTS RESERVED.
 
+#include "Core/BuiltinAssets.h"
 #include "Rendering/VertexType.h"
 #include "Rendering/Mesh/StaticMesh.h"
 
@@ -3099,4 +3100,4 @@ inline uint32 Sphere_indices[2400] =
     437, 475, 475, 437, 438, 476, 438, 477, 477, 438, 419, 478,
 };
 
-inline FStaticMesh SphereMesh = { "", SphereNormal_vertices, Sphere_indices };
+inline FStaticMesh SphereMesh = { BuiltinAssets::SphereMesh, SphereNormal_vertices, Sphere_indices };
