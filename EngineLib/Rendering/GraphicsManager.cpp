@@ -59,7 +59,7 @@ FGraphicsManager::~FGraphicsManager()
 	//{
 	//	mRenderer->ReleasePrimitiveTextureResources(texture.SRV, texture.Sampler);
 	//}
-
+	
 	mTexturedBufferMap.Empty();
 	mPrimitiveTextureMap.Empty();
 
@@ -359,7 +359,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
 		{
 			// TODO: Use the texture from the renderInfo if available
-			texture = mPrimitiveTextureMap.Find(EPrimitive::EP_Cube);
+			texture = mPrimitiveTextureMap.Find(EPrimitive::EP_Sphere);
 			if (texture == nullptr)
 			{
 				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
