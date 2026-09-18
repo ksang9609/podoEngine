@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include "Core/Name.h"
+#include "Core/BuiltinAssets.h"
 #include "Core/Object/Object.h"
 #include "Core/Object/ObjectFactory.h"
 #include "Editor/Console.h"
@@ -72,6 +73,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
 	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
 	mFileManager = new FFileManager();
+	mAssetManager = std::make_unique<FAssetManager>();
 
 	mGraphicsManager->InitializeLoadingScreen();
 	mGraphicsManager->RenderLoadingScreen();
@@ -208,11 +210,11 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
 	}
 	{
-		FStaticMesh* cubeMesh = new FStaticMesh(CubeMesh);
+		const FStaticMesh* cubeMesh = mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::CubeMesh);
 		mGraphicsManager->CreateStaticMeshBuffer(*cubeMesh);
 
-		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
-		staticMeshAsset->SetStaticMeshAsset(cubeMesh);
+		const UStaticMesh* staticMeshAsset =
+			mAssetManager->FindStaticMeshAssetOrNull(BuiltinAssets::CubeMesh);
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
@@ -220,11 +222,11 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
-		FStaticMesh* sphereMesh = new FStaticMesh(SphereMesh);
+		const FStaticMesh* sphereMesh = mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::SphereMesh);
 		mGraphicsManager->CreateStaticMeshBuffer(*sphereMesh);
 
-		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
-		staticMeshAsset->SetStaticMeshAsset(sphereMesh);
+		const UStaticMesh* staticMeshAsset =
+			mAssetManager->FindStaticMeshAssetOrNull(BuiltinAssets::SphereMesh);
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
@@ -336,6 +338,7 @@ void FEngineLoop::End()
 	delete mSceneManager;
 	delete mFileManager;
 	delete mGraphicsManager;
+	mAssetManager.reset();
 }
 
 void FEngineLoop::processEditorCommands(const FEditorCommands& commands)

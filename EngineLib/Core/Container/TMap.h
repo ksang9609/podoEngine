@@ -23,6 +23,7 @@ public:
 	std::unordered_map<T, V>::const_iterator end() const;
 
 	void Add(const T& key, const V& Value);
+	void Add(const T& key, V&& Value);
 	int32 Remove(const T& key);
 	
 	uint32 Num() const;
@@ -70,6 +71,12 @@ template <typename T, typename V>
 inline void TMap<T, V>::Add(const T& key, const V& value)
 {
 	mMap[key] = value;
+}
+
+template<typename T, typename V>
+inline void TMap<T, V>::Add(const T& key, V&& value)
+{
+	mMap.insert_or_assign(key, std::move(value));
 }
 
 template <typename T, typename V>
