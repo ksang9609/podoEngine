@@ -11,9 +11,23 @@ IMPLEMENT_SERIALIZATION(UStaticMeshComponent, UMeshComponent,
 )
 
 void UStaticMeshComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
-	const UStaticMesh& staticMeshRef, bool bUseTexture)
+	const UStaticMesh* staticMeshOrNull, bool bUseTexture)
 {
 	UPrimitiveComponent::Initialize(EPrimitive::EP_StaticMesh, location, rotation, scale3D, bUseTexture);
+	mStaticMeshRef = staticMeshOrNull;
+
+	if (mStaticMeshRef)
+	{
+		mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);
+	}
+	else
+	{
+		mLocalBounds = FBoundingBox{};
+	}
+}
+
+void UStaticMeshComponent::SetStaticMesh(const UStaticMesh& staticMeshRef)
+{
 	mStaticMeshRef = &staticMeshRef;
 	mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);
 }

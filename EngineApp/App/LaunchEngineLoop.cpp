@@ -206,7 +206,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		UStaticMeshComponent* staticMeshComponent =
 			FObjectFactory::ConstructObject<UStaticMeshComponent>(
 				FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-				*staticMeshAsset, false);
+				staticMeshAsset, false);
 		quadActor->AddRootSceneComponent(staticMeshComponent);
 		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
 	}
@@ -221,7 +221,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		UStaticMeshComponent* staticMeshComponent =
 			FObjectFactory::ConstructObject<UStaticMeshComponent>(
 				FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-				*staticMeshAsset, false);
+				staticMeshAsset, false);
 		cubeActor->AddRootSceneComponent(staticMeshComponent);
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
@@ -236,7 +236,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		UStaticMeshComponent* staticMeshComponent =
 			FObjectFactory::ConstructObject<UStaticMeshComponent>(
 				FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-				*staticMeshAsset, false);
+				staticMeshAsset, false);
 		sphereActor->AddRootSceneComponent(staticMeshComponent);
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
