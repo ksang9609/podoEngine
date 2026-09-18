@@ -2,6 +2,7 @@
 
 //#include <DirectXMath.h>
 
+#include "Core/BuiltinAssets.h"
 #include "Rendering/VertexType.h"
 #include "Rendering/Mesh/StaticMesh.h"
 
@@ -143,4 +144,4 @@ inline uint32 Cube_indices[36] =
     20, 21, 22,		20, 22, 23, // -Y
 };
 
-inline FStaticMesh CubeMesh = { "", CubeNormal_vertices, Cube_indices };
+inline FStaticMesh CubeMesh = { BuiltinAssets::CubeMesh, CubeNormal_vertices, Cube_indices };
