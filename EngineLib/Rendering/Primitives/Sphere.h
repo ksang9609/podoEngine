@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 // © 2024 KRAFTON, Inc. ALL RIGHTS RESERVED.
 
 #include "Rendering/VertexType.h"
+#include "Rendering/Mesh/StaticMesh.h"
 
 inline FVertexSimple Sphere_vertices[] = {
 	{ 0.000000f, 1.000000f, 0.000000f, 0.500000f, 1.000000f, 0.500000f, 1.000000f },
@@ -3097,3 +3098,5 @@ inline uint32 Sphere_indices[2400] =
     435, 471, 471, 435, 436, 472, 436, 473, 473, 436, 437, 474,
     437, 475, 475, 437, 438, 476, 438, 477, 477, 438, 419, 478,
 };
+
+inline FStaticMesh SphereMesh = { "", SphereNormal_vertices, Sphere_indices };

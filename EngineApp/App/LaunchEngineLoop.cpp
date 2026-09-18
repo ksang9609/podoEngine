@@ -211,9 +211,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
 	}
 	{
-		FStaticMesh* cubeMesh = new FStaticMesh();
-		cubeMesh->Vertices = CubeNormal_vertices;
-		cubeMesh->Indices = Cube_indices;
+		FStaticMesh* cubeMesh = new FStaticMesh(CubeMesh);
 		mGraphicsManager->CreateStaticMeshBuffer(*cubeMesh);
 
 		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
@@ -228,9 +226,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
-		FStaticMesh* sphereMesh = new FStaticMesh();
-		sphereMesh->Vertices = SphereNormal_vertices;
-		sphereMesh->Indices = Sphere_indices;
+		FStaticMesh* sphereMesh = new FStaticMesh(SphereMesh);
 		mGraphicsManager->CreateStaticMeshBuffer(*sphereMesh);
 
 		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();

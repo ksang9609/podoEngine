@@ -3,6 +3,7 @@
 //#include <DirectXMath.h>
 
 #include "Rendering/VertexType.h"
+#include "Rendering/Mesh/StaticMesh.h"
 
 // 원점(0,0,0)이 큐브의 중심. 각 축으로 -0.5 ~ +0.5, 한 변 1.0
 // (예전에는 원점이 최소 코너였다. 중심 정렬로 바꾸면서 -0.5 만큼 이동시켰다)
@@ -141,3 +142,5 @@ inline uint32 Cube_indices[36] =
 	16, 17, 18,		16, 18, 19, // +Y
     20, 21, 22,		20, 22, 23, // -Y
 };
+
+inline FStaticMesh CubeMesh = { "", CubeNormal_vertices, Cube_indices };
