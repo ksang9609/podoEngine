@@ -43,7 +43,11 @@ FGraphicsManager::~FGraphicsManager()
 
 	for (auto& buffer : mBufferMap)
 	{
-		buffer.second.Buffer->Release();
+		if (buffer.second.Buffer)
+		{
+			buffer.second.Buffer->Release();
+			buffer.second.Buffer = nullptr;
+		}
 	}
 
 	for (auto& entry : mTexturedBufferMap)
