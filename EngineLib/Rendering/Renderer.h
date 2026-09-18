@@ -2,11 +2,13 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include <wrl/client.h>
 
 #include "Core/enum.h"
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector.h"
 
+#include "ShaderConstants.h"
 #include "RenderInfo.h"
 #include "VertexType.h"
 
@@ -18,98 +20,11 @@
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
 
-struct FConstants
-{
-	FMatrix World; //Model
-	FMatrix ViewProjection;
-	FLinearColor Tint;          // rgb = 색, a = 섞는 비율
-};
-
-struct FTextureConstants
-{
-	FMatrix World; //Model
-	FMatrix ViewProjection;
-	FLinearColor Tint;          // rgb = 색, a = 섞는 비율
-	FVector2 UVScale;       // 텍스처 좌표 스케일
-	FVector2 UVOffset;      // 텍스처 좌표 오프셋
-};
-
-struct FBillboardConstants
-{
-	FVector3 Location;
-	float Pad0 = 0;
-	FVector3 Scale;
-	float Pad1 = 0;
-
-	FMatrix ViewProjection;
-	FLinearColor Tint;
-
-	FVector2 UVScale;
-	FVector2 UVOffset;
-
-	FVector3 CameraRight;
-	float Pad2 = 0;
-	FVector3 CameraUp;
-	float Pad3 = 0;
-};
-
-struct alignas(16) FParticleConstants
-{
-	FVector3 Location;
-	float pad0 = 0;
-	FVector3 Scale;
-	float pad1 = 0;
-
-	FMatrix ViewProjection;
-
-	FVector3 CameraRight;
-	float pad2 = 0;
-	FVector3 CameraUp;
-	float pad3 = 0;
-
-	FLinearColor Tint;
-	
-	int32 NumRows;
-	int32 NumCols;
-	int32 CurrentFrame;
-	int32 NextFrame;
-
-	float FrameRatio;
-	float pad[3] = {};
-};
-
-// intancing 용
-struct FInstanceData
-{
-	FMatrix World;
-	FLinearColor Tint;
-};
-
-// HLSL의 b1에 전달할 데이터
-struct FUnicodeFontConstants
-{
-	float DistanceRange = 4.0f;
-	float Padding[3] = {};
-};
-
-struct FFontConstants
-{
-	FVector3 Location;
-	float Pad0 = 0;
-	FVector3 Scale;
-	float Pad1 = 0;
-
-	FVector3 CameraRight;
-	float Pad2 = 0;
-	FVector3 CameraUp;
-	float Pad3 = 0;
-
-	FMatrix ViewProjection;
-	FLinearColor Tint;
-};
-
 class URenderer
 {
+	template<typename T>
+	using ComPtr = Microsoft::WRL::ComPtr<T>;
+
 public:
 	ID3D11Device* Device = nullptr;
 	ID3D11DeviceContext* DeviceContext = nullptr;
@@ -125,11 +40,12 @@ public:
 	ID3D11BlendState* BlendState[4] = {}; // 블렌딩 상태
 	ID3D11VertexShader* VertexShader[VST_Count] = {};
 	ID3D11PixelShader* PixelShader[PST_Count] = {};
+	ComPtr<ID3D11InputLayout> InputLayout[ILT_Count];
 
 	// 기존의 ASCII 폰트
 	ID3D11ShaderResourceView* FontAtlasShaderResoruceView = nullptr;
 	ID3D11Buffer* FontTextureBuffer = nullptr; // TODO: Rename to FontVertexBuffer
-	ID3D11InputLayout* FontInputLayout = nullptr;
+	//ID3D11InputLayout* FontInputLayout = nullptr;
 	ID3D11SamplerState* FontSamplerState = nullptr;
 	ID3D11Buffer* FontIndexBuffer = nullptr;
 
@@ -141,7 +57,7 @@ public:
 	uint32 UnicodeFontVertexCapacity = 0;
 	uint32 UnicodeFontIndexCapacity = 0;
 
-	ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
+	//ID3D11InputLayout* PrimitiveTextureLayout = nullptr;
 	ID3D11Buffer* CubeIndexBuffer = nullptr;     // 큐브 인덱스 저장
 	ID3D11Buffer* SphereIndexBuffer = nullptr;
 	UINT SphereIndexCount = 0;
@@ -154,8 +70,8 @@ public:
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT ViewportInfo;
-	ID3D11InputLayout* SimpleInputLayout;
-	ID3D11InputLayout* LineSimpleInputLayout;
+	//ID3D11InputLayout* SimpleInputLayout;
+	//ID3D11InputLayout* LineSimpleInputLayout;
 
 	// 매 프레임 내용이 바뀌는 선분용. 메시 버퍼와 달리 IMMUTABLE이 아니라 DYNAMIC이다
 	ID3D11Buffer* LineVertexBuffer = nullptr;
@@ -166,6 +82,7 @@ public:
 
 	unsigned int StrideSimple;
 	unsigned int StrideTextured;
+	unsigned int StrideNormalVertex;
 
 	ID3D11VertexShader* LoadingScreenVertexShader = nullptr;
 	ID3D11PixelShader* LoadingScreenPixelShader = nullptr;
@@ -282,7 +199,7 @@ private:
 	ID3D11Buffer* InstanceBuffer = nullptr;
 	UINT InstanceCapacity = 0;
 
-	ID3D11InputLayout* InstancedInputLayout = nullptr;
+	//ID3D11InputLayout* InstancedInputLayout = nullptr;
 
 	bool EnsureInstanceCapacity(UINT count);
 
@@ -291,7 +208,13 @@ private:
 
 	/* Create methods for each resources*/
 	void createDeviceAndSwapChain(HWND hWindow);
-	void createShader();
+	ComPtr<ID3DBlob> createVertexShaderFromFile(
+		const wchar_t* filename, const char* entryPoint, const char* shaderModel,
+		EVertexShaderType vertexShaderType);
+	void createPixelShaderFromFile(
+		const wchar_t* filename, const char* entryPoint, const char* shaderModel,
+		EPixelShaderType pixelShaderType);
+	void createShaders();
 	void createFrameBuffer();
 	void createLineVertexBuffer(uint32 maxVertices);
 	void createLineIndexBuffer(uint32 maxIndices);
