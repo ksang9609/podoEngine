@@ -260,6 +260,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			*ViewportClient,
 			*mGraphicsManager,
 			*mFileManager,
+			*mAssetManager
 			}, editorCommands);
 		processEditorCommands(editorCommands);
 
@@ -457,6 +458,17 @@ void FEngineLoop::processEditorCommand(const FSetSelectedActorCommand& command)
 	{
 		mSceneManager->ResetSelectedActor();
 	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetStaticMeshCommand& command)
+{
+	UStaticMeshComponent* staticMeshComponent = UObject::GetObjectByInternalIndex<UStaticMeshComponent>(command.ObjectID.InternalIndex);
+	if (!staticMeshComponent) return;
+
+	const UStaticMesh* staticMesh = mAssetManager->FindStaticMeshAssetOrNull(command.StaticMeshAssetKey);
+	if (!staticMesh) return;
+
+	staticMeshComponent->SetStaticMesh(*staticMesh);
 }
 
 void FEngineLoop::processEditorCommand(const FSetComponentUseTextureCommand& command)

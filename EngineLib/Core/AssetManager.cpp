@@ -57,12 +57,12 @@ void FAssetManager::createPrimitiveStaticMeshAssets()
 	mStaticMeshAssets.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshAsset));
 }
 
-TArray<FName> FAssetManager::GetAllStaticMeshAssetPaths() const
+TArray<FName> FAssetManager::GetAllStaticMeshAssetKeys() const
 {
 	return mStaticMeshAssets.GetKeys();
 }
 
-TArray<FName> FAssetManager::GetAllStaticMeshDataPaths() const
+TArray<FName> FAssetManager::GetAllStaticMeshDataKeys() const
 {
 	return mStaticMeshData.GetKeys();
 }
