@@ -114,7 +114,12 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 	}
 
 	FString line;
-	FString currentMaterialName;
+	int32 currentGroupIndex = -1;
+	int32 currentMaterialIndex = -1;
+
+	// 그룹 또는 재질이 바뀌면, 다음 면부터 새 구간을 생성.
+	bool startNewFaceGroup = true;
+
 	uint32 faceCount = 0;
 
 	while (ReadLine(fileIn, line))
@@ -167,6 +172,36 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			const auto& mtlFilePath = objFilePath.replace_filename(MtlFileName.CStr());
 			parseMtlFile(mtlFilePath, outObjInfo.Materials);
 		}
+		else if (Prefix == "g")
+		{
+			FString groupName;
+			int32 groupIndex = -1;
+
+			if (ReadToken(Cursor, groupName))
+			{
+				// 같은 이름이 다시 나오면 기존 인덱스를 재사용.
+				for (int32 i = 0; i < outObjInfo.GroupNames.Num(); ++i)
+				{
+					if (outObjInfo.GroupNames[i] == groupName)
+					{
+						groupIndex = i;
+						break;
+					}
+				}
+
+				if (groupIndex == -1)
+				{
+					groupIndex =
+						static_cast<int32>(outObjInfo.GroupNames.Add(groupName));
+				}
+			}
+
+			if (currentGroupIndex != groupIndex)
+			{
+				currentGroupIndex = groupIndex;
+				startNewFaceGroup = true;
+			}
+		}
 		else if (Prefix == "usemtl")
 		{
 			FString CurrentMaterialNameStr;
@@ -190,10 +225,11 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			UE_LOG(Log, Render, CurrentMaterialNameStr.CStr());
 
 			//인덱스 찾음 
-			FObjFaceGroup newGroup = {};
-			newGroup.MaterialIndex = MatIndex;
-			newGroup.FirstFaceIndex = faceCount;
-			outObjInfo.FaceGroups.Add(newGroup);
+			if (currentMaterialIndex != MatIndex)
+			{
+				currentMaterialIndex = MatIndex;
+				startNewFaceGroup = true;
+			}
 		}
 		else if (Prefix == "f")
 		{
@@ -255,11 +291,15 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			}
 
 			// usemtl 없이 시작하는 면은 기본 재질 그룹에 저장
-			if (outObjInfo.FaceGroups.Num() == 0)
+			if (outObjInfo.FaceGroups.Num() == 0 || startNewFaceGroup)
 			{
-				FObjFaceGroup DefaultGroup;
-				DefaultGroup.FirstFaceIndex = faceCount;
-				outObjInfo.FaceGroups.Add(DefaultGroup);
+				FObjFaceGroup newGroup;
+				newGroup.GroupIndex = currentGroupIndex;
+				newGroup.MaterialIndex = currentMaterialIndex;
+				newGroup.FirstFaceIndex = faceCount;
+
+				outObjInfo.FaceGroups.Add(newGroup);
+				startNewFaceGroup = false;
 			}
 
 			// 현재 그룹의 FaceCount 증가
@@ -402,11 +442,13 @@ void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& 
 	// 일단은 std map 으로 박아놓기
 	std::unordered_map<FObjVertexIndex, uint32, FObjVertexIndexHash> vertexMap;
 	outStaticMesh.Materials = objInfo.Materials;
+	outStaticMesh.GroupNames = objInfo.GroupNames;
 
 	for (const FObjFaceGroup& group : objInfo.FaceGroups)
 	{
 		FStaticMeshSection section;
 		section.MaterialIndex = group.MaterialIndex;
+		section.GroupIndex = group.GroupIndex;
 		section.StartIndex = static_cast<uint32>(outStaticMesh.Indices.Num());
 		section.IndexCount = 0;
 
