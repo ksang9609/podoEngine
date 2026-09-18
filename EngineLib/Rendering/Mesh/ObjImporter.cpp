@@ -8,6 +8,20 @@
 
 namespace
 {
+	struct FObjVertexIndexHash
+	{
+		size_t operator()(const FObjVertexIndex& Key) const
+		{
+			size_t Hash = std::hash<int32>{}(Key.PositionIndex);
+
+			Hash ^= std::hash<int32>{}(Key.UVIndex) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+
+			Hash ^= std::hash<int32>{}(Key.NormalIndex) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+
+			return Hash;
+		}
+	};
+
 	bool ReadLine(std::ifstream& File, FString& OutLine)
 	{
 		OutLine.Reset();
@@ -56,21 +70,18 @@ namespace
 	}
 }
 
+// 반환한 포인터는 무조건 FObjManager에서 관리해야 함. FObjManager에서 해제하지 않으면 메모리 누수 발생
 FStaticMesh* FObjImporter::ParseAndConvert(const FString& fileName)
 {
 	//테스트 코드 시작
     FObjInfo objInfo;
-	FStaticMesh staticMesh;
-    const bool Success = parseObjFile(fileName, objInfo);
 
-    UE_LOG(Log, Render, "OBJ parsing: %s",
-        Success ? "success" : "failed");
+	const bool Success = parseObjFile(fileName, objInfo);
+    UE_LOG(Log, Render, "OBJ parsing: %s", Success ? "success" : "failed");
+	auto staticMesh = std::make_unique<FStaticMesh>();
 
-	convertObjToStaticMesh(objInfo, staticMesh);
-
-    return nullptr; // 지금은 파싱만 테스트
-
-	//테스트 코드 끝
+	convertObjToStaticMesh(objInfo, *staticMesh);
+	return staticMesh.release();
 }
 
 bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
@@ -151,6 +162,8 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 				continue;
 			}
 			//UE_LOG(Log, Render, MtlFileName.CStr());
+
+			// MTL 파일 경로를 OBJ 파일 경로와 동일한 디렉토리에 있다고 가정하고 Path 등록
 			const auto& mtlFilePath = objFilePath.replace_filename(MtlFileName.CStr());
 			parseMtlFile(mtlFilePath, outObjInfo.Materials);
 		}
@@ -189,18 +202,22 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			while (ReadToken(Cursor, faceData))
 			{
 				const FString Slash("/");
-				size_t Pos = faceData.Find(Slash);
-				size_t Normal = (Pos == -1) ? -1 : faceData.Find(Slash, Pos + 1);
+				int32 Pos = faceData.Find(Slash);
+				int32 Normal = (Pos == -1) ? -1 : faceData.Find(Slash, Pos + 1);
 
 				FObjVertexIndex VertexIndex;
 
-				VertexIndex.PositionIndex = faceData.Left(Pos).ToInt() - 1;
+				const FString positionStr = (Pos == -1) ? faceData : faceData.Left(Pos);
 
+				// 음수 인덱스 지원
+				VertexIndex.PositionIndex = positionStr.ToInt() > 0 ? positionStr.ToInt() - 1
+					: static_cast<int32>(outObjInfo.Positions.Num()) + positionStr.ToInt();
 
-				if (Pos != -1 && Normal == -1)
+				// v/vt
+				if (Pos != -1 && Normal == -1 )
 				{
-					// v/vt
-					VertexIndex.UVIndex = faceData.RightChop(Pos + 1).ToInt() - 1;
+					VertexIndex.UVIndex = faceData.RightChop(Pos + 1).ToInt() > 0 ? faceData.RightChop(Pos + 1).ToInt() - 1
+						: static_cast<int32>(outObjInfo.UVs.Num()) + faceData.RightChop(Pos + 1).ToInt();
 				}
 				else if (Normal != -1)
 				{
@@ -208,11 +225,13 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 					// v//vn이면 건너뛰고 UVIndex는 -1 유지
 					if (Normal > Pos + 1)
 					{
-						VertexIndex.UVIndex = faceData.Mid(Pos + 1, Normal - Pos - 1).ToInt() - 1;
+						VertexIndex.UVIndex = faceData.Mid(Pos + 1, Normal - Pos - 1).ToInt() > 0 ? faceData.Mid(Pos + 1, Normal - Pos - 1).ToInt() - 1
+							: static_cast<int32>(outObjInfo.UVs.Num()) + faceData.Mid(Pos + 1, Normal - Pos - 1).ToInt();
 					}
 
 					// v/vt/vn 또는 v//vn의 노멀
-					VertexIndex.NormalIndex = faceData.RightChop(Normal + 1).ToInt() - 1;
+					VertexIndex.NormalIndex = faceData.RightChop(Normal + 1).ToInt() > 0 ? faceData.RightChop(Normal + 1).ToInt() - 1
+						: static_cast<int32>(outObjInfo.Normals.Num()) + faceData.RightChop(Normal + 1).ToInt();
 				}
 
 				newFace.VertexIndices.Add(VertexIndex);
@@ -230,7 +249,25 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			}*/
 			//테스트 코드 끝
 
-			outObjInfo.VertexIndices.Add(newFace);
+			if (newFace.VertexIndices.Num() < 3)
+			{
+				continue;
+			}
+
+			// usemtl 없이 시작하는 면은 기본 재질 그룹에 저장
+			if (outObjInfo.FaceGroups.Num() == 0)
+			{
+				FObjFaceGroup DefaultGroup;
+				DefaultGroup.FirstFaceIndex = faceCount;
+				outObjInfo.FaceGroups.Add(DefaultGroup);
+			}
+
+			// 현재 그룹의 FaceCount 증가
+			outObjInfo.FaceGroups[outObjInfo.FaceGroups.Num() - 1].FaceCount++;
+
+			outObjInfo.Faces.Add(newFace);
+
+			// 전체 면 수 증가
 			faceCount++;
 		}
 	}
@@ -358,17 +395,92 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 
 void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& outStaticMesh)
 {
+	outStaticMesh.Vertices.Reset(0);
+	outStaticMesh.Indices.Reset(0);
+	outStaticMesh.Sections.Reset(0);
 
-	for(const FObjFace& face : objInfo.VertexIndices)
+	// 일단은 std map 으로 박아놓기
+	std::unordered_map<FObjVertexIndex, uint32, FObjVertexIndexHash> vertexMap;
+	outStaticMesh.Materials = objInfo.Materials;
+
+	for (const FObjFaceGroup& group : objInfo.FaceGroups)
 	{
-		for(const FObjVertexIndex& vertexIndex : face.VertexIndices)
+		FStaticMeshSection section;
+		section.MaterialIndex = group.MaterialIndex;
+		section.StartIndex = static_cast<uint32>(outStaticMesh.Indices.Num());
+		section.IndexCount = 0;
+
+		for (uint32 FaceOffset = 0; FaceOffset < group.FaceCount; ++FaceOffset)
 		{
-			outStaticMesh.Vertices.Add(FNormalVertex{
-				objInfo.Positions[vertexIndex.PositionIndex],
-				vertexIndex.NormalIndex >= 0 ? objInfo.Normals[vertexIndex.NormalIndex] : FVector(0, 0, 1),
-				FLinearColor(1.0f, 1.0f, 1.0f, 1.0f),
-				vertexIndex.UVIndex >= 0 ? objInfo.UVs[vertexIndex.UVIndex] : FVector2(0, 0)
-				});
+			const FObjFace& face = objInfo.Faces[group.FirstFaceIndex + FaceOffset];
+
+			// Triangle Fan으로 삼각분할
+			for (int32 i = 1; i + 1 < face.VertexIndices.Num(); ++i)
+			{
+				const FObjVertexIndex vertices[3] =
+				{
+					face.VertexIndices[0],
+					face.VertexIndices[i],
+					face.VertexIndices[i + 1]
+				};
+
+				// 원본 노말이 없을 경우 면의 노말을 계산하여 사용
+				const FVector& A = objInfo.Positions[vertices[0].PositionIndex];
+				const FVector& B = objInfo.Positions[vertices[1].PositionIndex];
+				const FVector& C = objInfo.Positions[vertices[2].PositionIndex];
+				FVector FaceNormal = FVector::cross(B - A, C - A);
+
+				FaceNormal.Normalize();
+
+				for (const FObjVertexIndex& vertex : vertices)
+				{
+					const bool HasNormal = vertex.NormalIndex >= 0;
+
+					// 원본 노멀이 있으면 기존 정점을 재사용
+					if (HasNormal)
+					{
+						auto It = vertexMap.find(vertex);
+
+						if (It != vertexMap.end())
+						{
+							outStaticMesh.Indices.Add(It->second);
+							continue;
+						}
+					}
+
+					const uint32 NewIndex = static_cast<uint32>( outStaticMesh.Vertices.Num());
+
+					outStaticMesh.Vertices.Add(FNormalVertex{
+						objInfo.Positions[vertex.PositionIndex],
+
+						HasNormal ? objInfo.Normals[vertex.NormalIndex]
+							: FaceNormal,
+
+						FLinearColor(1.f, 1.f, 1.f, 1.f),
+
+						vertex.UVIndex >= 0
+							? objInfo.UVs[vertex.UVIndex]
+							: FVector2(0.f, 0.f)
+						});
+
+					outStaticMesh.Indices.Add(NewIndex);
+
+					// 노멀 없는 점은 면별 노멀을 유지하도록 공유 안 함
+					if (HasNormal)
+					{
+						vertexMap.emplace(vertex, NewIndex);
+					}
+				}
+			}
+		}
+
+		// 섹션의 인덱스 개수 계산
+		// 섹션의 인덱스 개수는 현재 인덱스 배열의 크기에서 섹션 시작 인덱스를 뺀 값
+		section.IndexCount = static_cast<uint32>(outStaticMesh.Indices.Num()) - section.StartIndex;
+
+		if (section.IndexCount > 0)
+		{
+			outStaticMesh.Sections.Add(section);
 		}
 	}
 }

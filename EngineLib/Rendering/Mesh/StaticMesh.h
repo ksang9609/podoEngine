@@ -7,9 +7,10 @@
 
 struct FStaticMeshSection
 {
-	FString Name;
-	int32 MaterialIndex;
-	int32 StartIndex;
+	FString Name; // 섹션 이름
+	int32 MaterialIndex; // 해당 섹션에 적용되는 머티리얼 인덱스
+	int32 StartIndex; // 해당 섹션의 인덱스 버퍼 시작 위치
+	int32 IndexCount; // 해당 섹션의 인덱스 개수
 };
 
 // Coocked Data
