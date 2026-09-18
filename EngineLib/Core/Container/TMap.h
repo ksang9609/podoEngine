@@ -6,6 +6,7 @@
 #include <initializer_list>
 
 #include "Core/Core.h"
+#include "TArray.h"
 
 template <typename T, typename V>
 class TMap
@@ -31,6 +32,8 @@ public:
 	void Empty(int32 ExpectedNumElements = 0);
 	V* Find(const T& key);
 	const V* Find(const T& key) const;
+
+	TArray<T> GetKeys() const;
 
 	bool Contains(const T& key) const;
 	bool IsEmpty() const;
@@ -126,6 +129,18 @@ inline const V* TMap<T, V>::Find(const T& key) const
 	}
 
 	return &iter->second;
+}
+
+template<typename T, typename V>
+inline TArray<T> TMap<T, V>::GetKeys() const
+{
+	TArray<T> keys;
+	keys.Reserve(static_cast<int32>(mMap.size()));
+	for (const auto& pair : mMap)
+	{
+		keys.Add(pair.first);
+	}
+	return keys;
 }
 
 template <typename T, typename V>

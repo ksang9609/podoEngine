@@ -26,7 +26,7 @@ const UStaticMesh* FAssetManager::FindStaticMeshAssetOrNull(const FName& assetNa
 
 const FStaticMesh* FAssetManager::FindStaticMeshDataOrNull(const FName& assetName) const
 {
-	const std::unique_ptr<FStaticMesh>* foundData = mStaticMesheData.Find(assetName);
+	const std::unique_ptr<FStaticMesh>* foundData = mStaticMeshData.Find(assetName);
 	if (foundData)
 	{
 		return foundData->get();
@@ -43,7 +43,7 @@ void FAssetManager::createPrimitiveStaticMeshAssets()
 		FObjectFactory::ConstructObject<UStaticMesh>(cubeMeshData.get())
 	);
 
-	mStaticMesheData.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshData));
+	mStaticMeshData.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshData));
 	mStaticMeshAssets.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshAsset));
 
 	/* Sphere */
@@ -53,7 +53,16 @@ void FAssetManager::createPrimitiveStaticMeshAssets()
 		FObjectFactory::ConstructObject<UStaticMesh>(sphereMeshData.get())
 	);
 
-	mStaticMesheData.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshData));
+	mStaticMeshData.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshData));
 	mStaticMeshAssets.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshAsset));
 }
 
+TArray<FName> FAssetManager::GetAllStaticMeshAssetPaths() const
+{
+	return mStaticMeshAssets.GetKeys();
+}
+
+TArray<FName> FAssetManager::GetAllStaticMeshDataPaths() const
+{
+	return mStaticMeshData.GetKeys();
+}

@@ -25,17 +25,21 @@ public:
 
 	void CreateStaticMeshAsset(const FName& assetName, const FStaticMesh* staticMeshData);
 
+	TArray<FName> GetAllStaticMeshAssetPaths() const;
+
 	/* Resources */
 	const FStaticMesh* FindStaticMeshDataOrNull(const FName& assetName) const;
 
 	void CreateStaticMeshData(const FName& assetName, const FStaticMesh* staticMeshData);
+
+	TArray<FName> GetAllStaticMeshDataPaths() const;
 
 private:
 	/* Assets */
 	TMap<FName, std::unique_ptr<UStaticMesh>> mStaticMeshAssets;
 
 	/* Resources */
-	TMap<FName, std::unique_ptr<FStaticMesh>> mStaticMesheData;
+	TMap<FName, std::unique_ptr<FStaticMesh>> mStaticMeshData;
 
 	void createPrimitiveStaticMeshAssets();
 };

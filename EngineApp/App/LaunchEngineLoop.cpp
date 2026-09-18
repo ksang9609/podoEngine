@@ -102,7 +102,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		L"Assets/Fonts/KoreanFullAtlas.png",
 		mDefaultFontResource->GetDistanceRange());
 
-	FObjectFactory::Initialize(*mDefaultFontResource);
+	FObjectFactory::SetDefaultFont(*mDefaultFontResource);
+	FObjectFactory::SetAssetManager(*mAssetManager);
 
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
@@ -213,24 +214,18 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		const FStaticMesh* cubeMesh = mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::CubeMesh);
 		mGraphicsManager->CreateStaticMeshBuffer(*cubeMesh);
 
-		const UStaticMesh* staticMeshAsset =
-			mAssetManager->FindStaticMeshAssetOrNull(BuiltinAssets::CubeMesh);
-
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			*staticMeshAsset);
+			BuiltinAssets::CubeMesh);
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
 		const FStaticMesh* sphereMesh = mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::SphereMesh);
 		mGraphicsManager->CreateStaticMeshBuffer(*sphereMesh);
 
-		const UStaticMesh* staticMeshAsset =
-			mAssetManager->FindStaticMeshAssetOrNull(BuiltinAssets::SphereMesh);
-
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			*staticMeshAsset);
+			BuiltinAssets::SphereMesh);
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 

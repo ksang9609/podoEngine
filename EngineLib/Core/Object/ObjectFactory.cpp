@@ -2,6 +2,7 @@
 
 #include "ThirdParty/Json/json.hpp"
 
+#include "Core/AssetManager.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/PrimitiveComponent.h"
 #include "Engine/Components/NameComponent.h"
@@ -15,10 +16,17 @@
 #include "Object.h"
 
 const FFontResource* FObjectFactory::mDefaultFontResource = nullptr;
+const FAssetManager* FObjectFactory::mAssetManagerRef = nullptr;
 
-void FObjectFactory::Initialize(const FFontResource& fontResource)
+
+void FObjectFactory::SetDefaultFont(const FFontResource& fontResource)
 {
 	mDefaultFontResource = &fontResource;
+}
+
+void FObjectFactory::SetAssetManager(const FAssetManager& assetManager)
+{
+	mAssetManagerRef = &assetManager;
 }
 
 const FFontResource* FObjectFactory::GetDefaultFontResource()
@@ -90,13 +98,13 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 
 AActor* FObjectFactory::SpawnStaticMeshActor(
 	FVector3 location, FRotator rotation, FVector3 scale,
-	const UStaticMesh& staticMesh)
+	const UStaticMesh& staticMeshAsset)
 {
 	FName StaticMeshName("StaticMesh");
 	AActor* actor = ConstructObjectWithName<AActor>(StaticMeshName);
 	UStaticMeshComponent* component = ConstructObject<UStaticMeshComponent>(
 		location, rotation, scale,
-		&staticMesh);
+		&staticMeshAsset);
 	actor->AddRootSceneComponent(component);
 
 	// Add name component
@@ -105,6 +113,20 @@ AActor* FObjectFactory::SpawnStaticMeshActor(
 		actor->GetName().ToString(), FVector3{ 0, 0, 1 }, *mDefaultFontResource);
 	billboardComponent.AttachTo(*component);
 	return actor;
+}
+
+AActor* FObjectFactory::SpawnStaticMeshActor(
+	FVector3 location, FRotator rotation, FVector3 scale,
+	FName staticMeshAssetName)
+{
+	assert(mAssetManagerRef && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
+
+	const UStaticMesh* staticMeshAsset = mAssetManagerRef->FindStaticMeshAssetOrNull(staticMeshAssetName);
+	if (!staticMeshAsset)
+	{
+		return nullptr;
+	}
+	return SpawnStaticMeshActor(location, rotation, scale, *staticMeshAsset);
 }
 
 AActor* FObjectFactory::SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale)
