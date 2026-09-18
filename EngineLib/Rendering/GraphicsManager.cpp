@@ -24,6 +24,12 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
+
+	// Create default white texture
+	mDefaultWhiteTexture = std::make_unique<FTexture>();
+	mDefaultWhiteTexture->SRV = mRenderer->CreateWhiteShaderResourceView();
+	mRenderer->CreateSamplerState(mDefaultWhiteTexture->Sampler.GetAddressOf());
+
 }
 
 FGraphicsManager::~FGraphicsManager()
@@ -49,10 +55,10 @@ FGraphicsManager::~FGraphicsManager()
 		}
 	}
 
-	for (auto& [key, texture] : mPrimitiveTextureMap)
-	{
-		mRenderer->ReleasePrimitiveTextureResources(texture.SRV, texture.Sampler);
-	}
+	//for (auto& [key, texture] : mPrimitiveTextureMap)
+	//{
+	//	mRenderer->ReleasePrimitiveTextureResources(texture.SRV, texture.Sampler);
+	//}
 
 	mTexturedBufferMap.Empty();
 	mPrimitiveTextureMap.Empty();
@@ -334,7 +340,7 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 			UE_LOG(Error, Render, "Primitive texture not found for primitive type.");
 			continue;
 		}
-		mRenderer->RenderParticle(texture->SRV);
+		mRenderer->RenderParticle(texture->SRV.Get());
 
 	}
 }
@@ -362,7 +368,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 		//}
 		//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
 		mRenderer->RenderStaticMesh(buffer.Buffer, buffer.SourceNum,
-			texture ? texture->SRV : nullptr, texture ? texture->Sampler : nullptr,
+			texture ? texture->SRV.Get() : nullptr, texture ? texture->Sampler.Get() : nullptr,
 			buffer.IndexBuffer, buffer.IndexCount);
 	}
 }
@@ -424,8 +430,8 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 		mRenderer->RenderTexturePrimitive(
 			vertexBuffer->Buffer,
 			vertexBuffer->SourceNum,
-			texture->SRV,
-			texture->Sampler,
+			texture->SRV.Get(),
+			texture->Sampler.Get(),
 			indexBuffer, indexCount); // 마지막 인수에 전달
 	}
 }

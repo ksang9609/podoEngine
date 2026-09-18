@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include<wrl/client.h>
+
 #include "Core/Math/Matrix.h"
 #include "Core/enum.h"
 
@@ -27,8 +29,8 @@ struct FBuffer
 
 struct FTexture
 {
-	ID3D11ShaderResourceView* SRV;
-	ID3D11SamplerState* Sampler;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> Sampler;
 };
 
 enum ERenderQueueType
@@ -137,6 +139,7 @@ private:
 
 	// Texture sub resource view and sampler for each primitive type
 	TMap<EPrimitive, FTexture> mPrimitiveTextureMap;
+	std::unique_ptr<FTexture> mDefaultWhiteTexture;
 
 	// Debug for static mesh
 	TMap<const FStaticMesh*, FBuffer> mStaticMeshBuffer;

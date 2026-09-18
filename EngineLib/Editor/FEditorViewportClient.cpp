@@ -155,11 +155,34 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 			continue;
 		}
 
+		TArray<FVector> vertexArray;
+		TArray<uint32> indexArray;
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
-		if (!GetPrimitiveMesh(RI.ePrimitive, vertices, length))
+		// TODO: Remove this GetPrimitiveMesh function
+		if (GetPrimitiveMesh(RI.ePrimitive, vertices, length))
 		{
-			continue;   // 모르는 프리미티브는 건너뛴다
+			//continue;   // 모르는 프리미티브는 건너뛴다
+			for (uint32 i = 0; i < length; i++)
+			{
+				vertexArray.Add(vertices[i].GetPosition());
+				indexArray.Add(i);
+			}
+		}
+		else if (RI.StaticMesh)
+		{
+			for (const auto& vertex : RI.StaticMesh->Vertices)
+			{
+				vertexArray.Add(vertex.pos);
+			}
+			for (const auto& index : RI.StaticMesh->Indices)
+			{
+				indexArray.Add(index);
+			}
+		}
+		else
+		{
+			continue;
 		}
 
 		const FMatrix effectiveWorld = RI.GetTransformMatrix(mCamera.Rotation);
@@ -189,11 +212,11 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 		}
 
 		// 삼각형 리스트라 정점 3개씩 묶인다
-		for (uint32 i = 0; i + 2 < length; i += 3)
+		for (uint32 i = 0; i + 2 < indexArray.Num(); i += 3)
 		{
-			const FVector V0 = vertices[i].GetPosition();
-			const FVector V1 = vertices[i + 1].GetPosition();
-			const FVector V2 = vertices[i + 2].GetPosition();
+			const FVector V0 = vertexArray[indexArray[i]];
+			const FVector V1 = vertexArray[indexArray[i + 1]];
+			const FVector V2 = vertexArray[indexArray[i + 2]];
 
 			float OutT, OutU, OutV;
 			if (RayIntersectsTriangle(LocalNear, LocalFar, V0, V1, V2, OutT, OutU, OutV)

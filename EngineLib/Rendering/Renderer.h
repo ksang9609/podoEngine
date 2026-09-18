@@ -100,6 +100,7 @@ public:
 	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreateVertexBuffer(const FNormalVertex* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreatePrimitiveIndexBuffer(const uint32* indices, UINT ByteWidth);
+	ComPtr<ID3D11ShaderResourceView> CreateWhiteShaderResourceView();
 
 	// 인스턴싱
 	bool RenderSimpleInstanced(
@@ -119,8 +120,8 @@ public:
 
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
 
-	void ReleasePrimitiveTextureResources(
-		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
+	//void ReleasePrimitiveTextureResources(
+	//	ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
 
 	// Release all resources that this render holds.
 	void Release();

@@ -897,6 +897,43 @@ bool URenderer::LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView
 	return true;
 }
 
+ComPtr<ID3D11ShaderResourceView> URenderer::CreateWhiteShaderResourceView()
+{
+	if (!Device)
+		return nullptr;
+	// 1x1 흰색 텍스처 생성
+	constexpr uint32 whitePixel = 0xFFFFFFFF; // ARGB: 흰색
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = 1;
+	textureDesc.Height = 1;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	D3D11_SUBRESOURCE_DATA initialData = {};
+	initialData.pSysMem = &whitePixel;
+	initialData.SysMemPitch = sizeof(whitePixel);
+
+	ComPtr<ID3D11Texture2D> whiteTexture = nullptr;
+	HRESULT hr = Device->CreateTexture2D(&textureDesc, &initialData, &whiteTexture);
+	if (FAILED(hr))
+	{
+		return nullptr;
+	}
+
+	ID3D11ShaderResourceView* whiteSRV = nullptr;
+	hr = Device->CreateShaderResourceView(whiteTexture.Get(), nullptr, &whiteSRV);
+
+	if (FAILED(hr))
+	{
+		return nullptr;
+	}
+	return whiteSRV;
+}
+
 // Prepare global rendering state for a new frame
 void URenderer::Prepare(bool bWireFrame)
 {
@@ -2180,20 +2217,20 @@ void URenderer::releaseFontTexture()
 	}
 }
 
-void URenderer::ReleasePrimitiveTextureResources(
-	ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState)
-{
-	if (textureSRV)
-	{
-		textureSRV->Release();
-		textureSRV = nullptr;
-	}
-
-	if (samplerState)
-	{
-		samplerState->Release();
-		samplerState = nullptr;
-	}
-}
+//void URenderer::ReleasePrimitiveTextureResources(
+//	ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState)
+//{
+//	if (textureSRV)
+//	{
+//		textureSRV->Release();
+//		textureSRV = nullptr;
+//	}
+//
+//	if (samplerState)
+//	{
+//		samplerState->Release();
+//		samplerState = nullptr;
+//	}
+//}
 
 
