@@ -40,6 +40,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    float4 sampleColor = g_txColor.Sample(g_Sample, input.uv);
-    return sampleColor * Tint * input.color;
+    float4 sampleColor = g_txColor.Sample(g_Sample, input.uv) * input.color;
+    float3 smapleColorRGB = sampleColor.rgb * lerp(1, Tint.rgb, Tint.a);
+    return float4(smapleColorRGB, sampleColor.a);
 }

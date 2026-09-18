@@ -210,6 +210,23 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		quadActor->AddRootSceneComponent(staticMeshComponent);
 		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
 	}
+	{
+		FStaticMesh* cubeMesh = new FStaticMesh();
+		cubeMesh->Vertices = CubeNormal_vertices;
+		cubeMesh->Indices = Cube_indices;
+		mGraphicsManager->CreateStaticMeshBuffer(*cubeMesh);
+
+		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		staticMeshAsset->SetStaticMeshAsset(cubeMesh);
+
+		AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
+		UStaticMeshComponent* staticMeshComponent =
+			FObjectFactory::ConstructObject<UStaticMeshComponent>(
+				FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+				*staticMeshAsset, false);
+		cubeActor->AddRootSceneComponent(staticMeshComponent);
+		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
+	}
 
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
