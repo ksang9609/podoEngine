@@ -14,3 +14,9 @@ void UStaticMeshComponent::Initialize(FVector location, FRotator rotation, FVect
 	UPrimitiveComponent::Initialize(EPrimitive::EP_StaticMesh, location, rotation, scale3D, bUseTexture);
 	mStaticMeshRef = staticMeshRef;
 }
+
+FRenderInfo UStaticMeshComponent::makeRenderInfo() const
+{
+	FRenderInfo renderInfo = UMeshComponent::makeRenderInfo();
+
+}

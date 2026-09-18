@@ -10,6 +10,9 @@ class UStaticMeshComponent : public UMeshComponent
 	void Initialize(FVector location, FRotator rotation, FVector scale3D,
 		UStaticMesh* staticMeshRef, bool bUseTexture = false);
 
+protected:
+	virtual FRenderInfo makeRenderInfo() const override;
+
 private:
 	UStaticMesh* mStaticMeshRef;
 };
