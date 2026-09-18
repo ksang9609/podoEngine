@@ -70,7 +70,7 @@ FGraphicsManager::~FGraphicsManager()
 
 void FGraphicsManager::InitializeLoadingScreen()
 {
-	mRenderer->LoadTexture(L"Assets/Textures/LoadingScreen.dds",&mLoadingScreenSRV);
+	mRenderer->LoadTexture(L"Assets/Textures/LoadingScreen.dds", &mLoadingScreenSRV);
 }
 
 void FGraphicsManager::Prepare(const FCamera* mCamera)
@@ -352,23 +352,27 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		//FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
-		//if (vertexBuffer == nullptr)
-		//{
-		//	UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
-		//	continue;
-		//}
+
 		FBuffer& buffer = mStaticMeshBuffer[renderInfo->StaticMesh];
-		// Debug
-		FTexture* texture = mPrimitiveTextureMap.Find(EPrimitive::EP_Cube);
-		//if (texture == nullptr)
-		//{
-		//	UE_LOG(Error, Render, "Primitive texture not found for primitive type.");
-		//	continue;
-		//}
+
+		FTexture* texture = nullptr;
+		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+		{
+			// TODO: Use the texture from the renderInfo if available
+			texture = mPrimitiveTextureMap.Find(EPrimitive::EP_Cube);
+			if (texture == nullptr)
+			{
+				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
+				texture = mDefaultWhiteTexture.get();
+			}
+		}
+		else {
+			texture = mDefaultWhiteTexture.get();
+		}
+
 		//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
 		mRenderer->RenderStaticMesh(buffer.Buffer, buffer.SourceNum,
-			texture ? texture->SRV.Get() : nullptr, texture ? texture->Sampler.Get() : nullptr,
+			texture->SRV.Get(), texture->Sampler.Get(),
 			buffer.IndexBuffer, buffer.IndexCount);
 	}
 }

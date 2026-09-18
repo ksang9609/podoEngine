@@ -192,8 +192,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
 		quadMesh->Vertices = {
 			{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
-			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 0) },
-			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 0) },
+			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {1, 0, 1, 1}, FVector2(0, 0)},
+			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {0, 1, 1, 1}, FVector2(1, 0)},
 			{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
 		};
 		quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
