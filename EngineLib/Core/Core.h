@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <iosfwd>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -108,6 +109,7 @@ public:
 
 	bool ToBool() const;
 	float ToFloat() const;
+	int32 ToInt() const;
 
 	FString ToLower() const;
 	FString ToUpper() const;
