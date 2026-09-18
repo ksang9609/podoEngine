@@ -212,22 +212,22 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	}
 	{
 		mGraphicsManager->CreateStaticMeshBuffer(
-			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::CubeMesh)
+			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::Cube)
 		);
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::CubeMesh);
+			BuiltinAssets::Cube);
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
 		mGraphicsManager->CreateStaticMeshBuffer(
-			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::SphereMesh)
+			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::Sphere)
 		);
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::SphereMesh);
+			BuiltinAssets::Sphere);
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 

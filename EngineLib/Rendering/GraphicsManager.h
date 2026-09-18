@@ -13,20 +13,9 @@
 #include "Core/Math/Vector.h"
 #include "Core/Math/FBoundingBox.h"
 #include "Rendering/Mesh/StaticMesh.h"
+#include "Rendering/GpuResourceManager.h"
 
 struct FFrustum;
-
-struct FBuffer
-{
-	ID3D11Buffer* Buffer;
-	uint32 SourceNum;
-	FBoundingBox LocalBounds;
-
-	ID3D11Buffer* TexturedBuffer = nullptr;
-	ID3D11Buffer* IndexBuffer = nullptr;
-	UINT IndexCount = 0;
-};
-
 struct FTexture
 {
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV;
@@ -121,6 +110,8 @@ public:
 	void SetShowFlags(uint32 flags) { mShowFlags = flags; }
 
 private:
+	/* Manager References */
+
 	URenderer* mRenderer;
 	FMatrix mViewUnifiedProjectionMatrix;
 

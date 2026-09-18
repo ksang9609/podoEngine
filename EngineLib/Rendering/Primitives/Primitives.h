@@ -23,3 +23,9 @@ inline FVertexTextured Quad_textured_vertices[6] =
 	{ 0.0f, -0.5f, -0.5f,   0.0f, 1.0f },
 	{ 0.0f, +0.5f, +0.5f,    1.0f, 0.0f },
 };
+
+inline uint32 Quad_indices[6] =
+{
+	0, 1, 2,   // First triangle
+	0, 2, 3    // Second triangle
+};

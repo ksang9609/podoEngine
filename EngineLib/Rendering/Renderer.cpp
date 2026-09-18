@@ -356,7 +356,6 @@ ID3D11Buffer* URenderer::CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWi
 
 	ID3D11Buffer* vertexBuffer;
 	Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
-
 	return vertexBuffer;
 }
 
