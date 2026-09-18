@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Core/FrameTimer.h"
+#include "Core/AssetManager.h"
 #include "Core/IO/FileManager.h"
 #include "Editor/FEditorViewportClient.h"
 #include "Editor/EditorUIManager.h"
@@ -38,6 +39,7 @@ private:
 	FSceneManager* mSceneManager;
 	FFileManager* mFileManager;
 	FEditorUIManager* mEditorUIManager;
+	std::unique_ptr<FAssetManager> mAssetManager;
 
 	std::unique_ptr<FFontResource> mDefaultFontResource;
 
