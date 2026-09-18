@@ -352,7 +352,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 		//	UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
 		//	continue;
 		//}
-		FBuffer& buffer = mStaticMeshBuffer;
+		FBuffer& buffer = mStaticMeshBuffer[renderInfo->StaticMesh];
 		// Debug
 		FTexture* texture = mPrimitiveTextureMap.Find(EPrimitive::EP_Cube);
 		//if (texture == nullptr)
@@ -836,7 +836,7 @@ void FGraphicsManager::CreateStaticMeshBuffer(const FStaticMesh& staticMesh)
 	buffer.LocalBounds = LocalBound;
 
 	// TODO: move this to gpu resource manager
-	mStaticMeshBuffer = buffer;
+	mStaticMeshBuffer.Add(&staticMesh, buffer);
 }
 
 void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize)

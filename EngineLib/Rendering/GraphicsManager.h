@@ -139,7 +139,7 @@ private:
 	TMap<EPrimitive, FTexture> mPrimitiveTextureMap;
 
 	// Debug for static mesh
-	FBuffer mStaticMeshBuffer;
+	TMap<const FStaticMesh*, FBuffer> mStaticMeshBuffer;
 
 	// Graphics config
 	// 이번 프레임에 쌓인 선분. 정점 2개가 선분 하나
