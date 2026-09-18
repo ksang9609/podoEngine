@@ -91,7 +91,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	console.Init("Jungle Console Window", clientWidth);
 
 	/* Resource Registration */
-	mDefaultFontResource = new FFontResource();
+	mDefaultFontResource = std::make_unique<FFontResource>();
 
 	const bool jsonLoaded = mDefaultFontResource->LoadUnicodeAtlas(
 		FString("Assets/Fonts/KoreanFullAtlas.json"));
@@ -202,12 +202,9 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
 		staticMeshAsset->SetStaticMeshAsset(quadMesh);
 
-		AActor* quadActor = FObjectFactory::ConstructObject<AActor>();
-		UStaticMeshComponent* staticMeshComponent =
-			FObjectFactory::ConstructObject<UStaticMeshComponent>(
-				FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-				staticMeshAsset, false);
-		quadActor->AddRootSceneComponent(staticMeshComponent);
+		AActor* quadActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			*staticMeshAsset);
 		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
 	}
 	{
@@ -217,12 +214,9 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
 		staticMeshAsset->SetStaticMeshAsset(cubeMesh);
 
-		AActor* cubeActor = FObjectFactory::ConstructObject<AActor>();
-		UStaticMeshComponent* staticMeshComponent =
-			FObjectFactory::ConstructObject<UStaticMeshComponent>(
-				FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-				staticMeshAsset, false);
-		cubeActor->AddRootSceneComponent(staticMeshComponent);
+		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			*staticMeshAsset);
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
@@ -232,12 +226,9 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
 		staticMeshAsset->SetStaticMeshAsset(sphereMesh);
 
-		AActor* sphereActor = FObjectFactory::ConstructObject<AActor>();
-		UStaticMeshComponent* staticMeshComponent =
-			FObjectFactory::ConstructObject<UStaticMeshComponent>(
-				FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-				staticMeshAsset, false);
-		sphereActor->AddRootSceneComponent(staticMeshComponent);
+		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			*staticMeshAsset);
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 
@@ -344,7 +335,6 @@ void FEngineLoop::End()
 	delete FrameTimer;
 	delete mSceneManager;
 	delete mFileManager;
-	delete mDefaultFontResource;
 	delete mGraphicsManager;
 }
 
