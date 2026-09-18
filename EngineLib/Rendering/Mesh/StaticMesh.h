@@ -3,6 +3,14 @@
 #include "Core/Object/Object.h"
 #include "Core/Core.h"
 #include "Rendering/VertexType.h"
+#include "ObjImporter.h"
+
+struct FStaticMeshSection
+{
+	FString Name;
+	int32 MaterialIndex;
+	int32 StartIndex;
+};
 
 // Coocked Data
 struct FStaticMesh
@@ -12,7 +20,8 @@ struct FStaticMesh
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
 
-	// ... need more?
+	TArray<FObjMaterialInfo> Materials;
+	TArray<FStaticMeshSection> Sections;
 };
 
 class UStaticMesh : public UObject
@@ -29,11 +38,6 @@ public:
 	void SetStaticMeshAsset(FStaticMesh* inStaticMesh)
 	{
 		mStaticMeshAssetRef = inStaticMesh;
-	}
-
-	const FStaticMesh* GetStaticMeshAsset() const
-	{
-		return mStaticMeshAssetRef;
 	}
 
 private:
