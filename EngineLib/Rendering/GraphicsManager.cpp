@@ -154,7 +154,12 @@ void FGraphicsManager::updateRenderQueue(
 			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
-			if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
+			// TODO: Unify all of these into just static mesh
+			if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
+			{
+				outRenderQueueMap[RQT_StaticMesh].Add(&renderInfo);
+			}
+			else if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
 			{
 				outRenderQueueMap[RQT_TexturedPrimitive].Add(&renderInfo);
 			}
@@ -230,6 +235,8 @@ void FGraphicsManager::Render(
 	//RenderInstancingTest();
 	renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
 	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);
+	renderStaticMesh(renderQueueMap[RQT_StaticMesh], camera);
+
 	renderBillboardText(renderQueueMap[RQT_BillboardText], camera);
 
 	// Line Buffer에 넣기전에 Buffer의 용량을 미리 지정하여 동적할당 방지
@@ -329,6 +336,34 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 		}
 		mRenderer->RenderParticle(texture->SRV);
 
+	}
+}
+
+void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+{
+	mRenderer->PrepareStaticMesh();
+	for (const FRenderInfo* renderInfo : renderInfos)
+	{
+		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		//FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
+		//if (vertexBuffer == nullptr)
+		//{
+		//	UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
+		//	continue;
+		//}
+		FBuffer& buffer = mStaticMeshBuffer;
+		// Debug
+		FTexture* texture = mPrimitiveTextureMap.Find(EPrimitive::EP_Cube);
+		//if (texture == nullptr)
+		//{
+		//	UE_LOG(Error, Render, "Primitive texture not found for primitive type.");
+		//	continue;
+		//}
+		//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
+		mRenderer->RenderStaticMesh(buffer.Buffer, buffer.SourceNum,
+			texture ? texture->SRV : nullptr, texture ? texture->Sampler : nullptr,
+			buffer.IndexBuffer, buffer.IndexCount);
 	}
 }
 

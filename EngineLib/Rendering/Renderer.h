@@ -143,6 +143,7 @@ public:
 	// 셰이더, 입력 레이아웃, 블렌딩 상태 설정
 	void PrepareUnicodeFont();
 	void PrepareParticle();
+	void PrepareStaticMesh();
 
 	void UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0));
 	void UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0),
@@ -175,6 +176,9 @@ public:
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
 	void RenderUnicodeFontTexture(uint32 indexCount);
 	void RenderParticle(ID3D11ShaderResourceView* texture);
+	void RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
+		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState,
+		ID3D11Buffer* indexBuffer = nullptr, uint32 indexCount = 0);
 
 	void SwapBuffer();
 
@@ -240,6 +244,7 @@ private:
 	void prepareFontShader();
 	void prepareUnicodeFontShader();
 	void prepareParticleShader();
+	void prepareStaticMeshShader();
 
 	/* Release methods for all resources */
 	void releaseDeviceAndSwapChain();

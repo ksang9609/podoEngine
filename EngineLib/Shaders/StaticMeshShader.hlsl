@@ -32,6 +32,7 @@ PS_INPUT mainVS(VS_INPUT input)
     PS_INPUT output;
 
     output.position = mul(mul(float4(input.position.xyz, 1.0f), World), ViewProjection);
+    output.color = input.color;
     output.uv = input.uv * UVScale + UVOffset;
 
     return output;

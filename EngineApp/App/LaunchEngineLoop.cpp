@@ -188,24 +188,26 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	// Test: static mesh
 	{
-		FStaticMesh quadMesh = {};
-		quadMesh.Vertices = {
-			{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1),{}, FVector2(0, 1) },
-			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1),{}, FVector2(0, 0) },
-			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1),{}, FVector2(1, 0) },
-			{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1),{}, FVector2(1, 1) },
+		FStaticMesh* quadMesh = new FStaticMesh();
+		FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
+		quadMesh->Vertices = {
+			{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
+			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 0) },
+			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 0) },
+			{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
 		};
-		quadMesh.Indices = { 0, 1, 2, 0, 2, 3 };
-		mGraphicsManager->CreateStaticMeshBuffer(quadMesh);
+		quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
+		mGraphicsManager->CreateStaticMeshBuffer(*quadMesh);
 
 		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
-		staticMeshAsset->SetStaticMeshAsset(&quadMesh);
+		staticMeshAsset->SetStaticMeshAsset(quadMesh);
 
 		AActor* quadActor = FObjectFactory::ConstructObject<AActor>();
-		UStaticMeshComponent& component = quadActor->CreateAndAddComponent<UStaticMeshComponent>(
-			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			*staticMeshAsset, true
-		);
+		UStaticMeshComponent* staticMeshComponent =
+			FObjectFactory::ConstructObject<UStaticMeshComponent>(
+				FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+				*staticMeshAsset, false);
+		quadActor->AddRootSceneComponent(staticMeshComponent);
 		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
 	}
 

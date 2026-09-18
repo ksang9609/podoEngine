@@ -685,7 +685,7 @@ void URenderer::createShaders()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	
+
 	const D3D11_INPUT_ELEMENT_DESC positionTexture[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -1011,6 +1011,18 @@ void URenderer::PrepareParticle()
 	DeviceContext->OMSetBlendState(BlendState[BST_Additive], nullptr, 0xffffffff);
 }
 
+void URenderer::PrepareStaticMesh()
+{
+	prepareStaticMeshShader();
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	DeviceContext->RSSetState(RasterizerState[mbWireFrame ? 1 : 0]);
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState[DSS_Default], 0);
+	DeviceContext->OMSetBlendState(BlendState[BST_Default], nullptr, 0xffffffff);
+}
+
 void URenderer::PrepareHighlight()
 {
 	prepareSimpleShader();
@@ -1135,6 +1147,18 @@ void URenderer::prepareParticleShader()
 	{
 		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Particle]);
 		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Particle]);
+	}
+}
+
+void URenderer::prepareStaticMeshShader()
+{
+	DeviceContext->VSSetShader(VertexShader[VST_StaticMesh], nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader[PST_StaticMesh], nullptr, 0);
+	DeviceContext->IASetInputLayout(InputLayout[ILT_PositionNormalColorTexture].Get());
+	if (ConstantBuffer[CBT_Texture])
+	{
+		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Texture]);
+		DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer[CBT_Texture]);
 	}
 }
 
@@ -1280,6 +1304,30 @@ void URenderer::RenderParticle(ID3D11ShaderResourceView* texture)
 	DeviceContext->IASetIndexBuffer(ParticleIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	DeviceContext->DrawIndexed(6, 0, 0);
+}
+
+void URenderer::RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
+	ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState,
+	ID3D11Buffer* indexBuffer, uint32 indexCount)
+{
+	if (!vertexBuffer || !indexBuffer || indexCount == 0 || !textureSRV || !samplerState) return;
+	UINT offset = 0;
+	// Bind the vertex buffer
+	DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &StrideNormalVertex, &offset);
+	// Bind the texture resource
+	DeviceContext->PSSetShaderResources(0, 1, &textureSRV);
+	DeviceContext->PSSetSamplers(0, 1, &samplerState);
+	// Bind the index buffer
+	DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	if (indexBuffer)
+	{
+		DeviceContext->DrawIndexed(indexCount, 0, 0);
+	}
+	else
+	{
+		DeviceContext->Draw(numVertices, 0);
+	}
 }
 
 // 쌓아둔 선분 전체를 한 번의 Draw로 그린다.

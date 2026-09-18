@@ -40,6 +40,7 @@ enum ERenderQueueType
 	RQT_Gizmo,
 	RQT_BoundingBox,
 	RQT_Particle,
+	RQT_StaticMesh,
 };
 
 class FGraphicsManager
@@ -190,6 +191,7 @@ private:
 	void renderGrid();
 	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 
 	void CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos);
 
