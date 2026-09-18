@@ -9,14 +9,17 @@ IMPLEMENT_SERIALIZATION(UStaticMeshComponent, UMeshComponent,
 )
 
 void UStaticMeshComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
-	UStaticMesh* staticMeshRef, bool bUseTexture)
+	const UStaticMesh& staticMeshRef, bool bUseTexture)
 {
 	UPrimitiveComponent::Initialize(EPrimitive::EP_StaticMesh, location, rotation, scale3D, bUseTexture);
-	mStaticMeshRef = staticMeshRef;
+	mStaticMeshRef = &staticMeshRef;
 }
 
 FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 {
 	FRenderInfo renderInfo = UMeshComponent::makeRenderInfo();
 
+	renderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
+
+	return renderInfo;
 }

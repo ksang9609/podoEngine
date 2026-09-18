@@ -98,6 +98,7 @@ public:
 	void CreateSamplerState(ID3D11SamplerState** outSamplerState);
 	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT ByteWidth);
+	ID3D11Buffer* CreateVertexBuffer(const FNormalVertex* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreatePrimitiveIndexBuffer(const uint32* indices, UINT ByteWidth);
 
 	// 인스턴싱

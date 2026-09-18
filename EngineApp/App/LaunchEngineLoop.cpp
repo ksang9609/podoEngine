@@ -11,6 +11,7 @@
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
+#include "Engine/Components/StaticMeshComponent.h"
 #include "Engine/SceneManager.h"
 #include "Engine/World.h"
 #include "Platform/WindowApplication.h"
@@ -184,6 +185,29 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
 	mSceneManager->NewScene();
+
+	// Test: static mesh
+	{
+		FStaticMesh quadMesh = {};
+		quadMesh.Vertices = {
+			{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1),{}, FVector2(0, 1) },
+			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1),{}, FVector2(0, 0) },
+			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1),{}, FVector2(1, 0) },
+			{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1),{}, FVector2(1, 1) },
+		};
+		quadMesh.Indices = { 0, 1, 2, 0, 2, 3 };
+		mGraphicsManager->CreateStaticMeshBuffer(quadMesh);
+
+		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		staticMeshAsset->SetStaticMeshAsset(&quadMesh);
+
+		AActor* quadActor = FObjectFactory::ConstructObject<AActor>();
+		UStaticMeshComponent& component = quadActor->CreateAndAddComponent<UStaticMeshComponent>(
+			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			*staticMeshAsset, true
+		);
+		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
+	}
 
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 

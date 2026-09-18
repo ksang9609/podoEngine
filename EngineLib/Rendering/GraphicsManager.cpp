@@ -768,6 +768,42 @@ void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertic
 	mBufferMap.Add(ePrimitive, buffer);
 }
 
+void FGraphicsManager::CreateStaticMeshBuffer(const FStaticMesh& staticMesh)
+{
+	uint32 numVertices = static_cast<uint32>(staticMesh.Vertices.Num());
+	uint32 verticesSize = numVertices * sizeof(FNormalVertex);
+
+	// Create vertex buffer
+	ID3D11Buffer* vertexBuffer = mRenderer->CreateVertexBuffer(staticMesh.Vertices.GetData(), verticesSize);
+	FVector3 LocalMin = FVector3(staticMesh.Vertices[0].pos.x, staticMesh.Vertices[0].pos.y, staticMesh.Vertices[0].pos.z);
+	FVector3 LocalMax = FVector3(staticMesh.Vertices[0].pos.x, staticMesh.Vertices[0].pos.y, staticMesh.Vertices[0].pos.z);
+	for (int i = 0;i < numVertices;i++)
+	{
+		LocalMin.x = min(LocalMin.x, staticMesh.Vertices[i].pos.x);
+		LocalMin.y = min(LocalMin.y, staticMesh.Vertices[i].pos.y);
+		LocalMin.z = min(LocalMin.z, staticMesh.Vertices[i].pos.z);
+		LocalMax.x = max(LocalMax.x, staticMesh.Vertices[i].pos.x);
+		LocalMax.y = max(LocalMax.y, staticMesh.Vertices[i].pos.y);
+		LocalMax.z = max(LocalMax.z, staticMesh.Vertices[i].pos.z);
+	} // AABB 렌더링에 필요한 LocalMin,Max 저장
+	FBoundingBox LocalBound;
+	LocalBound.min = LocalMin;
+	LocalBound.max = LocalMax;
+
+	// Create index buffer
+	ID3D11Buffer* indexBuffer = mRenderer->CreatePrimitiveIndexBuffer(staticMesh.Indices.GetData(), staticMesh.Indices.Num());
+
+	FBuffer buffer = {}; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
+	buffer.Buffer = vertexBuffer;
+	buffer.SourceNum = numVertices;
+	buffer.IndexBuffer = indexBuffer;
+	buffer.IndexCount = static_cast<uint32>(staticMesh.Indices.Num());
+	buffer.LocalBounds = LocalBound;
+
+	// TODO: move this to gpu resource manager
+	mStaticMeshBuffer = buffer;
+}
+
 void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize)
 {
 	if (!vertices || verticesSize == 0 ||

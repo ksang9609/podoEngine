@@ -378,6 +378,24 @@ ID3D11Buffer* URenderer::CreateVertexBuffer(const FVertexTextured* vertices, UIN
 	return buffer;
 }
 
+// TODO: Remove and unify this function with the others
+ID3D11Buffer* URenderer::CreateVertexBuffer(const FNormalVertex* vertices, UINT byteWidth)
+{
+	D3D11_BUFFER_DESC desc = {};
+	desc.ByteWidth = byteWidth;
+	desc.Usage = D3D11_USAGE_IMMUTABLE;
+	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA data = {};
+	data.pSysMem = vertices;
+
+	ID3D11Buffer* buffer = nullptr;
+	if (FAILED(Device->CreateBuffer(&desc, &data, &buffer)))
+		return nullptr;
+
+	return buffer;
+}
+
 void URenderer::ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer)
 {
 	vertexBuffer->Release();
