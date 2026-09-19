@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include "Core/Math/Vector.h"
 
-#include <d3d11.h>
+#include "ViewportTypes.h"
+#include "../Rendering/SceneView.h"
 #include "Engine/World.h"
 #include "Engine/EngineStatics.h"
 #include "Rendering/Camera.h"
@@ -18,21 +19,25 @@ struct FEditorViewportClient
 {
 public:
 
-	explicit FEditorViewportClient(FViewportSharedSettings& sharedSettings) :
+	explicit FEditorViewportClient(FViewportSharedSettings& sharedSettings, EViewportType viewporttype) :
 		mSharedSettings(sharedSettings)
-	{ }
+	{
+		configureCamera(viewporttype);
+	}
 
-	bool RaycastBounds(
-		const FVector& rayStart,
-		const FVector& rayEnd,
-		const FBoundingBox& bounds);
-	void RayCast(D3D11_VIEWPORT ViewportInfo, const TArray<FRenderInfo>& renderInfos,
-		float perspectiveRatio, bool bCheckObject);
+	bool RaycastBounds(const FVector& rayStart,const FVector& rayEnd,const FBoundingBox& bounds);
+	void RayCast(const FViewRect& viewrect, const TArray<FRenderInfo>& renderInfos, bool bCheckObject);
 	float GetFov() const { return mCamera.mFovDegree; }
-	void Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, float perspectiveRatio);
+	void Update(float deltaTime, const FViewRect& viewrect, FSceneManager* sceneManager, bool bViewportHoverd, bool bViewportFocused);
 	bool IsMouseHit() const { return bMouseHit; }
 
 	void Reset();
+
+	void startProjectionTransition(bool orthographic);
+	void updateProjectionTransition(float deltatime);
+
+	float getProjectionRatio() const { return mProjectionRatio; }
+	bool isOrthographicTarget() const { return mProjectionTargetRatio == 0.0f;  }
 
 	FCamera& GetCamera() { return mCamera; }
 	const FCamera& GetCamera() const { return mCamera; }
@@ -72,8 +77,15 @@ private:
 		FVector& OutNearPoint, FVector& OutFarPoint
 	);
 
-	bool bMouseHit = false;
+	void configureCamera(EViewportType viewportType);
 
+	bool bMouseHit = false;
+	float mProjectionRatio = 1.0f;
+	float mProjectionStartRatio = 1.0f;
+	float mProjectionTargetRatio = 1.0f;
+	float mProjectionElapsed = 0.0f;
+	float mProjectionDuration = 1.0f;
+	bool bProjectionTransitioning = false;
 	
 	// RayCast가 이번 프레임에 쏜 광선. 기즈모 드래그가 같은 광선을 다시 쓴다
 	FVector mRayNear;

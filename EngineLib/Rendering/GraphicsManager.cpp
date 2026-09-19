@@ -16,14 +16,9 @@
 
 FGraphicsManager::FGraphicsManager(HWND hWindow)
 	: mbWireFrame(false)
-	, mbPerspectiveProjection(true)
-	, mProjectionRatio(1.0f)
 {
 	mRenderer = new URenderer;
 	mRenderer->Create(hWindow);
-
-
-	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 
 	// Create default white texture
 	mDefaultWhiteTexture = std::make_unique<FTexture>();
@@ -77,27 +72,9 @@ void FGraphicsManager::InitializeLoadingScreen()
 	mRenderer->LoadTexture(L"Assets/Textures/LoadingScreen.dds", &mLoadingScreenSRV);
 }
 
-void FGraphicsManager::Prepare(const FCamera* mCamera)
+void FGraphicsManager::BeginFrame()
 {
-	mRenderer->Prepare(mbWireFrame);
-
-	// Cache view and projection matrices for rendering
-	const float nearZ = 0.1f;
-	const float farZ = 100.0f;
-
-	float d = mCamera->mOrthoDistance;
-
-	FMatrix view = mCamera->GetViewMatrix();
-	FMatrix projection_u = mCamera->GetUnifiedProjectionMatrix(mAspect, mCamera->mFovDegree, d, nearZ, farZ, mProjectionRatio);
-
-	mViewUnifiedProjectionMatrix = view * projection_u;
-
-	// 하이라이트 두께를 화면 픽셀 기준으로 환산할 때 쓴다
-	mCameraLocation = mCamera->Location;
-	mCameraForward = mCamera->GetForwardVector();
-	mCameraFovDegree = mCamera->mFovDegree;
-	mCameraOrthoDistance = mCamera->mOrthoDistance;
-
+	mRenderer->BeginFrame(mbWireFrame);
 	// 그리는 순서가 중요하다: 가까운 것을 먼저, 먼 것을 나중에.
 	// 깊이 테스트가 켜져 있으면 나중에 그린 FarCube 가 깊이 비교에서 탈락해
 	// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
@@ -223,13 +200,18 @@ void FGraphicsManager::Render(
 	const TArray<FRenderInfo>& scenerRenderInfos,
 	const TArray<FRenderInfo>& gizmoRenderInfos,
 	const TArray<FRenderInfo>& axisRenderInfos,
-	const FCamera& camera,
+	const FSceneView& view,
 	const AActor* selectedActor)
 {
 
-	Prepare(&camera);
+	if (!view.isValid())
+	{
+		return;
+	}
 
-	const FFrustum frustum = FFrustum::FrustumFromViewProjection(mViewUnifiedProjectionMatrix);
+	mRenderer->BeginView(view.Rect);
+
+	const FFrustum frustum = FFrustum::FrustumFromViewProjection(view.viewProjectionMatrix);
 
 	// 인스턴스 테스트용(큐브 1만개 출력=
 	// Prepare Render queue
@@ -240,14 +222,14 @@ void FGraphicsManager::Render(
 	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr);
 	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr);
 
-	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], mCameraLocation, mCameraForward);
+	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], view.cameraLocation, view.cameraForward);
 
 	//RenderInstancingTest();
-	renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
-	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);
-	renderStaticMesh(renderQueueMap[RQT_StaticMesh], camera);
+	renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], view);
+	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], view);
+	renderStaticMesh(renderQueueMap[RQT_StaticMesh], view);
 
-	renderBillboardText(renderQueueMap[RQT_BillboardText], camera);
+	renderBillboardText(renderQueueMap[RQT_BillboardText], view);
 
 	// Line Buffer에 넣기전에 Buffer의 용량을 미리 지정하여 동적할당 방지
 	CalculateLineBuffer(renderQueueMap[RQT_BoundingBox]);
@@ -259,33 +241,30 @@ void FGraphicsManager::Render(
 	{
 		renderGrid();
 	}
-	renderBoundingBox(renderQueueMap[RQT_BoundingBox], camera.GetRotation());
-	FlushLines();
+	renderBoundingBox(renderQueueMap[RQT_BoundingBox], view.cameraRotation);
+	FlushLines(view);
 
-	renderParticle(renderQueueMap[RQT_Particle], camera);
+	renderParticle(renderQueueMap[RQT_Particle], view);
 
 	//강조
 	if (selectedActor)
 	{
 		FRenderInfo clickedRenderInfo;
 		selectedActor->GetFirstRenderInfo(clickedRenderInfo);
-		renderHighLight(clickedRenderInfo, camera);
+		renderHighLight(clickedRenderInfo, view);
 	}
 
-	/* Clear Depth */
-	mRenderer->ClearDepth();
-
 	// Gizmo
-	renderGizmo(renderQueueMap[RQT_Gizmo], camera);
+	renderGizmo(renderQueueMap[RQT_Gizmo], view);
 }
 
-void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	mRenderer->PrepareSimplePrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -296,13 +275,13 @@ void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& r
 	}
 }
 
-void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	mRenderer->PrepareGizmo();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
 		if (vertexBuffer == nullptr)
 		{
@@ -313,12 +292,12 @@ void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos
 	}
 }
 
-void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	mRenderer->PrepareParticle();
 
-	FVector3 cameraRight = camera.GetRightVector();
-	FVector3 cameraUp = camera.GetUpVector();
+	FVector3 cameraRight = view.cameraRight;
+	FVector3 cameraUp = view.cameraUp;
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		//mRenderer->UpdateBillboardConstant(
@@ -329,7 +308,7 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 		//	renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
 		mRenderer->UpdateParticleConstant(
 			renderInfo->GetLocation(), renderInfo->GetScale(),
-			mViewUnifiedProjectionMatrix,
+			view.viewProjectionMatrix,
 			cameraRight, cameraUp,
 			renderInfo->numRows, renderInfo->numCols,
 			renderInfo->currentFrame, renderInfo->nextFrame, renderInfo->frameRatio,
@@ -349,13 +328,13 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 	}
 }
 
-void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	mRenderer->PrepareStaticMesh();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 
 		FBuffer& buffer = mStaticMeshBuffer[renderInfo->StaticMesh];
 
@@ -381,7 +360,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 	}
 }
 
-void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	mRenderer->PrepareTexturedPrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
@@ -396,7 +375,7 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 			: FVector2(0.0f, 0.0f);
 
 		mRenderer->UpdateTextureConstant(
-			worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
+			worldTransform, view.viewProjectionMatrix, renderInfo->Color,
 			uvScale, uvOffset
 		);
 		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
@@ -445,7 +424,7 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 }
 
 // 인스턴싱 적용한 심플 프리미티브 출력
-void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	if (renderInfos.IsEmpty())
 		return;
@@ -469,7 +448,7 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 	// Prepare()에서 계산한 ViewProjection을 사용한다.
 	// 개별 World와 Tint는 위의 인스턴스 배열로 전달한다.
 	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, view.viewProjectionMatrix, FLinearColor(0, 0, 0, 0));
 
 	//  프리미티브 종류마다 한 번씩 그린다.
 	for (auto& [primitiveType, instances] : batches)
@@ -520,13 +499,13 @@ void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRender
 	}
 }
 
-void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
 	//mRenderer->PrepareFont();
-	FVector3 cameraRight = camera.GetRightVector();
-	FVector3 cameraUp = camera.GetUpVector();
+	FVector3 cameraRight = view.cameraRight;
+	FVector3 cameraUp = view.cameraUp;
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		const FTextMesh* textMesh = renderInfo->Textmesh;
@@ -538,7 +517,7 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 
 		mRenderer->UpdateFontConstant(
 			renderInfo->GetLocation(), renderInfo->GetScale(),
-			mViewUnifiedProjectionMatrix,
+			view.viewProjectionMatrix,
 			cameraRight, cameraUp,
 			renderInfo->Color
 		);
@@ -717,7 +696,7 @@ void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& rende
 	}
 }
 
-void FGraphicsManager::FlushLines()
+void FGraphicsManager::FlushLines(const FSceneView& view)
 {
 	if (mLineVertices.Num() == 0) return;
 
@@ -725,7 +704,7 @@ void FGraphicsManager::FlushLines()
 
 	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
 	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, view.viewProjectionMatrix, FLinearColor(0, 0, 0, 0));
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
@@ -735,8 +714,14 @@ void FGraphicsManager::FlushLines()
 
 void FGraphicsManager::RenderLoadingScreen()
 {
-	GetRenderer()->PrepareForUI();
-	GetRenderer()->RenderFullscreenTexture(mLoadingScreenSRV);
+	BeginFrame();
+
+	const FViewRect fullScreenRect{0.0f,0.0f,mRenderer->ViewportInfo.Width,mRenderer->ViewportInfo.Height};
+
+	mRenderer->BeginView(fullScreenRect);
+	mRenderer->PrepareForUI();
+	mRenderer->RenderFullscreenTexture(mLoadingScreenSRV);
+
 	Display();
 }
 
@@ -751,7 +736,6 @@ void FGraphicsManager::Display()
 
 void FGraphicsManager::Update(float deltaTime)
 {
-	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
 
 	// 테스트용: deltaTime이 초 단위라는 전제
 	//static float elapsed = 0.0f;
@@ -781,16 +765,6 @@ void FGraphicsManager::Update(float deltaTime)
 	//	index = (index + 1)
 	//		% (sizeof(testTexts) / sizeof(testTexts[0]));
 	//}
-}
-
-bool FGraphicsManager::IsPerspectiveProjection() const
-{
-	return mbPerspectiveProjection;
-}
-
-void FGraphicsManager::SetPerspectiveProjection(bool bPerspectiveProjection)
-{
-	mbPerspectiveProjection = bPerspectiveProjection;
 }
 
 void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize)
@@ -969,25 +943,25 @@ void  FGraphicsManager::SetGridWidth(float width)
 }
 
 
-void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& camera)
+void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FSceneView& view)
 {
 	mRenderer->PrepareHighlight();
 
 	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
 	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
-	FMatrix worldTransformMatrix = RI.GetTransformMatrix(camera.Rotation);
+	FMatrix worldTransformMatrix = RI.GetTransformMatrix(view.cameraRotation);
 
 	// 화면에서 OUTLINE_PIXELS 만큼 보이려면 이 깊이에서 월드로 얼마여야 하는지 환산한다.
 	// 깊이 d에서 뷰포트가 담는 월드 높이가 2*d*tan(fov/2) 이므로, 그걸 픽셀 수로 나누면 픽셀당 월드 크기다.
 	const FVector ObjectLocation = worldTransformMatrix.TransformPosition(Center);
-	const float Depth = FVector::dot(ObjectLocation - mCameraLocation, mCameraForward);
-	const float TanHalfFov = tanf(FMath::DegreesToRadians(mCameraFovDegree * 0.5f));
+	const float Depth = FVector::dot(ObjectLocation - view.cameraLocation, view.cameraForward);
+	const float TanHalfFov = tanf(FMath::DegreesToRadians(view.fovDegree * 0.5f));
 	const float effectiveDepth = FMath::Max(
-		(1.0f - mProjectionRatio) * mCameraOrthoDistance + mProjectionRatio * Depth
+		(1.0f - view.projectionRatio) * view.orthoDistance + view.projectionRatio * Depth
 		, 0.01f);
 	//const float H = mbPerspectiveProjection ? 2.0f * Depth * TanHalfFov : 5.774f;
 	const float H = 2.0f * effectiveDepth * TanHalfFov;
-	const float WorldThickness = OUTLINE_PIXELS * H / mRenderer->ViewportInfo.Height;
+	const float WorldThickness = OUTLINE_PIXELS * H / view.Rect.Height;
 
 
 	// 축마다 월드 공간에서 WorldThickness 만큼만 자라도록 배율을 따로 구한다.
@@ -1016,47 +990,7 @@ void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& cam
 	//{
 	//	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewOrthogonalProjectionMatrix, Outline, RI);
 	//}
-	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewUnifiedProjectionMatrix, Outline, worldTransformMatrix);
-}
-
-
-void FGraphicsManager::StartProjectionTransition(bool orthographic)
-{
-	mProjectionStartRatio = mProjectionRatio;
-	mProjectionTargetRatio = orthographic ? 0.0f : 1.0f;
-	mProjectionElapsed = 0.0f;
-
-	mbProjectionTransitioning =
-		mProjectionStartRatio != mProjectionTargetRatio;
-}
-
-bool FGraphicsManager::IsOrthographicTarget() const
-{
-	return mProjectionTargetRatio == 0.0f;
-}
-
-void FGraphicsManager::UpdateProjectionTransition(float deltaTime)
-{
-	if (!mbProjectionTransitioning)
-	{
-		return;
-	}
-
-	mProjectionElapsed += deltaTime;
-
-	const float u = FMath::Clamp(
-		mProjectionElapsed / mProjectionDuration, 0.0f, 1.0f);
-
-	// Smoothstep interpolation for a smoother transition
-	const float blend = u * u * (3.0f - 2.0f * u);
-
-	mProjectionRatio = mProjectionStartRatio + (mProjectionTargetRatio - mProjectionStartRatio) * blend;
-
-	if (u >= 1.0f)
-	{
-		mProjectionRatio = mProjectionTargetRatio;
-		mbProjectionTransitioning = false;
-	}
+	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, view.viewProjectionMatrix, Outline, worldTransformMatrix);
 }
 
 bool FGraphicsManager::HasShowFlag(EEngineShowFlags Flag) const
@@ -1111,7 +1045,7 @@ void FGraphicsManager::CalculateLineBuffer(const TArray<const FRenderInfo*>& ren
 
 
 // 인스턴스 테스트용 큐브 출력 함수(1만개)
-void FGraphicsManager::RenderInstancingTest()
+void FGraphicsManager::RenderInstancingTest(const FSceneView& view)
 {
 	FBuffer* cube = mBufferMap.Find(EPrimitive::EP_Cube);
 	if (!cube || !cube->Buffer)
@@ -1167,7 +1101,7 @@ void FGraphicsManager::RenderInstancingTest()
 		instances.Add(instance);
 	}
 	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, view.viewProjectionMatrix, FLinearColor(0, 0, 0, 0));
 
 	// 한 번의 호출로 큐브 1만개 그리기
 	mRenderer->RenderSimpleInstanced(cube->Buffer, mTestInstanceIndexBuffer, 36, &instances[0], 10000);

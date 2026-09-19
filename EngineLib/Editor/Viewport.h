@@ -2,14 +2,18 @@
 #include "ViewportTypes.h"
 #include "FEditorViewportClient.h"
 
+struct FSceneView;
+
 class FViewport
 {
 public:
 	FViewport(uint8 id, EViewportType type, FViewportSharedSettings& sharedSettings) :
-		Id(id),Type(type),Client(std::make_unique<FEditorViewportClient>(sharedSettings))
+		Id(id),Type(type),Client(std::make_unique<FEditorViewportClient>(sharedSettings, type))
 	{
 	}
 	~FViewport() = default;
+
+	FSceneView buildSceneView() const;
 
 	uint8 getId() const;
 	EViewportType getType() const;

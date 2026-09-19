@@ -259,7 +259,7 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 		ImGui::EndCombo();
 	}
 
-	bool bOrthographic = guiReference.GraphicsManager.IsOrthographicTarget();
+	bool bOrthographic = guiReference.ViewportClient.isOrthographicTarget();
 	if (ImGui::Checkbox("Orthogonal", &bOrthographic))
 	{
 		//if (selectedActor && bOrthographic && guiReference.GraphicsManager.GetPerspectiveRatio() == 1.0f)
@@ -791,7 +791,8 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoScrollbar |
-		ImGuiWindowFlags_NoScrollWithMouse;
+		ImGuiWindowFlags_NoScrollWithMouse |
+		ImGuiWindowFlags_NoBackground ;
 
 	ImGui::Begin(
 		"Viewport Layout Debug",
@@ -802,11 +803,9 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 	// 테스트용 Viewport 추가/삭제 버튼
 	// --------------------------------------------------------
 
-	const int32 viewportCount =
-		viewportManager.getViewportCount();
+	const int32 viewportCount = viewportManager.getViewportCount();
 
-	ImGui::BeginDisabled(
-		viewportCount >= maxViewportCount);
+	ImGui::BeginDisabled(viewportCount >= maxViewportCount);
 
 	if (ImGui::Button("+ Viewport"))
 	{
@@ -847,11 +846,9 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 	// 실제 Viewport Layout이 들어갈 Host 영역 계산
 	// --------------------------------------------------------
 
-	const ImVec2 hostMin =
-		ImGui::GetCursorScreenPos();
+	const ImVec2 hostMin = ImGui::GetCursorScreenPos();
 
-	const ImVec2 availableSize =
-		ImGui::GetContentRegionAvail();
+	const ImVec2 availableSize = ImGui::GetContentRegionAvail();
 
 	const ImVec2 hostMax = {
 		hostMin.x + availableSize.x,
@@ -925,11 +922,6 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 	const ImU32 splitterColor =
 		IM_COL32(125, 125, 125, 255);
 
-	drawList->AddRectFilled(
-		hostMin,
-		hostMax,
-		splitterColor);
-
 	static constexpr ImU32 panelColors[] =
 	{
 		IM_COL32(55, 85, 120, 255),
@@ -938,24 +930,53 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		IM_COL32(90, 75, 120, 255)
 	};
 
-	const FViewport* activeViewport =
-		viewportManager.getActiveViewport();
 
-	for (int32 index = 0;
+
+	const FViewport* activeViewport = viewportManager.getActiveViewport();
+	const bool bViewportActivationClick =
+		ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+		ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+
+
+	if (bViewportActivationClick)
+	{
+		for (int8 index = 0; index < viewportManager.getViewportCount(); index++)
+		{
+			FViewport* viewport = viewportManager.getViewportAt(index);
+
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+
+			viewport->getWindowState().bFocused = false;
+		}
+	}
+
+
+	for (int8 index = 0;
 		index < viewportManager.getViewportCount();
 		++index)
 	{
-		const FViewport* viewport =
-			viewportManager.getViewportAt(
-				static_cast<uint8>(index));
+		FViewport* viewport =viewportManager.getViewportAt(index);
 
 		if (viewport == nullptr)
 		{
 			continue;
 		}
 
-		const FRect& panelRect =
-			viewport->getWindowState().panelRect;
+		FViewportWindowState& windowState = viewport->getWindowState();
+
+		windowState.bImageHovered = windowState.imageRect.contains(mousePoint);
+
+		if (windowState.bImageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			viewportManager.setActiveViewport(viewport->getId());
+		}
+
+		viewport->getWindowState().bFocused = true;
+
+		const FRect& panelRect = viewport->getWindowState().panelRect;
 
 		const ImVec2 panelMin = {
 			panelRect.Left,
@@ -972,10 +993,14 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 				index %
 					IM_ARRAYSIZE(panelColors)];
 
+		const FRect& imageRect =
+			viewport->getWindowState().imageRect;
+
 		drawList->AddRectFilled(
-			panelMin,
-			panelMax,
+			ImVec2(panelRect.Left,panelRect.Top),
+			ImVec2(panelRect.Right,imageRect.Top),
 			panelColor);
+
 
 		const bool isActive =
 			activeViewport == viewport;

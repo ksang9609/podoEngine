@@ -22,6 +22,7 @@
 #include "Rendering/Primitives/GizmoArrow.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/FontResource.h"
+#include "Rendering/SceneView.h"
 
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_dx11.h"
@@ -78,7 +79,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	FViewport* initialViewport = mEditorViewportManager->getActiveViewport();
 	viewportClient = &initialViewport->getClient();
 
-	mSceneManager = new FSceneManager(viewportClient->GetCamera());
+	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
 	mAssetManager = std::make_unique<FAssetManager>();
 
@@ -256,28 +257,59 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
 	//Input Threads
-	{
 		WindowApplication.ProcessDeferredEvents();
+
+		FViewport* activeViewport = mEditorViewportManager->getActiveViewport();
+		if (activeViewport != nullptr)
+		{
+			viewportClient = &activeViewport->getClient();
+		}
 
 		//ImGui Input
 		{
 			//mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 		}
-		FEditorCommands editorCommands;
-		mEditorUIManager->UpdateGui({
-			*FrameTimer,
-			*mSceneManager,
-			*viewportClient,
-			*mGraphicsManager,
-			*mFileManager,
-			*mAssetManager,
-			*mEditorViewportManager,
-			}, editorCommands);
-		processEditorCommands(editorCommands);
 
-		mGraphicsManager->UpdateProjectionTransition(deltaTime);
-		viewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->GetPerspectiveRatio());
-	}
+		if (viewportClient != nullptr)
+		{
+			FEditorCommands editorCommands;
+			mEditorUIManager->UpdateGui({
+				*FrameTimer,
+				*mSceneManager,
+				*viewportClient,
+				*mGraphicsManager,
+				*mFileManager,
+				*mAssetManager,
+				*mEditorViewportManager,
+				}, editorCommands);
+			processEditorCommands(editorCommands);
+
+		}
+
+		// UI에서 활성 Viewport가 변경되었을 수 있으므로 다시 조회한다.
+		activeViewport = mEditorViewportManager->getActiveViewport();
+
+		if (activeViewport != nullptr)
+		{
+			viewportClient = &activeViewport->getClient();
+		}
+		else
+		{
+			viewportClient = nullptr;
+		}
+
+		//Viewports
+		const uint8 viewportCount = mEditorViewportManager->getViewportCount();
+		for (uint8 i = 0; i < viewportCount; i++)
+		{
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+			viewport->getClient().updateProjectionTransition(deltaTime);
+		}
+
 
 	//Physics Threads
 	{
@@ -289,6 +321,18 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		// 레이캐스트보다 먼저 돌려야 한다.
 		// 여기서 RenderInfos 가 갱신되고, RayCast 가 그걸 읽는다.
 		mSceneManager->Update(deltaTime);
+	}
+
+	//활성 Viewport의 카메라 입력과 RayCast 처리
+	if (activeViewport != nullptr)
+	{
+		FSceneView activeSceneView = activeViewport->buildSceneView();
+
+		if (activeSceneView.isValid())
+		{
+			const FViewportWindowState& windowState = activeViewport->getWindowState();
+			activeViewport->getClient().Update(deltaTime, activeSceneView.Rect,mSceneManager, windowState.bImageHovered, windowState.bFocused);
+		}
 	}
 
 	//Render Threads
@@ -307,15 +351,33 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			WindowApplication.bPendingResize = false;
 		}
 
-		mGraphicsManager->Update(deltaTime);
+		mGraphicsManager->BeginFrame();
 
-		mGraphicsManager->Render(
-			mSceneManager->GetRenderInfos(),
-			viewportClient->mGizmo.GetGizmoRenderInfo(),
-			mSceneManager->GetAxisRenderInfos(),
-			viewportClient->GetCamera(),
-			mSceneManager->GetSelectedActor()
-		);
+		// Viewport 수만큼 같은 Scene을 다른 Camera로 렌더링
+		for (uint8 i = 0; i < viewportCount; i++)
+		{
+			FViewport* viewport =mEditorViewportManager->getViewportAt(i);
+
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+
+			const FSceneView sceneView =
+				viewport->buildSceneView();
+
+			if (!sceneView.isValid())
+			{
+				continue;
+			}
+
+			mGraphicsManager->Render(
+				mSceneManager->GetRenderInfos(),
+				viewportClient->mGizmo.GetGizmoRenderInfo(),
+				mSceneManager->GetAxisRenderInfos(),
+				sceneView,
+				mSceneManager->GetSelectedActor());
+		}
 
 		//ImGui
 		{
@@ -625,12 +687,13 @@ void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
 
 void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& command)
 {
+	FViewport* activeViewport = mEditorViewportManager->getActiveViewport();
 	AActor* selectedActor = mSceneManager->GetSelectedActor();
-	if (selectedActor && command.bOrthographic && mGraphicsManager->GetPerspectiveRatio() == 1.0f)
+	if (selectedActor && command.bOrthographic && activeViewport->getClient().getProjectionRatio() == 1.0f)
 	{
-		const FVector offset = selectedActor->GetTransform().Location - viewportClient->GetCamera().Location;
-		const float depth = FVector::dot(offset, viewportClient->GetCamera().GetForwardVector());
-		viewportClient->GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
+		const FVector offset = selectedActor->GetTransform().Location - activeViewport->getClient().GetCamera().Location;
+		const float depth = FVector::dot(offset, activeViewport->getClient().GetCamera().GetForwardVector());
+		activeViewport->getClient().GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
 	}
-	mGraphicsManager->StartProjectionTransition(command.bOrthographic);
+	activeViewport->getClient().startProjectionTransition(command.bOrthographic);
 }

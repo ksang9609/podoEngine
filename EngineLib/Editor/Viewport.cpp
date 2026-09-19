@@ -1,5 +1,6 @@
 ﻿#include "Viewport.h"
 #include "FEditorViewportClient.h"
+#include "../Rendering/SceneView.h"
 
 uint8 FViewport::getId() const
 {
@@ -28,4 +29,11 @@ const FViewportWindowState& FViewport::getWindowState() const
 void FViewport::setId(uint8 id)
 {
 	Id = id;
+}
+
+FSceneView FViewport::buildSceneView() const
+{
+	const FRect& imageRect = windowState.imageRect;
+	const FViewRect renderRect{ imageRect.Left, imageRect.Top, imageRect.getWidth(), imageRect.getHeight() };
+	return makeSceneView(Client->GetCamera(), renderRect, Client->getProjectionRatio());
 }

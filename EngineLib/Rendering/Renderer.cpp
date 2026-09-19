@@ -13,6 +13,7 @@
 #include "Editor/Console.h"
 #include "Rendering/Primitives/TexturedPrimitives.h"
 #include "Rendering/TextMesh.h"
+#include "SceneView.h"
 
 #pragma comment(lib, "DirectXTK.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -23,6 +24,29 @@ void URenderer::Create(HWND hWindow)
 {
 	createDeviceAndSwapChain(hWindow);
 	createFrameBuffer();
+
+	// 실제 Back Buffer 크기를 가져온다.
+	// SwapChain 생성 시 Width/Height를 0으로 전달했기 때문에
+	// 처음 전달한 SwapChainDesc 값에 의존하면 안 된다.
+	D3D11_TEXTURE2D_DESC backBufferDesc = {};
+
+	if (FrameBuffer != nullptr)
+	{
+		FrameBuffer->GetDesc(&backBufferDesc);
+
+		ViewportInfo = {
+			0.0f,
+			0.0f,
+			static_cast<float>(backBufferDesc.Width),
+			static_cast<float>(backBufferDesc.Height),
+			0.0f,
+			1.0f
+		};
+
+		createDepthStencilBuffer(
+			backBufferDesc.Width,
+			backBufferDesc.Height);
+	}
 
 	if (!createFontAtlasTexture() ||
 		!createFontSamplerState())
@@ -536,10 +560,12 @@ void URenderer::createRasterizerState()
 	rasterizerdesc[0].FillMode = D3D11_FILL_SOLID;
 	rasterizerdesc[0].CullMode = D3D11_CULL_BACK;
 	rasterizerdesc[0].DepthClipEnable = TRUE;
+	rasterizerdesc[0].ScissorEnable = TRUE;
 
 	rasterizerdesc[1].FillMode = D3D11_FILL_WIREFRAME;
 	rasterizerdesc[1].CullMode = D3D11_CULL_NONE;
 	rasterizerdesc[1].DepthClipEnable = TRUE;
+	rasterizerdesc[1].ScissorEnable = TRUE;
 
 	Device->CreateRasterizerState(&rasterizerdesc[0], &RasterizerState[0]);
 	Device->CreateRasterizerState(&rasterizerdesc[1], &RasterizerState[1]);
@@ -935,7 +961,7 @@ ComPtr<ID3D11ShaderResourceView> URenderer::CreateWhiteShaderResourceView()
 }
 
 // Prepare global rendering state for a new frame
-void URenderer::Prepare(bool bWireFrame)
+void URenderer::BeginFrame(bool bWireFrame)
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 
@@ -945,8 +971,6 @@ void URenderer::Prepare(bool bWireFrame)
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	DeviceContext->RSSetViewports(1, &ViewportInfo);
-
 	//DeviceContext->RSSetState(RasterizerState[bWireFrame ? 1 : 0]);
 	mbWireFrame = bWireFrame;
 
@@ -954,10 +978,39 @@ void URenderer::Prepare(bool bWireFrame)
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
 }
 
+void URenderer::BeginView(const FViewRect& rect)
+{
+	if (!rect.isValid())
+	{
+		return;
+	}
+
+	D3D11_VIEWPORT viewport = {};
+	viewport.TopLeftX = rect.X;
+	viewport.TopLeftY = rect.Y;
+	viewport.Width = rect.Width;
+	viewport.Height = rect.Height;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	DeviceContext->RSSetViewports(1, &viewport);
+
+	// 애매한 사각형 경계 자르기
+	D3D11_RECT scissor = {};
+	scissor.left = static_cast<LONG>(std::floor(rect.X));
+	scissor.top = static_cast<LONG>(std::floor(rect.Y));
+	scissor.right = static_cast<LONG>(std::ceil(rect.X + rect.Width));
+	scissor.bottom = static_cast<LONG>(std::ceil(rect.Y + rect.Height));
+
+	DeviceContext->RSSetScissorRects(1, &scissor);
+}
+
 void URenderer::PrepareForUI()
 {
+	/*
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
+	*/
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
 }
 
@@ -1943,7 +1996,7 @@ void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float vie
 	DXGI_SWAP_CHAIN_DESC desc;
 	SwapChain->GetDesc(&desc);
 
-	ViewportInfo = { viewportWidth, 0.0f, static_cast<float>(width) - viewportWidth, viewportHeight, 0.0f, 1.0f };
+	ViewportInfo = { 0.0f , 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f };
 
 	//상태는 이전에 생성한 걸 그대로 재사용
 	createFrameBuffer();

@@ -20,6 +20,8 @@
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
 
+struct FViewRect;
+
 class URenderer
 {
 	template<typename T>
@@ -130,7 +132,8 @@ public:
 
 
 	// Gloabal prepare method
-	void Prepare(bool bWireFrame);
+	void BeginFrame(bool bWireFrame);
+	void BeginView(const FViewRect& rect);
 	void PrepareForUI();
 
 	/* Prepare methods for each rendering type */
