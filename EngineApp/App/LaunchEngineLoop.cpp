@@ -81,7 +81,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
-	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
+	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->mDevice, mGraphicsManager->GetRenderer()->mDeviceContext);
 	ImGui::GetIO().IniFilename = "Config/imgui.ini";
 
 
@@ -140,7 +140,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		D3D11_SUBRESOURCE_DATA data = {};
 		data.pSysMem = CubeTextureIndices;
 
-		renderer->Device->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
+		renderer->mDevice->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
 	}
 
 	/*
@@ -266,7 +266,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		processEditorCommands(editorCommands);
 
 		mGraphicsManager->UpdateProjectionTransition(deltaTime);
-		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->GetPerspectiveRatio());
+		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->mViewportInfo, mSceneManager, mGraphicsManager->GetPerspectiveRatio());
 	}
 
 	//Physics Threads

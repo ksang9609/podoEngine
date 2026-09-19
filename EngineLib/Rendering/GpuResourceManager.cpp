@@ -19,10 +19,6 @@
 
 using Microsoft::WRL::ComPtr;
 
-constexpr uint32 StrideSimple = sizeof(FVertexSimple);
-constexpr uint32 StrideTextured = sizeof(FVertexTextured);
-constexpr uint32 StrideNormalVertex = sizeof(FNormalVertex);
-
 FBoundingBox calculateBoundingBox(const TArray<FVertexSimple>& vertices)
 {
 	FVector3 LocalMin = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
@@ -112,7 +108,7 @@ const FBuffer* FGpuResourceManager::FindImmutableBufferOrAdd(FName bufferName)
 	}
 }
 
-const ID3D11ShaderResourceView* FGpuResourceManager::FindTextureOrAdd(FName texturePath)
+ID3D11ShaderResourceView* FGpuResourceManager::FindTextureOrAdd(FName texturePath)
 {
 	ComPtr<ID3D11ShaderResourceView>* textureSRV = mTextureMap.Find(texturePath);
 	if (textureSRV)
@@ -200,14 +196,14 @@ const FBuffer& FGpuResourceManager::GetInstanceBuffer() const
 	return mInstanceBuffer;
 }
 
-const ID3D11VertexShader& FGpuResourceManager::GetVertexShader(EVertexShaderType shaderType) const
+ID3D11VertexShader& FGpuResourceManager::GetVertexShader(EVertexShaderType shaderType) const
 {
 	assert(shaderType >= 0 && shaderType < VST_Count && "Invalid vertex shader type.");
 	assert(mVertexShader[shaderType] && "Vertex shader not created.");
 	return *mVertexShader[shaderType].Get();
 }
 
-const ID3D11PixelShader& FGpuResourceManager::GetPixelShader(EPixelShaderType shaderType) const
+ID3D11PixelShader& FGpuResourceManager::GetPixelShader(EPixelShaderType shaderType) const
 {
 	assert(shaderType >= 0 && shaderType < PST_Count && "Invalid pixel shader type.");
 	assert(mPixelShader[shaderType] && "Pixel shader not created.");
@@ -347,7 +343,7 @@ void FGpuResourceManager::createBuiltinBuffers()
 	CreateBuffer(BuiltinAssets::GizmoArrow, GizmoArrow_vertices);
 	CreateBuffer(BuiltinAssets::Circle, Circle_vertices);
 	CreateBuffer(BuiltinAssets::BillboardQuad, Quad_vertices);
-	CreateBuffer(BuiltinAssets::BillboardQuadTextured, Quad_textured_vertices);
+	CreateBuffer(BuiltinAssets::BillboardQuadTextured, Quad_textured_indexed_vertices, Quad_indices);
 
 	// Create loading screen vertex buffer
 	TArray<FVertexTextured> loadingScreenVertices = {

@@ -20,10 +20,10 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	, mProjectionRatio(1.0f)
 {
 	mRenderer = new URenderer;
-	mRenderer->Create(hWindow);
+	mRenderer->Initialize(hWindow);
 
 
-	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
+	mAspect = mRenderer->mViewportInfo.Width / mRenderer->mViewportInfo.Height;
 
 	// Create default white texture
 	mDefaultWhiteTexture = std::make_unique<FTexture>();
@@ -751,7 +751,7 @@ void FGraphicsManager::Display()
 
 void FGraphicsManager::Update(float deltaTime)
 {
-	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
+	mAspect = mRenderer->mViewportInfo.Width / mRenderer->mViewportInfo.Height;
 
 	// 테스트용: deltaTime이 초 단위라는 전제
 	//static float elapsed = 0.0f;
@@ -987,7 +987,7 @@ void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& cam
 		, 0.01f);
 	//const float H = mbPerspectiveProjection ? 2.0f * Depth * TanHalfFov : 5.774f;
 	const float H = 2.0f * effectiveDepth * TanHalfFov;
-	const float WorldThickness = OUTLINE_PIXELS * H / mRenderer->ViewportInfo.Height;
+	const float WorldThickness = OUTLINE_PIXELS * H / mRenderer->mViewportInfo.Height;
 
 
 	// 축마다 월드 공간에서 WorldThickness 만큼만 자라도록 배율을 따로 구한다.

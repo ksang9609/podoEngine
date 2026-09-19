@@ -56,7 +56,7 @@ public:
 
 	/* Getters */
 	const FBuffer* FindImmutableBufferOrAdd(FName bufferName);
-	const ID3D11ShaderResourceView* FindTextureOrAdd(FName texturePath);
+	ID3D11ShaderResourceView* FindTextureOrAdd(FName texturePath);
 
 	ID3D11Buffer& GetConstantBuffer(EContantBufferType bufferType) const;
 	ID3D11BlendState& GetBlendState(EBlendStateType stateType) const;
@@ -70,8 +70,8 @@ public:
 	const FBuffer& GetLineBuffer() const;
 	const FBuffer& GetInstanceBuffer() const;
 
-	const ID3D11VertexShader& GetVertexShader(EVertexShaderType shaderType) const;
-	const ID3D11PixelShader& GetPixelShader(EPixelShaderType shaderType) const;
+	ID3D11VertexShader& GetVertexShader(EVertexShaderType shaderType) const;
+	ID3D11PixelShader& GetPixelShader(EPixelShaderType shaderType) const;
 
 	/* Setters */
 	void CreateBuffer(FName bufferName, const TArray<FVertexSimple>& vertices, const TArray<uint32>& indices = {});

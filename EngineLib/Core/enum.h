@@ -197,6 +197,7 @@ enum EContantBufferType
 	CBT_Texture,
 	CBT_BillboardTexture,
 	CBT_Font,
+	CBT_UnicodeFont,
 	CBT_Particle,
 	CBT_Count,
 };
