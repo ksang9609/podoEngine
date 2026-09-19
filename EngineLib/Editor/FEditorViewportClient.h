@@ -9,6 +9,7 @@
 #include "Rendering/RenderInfo.h"
 #include "Gizmo.h"
 #include "Core/Math/FBoundingBox.h"
+#include "Core/AssetManager.h"
 
 
 class AActor;
@@ -52,6 +53,9 @@ public:
 	FGizmo mGizmo;
 
 private:
+	/* Reference */
+	FAssetManager* mAssetManagerRef = nullptr;
+
 	//마우스 밑 무언가의
 	FRenderInfo mHoveredRenderInfo;
 

@@ -98,12 +98,13 @@ AActor* FObjectFactory::SpawnPrimitiveActor(
 
 AActor* FObjectFactory::SpawnStaticMeshActor(
 	FVector3 location, FRotator rotation, FVector3 scale,
-	const UStaticMesh& staticMeshAsset)
+	const UStaticMesh& staticMeshAsset, FName textureAssetName)
 {
 	FName StaticMeshName("StaticMesh");
 	AActor* actor = ConstructObjectWithName<AActor>(StaticMeshName);
 	UStaticMeshComponent* component = ConstructObject<UStaticMeshComponent>(
 		location, rotation, scale,
+		textureAssetName,
 		&staticMeshAsset);
 	actor->AddRootSceneComponent(component);
 
@@ -117,7 +118,7 @@ AActor* FObjectFactory::SpawnStaticMeshActor(
 
 AActor* FObjectFactory::SpawnStaticMeshActor(
 	FVector3 location, FRotator rotation, FVector3 scale,
-	FName staticMeshAssetName)
+	FName staticMeshAssetName, FName textureAssetName)
 {
 	assert(mAssetManagerRef && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
 
@@ -126,7 +127,7 @@ AActor* FObjectFactory::SpawnStaticMeshActor(
 	{
 		return nullptr;
 	}
-	return SpawnStaticMeshActor(location, rotation, scale, *staticMeshAsset);
+	return SpawnStaticMeshActor(location, rotation, scale, *staticMeshAsset, textureAssetName);
 }
 
 AActor* FObjectFactory::SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale)

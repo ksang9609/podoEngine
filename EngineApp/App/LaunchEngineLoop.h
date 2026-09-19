@@ -13,6 +13,7 @@
 #include "Rendering/Camera.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/FontResource.h"
+#include "Rendering/GpuResourceManager.h"
 
 #include <d3d11.h>
 
@@ -35,6 +36,7 @@ private:
 	FFrameTimer* FrameTimer;
 	bool GInTick = false;
 
+	/* Managers */
 	FGraphicsManager* mGraphicsManager;
 	FSceneManager* mSceneManager;
 	FFileManager* mFileManager;
@@ -44,6 +46,7 @@ private:
 	FEditorViewportClient* viewportClient = nullptr;
 
 	std::unique_ptr<FFontResource> mDefaultFontResource;
+	std::unique_ptr<FGpuResourceManager> mGpuResourceManager;
 
 	/* Editor Command */
 	void processEditorCommands(const FEditorCommands& commands);

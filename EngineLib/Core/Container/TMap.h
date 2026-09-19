@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <utility>
 #include <initializer_list>
+#include <memory>
 
 #include "Core/Core.h"
 #include "TArray.h"
@@ -116,7 +117,7 @@ inline V* TMap<T, V>::Find(const T& key)
 		return nullptr;
 	}
 
-	return &iter->second;
+	return std::addressof(iter->second);
 }
 
 template <typename T, typename V>
@@ -128,7 +129,7 @@ inline const V* TMap<T, V>::Find(const T& key) const
 		return nullptr;
 	}
 
-	return &iter->second;
+	return std::addressof(iter->second);
 }
 
 template<typename T, typename V>

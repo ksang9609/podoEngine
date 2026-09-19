@@ -11,10 +11,12 @@ IMPLEMENT_SERIALIZATION(UStaticMeshComponent, UMeshComponent,
 )
 
 void UStaticMeshComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
+	FName textureName,
 	const UStaticMesh* staticMeshOrNull, bool bUseTexture)
 {
 	UPrimitiveComponent::Initialize(EPrimitive::EP_StaticMesh, location, rotation, scale3D, bUseTexture);
 	mStaticMeshRef = staticMeshOrNull;
+	mTextureName = textureName;
 
 	if (mStaticMeshRef)
 	{
@@ -36,6 +38,8 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 {
 	FRenderInfo renderInfo = UMeshComponent::makeRenderInfo();
 
+	renderInfo.MeshName = mStaticMeshRef ? mStaticMeshRef->GetAssetPathFileName() : FName();
+	renderInfo.TextureName = mTextureName;
 	renderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
 
 	return renderInfo;

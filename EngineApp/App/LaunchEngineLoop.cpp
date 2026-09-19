@@ -71,7 +71,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
 	/* Init Managers */
-	mGraphicsManager = new FGraphicsManager(hWnd);
+	mGraphicsManager = new FGraphicsManager();
 	FrameTimer = new FFrameTimer(120);
 
 	mEditorViewportManager = new FEditorViewportManager();
@@ -82,6 +82,12 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
 	mAssetManager = std::make_unique<FAssetManager>();
+	mGpuResourceManager = std::make_unique<FGpuResourceManager>();
+
+	mGraphicsManager->Initialize(hWnd, *mGpuResourceManager);
+	viewportClient->Initialize(*mAssetManager);
+	mGpuResourceManager->Initialize(
+		*mAssetManager, *mGraphicsManager->GetRenderer()->GetDevice());
 
 
 	mGraphicsManager->InitializeLoadingScreen();
@@ -90,7 +96,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
-	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
+	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->GetDevice(), mGraphicsManager->GetRenderer()->GetDeviceContext());
 	ImGui::GetIO().IniFilename = "Config/imgui.ini";
 
 
@@ -107,19 +113,18 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const bool jsonLoaded = mDefaultFontResource->LoadUnicodeAtlas(
 		FString("Assets/Fonts/KoreanFullAtlas.json"));
 
-	mGraphicsManager->GetRenderer()->InitializeUnicodeFont(
-		L"Assets/Fonts/KoreanFullAtlas.png",
-		mDefaultFontResource->GetDistanceRange());
+	mGpuResourceManager->CreateUnicodeFontTexture("Assets/Fonts/KoreanFullAtlas.png");
+	mGpuResourceManager->SetDistanceRange(mDefaultFontResource->GetDistanceRange());
 
 	FObjectFactory::SetDefaultFont(*mDefaultFontResource);
 	FObjectFactory::SetAssetManager(*mAssetManager);
 
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_Circle, Circle_vertices, sizeof(Circle_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Circle, Circle_vertices, sizeof(Circle_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
 
 	// 큐브 텍스처 6개로 나눈 버전을 사용하려면
 	/*BuildCubeAtlasVertices(CubeTextureVertices);
@@ -134,23 +139,23 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	// 24: 인덱스 방식 / 36: 기존 방식
 	FVertexTextured atlasVertices[24];
 
-	BuildCubeAtlasVertices(atlasVertices, columns, rows, faceCells);
+	//BuildCubeAtlasVertices(atlasVertices, columns, rows, faceCells);
 
-	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
-	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_BillboardQuad, Quad_textured_vertices, sizeof(Quad_textured_vertices));
-	{
-		URenderer* renderer = mGraphicsManager->GetRenderer();
+	//mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
+	//mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_BillboardQuad, Quad_textured_vertices, sizeof(Quad_textured_vertices));
+	//{
+	//	URenderer* renderer = mGraphicsManager->GetRenderer();
 
-		D3D11_BUFFER_DESC desc = {};
-		desc.Usage = D3D11_USAGE_IMMUTABLE;
-		desc.ByteWidth = sizeof(CubeTextureIndices);
-		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	//	D3D11_BUFFER_DESC desc = {};
+	//	desc.Usage = D3D11_USAGE_IMMUTABLE;
+	//	desc.ByteWidth = sizeof(CubeTextureIndices);
+	//	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
-		D3D11_SUBRESOURCE_DATA data = {};
-		data.pSysMem = CubeTextureIndices;
+	//	D3D11_SUBRESOURCE_DATA data = {};
+	//	data.pSysMem = CubeTextureIndices;
 
-		renderer->Device->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
-	}
+	//	renderer->mDevice->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
+	//}
 
 	/*
 	// 구 텍스쳐 uv 매핑
@@ -163,35 +168,38 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	TArray<FVertexTextured> sphereIndexVertices;
 	TArray<UINT> sphereIndices;
 
-	BuildSphereTextureMeshIndices(Sphere_vertices, sphereIndexVertices, sphereIndices);
-	mGraphicsManager->CreateTexturedBuffer(
-		EPrimitive::EP_Sphere,
-		&sphereIndexVertices[0],
-		static_cast<uint32>(
-			sphereIndexVertices.Num() * sizeof(FVertexTextured))
-	);
+	//BuildSphereTextureMeshIndices(Sphere_vertices, sphereIndexVertices, sphereIndices);
+	//mGraphicsManager->CreateTexturedBuffer(
+	//	EPrimitive::EP_Sphere,
+	//	&sphereIndexVertices[0],
+	//	static_cast<uint32>(
+	//		sphereIndexVertices.Num() * sizeof(FVertexTextured))
+	//);
 
-	{
-		URenderer* renderer = mGraphicsManager->GetRenderer();
+	//{
+	//	URenderer* renderer = mGraphicsManager->GetRenderer();
 
-		renderer->SphereIndexBuffer = renderer->CreatePrimitiveIndexBuffer(
-			&sphereIndices[0],
-			static_cast<UINT>(sphereIndices.Num())
-		);
+	//	renderer->SphereIndexBuffer = renderer->CreatePrimitiveIndexBuffer(
+	//		&sphereIndices[0],
+	//		static_cast<UINT>(sphereIndices.Num())
+	//	);
 
-		renderer->SphereIndexCount = renderer->SphereIndexBuffer
-			? static_cast<UINT>(sphereIndices.Num())
-			: 0;
+	//	renderer->SphereIndexCount = renderer->SphereIndexBuffer
+	//		? static_cast<UINT>(sphereIndices.Num())
+	//		: 0;
 
-		if (!renderer->SphereIndexBuffer)
-		{
-			UE_LOG(Error, Render, "Failed to create sphere index buffer.");
-		}
-	}
+	//	if (!renderer->SphereIndexBuffer)
+	//	{
+	//		UE_LOG(Error, Render, "Failed to create sphere index buffer.");
+	//	}
+	//}
 
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion_Alpha.dds");
+	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
+	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
+	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion_Alpha.dds");
+	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/CubeTextureSample.dds");
+	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/EarthTexture.dds");
+	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/Explosion_Alpha.dds");
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
@@ -199,44 +207,44 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager->NewScene();
 
 	// Test: static mesh
-	{
-		FStaticMesh* quadMesh = new FStaticMesh();
-		FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
-		quadMesh->Vertices = {
-			{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
-			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {1, 0, 1, 1}, FVector2(0, 0)},
-			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {0, 1, 1, 1}, FVector2(1, 0)},
-			{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
-		};
-		quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
-		mGraphicsManager->CreateStaticMeshBuffer(*quadMesh);
+	//{
+		//	FStaticMesh* quadMesh = new FStaticMesh();
+		//	FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
+		//	quadMesh->Vertices = {
+		//		{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
+		//		{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {1, 0, 1, 1}, FVector2(0, 0)},
+		//		{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {0, 1, 1, 1}, FVector2(1, 0)},
+		//		{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
+		//	};
+		//	quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
+		//	//mGraphicsManager->CreateStaticMeshBuffer(*quadMesh);
 
-		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
-		staticMeshAsset->SetStaticMeshAsset(quadMesh);
+		//	UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		//	staticMeshAsset->SetStaticMeshAsset(quadMesh);
 
-		AActor* quadActor = FObjectFactory::SpawnStaticMeshActor(
-			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			*staticMeshAsset);
-		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
-	}
+		//	AActor* quadActor = FObjectFactory::SpawnStaticMeshActor(
+		//		FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+		//		*staticMeshAsset);
+		//	mSceneManager->GetCurrentWorld()->AddActor(quadActor);
+		//}
 	{
-		mGraphicsManager->CreateStaticMeshBuffer(
-			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::CubeMesh)
-		);
+		//mGraphicsManager->CreateStaticMeshBuffer(
+		//	*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::Cube)
+		//);
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::CubeMesh);
+			BuiltinAssets::Cube, "Assets/Textures/CubeTextureSample.dds");
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
-		mGraphicsManager->CreateStaticMeshBuffer(
-			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::SphereMesh)
-		);
+		//mGraphicsManager->CreateStaticMeshBuffer(
+		//	*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::Sphere)
+		//);
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::SphereMesh);
+			BuiltinAssets::Sphere, "Assets/Textures/EarthTexture.dds");
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 
@@ -310,7 +318,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			viewport->getClient().updateProjectionTransition(deltaTime);
 		}
 
-
 	//Physics Threads
 	{
 
@@ -381,6 +388,13 @@ void FEngineLoop::Tick(bool bPumpMessages)
 				selectedActor);
 		}
 
+			mGraphicsManager->RenderSceneView(
+				mSceneManager->GetRenderInfos(),
+				mSceneManager->GetAxisRenderInfos(),
+				sceneView,
+				selectedActor);
+		}
+
 		// Scene의 Depth만 한 번 초기화
 		mGraphicsManager->ClearDepth();
 
@@ -428,6 +442,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 	GInTick = false;
 }
+
 
 void FEngineLoop::End()
 {
