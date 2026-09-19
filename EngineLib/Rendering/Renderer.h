@@ -98,7 +98,9 @@ public:
 	void CreateSamplerState(ID3D11SamplerState** outSamplerState);
 	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreateVertexBuffer(const FVertexTextured* vertices, UINT ByteWidth);
+	ID3D11Buffer* CreateVertexBuffer(const FNormalVertex* vertices, UINT ByteWidth);
 	ID3D11Buffer* CreatePrimitiveIndexBuffer(const uint32* indices, UINT ByteWidth);
+	ComPtr<ID3D11ShaderResourceView> CreateWhiteShaderResourceView();
 
 	// 인스턴싱
 	bool RenderSimpleInstanced(
@@ -118,8 +120,8 @@ public:
 
 	bool LoadTexture(const wchar_t* texturePath, ID3D11ShaderResourceView** outSRV);
 
-	void ReleasePrimitiveTextureResources(
-		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
+	//void ReleasePrimitiveTextureResources(
+	//	ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState);
 
 	// Release all resources that this render holds.
 	void Release();
@@ -142,6 +144,7 @@ public:
 	// 셰이더, 입력 레이아웃, 블렌딩 상태 설정
 	void PrepareUnicodeFont();
 	void PrepareParticle();
+	void PrepareStaticMesh();
 
 	void UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0));
 	void UpdateTextureConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint = FLinearColor(0, 0, 0, 0),
@@ -174,6 +177,9 @@ public:
 	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
 	void RenderUnicodeFontTexture(uint32 indexCount);
 	void RenderParticle(ID3D11ShaderResourceView* texture);
+	void RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
+		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState,
+		ID3D11Buffer* indexBuffer = nullptr, uint32 indexCount = 0);
 
 	void SwapBuffer();
 
@@ -239,6 +245,7 @@ private:
 	void prepareFontShader();
 	void prepareUnicodeFontShader();
 	void prepareParticleShader();
+	void prepareStaticMeshShader();
 
 	/* Release methods for all resources */
 	void releaseDeviceAndSwapChain();

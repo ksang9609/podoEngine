@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include "Core/Name.h"
+#include "Core/BuiltinAssets.h"
 #include "Core/Object/Object.h"
 #include "Core/Object/ObjectFactory.h"
 #include "Editor/Console.h"
@@ -13,6 +14,7 @@
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
+#include "Engine/Components/StaticMeshComponent.h"
 #include "Engine/SceneManager.h"
 #include "Engine/World.h"
 #include "Platform/WindowApplication.h"
@@ -78,6 +80,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager = new FSceneManager(viewportClient->GetCamera());
 	mFileManager = new FFileManager();
+	mAssetManager = std::make_unique<FAssetManager>();
 
 
 	mGraphicsManager->InitializeLoadingScreen();
@@ -98,7 +101,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	console.Init("Jungle Console Window", clientWidth);
 
 	/* Resource Registration */
-	mDefaultFontResource = new FFontResource();
+	mDefaultFontResource = std::make_unique<FFontResource>();
 
 	const bool jsonLoaded = mDefaultFontResource->LoadUnicodeAtlas(
 		FString("Assets/Fonts/KoreanFullAtlas.json"));
@@ -107,7 +110,8 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 		L"Assets/Fonts/KoreanFullAtlas.png",
 		mDefaultFontResource->GetDistanceRange());
 
-	FObjectFactory::Initialize(*mDefaultFontResource);
+	FObjectFactory::SetDefaultFont(*mDefaultFontResource);
+	FObjectFactory::SetAssetManager(*mAssetManager);
 
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
 	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
@@ -193,6 +197,48 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager->NewScene();
 
+	// Test: static mesh
+	{
+		FStaticMesh* quadMesh = new FStaticMesh();
+		FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
+		quadMesh->Vertices = {
+			{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
+			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {1, 0, 1, 1}, FVector2(0, 0)},
+			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {0, 1, 1, 1}, FVector2(1, 0)},
+			{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
+		};
+		quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
+		mGraphicsManager->CreateStaticMeshBuffer(*quadMesh);
+
+		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		staticMeshAsset->SetStaticMeshAsset(quadMesh);
+
+		AActor* quadActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			*staticMeshAsset);
+		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
+	}
+	{
+		mGraphicsManager->CreateStaticMeshBuffer(
+			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::CubeMesh)
+		);
+
+		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			BuiltinAssets::CubeMesh);
+		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
+	}
+	{
+		mGraphicsManager->CreateStaticMeshBuffer(
+			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::SphereMesh)
+		);
+
+		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			BuiltinAssets::SphereMesh);
+		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
+	}
+
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
 	FEditorCommands startupCommands;
@@ -224,6 +270,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			*viewportClient,
 			*mGraphicsManager,
 			*mFileManager,
+			*mAssetManager
 			*mEditorViewportManager,
 			}, editorCommands);
 		processEditorCommands(editorCommands);
@@ -302,8 +349,8 @@ void FEngineLoop::End()
 	delete mSceneManager;
 	delete mEditorViewportManager;
 	delete mFileManager;
-	delete mDefaultFontResource;
 	delete mGraphicsManager;
+	mAssetManager.reset();
 }
 
 void FEngineLoop::processEditorCommands(const FEditorCommands& commands)
@@ -427,6 +474,17 @@ void FEngineLoop::processEditorCommand(const FSetSelectedActorCommand& command)
 	{
 		mSceneManager->ResetSelectedActor();
 	}
+}
+
+void FEngineLoop::processEditorCommand(const FSetStaticMeshCommand& command)
+{
+	UStaticMeshComponent* staticMeshComponent = UObject::GetObjectByInternalIndex<UStaticMeshComponent>(command.ObjectID.InternalIndex);
+	if (!staticMeshComponent) return;
+
+	const UStaticMesh* staticMesh = mAssetManager->FindStaticMeshAssetOrNull(command.StaticMeshAssetKey);
+	if (!staticMesh) return;
+
+	staticMeshComponent->SetStaticMesh(*staticMesh);
 }
 
 void FEngineLoop::processEditorCommand(const FSetComponentUseTextureCommand& command)

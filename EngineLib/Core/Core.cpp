@@ -315,6 +315,11 @@ float FString::ToFloat() const
 	return std::stof(*mData);
 }
 
+int32 FString::ToInt() const
+{
+	return std::stoi(*mData);
+}
+
 FString FString::ToLower() const
 {
 	FString result(*mData);

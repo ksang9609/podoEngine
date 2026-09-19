@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+#include <functional>
+
+#include "Core/Core.h"
+
 struct FName
 {
 	FName();

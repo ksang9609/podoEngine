@@ -14,11 +14,15 @@ class UObject;
 class AActor;
 class FClassInfo;
 class FFontResource;
+class UStaticMesh;
+class FAssetManager;
 
 struct FObjectFactory
 {
 	// TODO?: Rename?
-	static void Initialize(const FFontResource& defaultFontResource);
+	static void SetDefaultFont(const FFontResource& defaultFontResource);
+	static void SetAssetManager(const FAssetManager& assetManager);
+
 	static const FFontResource* GetDefaultFontResource();
 
 	static UObject* ConstructUnInitializedObject(const FClassInfo* classInfo);
@@ -48,6 +52,15 @@ struct FObjectFactory
 		FVector3 Location, FRotator Rotation, FVector3 Scale
 	);
 
+	static AActor* SpawnStaticMeshActor(
+		FVector3 location, FRotator rotation, FVector3 scale,
+		const UStaticMesh& staticMeshAsset);
+	static AActor* SpawnStaticMeshActor(
+		FVector3 location, FRotator rotation, FVector3 scale,
+		FName staticMeshAssetName
+	);
+	
+
 	static AActor* SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale);
 
 	static const FClassInfo* GetClassInfoByName(const FString& className);
@@ -60,6 +73,7 @@ private:
 
 	// TODO?: Does really need a default font resource?
 	static const FFontResource* mDefaultFontResource;
+	static const FAssetManager* mAssetManagerRef;
 };
 
 

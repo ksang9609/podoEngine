@@ -6,6 +6,7 @@
 #include <initializer_list>
 
 #include "Core/Core.h"
+#include "TArray.h"
 
 template <typename T, typename V>
 class TMap
@@ -23,6 +24,7 @@ public:
 	std::unordered_map<T, V>::const_iterator end() const;
 
 	void Add(const T& key, const V& Value);
+	void Add(const T& key, V&& Value);
 	int32 Remove(const T& key);
 	
 	uint32 Num() const;
@@ -30,6 +32,8 @@ public:
 	void Empty(int32 ExpectedNumElements = 0);
 	V* Find(const T& key);
 	const V* Find(const T& key) const;
+
+	TArray<T> GetKeys() const;
 
 	bool Contains(const T& key) const;
 	bool IsEmpty() const;
@@ -70,6 +74,12 @@ template <typename T, typename V>
 inline void TMap<T, V>::Add(const T& key, const V& value)
 {
 	mMap[key] = value;
+}
+
+template<typename T, typename V>
+inline void TMap<T, V>::Add(const T& key, V&& value)
+{
+	mMap.insert_or_assign(key, std::move(value));
 }
 
 template <typename T, typename V>
@@ -119,6 +129,18 @@ inline const V* TMap<T, V>::Find(const T& key) const
 	}
 
 	return &iter->second;
+}
+
+template<typename T, typename V>
+inline TArray<T> TMap<T, V>::GetKeys() const
+{
+	TArray<T> keys;
+	keys.Reserve(static_cast<int32>(mMap.size()));
+	for (const auto& pair : mMap)
+	{
+		keys.Add(pair.first);
+	}
+	return keys;
 }
 
 template <typename T, typename V>

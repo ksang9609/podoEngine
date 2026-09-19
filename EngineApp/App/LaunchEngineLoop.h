@@ -1,8 +1,10 @@
 ﻿#pragma once
 
 #include <Windows.h>
+#include <memory>
 
 #include "Core/FrameTimer.h"
+#include "Core/AssetManager.h"
 #include "Core/IO/FileManager.h"
 #include "Editor/FEditorViewportClient.h"
 #include "Editor/EditorUIManager.h"
@@ -10,6 +12,7 @@
 #include "Engine/World.h"
 #include "Rendering/Camera.h"
 #include "Rendering/Renderer.h"
+#include "Rendering/FontResource.h"
 
 #include <d3d11.h>
 
@@ -36,10 +39,11 @@ private:
 	FSceneManager* mSceneManager;
 	FFileManager* mFileManager;
 	FEditorUIManager* mEditorUIManager;
+	std::unique_ptr<FAssetManager> mAssetManager;
 	FEditorViewportManager* mEditorViewportManager;
 	FEditorViewportClient* viewportClient = nullptr;
 
-	FFontResource* mDefaultFontResource;
+	std::unique_ptr<FFontResource> mDefaultFontResource;
 
 	/* Editor Command */
 	void processEditorCommands(const FEditorCommands& commands);
@@ -57,6 +61,7 @@ private:
 	void processEditorCommand(const FSetActorNameCommand& command);
 	void processEditorCommand(const FSetSelectedActorCommand& command);
 
+	void processEditorCommand(const FSetStaticMeshCommand& command);
 	void processEditorCommand(const FSetComponentUseTextureCommand& command);
 	void processEditorCommand(const FSetComponentColorCommand& command);
 	void processEditorCommand(const FSetSphereComponentSpinCommand& command);

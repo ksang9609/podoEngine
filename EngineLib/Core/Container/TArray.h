@@ -12,6 +12,10 @@ class TArray
 public:
 	TArray() = default;
 	TArray(std::initializer_list<T> initList) : mDatas(initList) {};
+
+	template<std::size_t N>
+	TArray(const T(&arr)[N]) : mDatas(arr, arr + N) {};
+
 	~TArray() = default;
 
 	T& operator[](uint32 index);

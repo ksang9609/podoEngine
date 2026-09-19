@@ -2,12 +2,13 @@
 
 #include "Core/Object/Object.h"
 #include "Core/Core.h"
+#include "Core/Name.h"
 #include "Rendering/VertexType.h"
 
 // Coocked Data
 struct FStaticMesh
 {
-	FString PathFileName;
+	FName PathFileName;
 
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
@@ -20,18 +21,28 @@ class UStaticMesh : public UObject
 	DECLARE_OBJECT(UStaticMesh, UObject)
 	DECLARE_SERIALIZATION()
 public:
+	void Initialize() {};
+	void Initialize(const FStaticMesh* inStaticMesh)
+	{
+		SetStaticMeshAsset(inStaticMesh);
+	}
 
-	const FString& GetAssetPathFileName() const
+	const FName& GetAssetPathFileName() const
 	{
 		return mStaticMeshAssetRef->PathFileName;
 	}
 
-	void SetStaticMeshAsset(FStaticMesh* inStaticMesh)
+	void SetStaticMeshAsset(const FStaticMesh* inStaticMesh)
 	{
 		mStaticMeshAssetRef = inStaticMesh;
 	}
 
+	const FStaticMesh* GetStaticMeshAsset() const
+	{
+		return mStaticMeshAssetRef;
+	}
+
 private:
-	FStaticMesh* mStaticMeshAssetRef;
+	const FStaticMesh* mStaticMeshAssetRef;
 };
 

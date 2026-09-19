@@ -17,9 +17,12 @@ class FGraphicsManager;
 class FEditorViewportClient;
 class FFileManager;
 class FSceneManager;
+class FAssetManager;
 class FEditorViewportManager;
 
 struct ID3D11ShaderResourceView;
+
+
 
 struct FGuiReference
 {
@@ -28,6 +31,7 @@ struct FGuiReference
 	const FEditorViewportClient& ViewportClient;
 	const FGraphicsManager& GraphicsManager;
 	const FFileManager& FileManager;
+	const FAssetManager& AssetManager;
 	FEditorViewportManager& ViewportManager;
 };
 
@@ -43,6 +47,9 @@ struct FGuiInputField
 	/* Object Lists */
 	TArray<UObject*> SortedObjectLists;
 	uint64 LastGUObjectRevision = -1;
+
+	/* Static Mesh */
+	FName SelectedStaticMeshKey;
 };
 
 class ImGuiIO;

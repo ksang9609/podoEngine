@@ -24,6 +24,12 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 
 	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
+
+	// Create default white texture
+	mDefaultWhiteTexture = std::make_unique<FTexture>();
+	mDefaultWhiteTexture->SRV = mRenderer->CreateWhiteShaderResourceView();
+	mRenderer->CreateSamplerState(mDefaultWhiteTexture->Sampler.GetAddressOf());
+
 }
 
 FGraphicsManager::~FGraphicsManager()
@@ -37,7 +43,11 @@ FGraphicsManager::~FGraphicsManager()
 
 	for (auto& buffer : mBufferMap)
 	{
-		buffer.second.Buffer->Release();
+		if (buffer.second.Buffer)
+		{
+			buffer.second.Buffer->Release();
+			buffer.second.Buffer = nullptr;
+		}
 	}
 
 	for (auto& entry : mTexturedBufferMap)
@@ -49,11 +59,11 @@ FGraphicsManager::~FGraphicsManager()
 		}
 	}
 
-	for (auto& [key, texture] : mPrimitiveTextureMap)
-	{
-		mRenderer->ReleasePrimitiveTextureResources(texture.SRV, texture.Sampler);
-	}
-
+	//for (auto& [key, texture] : mPrimitiveTextureMap)
+	//{
+	//	mRenderer->ReleasePrimitiveTextureResources(texture.SRV, texture.Sampler);
+	//}
+	
 	mTexturedBufferMap.Empty();
 	mPrimitiveTextureMap.Empty();
 
@@ -64,7 +74,7 @@ FGraphicsManager::~FGraphicsManager()
 
 void FGraphicsManager::InitializeLoadingScreen()
 {
-	mRenderer->LoadTexture(L"Assets/Textures/LoadingScreen.dds",&mLoadingScreenSRV);
+	mRenderer->LoadTexture(L"Assets/Textures/LoadingScreen.dds", &mLoadingScreenSRV);
 }
 
 void FGraphicsManager::Prepare(const FCamera* mCamera)
@@ -154,7 +164,12 @@ void FGraphicsManager::updateRenderQueue(
 			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
-			if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
+			// TODO: Unify all of these into just static mesh
+			if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
+			{
+				outRenderQueueMap[RQT_StaticMesh].Add(&renderInfo);
+			}
+			else if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
 			{
 				outRenderQueueMap[RQT_TexturedPrimitive].Add(&renderInfo);
 			}
@@ -230,6 +245,8 @@ void FGraphicsManager::Render(
 	//RenderInstancingTest();
 	renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
 	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);
+	renderStaticMesh(renderQueueMap[RQT_StaticMesh], camera);
+
 	renderBillboardText(renderQueueMap[RQT_BillboardText], camera);
 
 	// Line Buffer에 넣기전에 Buffer의 용량을 미리 지정하여 동적할당 방지
@@ -327,8 +344,40 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 			UE_LOG(Error, Render, "Primitive texture not found for primitive type.");
 			continue;
 		}
-		mRenderer->RenderParticle(texture->SRV);
+		mRenderer->RenderParticle(texture->SRV.Get());
 
+	}
+}
+
+void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+{
+	mRenderer->PrepareStaticMesh();
+	for (const FRenderInfo* renderInfo : renderInfos)
+	{
+		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+
+		FBuffer& buffer = mStaticMeshBuffer[renderInfo->StaticMesh];
+
+		FTexture* texture = nullptr;
+		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+		{
+			// TODO: Use the texture from the renderInfo if available
+			texture = mPrimitiveTextureMap.Find(EPrimitive::EP_Sphere);
+			if (texture == nullptr)
+			{
+				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
+				texture = mDefaultWhiteTexture.get();
+			}
+		}
+		else {
+			texture = mDefaultWhiteTexture.get();
+		}
+
+		//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
+		mRenderer->RenderStaticMesh(buffer.Buffer, buffer.SourceNum,
+			texture->SRV.Get(), texture->Sampler.Get(),
+			buffer.IndexBuffer, buffer.IndexCount);
 	}
 }
 
@@ -389,8 +438,8 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 		mRenderer->RenderTexturePrimitive(
 			vertexBuffer->Buffer,
 			vertexBuffer->SourceNum,
-			texture->SRV,
-			texture->Sampler,
+			texture->SRV.Get(),
+			texture->Sampler.Get(),
 			indexBuffer, indexCount); // 마지막 인수에 전달
 	}
 }
@@ -766,6 +815,42 @@ void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertic
 	LocalBound.max = LocalMax;
 	FBuffer buffer = { vertexBuffer, numVertices, LocalBound }; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
 	mBufferMap.Add(ePrimitive, buffer);
+}
+
+void FGraphicsManager::CreateStaticMeshBuffer(const FStaticMesh& staticMesh)
+{
+	uint32 numVertices = static_cast<uint32>(staticMesh.Vertices.Num());
+	uint32 verticesSize = numVertices * sizeof(FNormalVertex);
+
+	// Create vertex buffer
+	ID3D11Buffer* vertexBuffer = mRenderer->CreateVertexBuffer(staticMesh.Vertices.GetData(), verticesSize);
+	FVector3 LocalMin = FVector3(staticMesh.Vertices[0].pos.x, staticMesh.Vertices[0].pos.y, staticMesh.Vertices[0].pos.z);
+	FVector3 LocalMax = FVector3(staticMesh.Vertices[0].pos.x, staticMesh.Vertices[0].pos.y, staticMesh.Vertices[0].pos.z);
+	for (int i = 0;i < numVertices;i++)
+	{
+		LocalMin.x = min(LocalMin.x, staticMesh.Vertices[i].pos.x);
+		LocalMin.y = min(LocalMin.y, staticMesh.Vertices[i].pos.y);
+		LocalMin.z = min(LocalMin.z, staticMesh.Vertices[i].pos.z);
+		LocalMax.x = max(LocalMax.x, staticMesh.Vertices[i].pos.x);
+		LocalMax.y = max(LocalMax.y, staticMesh.Vertices[i].pos.y);
+		LocalMax.z = max(LocalMax.z, staticMesh.Vertices[i].pos.z);
+	} // AABB 렌더링에 필요한 LocalMin,Max 저장
+	FBoundingBox LocalBound;
+	LocalBound.min = LocalMin;
+	LocalBound.max = LocalMax;
+
+	// Create index buffer
+	ID3D11Buffer* indexBuffer = mRenderer->CreatePrimitiveIndexBuffer(staticMesh.Indices.GetData(), staticMesh.Indices.Num());
+
+	FBuffer buffer = {}; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
+	buffer.Buffer = vertexBuffer;
+	buffer.SourceNum = numVertices;
+	buffer.IndexBuffer = indexBuffer;
+	buffer.IndexCount = static_cast<uint32>(staticMesh.Indices.Num());
+	buffer.LocalBounds = LocalBound;
+
+	// TODO: move this to gpu resource manager
+	mStaticMeshBuffer.Add(&staticMesh, buffer);
 }
 
 void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize)
