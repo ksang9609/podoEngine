@@ -653,7 +653,7 @@ void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& rende
 	{
 		// Billboard는 카메라 회전이 실제 렌더 행렬에 포함되므로(카메라 방향에 따라 월드 변환이 바뀜)
 		// 현재 카메라 기준으로 WorldBounds를 갱신
-		const FBoundingBox bounds = renderInfo->MeshName == BuiltinAssets::BillboardQuad
+		const FBoundingBox bounds = renderInfo->MeshName == BuiltinAssets::BillboardQuadTextured
 			? TransformBoundingBox(
 				renderInfo->LocalBounds,
 				renderInfo->GetTransformMatrix(cameraRotation))

@@ -51,6 +51,12 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 	return false;
 }
 
+void FEditorViewportClient::Initialize(FAssetManager& assetManagerRef)
+{
+	mAssetManagerRef = &assetManagerRef;
+	mGizmo.Reset();
+}
+
 bool FEditorViewportClient::RaycastBounds(
 	const FVector& rayStart,
 	const FVector& rayEnd,
@@ -100,6 +106,8 @@ bool FEditorViewportClient::RaycastBounds(
 void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 	const TArray<FRenderInfo>& renderInfos, float perspectiveRatio, bool bCheckObject)
 {
+	assert(mAssetManagerRef != nullptr);
+
 	bMouseHit = false;
 
 	// 투영 방식에 따라 광선을 만드는 법만 다르다. 두 점을 구하고 나면 이후 판정은 완전히 같다
@@ -160,16 +168,16 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
 		// TODO: Remove this GetPrimitiveMesh function
-		if (GetPrimitiveMesh(RI.ePrimitive, vertices, length))
-		{
-			//continue;   // 모르는 프리미티브는 건너뛴다
-			for (uint32 i = 0; i < length; i++)
-			{
-				vertexArray.Add(vertices[i].GetPosition());
-				indexArray.Add(i);
-			}
-		}
-		else if (RI.StaticMesh)
+		//if (GetPrimitiveMesh(RI.ePrimitive, vertices, length))
+		//{
+		//	//continue;   // 모르는 프리미티브는 건너뛴다
+		//	for (uint32 i = 0; i < length; i++)
+		//	{
+		//		vertexArray.Add(vertices[i].GetPosition());
+		//		indexArray.Add(i);
+		//	}
+		//}
+		if (RI.StaticMesh)
 		{
 			for (const auto& vertex : RI.StaticMesh->Vertices)
 			{
@@ -188,7 +196,7 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 		const FMatrix effectiveWorld = RI.GetTransformMatrix(mCamera.Rotation);
 
 		const FBoundingBox worldBounds =
-			RI.ePrimitive == EPrimitive::EP_BillboardQuad
+			RI.MeshName == BuiltinAssets::BillboardQuadTextured
 			? TransformBoundingBox(RI.LocalBounds, effectiveWorld)
 			: RI.WorldBounds;
 
