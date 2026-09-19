@@ -103,8 +103,7 @@ bool FEditorViewportClient::RaycastBounds(
 	return true;
 }
 
-void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
-	const TArray<FRenderInfo>& renderInfos, float perspectiveRatio, bool bCheckObject)
+void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRenderInfo>& renderInfos, bool bCheckObject)
 {
 	assert(mAssetManagerRef != nullptr);
 
@@ -122,8 +121,8 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 	//	DeprojectScreenToWorldForOrtho(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
 	//		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
 	//}
-	DeprojectScreenToWorldForUnified(WindowApplication.Input.CursorX - ViewportInfo.TopLeftX, WindowApplication.Input.CursorY - ViewportInfo.TopLeftY,
-		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, mCamera.mOrthoDistance, perspectiveRatio, NearPoint, FarPoint);
+	DeprojectScreenToWorldForUnified(WindowApplication.Input.CursorX - viewrect.X, WindowApplication.Input.CursorY - viewrect.Y,
+		viewrect.Width, viewrect.Height, 0.1f, 100.f, mCamera.mOrthoDistance, mProjectionRatio, NearPoint, FarPoint);
 
 	mRayNear = NearPoint;
 	mRayFar = FarPoint;
@@ -239,32 +238,54 @@ void FEditorViewportClient::RayCast(D3D11_VIEWPORT ViewportInfo,
 	}
 }
 
-void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo, FSceneManager* sceneManager, float perspectiveRatio)
+void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, FSceneManager* sceneManager, bool bViewportHovered, bool bViewportFocused)
 {
 	const FInputState& Input = WindowApplication.Input;
 	ImGuiIO& io = ImGui::GetIO();
 
+	// 마우스 입력은 실제 3D 이미지 위에 있을 때 허용한다.
+    // RMB 드래그 중에는 화면 밖으로 조금 벗어나도 계속 회전하게 한다.
+	const bool bCanUseMouse = bViewportHovered ||(bViewportFocused && Input.IsDown(VK_RBUTTON));
+
+	// 키보드는 Focus된 Viewport만 사용한다.
+	// 텍스트 필드에 입력 중일 때는 카메라를 움직이지 않는다.
+	const bool bCanUseKeyboard =bViewportFocused && !io.WantTextInput;
+	const bool bOrthographic = isOrthographicTarget();
+
 	// Camera Rotate
 	// 회전을 이동보다 먼저, 이번 프레임에 돌린 방향으로 바로 움직이게
-	if (!io.WantCaptureMouse && Input.IsDown(VK_RBUTTON))
+	if (bCanUseMouse && !bOrthographic && Input.IsDown(VK_RBUTTON))
 	{
 		mCamera.Rotate(Input.MouseDX, Input.MouseDY);
 	}
 
 	// Camera Velocity
 	FVector MoveDir(0.f, 0.f, 0.f);
-	if (!io.WantCaptureKeyboard)
+	if (bCanUseKeyboard)
 	{
 		const FMatrix R = FMatrix::Rotate(mCamera.Rotation);
 		const FVector Forward = R.GetUnitAxis(EAxis::X);
+		const FVector Upward = R.GetUnitAxis(EAxis::Z);
 		const FVector Right = R.GetUnitAxis(EAxis::Y);
 
-		if (Input.IsDown('W')) MoveDir += Forward;
-		if (Input.IsDown('S')) MoveDir -= Forward;
-		if (Input.IsDown('D')) MoveDir += Right;
-		if (Input.IsDown('A')) MoveDir -= Right;
-		if (Input.IsDown('E')) MoveDir += FVector(0.f, 0.f, 1.f);
-		if (Input.IsDown('Q')) MoveDir -= FVector(0.f, 0.f, 1.f);
+		if (bOrthographic)
+		{
+			if (Input.IsDown('W')) MoveDir += Upward;
+			if (Input.IsDown('S')) MoveDir -= Upward;
+			if (Input.IsDown('D')) MoveDir += Right;
+			if (Input.IsDown('A')) MoveDir -= Right;
+			if (Input.IsDown('E')) MoveDir += FVector(0.f, 0.f, 1.f);
+			if (Input.IsDown('Q')) MoveDir -= FVector(0.f, 0.f, 1.f);
+		}
+		else
+		{
+			if (Input.IsDown('W')) MoveDir += Forward;
+			if (Input.IsDown('S')) MoveDir -= Forward;
+			if (Input.IsDown('D')) MoveDir += Right;
+			if (Input.IsDown('A')) MoveDir -= Right;
+			if (Input.IsDown('E')) MoveDir += FVector(0.f, 0.f, 1.f);
+			if (Input.IsDown('Q')) MoveDir -= FVector(0.f, 0.f, 1.f);
+		}
 	}
 
 	const bool bMoveKeyDown = !MoveDir.IsNearlyZero();
@@ -275,12 +296,12 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 
 
 	//Camera Translate
-	if (!io.WantCaptureMouse && Input.MouseWheelDelta != 0.0f)
+	if (bCanUseMouse && !bOrthographic && Input.MouseWheelDelta != 0.0f)
 	{
 		//키 입력이 없으면 마우스 휠은 줌인/줌아웃
 		if (!bMoveKeyDown)
 		{
-			if (perspectiveRatio < 1.0f)
+			if (mProjectionRatio < 1.0f)
 			{
 				mCamera.mOrthoDistance *= FMath::Pow(1.2f, -Input.MouseWheelDelta);
 				mCamera.mOrthoDistance = FMath::Clamp(mCamera.mOrthoDistance, 0.1f, 100.0f);
@@ -310,14 +331,14 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 
 	mCamera.Location += mCamera.Velocity * deltaTime;
 
-	if (!io.WantCaptureKeyboard && Input.WasPressed(VK_SPACE))
+	if (bCanUseKeyboard && Input.WasPressed(VK_SPACE))
 	{
 		mGizmo.CycleGizmoType();
 	}
 
-	const bool bLeftClicked = !io.WantCaptureMouse && Input.WasPressed(VK_LBUTTON);
+	const bool bLeftClicked = bViewportHovered && Input.WasPressed(VK_LBUTTON);
 
-	RayCast(ViewportInfo, sceneManager->GetRenderInfos(), perspectiveRatio, bLeftClicked);
+	RayCast(viewRect, sceneManager->GetRenderInfos(), bLeftClicked);
 	
 	////Editor Click 처리
 	//if (mClickedActor)
@@ -464,20 +485,13 @@ void FEditorViewportClient::Update(float deltaTime, D3D11_VIEWPORT ViewportInfo,
 		}
 	}
 
-	if (!ImGui::GetIO().WantCaptureMouse && Input.WasReleased(VK_LBUTTON))
+	if (Input.WasReleased(VK_LBUTTON))
 	{
 		mGizmo.mDraggingAxis = EGIZMO_AXIS::NONE;
 	}
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
-	mGizmo.Update(
-		sceneManager->GetSelectedActor(),
-		mCamera.Location,
-		mCamera.GetForwardVector(),
-		mCamera.mFovDegree,
-		perspectiveRatio,
-		mCamera.mOrthoDistance);
-
+	UpdateGizmoForView(sceneManager->GetSelectedActor());
 }
 
 bool FEditorViewportClient::RayIntersectsTriangle(const FVector& Origin, const FVector& Dir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT, float& OutU, float& OutV)
@@ -601,4 +615,95 @@ void FEditorViewportClient::Reset()
 	mHoveredRenderInfo = FRenderInfo();
 	bMouseHit = false;
 	mGizmo.Reset();
+}
+
+void FEditorViewportClient::configureCamera(EViewportType viewporttype)
+{
+	switch (viewporttype)
+	{
+	case EViewportType::Perspective:
+		mCamera.Location = FVector(-5.0f, 5.0f, 5.0f);
+		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
+		mProjectionRatio = 1.0f;
+		break;
+	case EViewportType::Top:
+		mCamera.Location = FVector(0.0f, 0.0f, 10.0f);
+		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
+		mCamera.mOrthoDistance = 5.0f;
+		mProjectionRatio = 0.0f;
+		break;
+	case EViewportType::Bottom:
+		mCamera.Location = FVector(0.0f, 0.0f, -10.0f);
+		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
+		mCamera.mOrthoDistance = 5.0f;
+		mProjectionRatio = 0.0f;
+		break;
+	case EViewportType::Right:
+		mCamera.Location = FVector(0.0f, 10.0f, 0.0f);
+		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
+		mCamera.mOrthoDistance = 5.0f;
+		mProjectionRatio = 0.0f;
+		break;
+	case EViewportType::Left:
+		mCamera.Location = FVector(0.0f, -10.0f, 0.0f);
+		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
+		mCamera.mOrthoDistance = 5.0f;
+		mProjectionRatio = 0.0f;
+		break;
+	case EViewportType::Front:
+		mCamera.Location = FVector(-10.0f, 0.0f, 0.0f);
+		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
+		mCamera.mOrthoDistance = 5.0f;
+		mProjectionRatio = 0.0f;
+		break;
+	case EViewportType::Back:
+		mCamera.Location = FVector(10.0f, 0.0f, 0.0f);
+		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
+		mCamera.mOrthoDistance = 5.0f;
+		mProjectionRatio = 0.0f;
+		break;
+	default:
+		mCamera.Location = FVector(-5.0f, 5.0f, 5.0f);
+		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
+		mProjectionRatio = 1.0f;
+		break;
+	}
+	mProjectionStartRatio = mProjectionRatio;
+	mProjectionTargetRatio = mProjectionRatio;
+}
+
+void FEditorViewportClient::startProjectionTransition(bool orthographic)
+{
+	mProjectionStartRatio = mProjectionRatio;
+	mProjectionTargetRatio = orthographic ? 0.0f : 1.0f;
+	mProjectionElapsed = 0.0f;
+	bProjectionTransitioning = mProjectionStartRatio != mProjectionTargetRatio;
+}
+
+void FEditorViewportClient::updateProjectionTransition(float deltatime)
+{
+	if (!bProjectionTransitioning) { return; }
+	mProjectionElapsed += deltatime;
+
+	const float u = FMath::Clamp(mProjectionElapsed / mProjectionDuration, 0.0f, 1.0f);
+	const float smoothStep = u * u * (3.0f - 2.0f * u);
+
+	mProjectionRatio = mProjectionStartRatio + (mProjectionTargetRatio - mProjectionStartRatio) * smoothStep;
+
+	if (u >= 1.0f)
+	{
+		mProjectionRatio = mProjectionTargetRatio;
+		bProjectionTransitioning = false;
+	}
+}
+
+void FEditorViewportClient::UpdateGizmoForView(const AActor* selectedActor)
+{
+	mGizmo.Update(
+		selectedActor,
+		mCamera.Location,
+		mCamera.GetForwardVector(),
+		mCamera.mFovDegree,
+		mProjectionRatio,
+		mCamera.mOrthoDistance);
 }

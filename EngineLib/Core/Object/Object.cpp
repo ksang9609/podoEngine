@@ -88,6 +88,14 @@ void UObject::DeserializeClass(const json::JSON& inJson)
 
 	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
 	{
+		// Name was added after existing scene files had already been written.
+		// Keep the name assigned by FObjectFactory when loading those files.
+		if (std::string_view(Property.JsonKey) == "Name" &&
+			!propertiesJson.hasKey(Property.JsonKey))
+		{
+			continue;
+		}
+
 		Property.Deserialize(
 			Property,
 			this,

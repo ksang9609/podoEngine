@@ -533,7 +533,7 @@ void FGpuResourceManager::createRasterizerStates()
 		rasterizerDesc.DepthBiasClamp = 0.0f;
 		rasterizerDesc.SlopeScaledDepthBias = 0.0f;
 		rasterizerDesc.DepthClipEnable = TRUE;
-		rasterizerDesc.ScissorEnable = FALSE;
+		rasterizerDesc.ScissorEnable = TRUE;
 		rasterizerDesc.MultisampleEnable = FALSE;
 		rasterizerDesc.AntialiasedLineEnable = FALSE;
 		mDeviceRef->CreateRasterizerState(&rasterizerDesc,
@@ -549,7 +549,7 @@ void FGpuResourceManager::createRasterizerStates()
 		rasterizerDesc.DepthBiasClamp = 0.0f;
 		rasterizerDesc.SlopeScaledDepthBias = 0.0f;
 		rasterizerDesc.DepthClipEnable = TRUE;
-		rasterizerDesc.ScissorEnable = FALSE;
+		rasterizerDesc.ScissorEnable = TRUE;
 		rasterizerDesc.MultisampleEnable = FALSE;
 		rasterizerDesc.AntialiasedLineEnable = FALSE;
 		mDeviceRef->CreateRasterizerState(&rasterizerDesc,

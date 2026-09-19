@@ -14,6 +14,7 @@
 #include "Core/Math/FBoundingBox.h"
 #include "Rendering/Mesh/StaticMesh.h"
 #include "Rendering/GpuResourceManager.h"
+#include "SceneView.h"
 
 struct FFrustum;
 struct FTexture
@@ -43,32 +44,25 @@ public:
 	void Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManager);
 
 	//void Prepare(const Camera* mCamera);
-	void Prepare(const FCamera* mCamera);
+	void BeginFrame();
 	void PrepareForUI();
 
 	/* Rendering functions */
-	void Render(
+	void RenderSceneView(
 		const TArray<FRenderInfo>& scenerRenderInfos,
-		const TArray<FRenderInfo>& gizmoRenderInfos,
 		const TArray<FRenderInfo>& axisRenderInfos,
-		const FCamera& camera,
+		const FSceneView& view,
 		const AActor* selectedActor);
+	void RenderGizmoView(
+		const TArray<FRenderInfo>& gizmoRenderInfos,
+		const FSceneView& view
+	);
 
 	void Display();
 	void Update(float deltaTime);
 
-	float GetAspect() const { return mAspect; }
 	bool GetWireFrame() const { return mbWireFrame; }
 	void SetWireFrame(bool bWireFrame) { mbWireFrame = bWireFrame; }
-
-	bool IsPerspectiveProjection() const;
-	void SetPerspectiveProjection(bool bPerspectiveProjection);
-
-	float GetPerspectiveRatio() const { return mProjectionRatio; }
-	void SetPerspectiveRatio(float ratio) { mProjectionRatio = FMath::Clamp(ratio, 0.0f, 1.0f); }
-
-	float GetCameraOrthoDistance() const { return mCameraOrthoDistance; }
-	void SetCameraOrthoDistance(float distance) { mCameraOrthoDistance = distance; }
 
 	float GetGridWidth() const;
 	void SetGridWidth(float width);
@@ -87,7 +81,7 @@ public:
 	// 호출 즉시 그리지 않고 배열에 쌓는다. FlushLines()에서 한 번에 그린다.
 	void DrawLine(const FVector& start, const FVector& end, const FVector4& color);
 	void DrawAABBLine(const FBoundingBox& bounds, const FVector4& color);
-	void FlushLines();
+	void FlushLines(const FSceneView& view);
 
 	void RenderLoadingScreen();
 
@@ -100,17 +94,14 @@ public:
 	static FVector GetPrimitiveCenter(FName meshName);
 	static FVector GetPrimitiveHalfExtent(FName meshName);
 
-	// Projection ratio smoothing
-	void StartProjectionTransition(bool orthographic);
-	bool IsOrthographicTarget() const;
-	void UpdateProjectionTransition(float deltaTime);
-
 	bool HasShowFlag(EEngineShowFlags Flag) const;
 	uint32 GetShowFlags() const { return mShowFlags; }
 	void SetShowFlag(EEngineShowFlags Flag, bool bEnable);
 	void SetShowFlags(uint32 flags) { mShowFlags = flags; }
 
 	void CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos);
+
+	void ClearDepth() { mRenderer->ClearDepth(); }
 
 private:
 	/* Manager References */
@@ -121,11 +112,6 @@ private:
 
 	//ID3D11ShaderResourceView* mLoadingScreenSRV = nullptr;
 
-	// Prepare에서 갱신. 하이라이트 두께의 픽셀 → 월드 환산에 쓴다
-	FVector mCameraLocation;
-	FVector mCameraForward;
-	float mCameraFovDegree = 60.0f;
-	float mCameraOrthoDistance = 10.0f;
 
 	//TMap<EPrimitive, FBuffer> mBufferMap;
 
@@ -147,8 +133,6 @@ private:
 	bool mbWireFrame;
 	bool mbPerspectiveProjection;
 	bool mbShowWorldAxis = true;
-	float mAspect;
-	float mProjectionRatio; // 0.0f ~ 1.0f, 0이면 직교, 1이면 원근, 그 사이면 혼합
 
 	// Projection ratio smoothing
 	float mProjectionStartRatio = 1.0f;
@@ -174,21 +158,24 @@ private:
 	void updateRenderQueue(
 		const TArray<FRenderInfo>& renderInfos,
 		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
-		const FFrustum* frustum);
+		const FFrustum* frustum, uint32 showFlags);
+
+	static bool HasViewShowFlag(uint32 showFlags, EEngineShowFlags flag){return (showFlags & static_cast<uint32>(flag)) != 0;}
 
 	/* Rendering Functions */
-	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
-	void renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
-	void renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
+	void renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
+	void renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 	void renderWorldAxis(const TArray<const FRenderInfo*>& renderInfos);
 	void renderBoundingBox(const TArray<const FRenderInfo*>& renderInfos, const FRotator& cameraRotation);
 	// Instancing
-	//void renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
-	void renderHighLight(const FRenderInfo& RI, const FCamera& camera);
-	void renderGrid();
-	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
-	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
-	void renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
+	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
+	void renderHighLight(const FRenderInfo& RI, const FSceneView& view);
+	void renderGrid(const FSceneView& view);
+	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
+	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
+	void renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 
 
 	// Instancing Test
