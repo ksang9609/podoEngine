@@ -5,6 +5,7 @@
 #include "Core/Container/TQueue.h"
 #include "Core/Math/Frustum.h" 
 #include "Core/enum.h"
+#include "Core/BuiltinAssets.h"
 #include "Editor/Console.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/NameComponent.h"
@@ -14,67 +15,24 @@
 #include "Camera.h"
 #include "Renderer.h"
 
-FGraphicsManager::FGraphicsManager(HWND hWindow)
+FGraphicsManager::FGraphicsManager()
 	: mbWireFrame(false)
 	, mbPerspectiveProjection(true)
 	, mProjectionRatio(1.0f)
 {
-	mRenderer = new URenderer;
-	mRenderer->Create(hWindow);
-
-
-	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
-
-	// Create default white texture
-	mDefaultWhiteTexture = std::make_unique<FTexture>();
-	mDefaultWhiteTexture->SRV = mRenderer->CreateWhiteShaderResourceView();
-	mRenderer->CreateSamplerState(mDefaultWhiteTexture->Sampler.GetAddressOf());
-
 }
 
 FGraphicsManager::~FGraphicsManager()
 {
-	// 인스턴스 테스트용 버퍼 해제
-	if (mTestInstanceIndexBuffer)
-	{
-		mTestInstanceIndexBuffer->Release();
-		mTestInstanceIndexBuffer = nullptr;
-	}
-
-	for (auto& buffer : mBufferMap)
-	{
-		if (buffer.second.Buffer)
-		{
-			buffer.second.Buffer->Release();
-			buffer.second.Buffer = nullptr;
-		}
-	}
-
-	for (auto& entry : mTexturedBufferMap)
-	{
-		if (entry.second.Buffer)
-		{
-			entry.second.Buffer->Release();
-			entry.second.Buffer = nullptr;
-		}
-	}
-
-	//for (auto& [key, texture] : mPrimitiveTextureMap)
-	//{
-	//	mRenderer->ReleasePrimitiveTextureResources(texture.SRV, texture.Sampler);
-	//}
-	
-	mTexturedBufferMap.Empty();
-	mPrimitiveTextureMap.Empty();
-
-	mRenderer->Release();
-
-	delete mRenderer;
+	mRenderer.reset();
 }
 
-void FGraphicsManager::InitializeLoadingScreen()
+void FGraphicsManager::Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManager)
 {
-	mRenderer->LoadTexture(L"Assets/Textures/LoadingScreen.dds", &mLoadingScreenSRV);
+	mRenderer = std::make_unique<URenderer>();
+	mRenderer->Initialize(hWindow, gpuResourceManager);
+	mGpuResourceManagerRef = &gpuResourceManager;
+	mAspect = mRenderer->GetViewportInfo().Width / mRenderer->GetViewportInfo().Height;
 }
 
 void FGraphicsManager::Prepare(const FCamera* mCamera)
@@ -165,18 +123,18 @@ void FGraphicsManager::updateRenderQueue(
 			HasShowFlag(EEngineShowFlags::SF_Primitives))
 		{
 			// TODO: Unify all of these into just static mesh
-			if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
-			{
-				outRenderQueueMap[RQT_StaticMesh].Add(&renderInfo);
-			}
-			else if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
-			{
-				outRenderQueueMap[RQT_TexturedPrimitive].Add(&renderInfo);
-			}
-			else
-			{
-				outRenderQueueMap[RQT_SimplePrimitive].Add(&renderInfo);
-			}
+			//if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
+			//{
+			outRenderQueueMap[RQT_StaticMesh].Add(&renderInfo);
+			//}
+			//else if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
+			//{
+			//	outRenderQueueMap[RQT_TexturedPrimitive].Add(&renderInfo);
+			//}
+			//else
+			//{
+			//	outRenderQueueMap[RQT_SimplePrimitive].Add(&renderInfo);
+			//}
 		}
 		if (HasAllRenderFlags(renderFlags,
 			ERenderFlags::RF_Billboard | ERenderFlags::RF_Text) &&
@@ -243,7 +201,7 @@ void FGraphicsManager::Render(
 	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], mCameraLocation, mCameraForward);
 
 	//RenderInstancingTest();
-	renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
+	//renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
 	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);
 	renderStaticMesh(renderQueueMap[RQT_StaticMesh], camera);
 
@@ -281,40 +239,49 @@ void FGraphicsManager::Render(
 
 void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	mRenderer->PrepareSimplePrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
+		const FBuffer* vertexBuffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
 		if (vertexBuffer == nullptr)
 		{
 			UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
 			continue;
 		}
-		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer.Get(), vertexBuffer->SourceNum);
 	}
 }
 
 void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	mRenderer->PrepareGizmo();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
-		FBuffer* vertexBuffer = mBufferMap.Find(renderInfo->ePrimitive);
+		const FBuffer* vertexBuffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
 		if (vertexBuffer == nullptr)
 		{
 			UE_LOG(Error, Render, "Vertex buffer not found for primitive type.");
 			continue;
 		}
-		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum);
+		mRenderer->RenderSimplePrimitive(vertexBuffer->Buffer.Get(), vertexBuffer->SourceNum);
 	}
 }
 
 void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	mRenderer->PrepareParticle();
 
 	FVector3 cameraRight = camera.GetRightVector();
@@ -338,51 +305,58 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 
 		mRenderer->UpdateBlendState(renderInfo->BlendStateType);
 
-		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
+		auto* texture = resources.FindTextureOrAdd(renderInfo->TextureName);
 		if (texture == nullptr)
 		{
 			UE_LOG(Error, Render, "Primitive texture not found for primitive type.");
 			continue;
 		}
-		mRenderer->RenderParticle(texture->SRV.Get());
+		mRenderer->RenderParticle(texture);
 
 	}
 }
 
 void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	mRenderer->PrepareStaticMesh();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
 
-		FBuffer& buffer = mStaticMeshBuffer[renderInfo->StaticMesh];
+		const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
 
-		FTexture* texture = nullptr;
+		ID3D11ShaderResourceView* texture = nullptr;
 		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
 		{
 			// TODO: Use the texture from the renderInfo if available
-			texture = mPrimitiveTextureMap.Find(EPrimitive::EP_Sphere);
+			texture = resources.FindTextureOrAdd(renderInfo->TextureName);
 			if (texture == nullptr)
 			{
 				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
-				texture = mDefaultWhiteTexture.get();
+				texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
 			}
 		}
 		else {
-			texture = mDefaultWhiteTexture.get();
+			texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
 		}
 
 		//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
-		mRenderer->RenderStaticMesh(buffer.Buffer, buffer.SourceNum,
-			texture->SRV.Get(), texture->Sampler.Get(),
-			buffer.IndexBuffer, buffer.IndexCount);
+		mRenderer->RenderStaticMesh(buffer->Buffer.Get(), buffer->SourceNum,
+			texture,
+			&resources.GetSamplerState(SST_Default),
+			buffer->IndexBuffer.Get(), buffer->IndexCount);
 	}
 }
 
 void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	mRenderer->PrepareTexturedPrimitive();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
@@ -399,129 +373,112 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 			worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
 			uvScale, uvOffset
 		);
-		FBuffer* vertexBuffer = mTexturedBufferMap.Find(renderInfo->ePrimitive);
-		if (vertexBuffer == nullptr)
+		const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
+		if (buffer == nullptr)
 		{
 			UE_LOG(Error, Render, "Error: Textured vertex buffer not found for primitive type.");
 			continue;
 		}
-		FTexture* texture = mPrimitiveTextureMap.Find(renderInfo->ePrimitive);
+		auto* texture = resources.FindTextureOrAdd(renderInfo->MeshName);
 		if (texture == nullptr)
 		{
 			UE_LOG(Error, Render, "Error: Primitive texture not found for primitive type.");
 			continue;
 		}
-		/*mRenderer->RenderTexturePrimitive(vertexBuffer->Buffer, vertexBuffer->SourceNum,
-			texture->SRV, texture->Sampler);*/
-
-		ID3D11Buffer* indexBuffer = nullptr;
-		UINT indexCount = 0;
-
-		if (renderInfo->ePrimitive == EPrimitive::EP_Cube)
-		{
-			indexBuffer = mRenderer->CubeIndexBuffer;
-			indexCount = 36;
-
-			// indexBuffer = mRenderer->CubeIndexBuffer;
-			if (!indexBuffer)
-				continue;
-		}
-		else if (renderInfo->ePrimitive == EPrimitive::EP_Sphere)
-		{
-			indexBuffer = mRenderer->SphereIndexBuffer;
-			indexCount = mRenderer->SphereIndexCount;
-
-			if (!indexBuffer || indexCount == 0)
-				continue;
-		}
 
 		mRenderer->RenderTexturePrimitive(
-			vertexBuffer->Buffer,
-			vertexBuffer->SourceNum,
-			texture->SRV.Get(),
-			texture->Sampler.Get(),
-			indexBuffer, indexCount); // 마지막 인수에 전달
+			buffer->Buffer.Get(),
+			buffer->SourceNum,
+			texture,
+			&resources.GetSamplerState(SST_Default),
+			buffer->IndexBuffer.Get(), buffer->IndexCount); // 마지막 인수에 전달
 	}
 }
 
 // 인스턴싱 적용한 심플 프리미티브 출력
-void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
-{
-	if (renderInfos.IsEmpty())
-		return;
-
-	// 같은 프리미티브끼리 World, Tint를 모은다.
-	TMap<EPrimitive, TArray<FInstanceData>> batches;
-
-	for (const FRenderInfo* renderInfo : renderInfos)
-	{
-		if (!renderInfo)
-			continue;
-
-		FInstanceData instance{};
-		instance.World = renderInfo->WorldTransformMatrix;
-		instance.Tint = renderInfo->Color;
-
-		batches[renderInfo->ePrimitive].Add(instance);
-	}
-
-	// 모든 인스턴스가 공유하는 카메라 행렬.
-	// Prepare()에서 계산한 ViewProjection을 사용한다.
-	// 개별 World와 Tint는 위의 인스턴스 배열로 전달한다.
-	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
-
-	//  프리미티브 종류마다 한 번씩 그린다.
-	for (auto& [primitiveType, instances] : batches)
-	{
-		FBuffer* mesh = mBufferMap.Find(primitiveType);
-
-		if (!mesh || !mesh->Buffer || mesh->SourceNum == 0)
-		{
-			UE_LOG(Error, Render, "Primitive vertex buffer not found.");
-			continue;
-		}
-
-		// 기존 일반 프리미티브는 Draw()용 정점 배열
-		// DrawIndexedInstanced()에 연결하기 위해
-		// 0, 1, 2, ... 순서의 인덱스를 최초 한 번만 생성
-		if (!mesh->IndexBuffer)
-		{
-			TArray<UINT> indices;
-			indices.Reserve(mesh->SourceNum);
-
-			for (UINT i = 0; i < mesh->SourceNum; ++i)
-			{
-				indices.Add(i);
-			}
-
-			mesh->IndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(&indices[0], mesh->SourceNum);
-
-			if (!mesh->IndexBuffer)
-			{
-				UE_LOG(Error, Render, "Primitive index buffer creation failed.");
-				continue;
-			}
-
-			mesh->IndexCount = mesh->SourceNum;
-		}
-
-		const bool success = mRenderer->RenderSimpleInstanced(
-			mesh->Buffer,
-			mesh->IndexBuffer,
-			mesh->IndexCount,
-			&instances[0],
-			static_cast<UINT>(instances.Num()));
-
-		if (!success)
-		{
-			UE_LOG(Error, Render, "Instanced primitive rendering failed.");
-		}
-	}
-}
+//void FGraphicsManager::renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+//{
+//	assert(mGpuResourceManagerRef);
+//	auto& resources = *mGpuResourceManagerRef;
+//
+//	if (renderInfos.IsEmpty())
+//		return;
+//
+//	// 같은 프리미티브끼리 World, Tint를 모은다.
+//	TMap<FName, TArray<FInstanceData>> batches;
+//
+//	for (const FRenderInfo* renderInfo : renderInfos)
+//	{
+//		if (!renderInfo)
+//			continue;
+//
+//		FInstanceData instance{};
+//		instance.World = renderInfo->WorldTransformMatrix;
+//		instance.Tint = renderInfo->Color;
+//
+//		batches[renderInfo->MeshName].Add(instance);
+//	}
+//
+//	// 모든 인스턴스가 공유하는 카메라 행렬.
+//	// Prepare()에서 계산한 ViewProjection을 사용한다.
+//	// 개별 World와 Tint는 위의 인스턴스 배열로 전달한다.
+//	mRenderer->PrepareSimpleInstanced();
+//	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
+//
+//	//  프리미티브 종류마다 한 번씩 그린다.
+//	for (auto& [meshName, instances] : batches)
+//	{
+//		const FBuffer& buffer = resources.GetInstanceBuffer();
+//
+//		if (!buffer.Buffer || buffer.SourceNum == 0)
+//		{
+//			UE_LOG(Error, Render, "Primitive vertex buffer not found.");
+//			continue;
+//		}
+//
+//		// 기존 일반 프리미티브는 Draw()용 정점 배열
+//		// DrawIndexedInstanced()에 연결하기 위해
+//		// 0, 1, 2, ... 순서의 인덱스를 최초 한 번만 생성
+//		if (!buffer.IndexBuffer)
+//		{
+//			TArray<UINT> indices;
+//			indices.Reserve(buffer.SourceNum);
+//
+//			for (UINT i = 0; i < buffer.SourceNum; ++i)
+//			{
+//				indices.Add(i);
+//			}
+//
+//			buffer.IndexBuffer = buffer.IndexBuffer;
+//
+//			if (!buffer.IndexBuffer)
+//			{
+//				UE_LOG(Error, Render, "Primitive index buffer creation failed.");
+//				continue;
+//			}
+//
+//			buffer.IndexCount = buffer.SourceNum;
+//		}
+//
+//		const bool success = mRenderer->RenderSimpleInstanced(
+//			buffer.Buffer,
+//			buffer->IndexBuffer,
+//			buffer->IndexCount,
+//			&instances[0],
+//			static_cast<UINT>(instances.Num()));
+//
+//		if (!success)
+//		{
+//			UE_LOG(Error, Render, "Instanced primitive rendering failed.");
+//		}
+//	}
+//}
 
 void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
 	//mRenderer->PrepareFont();
@@ -577,6 +534,9 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 
 void FGraphicsManager::DrawLine(const FVector& start, const FVector& end, const FVector4& color)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	// 월드 좌표 그대로 넣는다. 그래서 그릴 때 World 행렬이 단위행렬이다
 	uint32 mStartOffset = mLineVertices.Num();
 
@@ -686,26 +646,14 @@ void FGraphicsManager::renderGrid()
 
 void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& renderInfos, const FRotator& cameraRotation)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		//if (renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad)
-		//{
-		//	if (!HasShowFlag(EEngineShowFlags::SF_BillboardText))
-		//	{
-		//		continue;
-		//	}
-		//}
-		//else
-		//{
-		//	if (!HasShowFlag(EEngineShowFlags::SF_Primitives))
-		//	{
-		//		continue;
-		//	}
-		//}
-
 		// Billboard는 카메라 회전이 실제 렌더 행렬에 포함되므로(카메라 방향에 따라 월드 변환이 바뀜)
 		// 현재 카메라 기준으로 WorldBounds를 갱신
-		const FBoundingBox bounds = renderInfo->ePrimitive == EPrimitive::EP_BillboardQuad
+		const FBoundingBox bounds = renderInfo->MeshName == BuiltinAssets::BillboardQuadTextured
 			? TransformBoundingBox(
 				renderInfo->LocalBounds,
 				renderInfo->GetTransformMatrix(cameraRotation))
@@ -729,14 +677,19 @@ void FGraphicsManager::FlushLines()
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
-	mLineVertices.Reset(LINE_VERTEX_CAPACITY);
-	mLineIndices.Reset(LINE_INDEX_CAPACITY);
+	mLineVertices.Reset(0);
+	mLineIndices.Reset(0);
 }
 
 void FGraphicsManager::RenderLoadingScreen()
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	GetRenderer()->PrepareForUI();
-	GetRenderer()->RenderFullscreenTexture(mLoadingScreenSRV);
+
+	auto* texture = resources.FindTextureOrAdd(BuiltinAssets::LoadingScreenTexture);
+	GetRenderer()->RenderFullscreenTexture(texture);
 	Display();
 }
 
@@ -751,7 +704,7 @@ void FGraphicsManager::Display()
 
 void FGraphicsManager::Update(float deltaTime)
 {
-	mAspect = mRenderer->ViewportInfo.Width / mRenderer->ViewportInfo.Height;
+	mAspect = mRenderer->GetViewportInfo().Width / mRenderer->GetViewportInfo().Height;
 
 	// 테스트용: deltaTime이 초 단위라는 전제
 	//static float elapsed = 0.0f;
@@ -793,145 +746,21 @@ void FGraphicsManager::SetPerspectiveProjection(bool bPerspectiveProjection)
 	mbPerspectiveProjection = bPerspectiveProjection;
 }
 
-void FGraphicsManager::CreateBuffer(EPrimitive ePrimitive, FVertexSimple* vertices, uint32 verticesSize)
-{
-	assert(vertices != nullptr);
-
-	UINT numVertices = static_cast<UINT>(verticesSize / sizeof(FVertexSimple));
-	ID3D11Buffer* vertexBuffer = mRenderer->CreateVertexBuffer(vertices, verticesSize);
-	FVector3 LocalMin = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
-	FVector3 LocalMax = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
-	for (int i = 0;i < numVertices;i++)
-	{
-		LocalMin.x = min(LocalMin.x, vertices[i].x);
-		LocalMin.y = min(LocalMin.y, vertices[i].y);
-		LocalMin.z = min(LocalMin.z, vertices[i].z);
-		LocalMax.x = max(LocalMax.x, vertices[i].x);
-		LocalMax.y = max(LocalMax.y, vertices[i].y);
-		LocalMax.z = max(LocalMax.z, vertices[i].z);
-	} // AABB 렌더링에 필요한 LocalMin,Max 저장
-	FBoundingBox LocalBound;
-	LocalBound.min = LocalMin;
-	LocalBound.max = LocalMax;
-	FBuffer buffer = { vertexBuffer, numVertices, LocalBound }; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
-	mBufferMap.Add(ePrimitive, buffer);
-}
-
-void FGraphicsManager::CreateStaticMeshBuffer(const FStaticMesh& staticMesh)
-{
-	uint32 numVertices = static_cast<uint32>(staticMesh.Vertices.Num());
-	uint32 verticesSize = numVertices * sizeof(FNormalVertex);
-
-	// Create vertex buffer
-	ID3D11Buffer* vertexBuffer = mRenderer->CreateVertexBuffer(staticMesh.Vertices.GetData(), verticesSize);
-	FVector3 LocalMin = FVector3(staticMesh.Vertices[0].pos.x, staticMesh.Vertices[0].pos.y, staticMesh.Vertices[0].pos.z);
-	FVector3 LocalMax = FVector3(staticMesh.Vertices[0].pos.x, staticMesh.Vertices[0].pos.y, staticMesh.Vertices[0].pos.z);
-	for (int i = 0;i < numVertices;i++)
-	{
-		LocalMin.x = min(LocalMin.x, staticMesh.Vertices[i].pos.x);
-		LocalMin.y = min(LocalMin.y, staticMesh.Vertices[i].pos.y);
-		LocalMin.z = min(LocalMin.z, staticMesh.Vertices[i].pos.z);
-		LocalMax.x = max(LocalMax.x, staticMesh.Vertices[i].pos.x);
-		LocalMax.y = max(LocalMax.y, staticMesh.Vertices[i].pos.y);
-		LocalMax.z = max(LocalMax.z, staticMesh.Vertices[i].pos.z);
-	} // AABB 렌더링에 필요한 LocalMin,Max 저장
-	FBoundingBox LocalBound;
-	LocalBound.min = LocalMin;
-	LocalBound.max = LocalMax;
-
-	// Create index buffer
-	ID3D11Buffer* indexBuffer = mRenderer->CreatePrimitiveIndexBuffer(staticMesh.Indices.GetData(), staticMesh.Indices.Num());
-
-	FBuffer buffer = {}; // 버퍼에 저장하여 도형 하나당 한번씩만 캐싱 진행하도록 함
-	buffer.Buffer = vertexBuffer;
-	buffer.SourceNum = numVertices;
-	buffer.IndexBuffer = indexBuffer;
-	buffer.IndexCount = static_cast<uint32>(staticMesh.Indices.Num());
-	buffer.LocalBounds = LocalBound;
-
-	// TODO: move this to gpu resource manager
-	mStaticMeshBuffer.Add(&staticMesh, buffer);
-}
-
-void FGraphicsManager::CreateTexturedBuffer(EPrimitive ePrimitive, const FVertexTextured* vertices, uint32 verticesSize)
-{
-	if (!vertices || verticesSize == 0 ||
-		verticesSize % sizeof(FVertexTextured) != 0)
-	{
-		UE_LOG(Log, Core, "Invalid textured vertex data.");
-		return;
-	}
-
-	ID3D11Buffer* vertexBuffer = mRenderer->CreateVertexBuffer(vertices, verticesSize);
-
-	if (!vertexBuffer)
-	{
-		UE_LOG(Log, Core, "Failed to create textured vertex buffer.");
-		return;
-	}
-
-	FBuffer buffer = {};
-	buffer.Buffer = vertexBuffer;
-	buffer.SourceNum = static_cast<uint32>(verticesSize / sizeof(FVertexTextured));
-
-	// 기존 색상용 버퍼처럼 로컬 AABB 계산
-	buffer.LocalBounds.min = FVector3(vertices[0].x, vertices[0].y, vertices[0].z);
-	buffer.LocalBounds.max = buffer.LocalBounds.min;
-
-	/*for (uint32 i = 1; i < buffer.SourceNum; ++i)
-	{
-		const auto& v = vertices[i];
-
-		buffer.LocalBounds.min.x = min(buffer.LocalBounds.min.x, v.x);
-		buffer.LocalBounds.min.y = min(buffer.LocalBounds.min.y, v.y);
-		buffer.LocalBounds.min.z = min(buffer.LocalBounds.min.z, v.z);
-
-		buffer.LocalBounds.max.x = max(buffer.LocalBounds.max.x, v.x);
-		buffer.LocalBounds.max.y = max(buffer.LocalBounds.max.y, v.y);
-		buffer.LocalBounds.max.z = max(buffer.LocalBounds.max.z, v.z);
-	}*/
-
-	// 동일한 종류를 다시 등록한다면 이전 버퍼 해제
-	if (FBuffer* previous = mTexturedBufferMap.Find(ePrimitive))
-	{
-		if (previous->Buffer)
-			previous->Buffer->Release();
-	}
-
-	mTexturedBufferMap.Add(ePrimitive, buffer);
-}
-
-void FGraphicsManager::CreatePrimitiveTexture(EPrimitive ePrimitive, const wchar_t* texturePath)
-{
-	// TODO: Set string path to the texture later
-
-	FTexture texture{};
-
-	if (!mRenderer->LoadTexture(texturePath, &texture.SRV))
-	{
-		UE_LOG(Log, Core, "Failed to create primitive texture resources.");
-	}
-
-	mRenderer->CreateSamplerState(&texture.Sampler);
-
-	mPrimitiveTextureMap.Add(ePrimitive, texture);
-}
-
 URenderer* FGraphicsManager::GetRenderer() const
 {
 	assert(mRenderer != nullptr);
 
-	return mRenderer;
+	return mRenderer.get();
 }
 
-FVector FGraphicsManager::GetPrimitiveCenter(EPrimitive type)
+FVector FGraphicsManager::GetPrimitiveCenter(FName meshName)
 {
-	switch (type)
+	if (meshName == BuiltinAssets::Sphere)
 	{
-	case EPrimitive::EP_Sphere:	return FVector(0, 0, 0);
-	case EPrimitive::EP_Cube:	return FVector(0, 0, 0);
-	default:					return FVector(0, 0, 0);
+		return FVector(0, 0, 0);
 	}
+
+	return FVector(0, 0, 0);
 }
 
 // 테두리가 화면에서 차지할 두께(픽셀). 물체 크기와 카메라 거리 어느 쪽에도 영향받지 않는다.
@@ -948,13 +777,19 @@ static float GetOutlineAxisScale(float worldHalfExtent, float worldThickness)
 	return 1.0f + worldThickness / worldHalfExtent;
 }
 
-FVector FGraphicsManager::GetPrimitiveHalfExtent(EPrimitive type)
+FVector FGraphicsManager::GetPrimitiveHalfExtent(FName meshName)
 {
-	switch (type)
+	if (meshName == BuiltinAssets::Sphere)
 	{
-	case EPrimitive::EP_Sphere:	return FVector(1.0f, 1.0f, 1.0f);
-	case EPrimitive::EP_Cube:	return FVector(0.5f, 0.5f, 0.5f);
-	default:					return FVector(0.5f, 0.5f, 0.5f);
+		return FVector(1.0f, 1.0f, 1.0f);
+	}
+	else if (meshName == BuiltinAssets::Cube)
+	{
+		return FVector(0.5f, 0.5f, 0.5f);
+	}
+	else
+	{
+		return FVector(0.5f, 0.5f, 0.5f);
 	}
 }
 
@@ -971,10 +806,13 @@ void  FGraphicsManager::SetGridWidth(float width)
 
 void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& camera)
 {
+	assert(mGpuResourceManagerRef);
+	auto& resources = *mGpuResourceManagerRef;
+
 	mRenderer->PrepareHighlight();
 
-	const FVector Center = GetPrimitiveCenter(RI.ePrimitive);
-	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.ePrimitive);
+	const FVector Center = GetPrimitiveCenter(RI.MeshName);
+	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.MeshName);
 	FMatrix worldTransformMatrix = RI.GetTransformMatrix(camera.Rotation);
 
 	// 화면에서 OUTLINE_PIXELS 만큼 보이려면 이 깊이에서 월드로 얼마여야 하는지 환산한다.
@@ -987,7 +825,7 @@ void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& cam
 		, 0.01f);
 	//const float H = mbPerspectiveProjection ? 2.0f * Depth * TanHalfFov : 5.774f;
 	const float H = 2.0f * effectiveDepth * TanHalfFov;
-	const float WorldThickness = OUTLINE_PIXELS * H / mRenderer->ViewportInfo.Height;
+	const float WorldThickness = OUTLINE_PIXELS * H / mRenderer->GetViewportInfo().Height;
 
 
 	// 축마다 월드 공간에서 WorldThickness 만큼만 자라도록 배율을 따로 구한다.
@@ -1007,7 +845,7 @@ void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& cam
 		* FMatrix::Translation(Center)
 		* worldTransformMatrix;
 
-	FBuffer vertexBuffer = mBufferMap[RI.ePrimitive];
+	FBuffer buffer = *resources.FindImmutableBufferOrAdd(RI.MeshName);
 	//if (mbPerspectiveProjection)
 	//{
 	//	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewProjectionMatrix, Outline, RI);
@@ -1016,7 +854,12 @@ void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& cam
 	//{
 	//	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewOrthogonalProjectionMatrix, Outline, RI);
 	//}
-	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewUnifiedProjectionMatrix, Outline, worldTransformMatrix);
+	mRenderer->RenderHighlight(
+		buffer.Buffer.Get(),
+		buffer.SourceNum,
+		mViewUnifiedProjectionMatrix, Outline, worldTransformMatrix,
+		buffer.IndexBuffer.Get(),
+		buffer.IndexCount);
 }
 
 
@@ -1110,65 +953,65 @@ void FGraphicsManager::CalculateLineBuffer(const TArray<const FRenderInfo*>& ren
 }
 
 
-// 인스턴스 테스트용 큐브 출력 함수(1만개)
-void FGraphicsManager::RenderInstancingTest()
-{
-	FBuffer* cube = mBufferMap.Find(EPrimitive::EP_Cube);
-	if (!cube || !cube->Buffer)
-		return;
-
-	// 기존 색상 큐브는 정점 36개이므로 0~35 순서로 연결.
-	// 인덱스 버퍼는 최초 한 번만 생성.
-	if (!mTestInstanceIndexBuffer)
-	{
-		UINT indices[36];
-		for (UINT i = 0; i < 36; ++i)
-			indices[i] = i;
-
-		mTestInstanceIndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(indices, 36);
-
-		if (!mTestInstanceIndexBuffer)
-			return;
-	}
-
-	TArray<FInstanceData> instances;
-
-	instances.Reserve(10000);
-
-	/// 큐브 배치 관련
-	const int32 ColumnCount = 100;
-	const float Spacing = 2.5f;
-
-	// 전체 격자를 원점 중심으로 맞추기 위한 오프셋
-	const float HalfWidth = (ColumnCount - 1) * Spacing * 0.5f;
-
-	// 원점 주변, 지면 위에 큐브 10000개 배치
-	for (UINT i = 0; i < 10000; ++i)
-	{
-		const int32 xIndex = i % ColumnCount;
-		const int32 yIndex = i / ColumnCount;
-
-		const float x = xIndex * Spacing - HalfWidth;
-		const float y = yIndex * Spacing - HalfWidth;
-
-		FInstanceData instance = {};
-
-		instance.World = FMatrix::Translation(FVector(x, y, 1.0f));
-
-		//instance.Tint = FVector4(1, 1, 1, 1);
-
-		// 3가지 색
-		float r = static_cast<float>(i % 3 == 0);
-		float g = static_cast<float>(i % 3 == 1);
-		float b = static_cast<float>(i % 3 == 2);
-
-		instance.Tint = FLinearColor(r, g, b, 1.0f);
-
-		instances.Add(instance);
-	}
-	mRenderer->PrepareSimpleInstanced();
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
-
-	// 한 번의 호출로 큐브 1만개 그리기
-	mRenderer->RenderSimpleInstanced(cube->Buffer, mTestInstanceIndexBuffer, 36, &instances[0], 10000);
-}
+//// 인스턴스 테스트용 큐브 출력 함수(1만개)
+//void FGraphicsManager::RenderInstancingTest()
+//{
+//	FBuffer* cube = mBufferMap.Find(EPrimitive::EP_Cube);
+//	if (!cube || !cube->Buffer)
+//		return;
+//
+//	// 기존 색상 큐브는 정점 36개이므로 0~35 순서로 연결.
+//	// 인덱스 버퍼는 최초 한 번만 생성.
+//	if (!mTestInstanceIndexBuffer)
+//	{
+//		UINT indices[36];
+//		for (UINT i = 0; i < 36; ++i)
+//			indices[i] = i;
+//
+//		mTestInstanceIndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(indices, 36);
+//
+//		if (!mTestInstanceIndexBuffer)
+//			return;
+//	}
+//
+//	TArray<FInstanceData> instances;
+//
+//	instances.Reserve(10000);
+//
+//	/// 큐브 배치 관련
+//	const int32 ColumnCount = 100;
+//	const float Spacing = 2.5f;
+//
+//	// 전체 격자를 원점 중심으로 맞추기 위한 오프셋
+//	const float HalfWidth = (ColumnCount - 1) * Spacing * 0.5f;
+//
+//	// 원점 주변, 지면 위에 큐브 10000개 배치
+//	for (UINT i = 0; i < 10000; ++i)
+//	{
+//		const int32 xIndex = i % ColumnCount;
+//		const int32 yIndex = i / ColumnCount;
+//
+//		const float x = xIndex * Spacing - HalfWidth;
+//		const float y = yIndex * Spacing - HalfWidth;
+//
+//		FInstanceData instance = {};
+//
+//		instance.World = FMatrix::Translation(FVector(x, y, 1.0f));
+//
+//		//instance.Tint = FVector4(1, 1, 1, 1);
+//
+//		// 3가지 색
+//		float r = static_cast<float>(i % 3 == 0);
+//		float g = static_cast<float>(i % 3 == 1);
+//		float b = static_cast<float>(i % 3 == 2);
+//
+//		instance.Tint = FLinearColor(r, g, b, 1.0f);
+//
+//		instances.Add(instance);
+//	}
+//	mRenderer->PrepareSimpleInstanced();
+//	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
+//
+//	// 한 번의 호출로 큐브 1만개 그리기
+//	mRenderer->RenderSimpleInstanced(cube->Buffer, mTestInstanceIndexBuffer, 36, &instances[0], 10000);
+//}

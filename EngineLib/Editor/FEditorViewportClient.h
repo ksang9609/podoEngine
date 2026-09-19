@@ -8,6 +8,7 @@
 #include "Rendering/RenderInfo.h"
 #include "Gizmo.h"
 #include "Core/Math/FBoundingBox.h"
+#include "Core/AssetManager.h"
 
 
 class AActor;
@@ -16,6 +17,8 @@ class FSceneManager;
 struct FEditorViewportClient
 {
 public:
+	void Initialize(FAssetManager& assetManagerRef);
+
 	bool RaycastBounds(
 		const FVector& rayStart,
 		const FVector& rayEnd,
@@ -35,6 +38,9 @@ public:
 	FGizmo mGizmo;
 
 private:
+	/* Reference */
+	FAssetManager* mAssetManagerRef = nullptr;
+
 	//마우스 밑 무언가의
 	FRenderInfo mHoveredRenderInfo;
 

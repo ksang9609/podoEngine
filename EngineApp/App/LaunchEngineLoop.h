@@ -13,6 +13,7 @@
 #include "Rendering/Camera.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/FontResource.h"
+#include "Rendering/GpuResourceManager.h"
 
 #include <d3d11.h>
 
@@ -33,8 +34,9 @@ private:
 	// Todo: Make as pointer
 	FFrameTimer* FrameTimer;
 	bool GInTick = false;
-	FEditorViewportClient* ViewportClient;
+	FEditorViewportClient* mViewportClient;
 
+	/* Managers */
 	FGraphicsManager* mGraphicsManager;
 	FSceneManager* mSceneManager;
 	FFileManager* mFileManager;
@@ -42,6 +44,7 @@ private:
 	std::unique_ptr<FAssetManager> mAssetManager;
 
 	std::unique_ptr<FFontResource> mDefaultFontResource;
+	std::unique_ptr<FGpuResourceManager> mGpuResourceManager;
 
 	/* Editor Command */
 	void processEditorCommands(const FEditorCommands& commands);

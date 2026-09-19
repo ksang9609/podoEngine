@@ -156,6 +156,14 @@ inline const char* PrimitiveToString(EPrimitive primitiveType)
 	}
 }
 
+enum ESamplerStateType
+{
+	SST_Default,
+	SST_Clamp,
+	SST_Wrap,
+	SST_Count,
+};
+
 enum EDepthStencilStateType
 {
 	DSS_Default,
@@ -164,6 +172,14 @@ enum EDepthStencilStateType
 	// For hightlighting selected object
 	DSS_StencilMark,
 	DSS_StencilOutline,
+	DSS_Count,
+};
+
+enum ERasterizerStateType
+{
+	RST_Default,
+	RST_Wireframe,
+	RST_Count,
 };
 
 enum EBlendStateType
@@ -181,6 +197,7 @@ enum EContantBufferType
 	CBT_Texture,
 	CBT_BillboardTexture,
 	CBT_Font,
+	CBT_UnicodeFont,
 	CBT_Particle,
 	CBT_Count,
 };
@@ -195,6 +212,7 @@ enum EVertexShaderType
 	VST_Billboard,
 	VST_Particle,
 	VST_StaticMesh,
+	VST_LoadingScreen,
 	VST_Count,
 };
 
@@ -208,6 +226,7 @@ enum EPixelShaderType
 	PST_Billboard,
 	PST_Particle,
 	PST_StaticMesh,
+	PST_LoadingScreen,
 	PST_Count,
 };
 

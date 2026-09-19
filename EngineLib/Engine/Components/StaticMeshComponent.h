@@ -8,6 +8,7 @@ class UStaticMeshComponent : public UMeshComponent
 	DECLARE_SERIALIZATION()
 
 	void Initialize(FVector location, FRotator rotation, FVector scale3D,
+		FName textureName,
 		const UStaticMesh* staticMeshOrNull = nullptr, bool bUseTexture = false);
 
 	void SetStaticMesh(const UStaticMesh& staticMeshRef);
@@ -17,4 +18,5 @@ protected:
 
 private:
 	const UStaticMesh* mStaticMeshRef;
+	FName mTextureName;
 };
