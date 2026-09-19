@@ -333,7 +333,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
 		{
 			// TODO: Use the texture from the renderInfo if available
-			texture = resources.FindTextureOrAdd(renderInfo->MeshName);
+			texture = resources.FindTextureOrAdd(renderInfo->TextureName);
 			if (texture == nullptr)
 			{
 				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
