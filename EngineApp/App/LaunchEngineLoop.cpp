@@ -270,7 +270,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			*viewportClient,
 			*mGraphicsManager,
 			*mFileManager,
-			*mAssetManager
+			*mAssetManager,
 			*mEditorViewportManager,
 			}, editorCommands);
 		processEditorCommands(editorCommands);
