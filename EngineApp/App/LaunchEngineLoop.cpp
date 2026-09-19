@@ -1,5 +1,6 @@
 ﻿#include "LaunchEngineLoop.h"
 
+#include <stdexcept>
 #include <windows.h>
 
 #include "Core/Name.h"
@@ -8,6 +9,8 @@
 #include "Core/Object/ObjectFactory.h"
 #include "Editor/Console.h"
 #include "Editor/EditorUIManager.h"
+#include "Editor/EditorViewportManager.h"
+#include "Editor/Viewport.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
@@ -20,6 +23,7 @@
 #include "Rendering/Primitives/GizmoArrow.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/FontResource.h"
+#include "Rendering/SceneView.h"
 
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_dx11.h"
@@ -70,16 +74,30 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	/* Init Managers */
 	mGraphicsManager = new FGraphicsManager();
 	FrameTimer = new FFrameTimer(120);
-	mViewportClient = new FEditorViewportClient(); // Todo: cChange to class
-	mSceneManager = new FSceneManager(mViewportClient->GetCamera());
-	mFileManager = new FFileManager();
 	mAssetManager = std::make_unique<FAssetManager>();
 	mGpuResourceManager = std::make_unique<FGpuResourceManager>();
 
+	mEditorViewportManager = new FEditorViewportManager();
+	if (!mEditorViewportManager->Initialize(*mAssetManager))
+	{
+		throw std::runtime_error("Failed to initialize the editor viewport manager.");
+	}
+
+	FViewport* initialViewport = mEditorViewportManager->getActiveViewport();
+	if (initialViewport == nullptr)
+	{
+		throw std::runtime_error("The initial editor viewport was not created.");
+	}
+
+	viewportClient = &initialViewport->getClient();
+
+	mSceneManager = new FSceneManager();
+	mFileManager = new FFileManager();
+
 	mGraphicsManager->Initialize(hWnd, *mGpuResourceManager);
-	mViewportClient->Initialize(*mAssetManager);
 	mGpuResourceManager->Initialize(
 		*mAssetManager, *mGraphicsManager->GetRenderer()->GetDevice());
+
 
 	mGraphicsManager->RenderLoadingScreen();
 
@@ -255,27 +273,58 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
 	//Input Threads
-	{
 		WindowApplication.ProcessDeferredEvents();
+
+		FViewport* activeViewport = mEditorViewportManager->getActiveViewport();
+		if (activeViewport != nullptr)
+		{
+			viewportClient = &activeViewport->getClient();
+		}
 
 		//ImGui Input
 		{
 			//mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 		}
-		FEditorCommands editorCommands;
-		mEditorUIManager->UpdateGui({
-			*FrameTimer,
-			*mSceneManager,
-			*mViewportClient,
-			*mGraphicsManager,
-			*mFileManager,
-			*mAssetManager
-			}, editorCommands);
-		processEditorCommands(editorCommands);
 
-		mGraphicsManager->UpdateProjectionTransition(deltaTime);
-		mViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->GetViewportInfo(), mSceneManager, mGraphicsManager->GetPerspectiveRatio());
-	}
+		if (viewportClient != nullptr)
+		{
+			FEditorCommands editorCommands;
+			mEditorUIManager->UpdateGui({
+				*FrameTimer,
+				*mSceneManager,
+				*viewportClient,
+				*mGraphicsManager,
+				*mFileManager,
+				*mAssetManager,
+				*mEditorViewportManager,
+				}, editorCommands);
+			processEditorCommands(editorCommands);
+
+		}
+
+		// UI에서 활성 Viewport가 변경되었을 수 있으므로 다시 조회한다.
+		activeViewport = mEditorViewportManager->getActiveViewport();
+
+		if (activeViewport != nullptr)
+		{
+			viewportClient = &activeViewport->getClient();
+		}
+		else
+		{
+			viewportClient = nullptr;
+		}
+
+		//Viewports
+		const uint8 viewportCount = mEditorViewportManager->getViewportCount();
+		for (uint8 i = 0; i < viewportCount; i++)
+		{
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+			viewport->getClient().updateProjectionTransition(deltaTime);
+		}
 
 	//Physics Threads
 	{
@@ -289,26 +338,92 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		mSceneManager->Update(deltaTime);
 	}
 
+	//활성 Viewport의 카메라 입력과 RayCast 처리
+	if (activeViewport != nullptr)
+	{
+		FSceneView activeSceneView = activeViewport->buildSceneView();
+
+		if (activeSceneView.isValid())
+		{
+			const FViewportWindowState& windowState = activeViewport->getWindowState();
+			activeViewport->getClient().Update(deltaTime, activeSceneView.Rect,mSceneManager, windowState.bImageHovered, windowState.bFocused);
+		}
+	}
+
 	//Render Threads
 	{
 		if (WindowApplication.bPendingResize)
 		{
 			float viewportWidth = mEditorUIManager->GetPanelWidth();
-			float viewportHeight = (1.f - ConsoleWindow::HEIGHT_RATIO) * WindowApplication.PendingHeight;
+			float viewportHeight = static_cast<float>(WindowApplication.PendingHeight) - FEditorUIManager::BOTTOM_BAR_HEIGHT;
+
+			if (viewportHeight < 0.0f)
+			{
+				viewportHeight = 0.0f;
+			}
 
 			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight, viewportWidth, viewportHeight);
 			WindowApplication.bPendingResize = false;
 		}
 
-		mGraphicsManager->Update(deltaTime);
+		mGraphicsManager->BeginFrame();
+		AActor* selectedActor = mSceneManager->GetSelectedActor();
 
-		mGraphicsManager->Render(
-			mSceneManager->GetRenderInfos(),
-			mViewportClient->mGizmo.GetGizmoRenderInfo(),
-			mSceneManager->GetAxisRenderInfos(),
-			mViewportClient->GetCamera(),
-			mSceneManager->GetSelectedActor()
-		);
+		// Viewport 수만큼 같은 Scene을 다른 Camera로 렌더링
+		for (uint8 i = 0; i < viewportCount; i++)
+		{
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+
+			FEditorViewportClient& client = viewport->getClient();
+			const FSceneView sceneView = viewport->buildSceneView();
+
+			if (!sceneView.isValid())
+			{
+				continue;
+			}
+
+			client.UpdateGizmoForView(selectedActor);
+
+			mGraphicsManager->RenderSceneView(
+				mSceneManager->GetRenderInfos(),
+				mSceneManager->GetAxisRenderInfos(),
+				sceneView,
+				selectedActor);
+		}
+
+		// Scene의 Depth만 한 번 초기화
+		mGraphicsManager->ClearDepth();
+
+		// 각 Viewport의 Gizmo 렌더링
+		for (uint8 i = 0; i < viewportCount; ++i)
+		{
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+
+			FEditorViewportClient& client = viewport->getClient();
+
+			const FSceneView sceneView = viewport->buildSceneView();
+
+			if (!sceneView.isValid())
+			{
+				continue;
+			}
+			client.UpdateGizmoForView(selectedActor);
+
+			const TArray<FRenderInfo> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
+
+			mGraphicsManager->RenderGizmoView(gizmoRenderInfos,sceneView);
+		}
+
 
 		//ImGui
 		{
@@ -338,10 +453,10 @@ void FEngineLoop::End()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	delete mViewportClient;
 	delete mEditorUIManager;
 	delete FrameTimer;
 	delete mSceneManager;
+	delete mEditorViewportManager;
 	delete mFileManager;
 	delete mGraphicsManager;
 	mAssetManager.reset();
@@ -584,32 +699,32 @@ void FEngineLoop::processEditorCommand(const FSetShowFlagCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSetCameraSensitivityCommand& command)
 {
-	mViewportClient->GetCamera().SetCameraSensitivity(command.Sensitivity);
+	viewportClient->GetCamera().SetCameraSensitivity(command.Sensitivity);
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraFovCommand& command)
 {
-	mViewportClient->GetCamera().mFovDegree = command.Fov;
+	viewportClient->GetCamera().mFovDegree = command.Fov;
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraLocationCommand& command)
 {
-	mViewportClient->GetCamera().Location = command.Location;
+	viewportClient->GetCamera().Location = command.Location;
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraRotationCommand& command)
 {
-	mViewportClient->GetCamera().Rotation = command.Rotation;
+	viewportClient->GetCamera().Rotation = command.Rotation;
 }
 
 void FEngineLoop::processEditorCommand(const FSetGizmoModeCommand& command)
 {
-	mViewportClient->mGizmo.SetGizmoType(command.GizmoMode);
+	viewportClient->mGizmo.SetGizmoType(command.GizmoMode);
 }
 
 void FEngineLoop::processEditorCommand(const FCycleGizmoModeCommand& command)
 {
-	mViewportClient->mGizmo.CycleGizmoType();
+	viewportClient->mGizmo.CycleGizmoType();
 }
 
 void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
@@ -619,12 +734,34 @@ void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
 
 void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& command)
 {
+	FViewport* activeViewport = mEditorViewportManager->getActiveViewport();
 	AActor* selectedActor = mSceneManager->GetSelectedActor();
-	if (selectedActor && command.bOrthographic && mGraphicsManager->GetPerspectiveRatio() == 1.0f)
+	if (selectedActor && command.bOrthographic && activeViewport->getClient().getProjectionRatio() == 1.0f)
 	{
-		const FVector offset = selectedActor->GetTransform().Location - mViewportClient->GetCamera().Location;
-		const float depth = FVector::dot(offset, mViewportClient->GetCamera().GetForwardVector());
-		mViewportClient->GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
+		const FVector offset = selectedActor->GetTransform().Location - activeViewport->getClient().GetCamera().Location;
+		const float depth = FVector::dot(offset, activeViewport->getClient().GetCamera().GetForwardVector());
+		activeViewport->getClient().GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
 	}
-	mGraphicsManager->StartProjectionTransition(command.bOrthographic);
+	activeViewport->getClient().startProjectionTransition(command.bOrthographic);
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportTypeCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->setType(command.Type);
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->getRenderSettings().ViewMode = command.ViewMode;
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->getRenderSettings().SetShowFlag(command.Flag, command.bEnabled);
 }

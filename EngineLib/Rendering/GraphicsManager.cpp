@@ -16,9 +16,8 @@
 #include "Renderer.h"
 
 FGraphicsManager::FGraphicsManager()
-	: mbWireFrame(false)
-	, mbPerspectiveProjection(true)
-	, mProjectionRatio(1.0f)
+	: mGpuResourceManagerRef(nullptr)
+	, mbWireFrame(false)
 {
 }
 
@@ -27,35 +26,19 @@ FGraphicsManager::~FGraphicsManager()
 	mRenderer.reset();
 }
 
-void FGraphicsManager::Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManager)
+void FGraphicsManager::Initialize(
+	HWND hWindow,
+	FGpuResourceManager& gpuResourceManager)
 {
 	mRenderer = std::make_unique<URenderer>();
 	mRenderer->Initialize(hWindow, gpuResourceManager);
+
 	mGpuResourceManagerRef = &gpuResourceManager;
-	mAspect = mRenderer->GetViewportInfo().Width / mRenderer->GetViewportInfo().Height;
 }
 
-void FGraphicsManager::Prepare(const FCamera* mCamera)
+void FGraphicsManager::BeginFrame()
 {
-	mRenderer->Prepare(mbWireFrame);
-
-	// Cache view and projection matrices for rendering
-	const float nearZ = 0.1f;
-	const float farZ = 100.0f;
-
-	float d = mCamera->mOrthoDistance;
-
-	FMatrix view = mCamera->GetViewMatrix();
-	FMatrix projection_u = mCamera->GetUnifiedProjectionMatrix(mAspect, mCamera->mFovDegree, d, nearZ, farZ, mProjectionRatio);
-
-	mViewUnifiedProjectionMatrix = view * projection_u;
-
-	// 하이라이트 두께를 화면 픽셀 기준으로 환산할 때 쓴다
-	mCameraLocation = mCamera->Location;
-	mCameraForward = mCamera->GetForwardVector();
-	mCameraFovDegree = mCamera->mFovDegree;
-	mCameraOrthoDistance = mCamera->mOrthoDistance;
-
+	mRenderer->BeginFrame();
 	// 그리는 순서가 중요하다: 가까운 것을 먼저, 먼 것을 나중에.
 	// 깊이 테스트가 켜져 있으면 나중에 그린 FarCube 가 깊이 비교에서 탈락해
 	// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
@@ -104,7 +87,7 @@ void FGraphicsManager::PrepareForUI()
 void FGraphicsManager::updateRenderQueue(
 	const TArray<FRenderInfo>& renderInfos,
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
-	const FFrustum* frustum)
+	const FFrustum* frustum, uint32 showFlags)
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
@@ -120,7 +103,7 @@ void FGraphicsManager::updateRenderQueue(
 
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
 			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
-			HasShowFlag(EEngineShowFlags::SF_Primitives))
+			HasViewShowFlag(showFlags,EEngineShowFlags::SF_Primitives))
 		{
 			// TODO: Unify all of these into just static mesh
 			//if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
@@ -138,12 +121,12 @@ void FGraphicsManager::updateRenderQueue(
 		}
 		if (HasAllRenderFlags(renderFlags,
 			ERenderFlags::RF_Billboard | ERenderFlags::RF_Text) &&
-			HasShowFlag(EEngineShowFlags::SF_BillboardText))
+			HasViewShowFlag(showFlags,EEngineShowFlags::SF_BillboardText))
 		{
 			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_WorldAxis) &&
-			HasShowFlag(EEngineShowFlags::SF_WorldAxis))
+			HasViewShowFlag(showFlags,EEngineShowFlags::SF_WorldAxis))
 		{
 			outRenderQueueMap[RQT_WorldAxis].Add(&renderInfo);
 		}
@@ -152,7 +135,7 @@ void FGraphicsManager::updateRenderQueue(
 			outRenderQueueMap[RQT_Gizmo].Add(&renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox) &&
-			HasShowFlag(EEngineShowFlags::SF_BoundingBox))
+			HasViewShowFlag(showFlags,EEngineShowFlags::SF_BoundingBox))
 		{
 			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
 		}
@@ -177,35 +160,37 @@ void sortRenderQueueByDistance(TArray<const FRenderInfo*>& renderQueue, const FV
 	std::sort(renderQueue.begin(), renderQueue.end(), compare);
 }
 
-void FGraphicsManager::Render(
+void FGraphicsManager::RenderSceneView(
 	const TArray<FRenderInfo>& scenerRenderInfos,
-	const TArray<FRenderInfo>& gizmoRenderInfos,
 	const TArray<FRenderInfo>& axisRenderInfos,
-	const FCamera& camera,
+	const FSceneView& view,
 	const AActor* selectedActor)
 {
 
-	Prepare(&camera);
+	if (!view.isValid())
+	{
+		return;
+	}
 
-	const FFrustum frustum = FFrustum::FrustumFromViewProjection(mViewUnifiedProjectionMatrix);
+	mRenderer->BeginView(view.Rect);
+	mRenderer->SetViewMode(view.viewMode);
+	const FFrustum frustum = FFrustum::FrustumFromViewProjection(view.viewProjectionMatrix);
 
 	// 인스턴스 테스트용(큐브 1만개 출력=
 	// Prepare Render queue
 	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
 	// Each render info is splitted into different render queues
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
-	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum);
-	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr);
-	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr);
+	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum, view.showFlags);
+	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr, view.showFlags);
 
-	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], mCameraLocation, mCameraForward);
+	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], view.cameraLocation, view.cameraForward);
 
-	//RenderInstancingTest();
-	//renderSimplePrimitiveInstanced(renderQueueMap[RQT_SimplePrimitive], camera);
-	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], camera);
-	renderStaticMesh(renderQueueMap[RQT_StaticMesh], camera);
+	// Simple primitives are currently routed through RQT_StaticMesh.
+	renderTexturedPrimitive(renderQueueMap[RQT_TexturedPrimitive], view);
+	renderStaticMesh(renderQueueMap[RQT_StaticMesh], view);
 
-	renderBillboardText(renderQueueMap[RQT_BillboardText], camera);
+	renderBillboardText(renderQueueMap[RQT_BillboardText], view);
 
 	// Line Buffer에 넣기전에 Buffer의 용량을 미리 지정하여 동적할당 방지
 	CalculateLineBuffer(renderQueueMap[RQT_BoundingBox]);
@@ -213,31 +198,40 @@ void FGraphicsManager::Render(
 	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
 	renderWorldAxis(renderQueueMap[RQT_WorldAxis]);
 
-	if (HasShowFlag(EEngineShowFlags::SF_Grid))
+	if (view.HasShowFlag(EEngineShowFlags::SF_Grid))
 	{
-		renderGrid();
+		renderGrid(view);
 	}
-	renderBoundingBox(renderQueueMap[RQT_BoundingBox], camera.GetRotation());
-	FlushLines();
+	renderBoundingBox(renderQueueMap[RQT_BoundingBox], view.cameraRotation);
+	FlushLines(view);
 
-	renderParticle(renderQueueMap[RQT_Particle], camera);
+	renderParticle(renderQueueMap[RQT_Particle], view);
 
 	//강조
 	if (selectedActor)
 	{
 		FRenderInfo clickedRenderInfo;
 		selectedActor->GetFirstRenderInfo(clickedRenderInfo);
-		renderHighLight(clickedRenderInfo, camera);
+		renderHighLight(clickedRenderInfo, view);
 	}
-
-	/* Clear Depth */
-	mRenderer->ClearDepth();
-
-	// Gizmo
-	renderGizmo(renderQueueMap[RQT_Gizmo], camera);
 }
 
-void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::RenderGizmoView(const TArray<FRenderInfo>& gizmoRenderInfos,const FSceneView& view)
+{
+	if (!view.isValid() ||gizmoRenderInfos.IsEmpty())
+	{
+		return;
+	}
+
+	mRenderer->BeginView(view.Rect);
+
+	TMap<ERenderQueueType,TArray<const FRenderInfo*>> renderQueueMap;
+
+	updateRenderQueue(gizmoRenderInfos,renderQueueMap,nullptr, view.showFlags);
+	renderGizmo(renderQueueMap[RQT_Gizmo],view);
+}
+
+void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
@@ -246,7 +240,7 @@ void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& r
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 		const FBuffer* vertexBuffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
 		if (vertexBuffer == nullptr)
 		{
@@ -257,7 +251,7 @@ void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& r
 	}
 }
 
-void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
@@ -266,7 +260,7 @@ void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateSimpleConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateSimpleConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 		const FBuffer* vertexBuffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
 		if (vertexBuffer == nullptr)
 		{
@@ -277,15 +271,15 @@ void FGraphicsManager::renderGizmo(const TArray<const FRenderInfo*>& renderInfos
 	}
 }
 
-void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
 
 	mRenderer->PrepareParticle();
 
-	FVector3 cameraRight = camera.GetRightVector();
-	FVector3 cameraUp = camera.GetUpVector();
+	FVector3 cameraRight = view.cameraRight;
+	FVector3 cameraUp = view.cameraUp;
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		//mRenderer->UpdateBillboardConstant(
@@ -296,7 +290,7 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 		//	renderInfo->SubUVMesh->UVScale, renderInfo->SubUVMesh->UVOffset);
 		mRenderer->UpdateParticleConstant(
 			renderInfo->GetLocation(), renderInfo->GetScale(),
-			mViewUnifiedProjectionMatrix,
+			view.viewProjectionMatrix,
 			cameraRight, cameraUp,
 			renderInfo->numRows, renderInfo->numCols,
 			renderInfo->currentFrame, renderInfo->nextFrame, renderInfo->frameRatio,
@@ -316,7 +310,7 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 	}
 }
 
-void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
@@ -325,9 +319,14 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateTextureConstant(worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color);
+		mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 
 		const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
+		if (buffer == nullptr)
+		{
+			UE_LOG(Error, Render, "Static mesh buffer not found.");
+			continue;
+		}
 
 		ID3D11ShaderResourceView* texture = nullptr;
 		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
@@ -352,7 +351,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 	}
 }
 
-void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
@@ -370,7 +369,7 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 			: FVector2(0.0f, 0.0f);
 
 		mRenderer->UpdateTextureConstant(
-			worldTransform, mViewUnifiedProjectionMatrix, renderInfo->Color,
+			worldTransform, view.viewProjectionMatrix, renderInfo->Color,
 			uvScale, uvOffset
 		);
 		const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
@@ -474,7 +473,7 @@ void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>&
 //	}
 //}
 
-void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera)
+void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
@@ -482,8 +481,8 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 	// Render Billboard Quads
 	// TODO: Remove dedicated render path for billboard quads if possible
 	//mRenderer->PrepareFont();
-	FVector3 cameraRight = camera.GetRightVector();
-	FVector3 cameraUp = camera.GetUpVector();
+	FVector3 cameraRight = view.cameraRight;
+	FVector3 cameraUp = view.cameraUp;
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		const FTextMesh* textMesh = renderInfo->Textmesh;
@@ -495,7 +494,7 @@ void FGraphicsManager::renderBillboardText(const TArray<const FRenderInfo*>& ren
 
 		mRenderer->UpdateFontConstant(
 			renderInfo->GetLocation(), renderInfo->GetScale(),
-			mViewUnifiedProjectionMatrix,
+			view.viewProjectionMatrix,
 			cameraRight, cameraUp,
 			renderInfo->Color
 		);
@@ -630,13 +629,13 @@ void FGraphicsManager::renderWorldAxis(const TArray<const FRenderInfo*>& renderI
 	}
 }
 
-void FGraphicsManager::renderGrid()
+void FGraphicsManager::renderGrid(const FSceneView& view)
 {
 	int LineCount = (mgridExtent / 2) / mgridSpacing;
 	for (int32 i = -LineCount; i <= LineCount;i++)
 	{
 		float Spaceline = i * mgridSpacing;
-		if (HasShowFlag(EEngineShowFlags::SF_WorldAxis)) {
+		if (view.HasShowFlag(EEngineShowFlags::SF_WorldAxis)) {
 			if (Spaceline == 0) continue;
 		}
 		DrawLine(FVector3(Spaceline, -mgridExtent / 2.0f, 0), FVector3(Spaceline, mgridExtent / 2.0f, 0), FVector4(0.3f, 0.3f, 0.3f, 1.0f));  // Y축 기준 Grid
@@ -665,7 +664,7 @@ void FGraphicsManager::renderBoundingBox(const TArray<const FRenderInfo*>& rende
 	}
 }
 
-void FGraphicsManager::FlushLines()
+void FGraphicsManager::FlushLines(const FSceneView& view)
 {
 	if (mLineVertices.Num() == 0) return;
 
@@ -673,7 +672,7 @@ void FGraphicsManager::FlushLines()
 
 	// 선분 좌표가 이미 월드 공간이라 World는 단위행렬.
 	// Tint.a = 0 이면 셰이더의 lerp가 정점 색을 그대로 통과시킨다
-	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
+	mRenderer->UpdateSimpleConstant(FMatrix::Identity, view.viewProjectionMatrix, FLinearColor(0, 0, 0, 0));
 	mRenderer->RenderLines(&mLineVertices[0], mLineVertices.Num(), &mLineIndices[0], mLineIndices.Num());
 
 	// 안 비우면 매 프레임 누적돼 버퍼가 넘친다. 용량은 유지한 채 개수만 0으로
@@ -704,7 +703,6 @@ void FGraphicsManager::Display()
 
 void FGraphicsManager::Update(float deltaTime)
 {
-	mAspect = mRenderer->GetViewportInfo().Width / mRenderer->GetViewportInfo().Height;
 
 	// 테스트용: deltaTime이 초 단위라는 전제
 	//static float elapsed = 0.0f;
@@ -734,16 +732,6 @@ void FGraphicsManager::Update(float deltaTime)
 	//	index = (index + 1)
 	//		% (sizeof(testTexts) / sizeof(testTexts[0]));
 	//}
-}
-
-bool FGraphicsManager::IsPerspectiveProjection() const
-{
-	return mbPerspectiveProjection;
-}
-
-void FGraphicsManager::SetPerspectiveProjection(bool bPerspectiveProjection)
-{
-	mbPerspectiveProjection = bPerspectiveProjection;
 }
 
 URenderer* FGraphicsManager::GetRenderer() const
@@ -798,220 +786,127 @@ float FGraphicsManager::GetGridWidth() const
 	return mgridSpacing;
 }
 
-void  FGraphicsManager::SetGridWidth(float width)
+void FGraphicsManager::SetGridWidth(float width)
 {
 	mgridSpacing = width;
 }
 
-
-void FGraphicsManager::renderHighLight(const FRenderInfo& RI, const FCamera& camera)
+void FGraphicsManager::renderHighLight(
+	const FRenderInfo& renderInfo,
+	const FSceneView& view)
 {
 	assert(mGpuResourceManagerRef);
-	auto& resources = *mGpuResourceManagerRef;
 
-	mRenderer->PrepareHighlight();
-
-	const FVector Center = GetPrimitiveCenter(RI.MeshName);
-	const FVector HalfExtent = GetPrimitiveHalfExtent(RI.MeshName);
-	FMatrix worldTransformMatrix = RI.GetTransformMatrix(camera.Rotation);
-
-	// 화면에서 OUTLINE_PIXELS 만큼 보이려면 이 깊이에서 월드로 얼마여야 하는지 환산한다.
-	// 깊이 d에서 뷰포트가 담는 월드 높이가 2*d*tan(fov/2) 이므로, 그걸 픽셀 수로 나누면 픽셀당 월드 크기다.
-	const FVector ObjectLocation = worldTransformMatrix.TransformPosition(Center);
-	const float Depth = FVector::dot(ObjectLocation - mCameraLocation, mCameraForward);
-	const float TanHalfFov = tanf(FMath::DegreesToRadians(mCameraFovDegree * 0.5f));
-	const float effectiveDepth = FMath::Max(
-		(1.0f - mProjectionRatio) * mCameraOrthoDistance + mProjectionRatio * Depth
-		, 0.01f);
-	//const float H = mbPerspectiveProjection ? 2.0f * Depth * TanHalfFov : 5.774f;
-	const float H = 2.0f * effectiveDepth * TanHalfFov;
-	const float WorldThickness = OUTLINE_PIXELS * H / mRenderer->GetViewportInfo().Height;
-
-
-	// 축마다 월드 공간에서 WorldThickness 만큼만 자라도록 배율을 따로 구한다.
-	const FVector WorldScale(
-		worldTransformMatrix.GetUnitAxis(EAxis::X).Length(),
-		worldTransformMatrix.GetUnitAxis(EAxis::Y).Length(),
-		worldTransformMatrix.GetUnitAxis(EAxis::Z).Length());
-
-	FVector OutlineScale = {
-		GetOutlineAxisScale(HalfExtent.x * WorldScale.x, WorldThickness),
-		GetOutlineAxisScale(HalfExtent.y * WorldScale.y, WorldThickness),
-		GetOutlineAxisScale(HalfExtent.z * WorldScale.z, WorldThickness) };
-
-
-	const FMatrix Outline = FMatrix::Translation(FVector(-Center.x, -Center.y, -Center.z))
-		* FMatrix::Scale(OutlineScale)
-		* FMatrix::Translation(Center)
-		* worldTransformMatrix;
-
-	FBuffer buffer = *resources.FindImmutableBufferOrAdd(RI.MeshName);
-	//if (mbPerspectiveProjection)
-	//{
-	//	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewProjectionMatrix, Outline, RI);
-	//}
-	//else
-	//{
-	//	mRenderer->RenderHighlight(vertexBuffer.Buffer, vertexBuffer.SourceNum, mViewOrthogonalProjectionMatrix, Outline, RI);
-	//}
-	mRenderer->RenderHighlight(
-		buffer.Buffer.Get(),
-		buffer.SourceNum,
-		mViewUnifiedProjectionMatrix, Outline, worldTransformMatrix,
-		buffer.IndexBuffer.Get(),
-		buffer.IndexCount);
-}
-
-
-void FGraphicsManager::StartProjectionTransition(bool orthographic)
-{
-	mProjectionStartRatio = mProjectionRatio;
-	mProjectionTargetRatio = orthographic ? 0.0f : 1.0f;
-	mProjectionElapsed = 0.0f;
-
-	mbProjectionTransitioning =
-		mProjectionStartRatio != mProjectionTargetRatio;
-}
-
-bool FGraphicsManager::IsOrthographicTarget() const
-{
-	return mProjectionTargetRatio == 0.0f;
-}
-
-void FGraphicsManager::UpdateProjectionTransition(float deltaTime)
-{
-	if (!mbProjectionTransitioning)
+	if (!view.isValid())
 	{
 		return;
 	}
 
-	mProjectionElapsed += deltaTime;
+	auto& resources = *mGpuResourceManagerRef;
+	const FBuffer* buffer =
+		resources.FindImmutableBufferOrAdd(renderInfo.MeshName);
 
-	const float u = FMath::Clamp(
-		mProjectionElapsed / mProjectionDuration, 0.0f, 1.0f);
-
-	// Smoothstep interpolation for a smoother transition
-	const float blend = u * u * (3.0f - 2.0f * u);
-
-	mProjectionRatio = mProjectionStartRatio + (mProjectionTargetRatio - mProjectionStartRatio) * blend;
-
-	if (u >= 1.0f)
+	if (buffer == nullptr)
 	{
-		mProjectionRatio = mProjectionTargetRatio;
-		mbProjectionTransitioning = false;
+		UE_LOG(Error, Render, "Highlight mesh buffer not found.");
+		return;
 	}
+
+	mRenderer->PrepareHighlight();
+
+	const FVector center = GetPrimitiveCenter(renderInfo.MeshName);
+	const FVector halfExtent = GetPrimitiveHalfExtent(renderInfo.MeshName);
+	const FMatrix worldTransform =
+		renderInfo.GetTransformMatrix(view.cameraRotation);
+
+	const FVector objectLocation =
+		worldTransform.TransformPosition(center);
+	const float depth = FVector::dot(
+		objectLocation - view.cameraLocation,
+		view.cameraForward);
+	const float tanHalfFov = tanf(
+		FMath::DegreesToRadians(view.fovDegree * 0.5f));
+	const float effectiveDepth = FMath::Max(
+		(1.0f - view.projectionRatio) * view.orthoDistance +
+		view.projectionRatio * depth,
+		0.01f);
+	const float visibleWorldHeight =
+		2.0f * effectiveDepth * tanHalfFov;
+	const float worldThickness =
+		OUTLINE_PIXELS * visibleWorldHeight / view.Rect.Height;
+
+	const FVector worldScale(
+		worldTransform.GetUnitAxis(EAxis::X).Length(),
+		worldTransform.GetUnitAxis(EAxis::Y).Length(),
+		worldTransform.GetUnitAxis(EAxis::Z).Length());
+
+	const FVector outlineScale = {
+		GetOutlineAxisScale(
+			halfExtent.x * worldScale.x,
+			worldThickness),
+		GetOutlineAxisScale(
+			halfExtent.y * worldScale.y,
+			worldThickness),
+		GetOutlineAxisScale(
+			halfExtent.z * worldScale.z,
+			worldThickness)
+	};
+
+	const FMatrix outline =
+		FMatrix::Translation(
+			FVector(-center.x, -center.y, -center.z)) *
+		FMatrix::Scale(outlineScale) *
+		FMatrix::Translation(center) *
+		worldTransform;
+
+	mRenderer->RenderHighlight(
+		buffer->Buffer.Get(),
+		buffer->SourceNum,
+		view.viewProjectionMatrix,
+		outline,
+		worldTransform,
+		buffer->IndexBuffer.Get(),
+		buffer->IndexCount);
 }
 
-bool FGraphicsManager::HasShowFlag(EEngineShowFlags Flag) const
+bool FGraphicsManager::HasShowFlag(EEngineShowFlags flag) const
 {
-	const uint32 FlagValue = static_cast<uint32>(Flag);
-	return (mShowFlags & FlagValue) != 0;
+	return (mShowFlags & static_cast<uint32>(flag)) != 0;
 }
 
-void FGraphicsManager::SetShowFlag(EEngineShowFlags Flag, bool bEnable)
+void FGraphicsManager::SetShowFlag(
+	EEngineShowFlags flag,
+	bool bEnable)
 {
-	const uint32 FlagValue = static_cast<uint32>(Flag);
+	const uint32 flagValue = static_cast<uint32>(flag);
 
 	if (bEnable)
 	{
-		mShowFlags |= FlagValue;
+		mShowFlags |= flagValue;
 	}
 	else
 	{
-		mShowFlags &= ~FlagValue;
+		mShowFlags &= ~flagValue;
 	}
 }
 
-void FGraphicsManager::SetViewMode(EViewModeIndex InViewMode)
+void FGraphicsManager::SetViewMode(EViewModeIndex viewMode)
 {
-	mViewMode = InViewMode;
-
-	switch (mViewMode)
-	{
-	case EViewModeIndex::VMI_Lit:
-		SetWireFrame(false);
-		// Lit 렌더링 상태 설정
-		break;
-
-	case EViewModeIndex::VMI_Unlit:
-		SetWireFrame(false);
-		// Unlit 렌더링 상태 설정
-		break;
-
-	case EViewModeIndex::VMI_Wireframe:
-		SetWireFrame(true);
-		break;
-	}
+	mViewMode = viewMode;
+	mbWireFrame =
+		viewMode == EViewModeIndex::VMI_Wireframe;
 }
 
-void FGraphicsManager::CalculateLineBuffer(const TArray<const FRenderInfo*>& renderInfos)
+void FGraphicsManager::CalculateLineBuffer(
+	const TArray<const FRenderInfo*>& renderInfos)
 {
-	uint32 countIndices = 6 + (mgridExtent / mgridSpacing) * 2 * 2 + renderInfos.Num() * 24;
-	uint32 countvertices = 6 + (mgridExtent / mgridSpacing) * 2 * 2 + renderInfos.Num() * 8;
-	mLineIndices.Reserve(countIndices);
-	mLineVertices.Reserve(countvertices);
+	const uint32 gridElementCount = static_cast<uint32>(
+		(mgridExtent / mgridSpacing) * 4.0f);
+	const uint32 renderInfoCount =
+		static_cast<uint32>(renderInfos.Num());
+
+	mLineIndices.Reserve(
+		6 + gridElementCount + renderInfoCount * 24);
+	mLineVertices.Reserve(
+		6 + gridElementCount + renderInfoCount * 8);
 }
-
-
-//// 인스턴스 테스트용 큐브 출력 함수(1만개)
-//void FGraphicsManager::RenderInstancingTest()
-//{
-//	FBuffer* cube = mBufferMap.Find(EPrimitive::EP_Cube);
-//	if (!cube || !cube->Buffer)
-//		return;
-//
-//	// 기존 색상 큐브는 정점 36개이므로 0~35 순서로 연결.
-//	// 인덱스 버퍼는 최초 한 번만 생성.
-//	if (!mTestInstanceIndexBuffer)
-//	{
-//		UINT indices[36];
-//		for (UINT i = 0; i < 36; ++i)
-//			indices[i] = i;
-//
-//		mTestInstanceIndexBuffer = mRenderer->CreatePrimitiveIndexBuffer(indices, 36);
-//
-//		if (!mTestInstanceIndexBuffer)
-//			return;
-//	}
-//
-//	TArray<FInstanceData> instances;
-//
-//	instances.Reserve(10000);
-//
-//	/// 큐브 배치 관련
-//	const int32 ColumnCount = 100;
-//	const float Spacing = 2.5f;
-//
-//	// 전체 격자를 원점 중심으로 맞추기 위한 오프셋
-//	const float HalfWidth = (ColumnCount - 1) * Spacing * 0.5f;
-//
-//	// 원점 주변, 지면 위에 큐브 10000개 배치
-//	for (UINT i = 0; i < 10000; ++i)
-//	{
-//		const int32 xIndex = i % ColumnCount;
-//		const int32 yIndex = i / ColumnCount;
-//
-//		const float x = xIndex * Spacing - HalfWidth;
-//		const float y = yIndex * Spacing - HalfWidth;
-//
-//		FInstanceData instance = {};
-//
-//		instance.World = FMatrix::Translation(FVector(x, y, 1.0f));
-//
-//		//instance.Tint = FVector4(1, 1, 1, 1);
-//
-//		// 3가지 색
-//		float r = static_cast<float>(i % 3 == 0);
-//		float g = static_cast<float>(i % 3 == 1);
-//		float b = static_cast<float>(i % 3 == 2);
-//
-//		instance.Tint = FLinearColor(r, g, b, 1.0f);
-//
-//		instances.Add(instance);
-//	}
-//	mRenderer->PrepareSimpleInstanced();
-//	mRenderer->UpdateSimpleConstant(FMatrix::Identity, mViewUnifiedProjectionMatrix, FLinearColor(0, 0, 0, 0));
-//
-//	// 한 번의 호출로 큐브 1만개 그리기
-//	mRenderer->RenderSimpleInstanced(cube->Buffer, mTestInstanceIndexBuffer, 36, &instances[0], 10000);
-//}

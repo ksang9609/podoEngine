@@ -26,6 +26,8 @@ constexpr uint32 StrideNormalVertex = sizeof(FNormalVertex);
 
 class FGpuResourceManager;
 
+struct FViewRect;
+
 class URenderer
 {
 	template<typename T>
@@ -42,7 +44,9 @@ public:
 	void Release();
 
 	// Gloabal prepare method
-	void Prepare(bool bWireFrame);
+	void BeginFrame();
+	void SetViewMode(EViewModeIndex viewMode);
+	void BeginView(const FViewRect& rect);
 	void PrepareForUI();
 
 	/* Prepare methods for each rendering type */
@@ -122,7 +126,7 @@ private:
 	/* Refernece */
 	FGpuResourceManager* mGpuResourceManagerRef = nullptr;
 
-	/* Internal global rendering state */
+	EViewModeIndex mViewMode = EViewModeIndex::VMI_Lit;
 	bool mbWireFrame = false;
 
 	/* Direct3D resources */
