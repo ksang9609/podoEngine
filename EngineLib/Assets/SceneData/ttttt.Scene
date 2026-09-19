@@ -1,0 +1,123 @@
+{
+  "NextUUID" : 10,
+  "Version" : 0,
+  "World" : {
+    "ClassName" : "UWorld",
+    "Properties" : {
+      "Name" : "UWorld",
+      "UUID" : 0,
+      "mActors" : [{
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "StaticMesh",
+            "UUID" : 1,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "UStaticMeshComponent",
+                  "UUID" : 2,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "Unknown"
+                }
+              }, {
+                "ClassName" : "UNameComponent",
+                "ParentUUID" : 2,
+                "Properties" : {
+                  "Name" : "UNameComponent",
+                  "UUID" : 3,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mNameText" : "Name: StaticMesh, UUID: 1",
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
+                }
+              }],
+            "mRootComponentUUID" : 2
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "StaticMesh",
+            "UUID" : 4,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "UStaticMeshComponent",
+                  "UUID" : 5,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
+                  "mRelativeLocation" : [2.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "Unknown"
+                }
+              }, {
+                "ClassName" : "UNameComponent",
+                "ParentUUID" : 5,
+                "Properties" : {
+                  "Name" : "UNameComponent",
+                  "UUID" : 6,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mNameText" : "Name: StaticMesh, UUID: 4",
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
+                }
+              }],
+            "mRootComponentUUID" : 5
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "StaticMesh",
+            "UUID" : 7,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "UStaticMeshComponent",
+                  "UUID" : 8,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
+                  "mRelativeLocation" : [-2.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "Unknown"
+                }
+              }, {
+                "ClassName" : "UNameComponent",
+                "ParentUUID" : 8,
+                "Properties" : {
+                  "Name" : "UNameComponent",
+                  "UUID" : 9,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mNameText" : "Name: StaticMesh, UUID: 7",
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
+                }
+              }],
+            "mRootComponentUUID" : 8
+          }
+        }]
+    }
+  }
+}

@@ -6,6 +6,9 @@
 
 #include "Core/FrameTimer.h"
 #include "Core/IO/FileManager.h"
+#include "Core/AssetManager.h"
+#include "Core/Name.h"
+
 #include "Rendering/GraphicsManager.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/SceneManager.h"
@@ -13,9 +16,11 @@
 #include "Engine/Components/PrimitiveComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
+#include "Engine/Components/StaticMeshComponent.h"
 
 /* Editor */
 #include "FEditorViewportClient.h"
+#include "AssetPicker.h"
 #include "Console.h"
 
 
@@ -488,70 +493,69 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 			const TArray<UActorComponent*>& components = selectedActor->GetComponents();
 			for (const UActorComponent* component : components)
 			{
-				ImGui::PushID(component->UUID); // Ensure unique ID for each child
-				if (ImGui::BeginChild("ComponentFrame", ImVec2(0, 0),
-					ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+				ImGui::PushID(component->UUID);
+
+				if (ImGui::BeginChild("ComponentFrame", ImVec2(0, 0), ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
 				{
 					ImGui::Text("Class: %s", component->GetRuntimeClass()->Name.CStr());
 					ImGui::Text("UUID: %d", component->UUID);
-					FString ComponentName = component->GetName().ToString();
+
+					FString componentName = component->GetName().ToString();
 					ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
-						ComponentName.CStr(),
+						componentName.CStr(),
 						component->GetName().DisplayIndex,
-						component->GetName().ComparisonIndex
-					);
-				}
+						component->GetName().ComparisonIndex);
 
-				if (const UPrimitiveComponent* primitiveComponent =
-					component->Cast<UPrimitiveComponent>())
-				{
-					bool bUseTexture = primitiveComponent->GetUseTexture();
-					FLinearColor color = primitiveComponent->GetColor();
+					// StaticMesh DropList
+					if (const UStaticMeshComponent* staticMeshComponent = component->Cast<UStaticMeshComponent>())
+					{
+						if (FAssetPicker::DrawStaticMeshPicker(guiReference.AssetManager, mGuiInputField.SelectedStaticMeshKey))
+						{
+							outCommands.Emplace(FSetStaticMeshCommand{
+								staticMeshComponent->GetObjectID(),
+								mGuiInputField.SelectedStaticMeshKey
+								});
+						}
+					}
 
-					if (ImGui::Checkbox("Use Texture", &bUseTexture))
+					if (const UPrimitiveComponent* primitiveComponent = component->Cast<UPrimitiveComponent>())
 					{
-						outCommands.Emplace(FSetComponentUseTextureCommand{ primitiveComponent->GetObjectID(), bUseTexture });
-					}
-					if (ImGui::ColorEdit4("Color", &color.R))
-					{
-						outCommands.Emplace(FSetComponentColorCommand{ primitiveComponent->GetObjectID(), color });
-					}
-				}
+						bool bUseTexture = primitiveComponent->GetUseTexture();
+						FLinearColor color = primitiveComponent->GetColor();
 
-				if (const USphereComponent* sphereComponent =
-					component->Cast<USphereComponent>())
-				{
-					bool bSpin = sphereComponent->GetSpin();
-					float spinSpeed = sphereComponent->GetSpinSpeed();
+						if (ImGui::Checkbox("Use Texture", &bUseTexture))
+							outCommands.Emplace(FSetComponentUseTextureCommand{ primitiveComponent->GetObjectID(), bUseTexture });
 
-					if (ImGui::Checkbox("Spin", &bSpin))
-					{
-						outCommands.Emplace(FSetSphereComponentSpinCommand{ sphereComponent->GetObjectID(), bSpin });
+						if (ImGui::ColorEdit4("Color", &color.R))
+							outCommands.Emplace(FSetComponentColorCommand{ primitiveComponent->GetObjectID(), color });
 					}
-					if (ImGui::DragFloat("Spin Speed", &spinSpeed, 0.1f, 0.0f, 3600.0f))
-					{
-						outCommands.Emplace(FSetSphereComponentSpinSpeedCommand{ sphereComponent->GetObjectID(), spinSpeed });
-					}
-				}
 
-				if (const UParticleSubUVComponent* particleSubUVComponent =
-					component->Cast<UParticleSubUVComponent>())
-				{
-					bool bLooping = particleSubUVComponent->IsLooping();
-					float playRate = particleSubUVComponent->GetPlayRate();
-					bool bUseAddtiveBlend = particleSubUVComponent->GetBlendStateType() == EBlendStateType::BST_Additive;
+					if (const USphereComponent* sphereComponent = component->Cast<USphereComponent>())
+					{
+						bool bSpin = sphereComponent->GetSpin();
+						float spinSpeed = sphereComponent->GetSpinSpeed();
 
-					if (ImGui::Checkbox("Looping", &bLooping))
-					{
-						outCommands.Emplace(FSetParticleSubUVComponentLoopingCommand{ particleSubUVComponent->GetObjectID(), bLooping });
+						if (ImGui::Checkbox("Spin", &bSpin))
+							outCommands.Emplace(FSetSphereComponentSpinCommand{ sphereComponent->GetObjectID(), bSpin });
+
+						if (ImGui::DragFloat("Spin Speed", &spinSpeed, 0.1f, 0.0f, 3600.0f))
+							outCommands.Emplace(FSetSphereComponentSpinSpeedCommand{ sphereComponent->GetObjectID(), spinSpeed });
 					}
-					if (ImGui::DragFloat("Play Rate", &playRate, 0.1f, 0.0f, 10.0f))
+
+					if (const UParticleSubUVComponent* particleSubUVComponent = component->Cast<UParticleSubUVComponent>())
 					{
-						outCommands.Emplace(FSetParticleSubUVComponentPlayRateCommand{ particleSubUVComponent->GetObjectID(), playRate });
-					}
-					if (ImGui::Checkbox("Additive Blend", &bUseAddtiveBlend))
-					{
-						outCommands.Emplace(FSetParticleSubUVComponentBlendStateTypeCommand{ particleSubUVComponent->GetObjectID(), bUseAddtiveBlend ? EBlendStateType::BST_Additive : EBlendStateType::BST_AlphaBlend });
+						bool bLooping = particleSubUVComponent->IsLooping();
+						float playRate = particleSubUVComponent->GetPlayRate();
+						bool bUseAddtiveBlend = particleSubUVComponent->GetBlendStateType() == EBlendStateType::BST_Additive;
+
+						if (ImGui::Checkbox("Looping", &bLooping))
+							outCommands.Emplace(FSetParticleSubUVComponentLoopingCommand{ particleSubUVComponent->GetObjectID(), bLooping });
+
+						if (ImGui::DragFloat("Play Rate", &playRate, 0.1f, 0.0f, 10.0f))
+							outCommands.Emplace(FSetParticleSubUVComponentPlayRateCommand{ particleSubUVComponent->GetObjectID(), playRate });
+
+						if (ImGui::Checkbox("Additive Blend", &bUseAddtiveBlend))
+							outCommands.Emplace(FSetParticleSubUVComponentBlendStateTypeCommand{ particleSubUVComponent->GetObjectID(), bUseAddtiveBlend ? EBlendStateType::BST_Additive : EBlendStateType::BST_AlphaBlend });
 					}
 				}
 
@@ -561,6 +565,11 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 		}
 		ImGui::EndChild();
 	}
+
+
+
+	static FName selectedStaticMeshKey;
+
 
 	ImGui::End();
 }
