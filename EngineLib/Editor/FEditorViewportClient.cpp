@@ -483,14 +483,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 	}
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
-	mGizmo.Update(
-		sceneManager->GetSelectedActor(),
-		mCamera.Location,
-		mCamera.GetForwardVector(),
-		mCamera.mFovDegree,
-		mProjectionRatio,
-		mCamera.mOrthoDistance);
-
+	UpdateGizmoForView(sceneManager->GetSelectedActor());
 }
 
 bool FEditorViewportClient::RayIntersectsTriangle(const FVector& Origin, const FVector& Dir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT, float& OutU, float& OutV)
@@ -694,4 +687,15 @@ void FEditorViewportClient::updateProjectionTransition(float deltatime)
 		mProjectionRatio = mProjectionTargetRatio;
 		bProjectionTransitioning = false;
 	}
+}
+
+void FEditorViewportClient::UpdateGizmoForView(const AActor* selectedActor)
+{
+	mGizmo.Update(
+		selectedActor,
+		mCamera.Location,
+		mCamera.GetForwardVector(),
+		mCamera.mFovDegree,
+		mProjectionRatio,
+		mCamera.mOrthoDistance);
 }

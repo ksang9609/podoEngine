@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "../Core/Core.h"
+#include "../Core/enum.h"
 #include <array>
 
 inline constexpr uint8 invalidViewportId = 0;
@@ -61,4 +62,35 @@ struct FViewportWindowState
 	FRect imageRect;
 	bool bImageHovered = false;
 	bool bFocused = false;
+};
+
+struct FViewportRenderSettings
+{
+	EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
+
+	uint32 ShowFlags =
+		static_cast<uint32>(EEngineShowFlags::SF_Primitives) |
+		static_cast<uint32>(EEngineShowFlags::SF_BillboardText) |
+		static_cast<uint32>(EEngineShowFlags::SF_WorldAxis) |
+		static_cast<uint32>(EEngineShowFlags::SF_BoundingBox) |
+		static_cast<uint32>(EEngineShowFlags::SF_Grid);
+
+	bool HasShowFlag(EEngineShowFlags flag) const
+	{
+		return (ShowFlags & static_cast<uint32>(flag)) != 0;
+	}
+
+	void SetShowFlag(EEngineShowFlags flag,bool bEnabled)
+	{
+		const uint32 value = static_cast<uint32>(flag);
+
+		if (bEnabled)
+		{
+			ShowFlags |= value;
+		}
+		else
+		{
+			ShowFlags &= ~value;
+		}
+	}
 };

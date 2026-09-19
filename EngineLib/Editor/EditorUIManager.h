@@ -87,5 +87,5 @@ private:
 	void updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updateObjectListPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
-	void updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager);
+	void updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FEditorCommands& outCommands);
 };

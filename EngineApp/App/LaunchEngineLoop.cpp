@@ -352,32 +352,63 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		}
 
 		mGraphicsManager->BeginFrame();
+		AActor* selectedActor = mSceneManager->GetSelectedActor();
 
 		// Viewport 수만큼 같은 Scene을 다른 Camera로 렌더링
 		for (uint8 i = 0; i < viewportCount; i++)
 		{
-			FViewport* viewport =mEditorViewportManager->getViewportAt(i);
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
 
 			if (viewport == nullptr)
 			{
 				continue;
 			}
 
-			const FSceneView sceneView =
-				viewport->buildSceneView();
+			FEditorViewportClient& client = viewport->getClient();
+			const FSceneView sceneView = viewport->buildSceneView();
 
 			if (!sceneView.isValid())
 			{
 				continue;
 			}
 
-			mGraphicsManager->Render(
+			client.UpdateGizmoForView(selectedActor);
+
+			mGraphicsManager->RenderSceneView(
 				mSceneManager->GetRenderInfos(),
-				viewportClient->mGizmo.GetGizmoRenderInfo(),
 				mSceneManager->GetAxisRenderInfos(),
 				sceneView,
-				mSceneManager->GetSelectedActor());
+				selectedActor);
 		}
+
+		// Scene의 Depth만 한 번 초기화
+		mGraphicsManager->ClearDepth();
+
+		// 각 Viewport의 Gizmo 렌더링
+		for (uint8 i = 0; i < viewportCount; ++i)
+		{
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+
+			FEditorViewportClient& client = viewport->getClient();
+
+			const FSceneView sceneView = viewport->buildSceneView();
+
+			if (!sceneView.isValid())
+			{
+				continue;
+			}
+			client.UpdateGizmoForView(selectedActor);
+
+			const TArray<FRenderInfo> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
+
+			mGraphicsManager->RenderGizmoView(gizmoRenderInfos,sceneView);
+		}
+
 
 		//ImGui
 		{
@@ -696,4 +727,25 @@ void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& 
 		activeViewport->getClient().GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
 	}
 	activeViewport->getClient().startProjectionTransition(command.bOrthographic);
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportTypeCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->setType(command.Type);
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->getRenderSettings().ViewMode = command.ViewMode;
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->getRenderSettings().SetShowFlag(command.Flag, command.bEnabled);
 }

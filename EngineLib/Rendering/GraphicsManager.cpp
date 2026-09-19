@@ -74,7 +74,7 @@ void FGraphicsManager::InitializeLoadingScreen()
 
 void FGraphicsManager::BeginFrame()
 {
-	mRenderer->BeginFrame(mbWireFrame);
+	mRenderer->BeginFrame();
 	// 그리는 순서가 중요하다: 가까운 것을 먼저, 먼 것을 나중에.
 	// 깊이 테스트가 켜져 있으면 나중에 그린 FarCube 가 깊이 비교에서 탈락해
 	// NearCube(주황)가 앞에 남고, 꺼져 있으면 FarCube(파랑)가 그 위를 덮어쓴다.
@@ -123,7 +123,7 @@ void FGraphicsManager::PrepareForUI()
 void FGraphicsManager::updateRenderQueue(
 	const TArray<FRenderInfo>& renderInfos,
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
-	const FFrustum* frustum)
+	const FFrustum* frustum, uint32 showFlags)
 {
 	for (const FRenderInfo& renderInfo : renderInfos)
 	{
@@ -139,7 +139,7 @@ void FGraphicsManager::updateRenderQueue(
 
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
 			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
-			HasShowFlag(EEngineShowFlags::SF_Primitives))
+			HasViewShowFlag(showFlags,EEngineShowFlags::SF_Primitives))
 		{
 			// TODO: Unify all of these into just static mesh
 			if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
@@ -157,12 +157,12 @@ void FGraphicsManager::updateRenderQueue(
 		}
 		if (HasAllRenderFlags(renderFlags,
 			ERenderFlags::RF_Billboard | ERenderFlags::RF_Text) &&
-			HasShowFlag(EEngineShowFlags::SF_BillboardText))
+			HasViewShowFlag(showFlags,EEngineShowFlags::SF_BillboardText))
 		{
 			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_WorldAxis) &&
-			HasShowFlag(EEngineShowFlags::SF_WorldAxis))
+			HasViewShowFlag(showFlags,EEngineShowFlags::SF_WorldAxis))
 		{
 			outRenderQueueMap[RQT_WorldAxis].Add(&renderInfo);
 		}
@@ -171,7 +171,7 @@ void FGraphicsManager::updateRenderQueue(
 			outRenderQueueMap[RQT_Gizmo].Add(&renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox) &&
-			HasShowFlag(EEngineShowFlags::SF_BoundingBox))
+			HasViewShowFlag(showFlags,EEngineShowFlags::SF_BoundingBox))
 		{
 			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
 		}
@@ -196,9 +196,8 @@ void sortRenderQueueByDistance(TArray<const FRenderInfo*>& renderQueue, const FV
 	std::sort(renderQueue.begin(), renderQueue.end(), compare);
 }
 
-void FGraphicsManager::Render(
+void FGraphicsManager::RenderSceneView(
 	const TArray<FRenderInfo>& scenerRenderInfos,
-	const TArray<FRenderInfo>& gizmoRenderInfos,
 	const TArray<FRenderInfo>& axisRenderInfos,
 	const FSceneView& view,
 	const AActor* selectedActor)
@@ -210,7 +209,7 @@ void FGraphicsManager::Render(
 	}
 
 	mRenderer->BeginView(view.Rect);
-
+	mRenderer->SetViewMode(view.viewMode);
 	const FFrustum frustum = FFrustum::FrustumFromViewProjection(view.viewProjectionMatrix);
 
 	// 인스턴스 테스트용(큐브 1만개 출력=
@@ -218,9 +217,8 @@ void FGraphicsManager::Render(
 	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
 	// Each render info is splitted into different render queues
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
-	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum);
-	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr);
-	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr);
+	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum, view.showFlags);
+	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr, view.showFlags);
 
 	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], view.cameraLocation, view.cameraForward);
 
@@ -237,7 +235,7 @@ void FGraphicsManager::Render(
 	//월드 축. 액터 뒤에 그려서 같은 깊이 버퍼로 가려지게 한다 (기즈모와 달리 깊이를 지우지 않는다)
 	renderWorldAxis(renderQueueMap[RQT_WorldAxis]);
 
-	if (HasShowFlag(EEngineShowFlags::SF_Grid))
+	if (view.HasShowFlag(EEngineShowFlags::SF_Grid))
 	{
 		renderGrid();
 	}
@@ -253,9 +251,21 @@ void FGraphicsManager::Render(
 		selectedActor->GetFirstRenderInfo(clickedRenderInfo);
 		renderHighLight(clickedRenderInfo, view);
 	}
+}
 
-	// Gizmo
-	renderGizmo(renderQueueMap[RQT_Gizmo], view);
+void FGraphicsManager::RenderGizmoView(const TArray<FRenderInfo>& gizmoRenderInfos,const FSceneView& view)
+{
+	if (!view.isValid() ||gizmoRenderInfos.IsEmpty())
+	{
+		return;
+	}
+
+	mRenderer->BeginView(view.Rect);
+
+	TMap<ERenderQueueType,TArray<const FRenderInfo*>> renderQueueMap;
+
+	updateRenderQueue(gizmoRenderInfos,renderQueueMap,nullptr, view.showFlags);
+	renderGizmo(renderQueueMap[RQT_Gizmo],view);
 }
 
 void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)

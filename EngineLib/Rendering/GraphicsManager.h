@@ -57,12 +57,15 @@ public:
 	void PrepareForUI();
 
 	/* Rendering functions */
-	void Render(
+	void RenderSceneView(
 		const TArray<FRenderInfo>& scenerRenderInfos,
-		const TArray<FRenderInfo>& gizmoRenderInfos,
 		const TArray<FRenderInfo>& axisRenderInfos,
 		const FSceneView& view,
 		const AActor* selectedActor);
+	void RenderGizmoView(
+		const TArray<FRenderInfo>& gizmoRenderInfos,
+		const FSceneView& view
+	);
 
 	void Display();
 	void Update(float deltaTime);
@@ -105,6 +108,8 @@ public:
 	uint32 GetShowFlags() const { return mShowFlags; }
 	void SetShowFlag(EEngineShowFlags Flag, bool bEnable);
 	void SetShowFlags(uint32 flags) { mShowFlags = flags; }
+
+	void ClearDepth() { mRenderer->ClearDepth(); }
 
 private:
 	URenderer* mRenderer;
@@ -157,7 +162,9 @@ private:
 	void updateRenderQueue(
 		const TArray<FRenderInfo>& renderInfos,
 		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
-		const FFrustum* frustum);
+		const FFrustum* frustum, uint32 showFlags);
+
+	static bool HasViewShowFlag(uint32 showFlags, EEngineShowFlags flag){return (showFlags & static_cast<uint32>(flag)) != 0;}
 
 	/* Rendering Functions */
 	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);

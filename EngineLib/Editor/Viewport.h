@@ -15,6 +15,10 @@ public:
 
 	FSceneView buildSceneView() const;
 
+	void setType(EViewportType type) { Type = type; Client->setViewportSettings(type); }
+	FViewportRenderSettings& getRenderSettings() {return renderSettings;}
+	const FViewportRenderSettings& getRenderSettings() const{return renderSettings;}
+
 	uint8 getId() const;
 	EViewportType getType() const;
 
@@ -31,4 +35,5 @@ private:
 	EViewportType Type = EViewportType::Perspective;
 	std::unique_ptr<FEditorViewportClient> Client;
 	FViewportWindowState windowState;
+	FViewportRenderSettings renderSettings;
 };

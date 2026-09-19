@@ -3,6 +3,7 @@
 #include "../Core/Math/Matrix.h"
 #include "../Core/Math/Rotator.h"
 #include "../Core/Math/Vector.h"
+#include "../Core/enum.h"
 
 class FCamera;
 
@@ -40,6 +41,12 @@ struct FSceneView
 	float farZ = 100.0f;
 
 	bool isValid() const { return Rect.isValid(); }
+
+
+	EViewModeIndex viewMode = EViewModeIndex::VMI_Lit;
+	uint32 showFlags = 0;
+
+	bool HasShowFlag(EEngineShowFlags flag) const { return (showFlags & static_cast<uint32>(flag)) != 0; }
 };
 
 FSceneView makeSceneView(const FCamera& camera, const FViewRect& rect, float projectionratio,

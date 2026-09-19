@@ -42,6 +42,12 @@ public:
 	FCamera& GetCamera() { return mCamera; }
 	const FCamera& GetCamera() const { return mCamera; }
 
+	void UpdateGizmoForView(const AActor* selectedActor);
+
+	FGizmo& GetGizmo() { return mGizmo; }
+	const FGizmo& GetGizmo() const{ return mGizmo; }
+	void setViewportSettings(EViewportType type) { configureCamera(type); mProjectionElapsed = 0.0f; bProjectionTransitioning = false; }
+
 	FCamera mCamera;
 	FGizmo mGizmo;
 

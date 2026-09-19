@@ -79,6 +79,10 @@ private:
 	void processEditorCommand(const FSetGizmoModeCommand& command);
 	void processEditorCommand(const FCycleGizmoModeCommand& command);
 
+	void processEditorCommand(const FSetViewportTypeCommand& command);
+	void processEditorCommand(const FSetViewportViewModeCommand& command);
+	void processEditorCommand(const FSetViewportShowFlagCommand& command);
+
 	void processEditorCommand(const FSetGridWidthCommand& command);
 	void processEditorCommand(const FStartProjectionTransitionCommand& command);
 };

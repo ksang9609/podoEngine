@@ -1,6 +1,9 @@
-﻿#include "Core/Core.h"
+﻿#pragma once
+
+#include "Core/Core.h"
 #include "Core/enum.h"
 #include "Core/Math/Color.h"
+#include "ViewportTypes.h"
 
 /* Editor Commands */
 /* SceneManager Commands */
@@ -36,6 +39,10 @@ struct FSetCameraLocationCommand { FVector Location; };
 struct FSetCameraRotationCommand { FRotator Rotation; };
 struct FSetGizmoModeCommand { EGIZMO_TYPE GizmoMode; };
 struct FCycleGizmoModeCommand {};
+
+struct FSetViewportTypeCommand { uint8 viewportId; EViewportType Type; };
+struct FSetViewportViewModeCommand { uint8 viewportId; EViewModeIndex ViewMode; };
+struct FSetViewportShowFlagCommand { uint8 viewportId; EEngineShowFlags Flag; bool bEnabled; };
 
 /* GraphicsManager Commands */
 struct FSetGridWidthCommand { float GridWidth; };
@@ -73,6 +80,10 @@ using FEditorCommand = std::variant <
 	FSetCameraRotationCommand,
 	FSetGizmoModeCommand,
 	FCycleGizmoModeCommand,
+
+	FSetViewportTypeCommand,
+	FSetViewportViewModeCommand,
+	FSetViewportShowFlagCommand,
 
 	FSetGridWidthCommand,
 	FStartProjectionTransitionCommand

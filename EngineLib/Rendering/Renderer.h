@@ -132,7 +132,8 @@ public:
 
 
 	// Gloabal prepare method
-	void BeginFrame(bool bWireFrame);
+	void BeginFrame();
+	void SetViewMode(EViewModeIndex viewMode);
 	void BeginView(const FViewRect& rect);
 	void PrepareForUI();
 
@@ -212,7 +213,7 @@ private:
 
 	bool EnsureInstanceCapacity(UINT count);
 
-	/* Internal global rendering state */
+	EViewModeIndex mViewMode = EViewModeIndex::VMI_Lit;
 	bool mbWireFrame = false;
 
 	/* Create methods for each resources*/

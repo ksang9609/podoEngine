@@ -26,39 +26,330 @@
 #include "Console.h"
 
 #include <algorithm>
-#include <cstdio>
 
 namespace
 {
-	const char* getViewportTypeName(
-		EViewportType type)
+	struct FViewportTypeOption
 	{
-		switch (type)
+		const char* Label;
+		EViewportType Type;
+	};
+
+	struct FViewModeOption
+	{
+		const char* Label;
+		EViewModeIndex Mode;
+	};
+
+	struct FShowFlagOption
+	{
+		const char* Label;
+		EEngineShowFlags Flag;
+	};
+
+	constexpr FViewportTypeOption viewportTypeOptions[] =
+	{
+		{ "Perspective", EViewportType::Perspective },
+		{ "Top", EViewportType::Top },
+		{ "Bottom", EViewportType::Bottom },
+		{ "Front", EViewportType::Front },
+		{ "Back", EViewportType::Back },
+		{ "Left", EViewportType::Left },
+		{ "Right", EViewportType::Right }
+	};
+
+	constexpr FViewModeOption viewModeOptions[] =
+	{
+		{ "Lit", EViewModeIndex::VMI_Lit },
+		{ "Unlit", EViewModeIndex::VMI_Unlit },
+		{ "Wireframe", EViewModeIndex::VMI_Wireframe }
+	};
+
+	constexpr FShowFlagOption showFlagOptions[] =
+	{
+		{ "Primitives", EEngineShowFlags::SF_Primitives },
+		{ "Billboard Text", EEngineShowFlags::SF_BillboardText },
+		{ "World Axis", EEngineShowFlags::SF_WorldAxis },
+		{ "Bounding Box", EEngineShowFlags::SF_BoundingBox },
+		{ "Grid", EEngineShowFlags::SF_Grid }
+	};
+
+	constexpr ImU32 viewportToolbarColors[] =
+	{
+		IM_COL32(55, 85, 120, 255),
+		IM_COL32(80, 105, 70, 255),
+		IM_COL32(110, 75, 80, 255),
+		IM_COL32(90, 75, 120, 255)
+	};
+
+	const char* getViewportTypeName(EViewportType type)
+	{
+		for (const FViewportTypeOption& option : viewportTypeOptions)
 		{
-		case EViewportType::Perspective:
-			return "Perspective";
-
-		case EViewportType::Top:
-			return "Top";
-
-		case EViewportType::Bottom:
-			return "Bottom";
-
-		case EViewportType::Left:
-			return "Left";
-
-		case EViewportType::Right:
-			return "Right";
-
-		case EViewportType::Front:
-			return "Front";
-
-		case EViewportType::Back:
-			return "Back";
-
-		default:
-			return "Unknown";
+			if (option.Type == type)
+			{
+				return option.Label;
+			}
 		}
+
+		return "Unknown";
+	}
+
+	const char* getViewModeName(EViewModeIndex mode)
+	{
+		for (const FViewModeOption& option : viewModeOptions)
+		{
+			if (option.Mode == mode)
+			{
+				return option.Label;
+			}
+		}
+
+		return "Unknown";
+	}
+
+	void drawViewportCountControls(FEditorViewportManager& viewportManager)
+	{
+		const uint8 viewportCount = viewportManager.getViewportCount();
+
+		ImGui::BeginDisabled(viewportCount >= maxViewportCount);
+		if (ImGui::Button("+ Viewport"))
+		{
+			viewportManager.addViewport();
+		}
+		ImGui::EndDisabled();
+
+		ImGui::SameLine();
+		ImGui::BeginDisabled(viewportCount <= 1);
+		if (ImGui::Button("- Last Viewport"))
+		{
+			const FViewport* lastViewport =
+				viewportManager.getViewportAt(viewportCount - 1);
+
+			if (lastViewport != nullptr)
+			{
+				viewportManager.removeViewport(lastViewport->getId());
+			}
+		}
+		ImGui::EndDisabled();
+
+		ImGui::SameLine();
+		ImGui::Text(
+			"%d / %d",
+			viewportManager.getViewportCount(),
+			static_cast<int32>(maxViewportCount));
+
+		ImGui::Separator();
+	}
+
+	void updateSplitterInteraction(
+		FEditorViewportManager& viewportManager,
+		const FRect& hostRect,
+		const FPoint& mousePoint)
+	{
+		if (hostRect.contains(mousePoint) &&
+			ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			viewportManager.beginSplitterDrag(mousePoint);
+		}
+
+		if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+		{
+			viewportManager.updateSplitterDrag(mousePoint);
+		}
+
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+		{
+			viewportManager.endSplitterDrag();
+		}
+	}
+
+	void updateViewportInteraction(
+		FEditorViewportManager& viewportManager,
+		const FPoint& mousePoint)
+	{
+		const bool bActivationClick =
+			ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+			ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+
+		FViewport* clickedViewport = nullptr;
+
+		for (uint8 index = 0;
+			index < viewportManager.getViewportCount();
+			++index)
+		{
+			FViewport* viewport = viewportManager.getViewportAt(index);
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+
+			FViewportWindowState& windowState = viewport->getWindowState();
+			windowState.bImageHovered = windowState.imageRect.contains(mousePoint);
+
+			if (bActivationClick)
+			{
+				windowState.bFocused = false;
+
+				if (windowState.bImageHovered)
+				{
+					clickedViewport = viewport;
+				}
+			}
+		}
+
+		if (clickedViewport != nullptr)
+		{
+			viewportManager.setActiveViewport(clickedViewport->getId());
+			clickedViewport->getWindowState().bFocused = true;
+		}
+	}
+
+	void drawViewportTypeSelector(
+		const FViewport& viewport,
+		FEditorCommands& outCommands)
+	{
+		if (ImGui::SmallButton(getViewportTypeName(viewport.getType())))
+		{
+			ImGui::OpenPopup("CameraMenu");
+		}
+
+		if (!ImGui::BeginPopup("CameraMenu"))
+		{
+			return;
+		}
+
+		for (int32 index = 0; index < IM_ARRAYSIZE(viewportTypeOptions); ++index)
+		{
+			if (index == 1)
+			{
+				ImGui::Separator();
+			}
+
+			const FViewportTypeOption& option = viewportTypeOptions[index];
+			const bool bSelected = viewport.getType() == option.Type;
+
+			if (ImGui::MenuItem(option.Label, nullptr, bSelected))
+			{
+				outCommands.Emplace(FSetViewportTypeCommand{
+					viewport.getId(),
+					option.Type
+				});
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+
+	void drawViewportViewModeSelector(
+		const FViewport& viewport,
+		FEditorCommands& outCommands)
+	{
+		const FViewportRenderSettings& settings = viewport.getRenderSettings();
+
+		if (ImGui::SmallButton(getViewModeName(settings.ViewMode)))
+		{
+			ImGui::OpenPopup("ViewModeMenu");
+		}
+
+		if (!ImGui::BeginPopup("ViewModeMenu"))
+		{
+			return;
+		}
+
+		for (const FViewModeOption& option : viewModeOptions)
+		{
+			const bool bSelected = settings.ViewMode == option.Mode;
+
+			if (ImGui::MenuItem(option.Label, nullptr, bSelected))
+			{
+				outCommands.Emplace(FSetViewportViewModeCommand{
+					viewport.getId(),
+					option.Mode
+				});
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+
+	void drawViewportShowFlagSelector(
+		const FViewport& viewport,
+		FEditorCommands& outCommands)
+	{
+		if (ImGui::SmallButton("Show"))
+		{
+			ImGui::OpenPopup("ShowFlagsMenu");
+		}
+
+		if (!ImGui::BeginPopup("ShowFlagsMenu"))
+		{
+			return;
+		}
+
+		const FViewportRenderSettings& settings = viewport.getRenderSettings();
+
+		for (const FShowFlagOption& option : showFlagOptions)
+		{
+			const bool bEnabled = settings.HasShowFlag(option.Flag);
+
+			if (ImGui::MenuItem(option.Label, nullptr, bEnabled))
+			{
+				outCommands.Emplace(FSetViewportShowFlagCommand{
+					viewport.getId(),
+					option.Flag,
+					!bEnabled
+				});
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+
+	void drawViewportOverlay(
+		const FViewport& viewport,
+		uint8 viewportIndex,
+		bool bActive,
+		ImDrawList& drawList,
+		FEditorCommands& outCommands)
+	{
+		const FViewportWindowState& windowState = viewport.getWindowState();
+		const FRect& panelRect = windowState.panelRect;
+		const FRect& imageRect = windowState.imageRect;
+
+		const ImU32 toolbarColor =
+			viewportToolbarColors[viewportIndex % IM_ARRAYSIZE(viewportToolbarColors)];
+
+		drawList.AddRectFilled(
+			ImVec2(panelRect.Left, panelRect.Top),
+			ImVec2(panelRect.Right, imageRect.Top),
+			toolbarColor);
+
+		const ImU32 borderColor = bActive
+			? IM_COL32(255, 210, 70, 255)
+			: IM_COL32(150, 150, 160, 255);
+
+		drawList.AddRect(
+			ImVec2(panelRect.Left, panelRect.Top),
+			ImVec2(panelRect.Right, panelRect.Bottom),
+			borderColor,
+			0.0f,
+			0,
+			bActive ? 3.0f : 1.0f);
+
+		const ImVec2 savedCursor = ImGui::GetCursorScreenPos();
+		ImGui::SetCursorScreenPos(
+			ImVec2(panelRect.Left + 4.0f, panelRect.Top + 1.0f));
+
+		ImGui::PushID(static_cast<int>(viewport.getId()));
+		drawViewportTypeSelector(viewport, outCommands);
+		ImGui::SameLine();
+		drawViewportViewModeSelector(viewport, outCommands);
+		ImGui::SameLine();
+		drawViewportShowFlagSelector(viewport, outCommands);
+		ImGui::PopID();
+
+		ImGui::SetCursorScreenPos(savedCursor);
 	}
 }
 
@@ -88,7 +379,7 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorComma
 	updateControlPanelGUI(guiReference, outCommands);
 	updatePropertyWindowGUI(guiReference, outCommands);
 	updateObjectListPanelGUI(guiReference, outCommands);
-	updateViewportLayoutPanelGUI(guiReference.ViewportManager);
+	updateViewportLayoutPanelGUI(guiReference.ViewportManager, outCommands);
 
 	updateBottomBarGUI();
 }
@@ -765,23 +1056,21 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 	ImGui::End();
 }
 
-void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager)
+void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FEditorCommands& outCommands)
 {
-	const float hostWidth = (std::max)(mImGuiIO.DisplaySize.x - mPanelWidth,0.0f);
-	const float hostHeight = (std::max)(mImGuiIO.DisplaySize.y - BOTTOM_BAR_HEIGHT,0.0f);
+	const float hostWidth =
+		(std::max)(mImGuiIO.DisplaySize.x - mPanelWidth, 0.0f);
+	const float hostHeight =
+		(std::max)(mImGuiIO.DisplaySize.y - BOTTOM_BAR_HEIGHT, 0.0f);
 
-	if (hostWidth <= 0.0f ||
-		hostHeight <= 0.0f)
+	if (hostWidth <= 0.0f || hostHeight <= 0.0f)
 	{
 		return;
 	}
 
-	// 기존 왼쪽 Editor 패널 오른쪽,
-	// Console 위쪽에 배치한다.
 	ImGui::SetNextWindowPos(
 		ImVec2(mPanelWidth, 0.0f),
 		ImGuiCond_Always);
-
 	ImGui::SetNextWindowSize(
 		ImVec2(hostWidth, hostHeight),
 		ImGuiCond_Always);
@@ -792,64 +1081,18 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoScrollWithMouse |
-		ImGuiWindowFlags_NoBackground ;
+		ImGuiWindowFlags_NoBackground;
 
-	ImGui::Begin(
-		"Viewport Layout Debug",
-		nullptr,
-		windowFlags);
-
-	// --------------------------------------------------------
-	// 테스트용 Viewport 추가/삭제 버튼
-	// --------------------------------------------------------
-
-	const int32 viewportCount = viewportManager.getViewportCount();
-
-	ImGui::BeginDisabled(viewportCount >= maxViewportCount);
-
-	if (ImGui::Button("+ Viewport"))
+	if (!ImGui::Begin("Viewport Layout Debug", nullptr, windowFlags))
 	{
-		viewportManager.addViewport();
+		ImGui::End();
+		return;
 	}
 
-	ImGui::EndDisabled();
-
-	ImGui::SameLine();
-
-	ImGui::BeginDisabled(
-		viewportCount <= 1);
-
-	if (ImGui::Button("- Last Viewport"))
-	{
-		// 현재 EngineLoop가 첫 번째 ViewportClient를 사용하므로
-		// 임시 테스트에서는 마지막 Viewport만 삭제한다.
-		const uint8 lastViewportId =
-			static_cast<uint8>(
-				viewportManager.getViewportCount());
-
-		viewportManager.removeViewport(
-			lastViewportId);
-	}
-
-	ImGui::EndDisabled();
-
-	ImGui::SameLine();
-
-	ImGui::Text(
-		"Count: %d / %d",
-		viewportManager.getViewportCount(),
-		static_cast<int32>(maxViewportCount));
-
-	ImGui::Separator();
-
-	// --------------------------------------------------------
-	// 실제 Viewport Layout이 들어갈 Host 영역 계산
-	// --------------------------------------------------------
+	drawViewportCountControls(viewportManager);
 
 	const ImVec2 hostMin = ImGui::GetCursorScreenPos();
-
 	const ImVec2 availableSize = ImGui::GetContentRegionAvail();
-
 	const ImVec2 hostMax = {
 		hostMin.x + availableSize.x,
 		hostMin.y + availableSize.y
@@ -862,186 +1105,45 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		hostMax.y
 	};
 
-	// Layout 트리 전체 배치.
-	// 이 호출로 각 Viewport의 panelRect가 갱신된다.
+	// 이 호출이 각 Viewport의 panelRect와 imageRect를 갱신한다.
 	viewportManager.arrangeLayout(hostRect);
 
-	// --------------------------------------------------------
-	// Splitter 마우스 입력
-	// --------------------------------------------------------
-
-	const ImVec2 mousePosition =
-		ImGui::GetIO().MousePos;
-
+	const ImVec2 mousePosition = ImGui::GetIO().MousePos;
 	const FPoint mousePoint = {
 		mousePosition.x,
 		mousePosition.y
 	};
 
-	const bool mouseInsideHost =
-		hostRect.contains(mousePoint);
+	updateSplitterInteraction(viewportManager, hostRect, mousePoint);
+	updateViewportInteraction(viewportManager, mousePoint);
 
-	if (mouseInsideHost &&
-		ImGui::IsMouseClicked(
-			ImGuiMouseButton_Left))
-	{
-		viewportManager.beginSplitterDrag(
-			mousePoint);
-	}
-
-	// 드래그 도중 Host 바깥으로 나가도 계속 갱신한다.
-	// clampSplitRatio()가 최소 크기를 제한한다.
-	if (ImGui::IsMouseDown(
-		ImGuiMouseButton_Left))
-	{
-		viewportManager.updateSplitterDrag(
-			mousePoint);
-	}
-
-	if (ImGui::IsMouseReleased(
-		ImGuiMouseButton_Left))
-	{
-		viewportManager.endSplitterDrag();
-	}
-
-	// --------------------------------------------------------
-	// 디버그 화면 그리기
-	// --------------------------------------------------------
-
-	ImDrawList* drawList =
-		ImGui::GetWindowDrawList();
-
-	drawList->PushClipRect(
-		hostMin,
-		hostMax,
-		true);
-
-	// 먼저 전체 Host를 Splitter 색으로 채운다.
-	// 그 위에 패널을 그리면, 패널 사이에 남은 영역이
-	// 자연스럽게 Splitter 선으로 보인다.
-	const ImU32 splitterColor =
-		IM_COL32(125, 125, 125, 255);
-
-	static constexpr ImU32 panelColors[] =
-	{
-		IM_COL32(55, 85, 120, 255),
-		IM_COL32(80, 105, 70, 255),
-		IM_COL32(110, 75, 80, 255),
-		IM_COL32(90, 75, 120, 255)
-	};
-
-
+	ImDrawList& drawList = *ImGui::GetWindowDrawList();
+	drawList.PushClipRect(hostMin, hostMax, true);
 
 	const FViewport* activeViewport = viewportManager.getActiveViewport();
-	const bool bViewportActivationClick =
-		ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
-		ImGui::IsMouseClicked(ImGuiMouseButton_Right);
 
-
-	if (bViewportActivationClick)
-	{
-		for (int8 index = 0; index < viewportManager.getViewportCount(); index++)
-		{
-			FViewport* viewport = viewportManager.getViewportAt(index);
-
-			if (viewport == nullptr)
-			{
-				continue;
-			}
-
-			viewport->getWindowState().bFocused = false;
-		}
-	}
-
-
-	for (int8 index = 0;
+	for (uint8 index = 0;
 		index < viewportManager.getViewportCount();
 		++index)
 	{
-		FViewport* viewport =viewportManager.getViewportAt(index);
-
+		const FViewport* viewport = viewportManager.getViewportAt(index);
 		if (viewport == nullptr)
 		{
 			continue;
 		}
 
-		FViewportWindowState& windowState = viewport->getWindowState();
-
-		windowState.bImageHovered = windowState.imageRect.contains(mousePoint);
-
-		if (windowState.bImageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-		{
-			viewportManager.setActiveViewport(viewport->getId());
-		}
-
-		viewport->getWindowState().bFocused = true;
-
-		const FRect& panelRect = viewport->getWindowState().panelRect;
-
-		const ImVec2 panelMin = {
-			panelRect.Left,
-			panelRect.Top
-		};
-
-		const ImVec2 panelMax = {
-			panelRect.Right,
-			panelRect.Bottom
-		};
-
-		const ImU32 panelColor =
-			panelColors[
-				index %
-					IM_ARRAYSIZE(panelColors)];
-
-		const FRect& imageRect =
-			viewport->getWindowState().imageRect;
-
-		drawList->AddRectFilled(
-			ImVec2(panelRect.Left,panelRect.Top),
-			ImVec2(panelRect.Right,imageRect.Top),
-			panelColor);
-
-
-		const bool isActive =
-			activeViewport == viewport;
-
-		const ImU32 borderColor =
-			isActive
-			? IM_COL32(255, 210, 70, 255)
-			: IM_COL32(150, 150, 160, 255);
-
-		drawList->AddRect(
-			panelMin,
-			panelMax,
-			borderColor,
-			0.0f,
-			0,
-			isActive ? 3.0f : 1.0f);
-
-		char label[128] = {};
-
-		std::snprintf(
-			label,
-			sizeof(label),
-			"Viewport %u\n%s",
-			static_cast<unsigned>(
-				viewport->getId()),
-			getViewportTypeName(
-				viewport->getType()));
-
-		drawList->AddText(
-			ImVec2(
-				panelRect.Left + 10.0f,
-				panelRect.Top + 10.0f),
-			IM_COL32(255, 255, 255, 255),
-			label);
+		drawViewportOverlay(
+			*viewport,
+			index,
+			activeViewport == viewport,
+			drawList,
+			outCommands);
 	}
 
-	drawList->PopClipRect();
+	drawList.PopClipRect();
 
 	// ImGui에게 해당 영역이 실제 콘텐츠로 사용됐음을 알려준다.
 	ImGui::Dummy(availableSize);
-
 	ImGui::End();
 }
 

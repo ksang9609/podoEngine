@@ -961,7 +961,7 @@ ComPtr<ID3D11ShaderResourceView> URenderer::CreateWhiteShaderResourceView()
 }
 
 // Prepare global rendering state for a new frame
-void URenderer::BeginFrame(bool bWireFrame)
+void URenderer::BeginFrame()
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 
@@ -969,13 +969,13 @@ void URenderer::BeginFrame(bool bWireFrame)
 	DeviceContext->ClearDepthStencilView(DepthStencilView,
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//DeviceContext->RSSetState(RasterizerState[bWireFrame ? 1 : 0]);
-	mbWireFrame = bWireFrame;
-
 	//세 번째 인자에 nullptr 대신 DSV를 넘긴다
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
+}
+void URenderer::SetViewMode(EViewModeIndex viewMode)
+{
+	mViewMode = viewMode;
+	mbWireFrame = viewMode == EViewModeIndex::VMI_Wireframe;
 }
 
 void URenderer::BeginView(const FViewRect& rect)
