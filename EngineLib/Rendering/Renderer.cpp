@@ -350,7 +350,8 @@ void URenderer::PrepareHighlight()
 {
 	assert(mGpuResourceManagerRef && mDeviceContext);
 
-	prepareSimpleShader();
+	//prepareSimpleShader();
+	prepareStaticMeshShader();
 
 	auto& resources = *mGpuResourceManagerRef;
 
@@ -761,25 +762,34 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, c
 	mDeviceContext->DrawIndexed(numindices, 0, 0);
 }
 
-void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix)
+void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix,
+	FMatrix OutlineMatrix, const FMatrix originalMatrix,
+	ID3D11Buffer* indexBuffer, uint32 indexCount)
 {
 	assert(mGpuResourceManagerRef && mDeviceContext);
 
 	auto& resources = *mGpuResourceManagerRef;
+
+	auto* defaultWhiteTexture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+	auto& samplerState = resources.GetSamplerState(ESamplerStateType::SST_Clamp);
 
 	// (a) 스텐실에 1 마킹. 색은 쓰지 않으므로 화면 변화 없음.
 	//     다른 오브젝트에 가려진 부분도 반드시 마킹해야 한다. 여기서 빠지면
 	//     (b)의 != 1 조건을 통과해 버려서 겹친 영역 전체가 단색으로 칠해진다.
 	mDeviceContext->OMSetBlendState(&resources.GetBlendState(BST_NoColorWrite), nullptr, 0xffffffff);
 	mDeviceContext->OMSetDepthStencilState(&resources.GetDepthStencilState(DSS_StencilMark), 1);
-	UpdateSimpleConstant(originalMatrix, mViewProjectionMatrix);
-	RenderSimplePrimitive(pBuffer, Num);
+	//UpdateSimpleConstant(originalMatrix, mViewProjectionMatrix);
+	//RenderSimplePrimitive(pBuffer, Num);
+	UpdateTextureConstant(originalMatrix, mViewProjectionMatrix, FLinearColor(0.f, 0.f, 0.f, 0.f), FVector2(1.f, 1.f), FVector2(0.f, 0.f));
+	RenderStaticMesh(pBuffer, Num, defaultWhiteTexture, &samplerState, indexBuffer, indexCount);
 
 	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
 	mDeviceContext->OMSetBlendState(&resources.GetBlendState(BST_Default), nullptr, 0xffffffff);
 	mDeviceContext->OMSetDepthStencilState(&resources.GetDepthStencilState(DSS_StencilOutline), 1);
-	UpdateSimpleConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f));
-	RenderSimplePrimitive(pBuffer, Num);
+	//UpdateSimpleConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f));
+	//RenderSimplePrimitive(pBuffer, Num);
+	UpdateTextureConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f), FVector2(1.f, 1.f), FVector2(0.f, 0.f));
+	RenderStaticMesh(pBuffer, Num, defaultWhiteTexture, &samplerState, indexBuffer, indexCount);
 }
 
 void URenderer::releaseDepthStencilBuffer()

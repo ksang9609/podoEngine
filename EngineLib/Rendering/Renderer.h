@@ -85,7 +85,9 @@ public:
 	// It doesn't recieve buffer parameters since it use the internal buffers.
 	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
-	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix, FMatrix OutlineMatrix, const FMatrix originalMatrix);
+	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix,
+		FMatrix OutlineMatrix, const FMatrix originalMatrix,
+		ID3D11Buffer* indexBuffer, uint32 indexCount);
 	void RenderUnicodeFontTexture(uint32 indexCount);
 	void RenderParticle(ID3D11ShaderResourceView* texture);
 	bool RenderSimpleInstanced(
@@ -99,6 +101,9 @@ public:
 		ID3D11Buffer* indexBuffer = nullptr, uint32 indexCount = 0);
 
 	void SwapBuffer();
+
+	/* Getter */
+	D3D11_VIEWPORT GetViewportInfo() const { return mViewportInfo; }
 
 
 	//Initialize

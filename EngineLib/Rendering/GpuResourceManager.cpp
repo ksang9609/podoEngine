@@ -98,7 +98,7 @@ const FBuffer* FGpuResourceManager::FindImmutableBufferOrAdd(FName bufferName)
 	const FStaticMesh* staticMeshData = mAssetManagerRef.FindStaticMeshDataOrNull(bufferName);
 	if (staticMeshData)
 	{
-		CreateBuffer(bufferName, staticMeshData->Vertices);
+		CreateBuffer(bufferName, staticMeshData->Vertices, staticMeshData->Indices);
 		return mImmutableBufferMap.Find(bufferName);
 	}
 	else

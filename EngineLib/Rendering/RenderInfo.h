@@ -11,7 +11,10 @@ struct FSubUVMesh;
 struct FStaticMesh;
 struct FRenderInfo
 {
-	EPrimitive ePrimitive;
+	//EPrimitive ePrimitive;
+	FName MeshName;
+	FName TextureName;
+
 	FMatrix WorldTransformMatrix;
 	FObjectID ObejctID;
 	FLinearColor Color;
