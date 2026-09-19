@@ -27,9 +27,11 @@ void SViewportPanel::Arrange(const FRect& rect)
 	{
 		return;
 	}
+	FRect IRect = Rect;
+	IRect.Top += menuBarSize;
 	FViewportWindowState& windowState = Viewport->getWindowState();
-	windowState.panelRect = rect;
-	windowState.imageRect = rect; // Todo : 메뉴바 높이 고려 추가
+	windowState.panelRect = Rect;
+	windowState.imageRect = IRect; // Todo : 메뉴바 높이 고려 추가
 }
 // Splitter의 두 자식을 소유
 SSplitter::SSplitter(std::unique_ptr<SWindow> sideLT, std::unique_ptr<SWindow> sideRB, float initialSplitRatio)

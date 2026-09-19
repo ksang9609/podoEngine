@@ -85,7 +85,7 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorComma
 	updateObjectListPanelGUI(guiReference, outCommands);
 	updateViewportLayoutPanelGUI(guiReference.ViewportManager);
 
-	ConsoleWindow::GetInstance().Draw(mPanelWidth);
+	updateBottomBarGUI();
 }
 
 FString saveSceneFileDialog();
@@ -758,12 +758,8 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 
 void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager)
 {
-	const float consoleHeight =
-		mImGuiIO.DisplaySize.y *
-		ConsoleWindow::HEIGHT_RATIO;
-
 	const float hostWidth = (std::max)(mImGuiIO.DisplaySize.x - mPanelWidth,0.0f);
-	const float hostHeight = (std::max)(mImGuiIO.DisplaySize.y - consoleHeight,0.0f);
+	const float hostHeight = (std::max)(mImGuiIO.DisplaySize.y - BOTTOM_BAR_HEIGHT,0.0f);
 
 	if (hostWidth <= 0.0f ||
 		hostHeight <= 0.0f)
@@ -918,7 +914,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 	// 그 위에 패널을 그리면, 패널 사이에 남은 영역이
 	// 자연스럽게 Splitter 선으로 보인다.
 	const ImU32 splitterColor =
-		IM_COL32(45, 45, 50, 255);
+		IM_COL32(125, 125, 125, 255);
 
 	drawList->AddRectFilled(
 		hostMin,
@@ -1013,4 +1009,91 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 	ImGui::Dummy(availableSize);
 
 	ImGui::End();
+}
+
+void FEditorUIManager::updateBottomBarGUI()
+{
+    const float displayWidth = mImGuiIO.DisplaySize.x;
+    const float displayHeight = mImGuiIO.DisplaySize.y;
+
+    const float barWidth =
+        (std::max)(displayWidth - mPanelWidth, 0.0f);
+
+    if (barWidth <= 0.0f)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowPos(
+        ImVec2(mPanelWidth, displayHeight - BOTTOM_BAR_HEIGHT),
+        ImGuiCond_Always);
+
+    ImGui::SetNextWindowSize(
+        ImVec2(barWidth, BOTTOM_BAR_HEIGHT),
+        ImGuiCond_Always);
+
+    const ImGuiWindowFlags barFlags =
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoSavedSettings;
+
+    ImGui::PushStyleVar(
+        ImGuiStyleVar_WindowPadding,
+        ImVec2(6.0f, 3.0f));
+
+    if (ImGui::Begin("##EditorBottomBar", nullptr, barFlags))
+    {
+        constexpr const char* consolePopupId =
+            "ConsoleDrawer";
+
+        const bool bConsoleOpen =
+            ImGui::IsPopupOpen(consolePopupId);
+
+        if (ImGui::Button(
+            bConsoleOpen ? "Console *" : "Console"))
+        {
+            // 열려 있을 때 버튼을 누르면 그 클릭은
+            // 팝업 외부 클릭으로 처리되어 닫힌다.
+            if (!bConsoleOpen)
+            {
+                ImGui::OpenPopup(consolePopupId);
+            }
+        }
+
+        const float popupHeight =
+            displayHeight * CONSOLE_POPUP_HEIGHT_RATIO;
+
+        // 팝업의 왼쪽 아래를 하단 바의 왼쪽 위에 고정한다.
+        ImGui::SetNextWindowPos(
+            ImVec2(
+                mPanelWidth,
+                displayHeight - BOTTOM_BAR_HEIGHT),
+            ImGuiCond_Always,
+            ImVec2(0.0f, 1.0f));
+
+        ImGui::SetNextWindowSize(
+            ImVec2(barWidth, popupHeight),
+            ImGuiCond_Always);
+
+        const ImGuiWindowFlags popupFlags =
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoCollapse;
+
+        // OpenPopup과 BeginPopup은 반드시 같은 ImGui 창/ID
+        // 스코프 안에 있어야 한다.
+        if (ImGui::BeginPopup(
+            consolePopupId,
+            popupFlags))
+        {
+            ConsoleWindow::GetInstance().DrawContents();
+            ImGui::EndPopup();
+        }
+    }
+
+    ImGui::End();
+    ImGui::PopStyleVar();
 }

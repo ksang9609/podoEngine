@@ -249,7 +249,12 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		if (WindowApplication.bPendingResize)
 		{
 			float viewportWidth = mEditorUIManager->GetPanelWidth();
-			float viewportHeight = (1.f - ConsoleWindow::HEIGHT_RATIO) * WindowApplication.PendingHeight;
+			float viewportHeight = static_cast<float>(WindowApplication.PendingHeight) - FEditorUIManager::BOTTOM_BAR_HEIGHT;
+
+			if (viewportHeight < 0.0f)
+			{
+				viewportHeight = 0.0f;
+			}
 
 			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight, viewportWidth, viewportHeight);
 			WindowApplication.bPendingResize = false;

@@ -23,6 +23,7 @@ public :
 	void Arrange(const FRect& rect) override;
 private:
 	FViewport* Viewport = nullptr;
+	float menuBarSize = 20.0f;
 };
 
 class SSplitter : public SWindow
@@ -43,7 +44,7 @@ protected:
 
 	FRect handleRect;
 	float splitRatio = 0.5f;
-	float handleThickness = 4.0f;
+	float handleThickness = 6.0f;
 	float minimumPanelSize = 100.0f;
 };
 
