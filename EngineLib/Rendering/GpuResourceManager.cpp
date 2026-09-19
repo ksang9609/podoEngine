@@ -357,11 +357,11 @@ void FGpuResourceManager::createBuiltinBuffers()
 	TArray<FVertexTextured> loadingScreenVertices = {
 		{ -1.0f,  1.0f, 0.0f,	0.0f, 0.0f }, // Top-left
 		{  1.0f,  1.0f, 0.0f,	1.0f, 0.0f }, // Top-right
-		{ -1.0f, -1.0f, 0.0f,	0.0f, 1.0f }, // Bottom-left
-		{  1.0f, -1.0f, 0.0f,	1.0f, 1.0f }  // Bottom-right
+		{  1.0f, -1.0f, 0.0f,	1.0f, 1.0f }, // Bottom-right
+		{ -1.0f, -1.0f, 0.0f,	0.0f, 1.0f }  // Bottom-left
 	};
-	TArray<uint32> loadingScreenIndices = { 0, 2, 3,   // First triangle
-										   3, 1, 0 }; // Second triangle
+	TArray<uint32> loadingScreenIndices = { 0, 1, 2,   // First triangle
+										   0, 2, 3 }; // Second triangle
 	CreateBuffer(BuiltinAssets::LoadingScreenQuad,
 		loadingScreenVertices,
 		loadingScreenIndices);

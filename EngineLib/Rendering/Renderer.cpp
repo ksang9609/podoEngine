@@ -1140,7 +1140,7 @@ void URenderer::RenderFullscreenTexture(ID3D11ShaderResourceView* texture)
 	mDeviceContext->OMSetBlendState(&resources.GetBlendState(BST_Default), nullptr, 0xffffffff);
 
 	mDeviceContext->OMSetDepthStencilState(nullptr, 0);
-	mDeviceContext->DrawIndexed(4, 0, 0);
+	mDeviceContext->DrawIndexed(6, 0, 0);
 }
 
 void URenderer::ClearDepth()
