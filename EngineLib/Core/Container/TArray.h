@@ -240,10 +240,12 @@ inline void TArray<T>::RemoveAtSwap(uint32 index)
 	assert(mDatas.empty() == false);
 	assert(index < mDatas.size());
 
-	mDatas[index] = std::move(mDatas.back());
-	mDatas.pop_back();
+	if (index != mDatas.size() - 1)
+	{
+		mDatas[index] = std::move(mDatas.back());
+	}
 
-	RemoveLast();
+	mDatas.pop_back();
 }
 
 template<typename T>

@@ -26,6 +26,7 @@ public:
 		configureCamera(viewporttype);
 	}
 
+	void Initialize(FAssetManager& assetManagerRef);
 	bool RaycastBounds(const FVector& rayStart,const FVector& rayEnd,const FBoundingBox& bounds);
 	void RayCast(const FViewRect& viewrect, const TArray<FRenderInfo>& renderInfos, bool bCheckObject);
 	float GetFov() const { return mCamera.mFovDegree; }

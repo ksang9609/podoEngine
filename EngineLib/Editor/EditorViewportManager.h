@@ -6,6 +6,7 @@
 #include <memory>
 
 class FEditorViewportClient;
+class FAssetManager;
 class FGraphicsManager;
 class FSceneManager;
 
@@ -14,6 +15,7 @@ class FEditorViewportManager
 private :
 	FViewportSharedSettings mSharedSettings;
 	TArray<std::unique_ptr<FViewport>> Viewports;
+	FAssetManager* mAssetManager = nullptr;
 
 	EViewportLayoutMode layoutMode = EViewportLayoutMode::SinglePane;
 	uint8 activeViewportId = invalidViewportId;
@@ -24,7 +26,7 @@ public :
 	FEditorViewportManager() = default;
 	~FEditorViewportManager() = default;
 
-	bool Initialize();
+	bool Initialize(FAssetManager& assetManager);
 
 	FViewport* findViewport(uint8 viewportId);
 	const FViewport* findViewport(uint8 viewportId) const;

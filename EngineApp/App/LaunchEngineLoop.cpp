@@ -1,5 +1,6 @@
 ﻿#include "LaunchEngineLoop.h"
 
+#include <stdexcept>
 #include <windows.h>
 
 #include "Core/Name.h"
@@ -73,24 +74,31 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	/* Init Managers */
 	mGraphicsManager = new FGraphicsManager();
 	FrameTimer = new FFrameTimer(120);
+	mAssetManager = std::make_unique<FAssetManager>();
+	mGpuResourceManager = std::make_unique<FGpuResourceManager>();
 
 	mEditorViewportManager = new FEditorViewportManager();
-	const bool initialized = mEditorViewportManager->Initialize();
+	if (!mEditorViewportManager->Initialize(*mAssetManager))
+	{
+		throw std::runtime_error("Failed to initialize the editor viewport manager.");
+	}
+
 	FViewport* initialViewport = mEditorViewportManager->getActiveViewport();
+	if (initialViewport == nullptr)
+	{
+		throw std::runtime_error("The initial editor viewport was not created.");
+	}
+
 	viewportClient = &initialViewport->getClient();
 
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
-	mAssetManager = std::make_unique<FAssetManager>();
-	mGpuResourceManager = std::make_unique<FGpuResourceManager>();
 
 	mGraphicsManager->Initialize(hWnd, *mGpuResourceManager);
-	viewportClient->Initialize(*mAssetManager);
 	mGpuResourceManager->Initialize(
 		*mAssetManager, *mGraphicsManager->GetRenderer()->GetDevice());
 
 
-	mGraphicsManager->InitializeLoadingScreen();
 	mGraphicsManager->RenderLoadingScreen();
 
 	IMGUI_CHECKVERSION();
@@ -380,13 +388,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			}
 
 			client.UpdateGizmoForView(selectedActor);
-
-			mGraphicsManager->RenderSceneView(
-				mSceneManager->GetRenderInfos(),
-				mSceneManager->GetAxisRenderInfos(),
-				sceneView,
-				selectedActor);
-		}
 
 			mGraphicsManager->RenderSceneView(
 				mSceneManager->GetRenderInfos(),

@@ -2,10 +2,16 @@
 #include "FEditorViewportClient.h"
 
 //Todo : 종료하기전 패널 모드를 유지해서 불러와야함
-bool FEditorViewportManager::Initialize()
+bool FEditorViewportManager::Initialize(FAssetManager& assetManager)
 {
+	mAssetManager = &assetManager;
+
 	if (!Viewports.IsEmpty())
 	{
+		for (const std::unique_ptr<FViewport>& viewport : Viewports)
+		{
+			viewport->getClient().Initialize(assetManager);
+		}
 		return true;
 	}
 	return addViewport() != invalidViewportId;
@@ -81,6 +87,11 @@ std::unique_ptr<SWindow> FEditorViewportManager::makeFourPaneLayout()
 }
 uint8 FEditorViewportManager::addViewport()
 {
+	if (mAssetManager == nullptr)
+	{
+		return invalidViewportId;
+	}
+
 	const uint8 viewportId = allocateViewportId();
 	if (viewportId <= invalidViewportId)
 	{
@@ -95,7 +106,10 @@ uint8 FEditorViewportManager::addViewport()
 		EViewportType::Right
 	};
 	
-	Viewports.Add(std::make_unique<FViewport>(viewportId,defaultTypes[viewportId-1],mSharedSettings));
+	auto viewport = std::make_unique<FViewport>(
+		viewportId, defaultTypes[viewportId - 1], mSharedSettings);
+	viewport->getClient().Initialize(*mAssetManager);
+	Viewports.Add(std::move(viewport));
 	if (activeViewportId == invalidViewportId)
 	{
 		activeViewportId = viewportId;

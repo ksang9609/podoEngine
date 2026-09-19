@@ -172,7 +172,7 @@ private:
 	void renderSimplePrimitiveInstanced(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 	//void RenderOverlay(const TArray<const FRenderInfo*>& renderInfos, const FCamera& camera);
 	void renderHighLight(const FRenderInfo& RI, const FSceneView& view);
-	void renderGrid();
+	void renderGrid(const FSceneView& view);
 	void renderGizmo(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 	void renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);

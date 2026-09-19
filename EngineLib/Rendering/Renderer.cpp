@@ -33,11 +33,11 @@ void URenderer::Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManager
 	// 처음 전달한 SwapChainDesc 값에 의존하면 안 된다.
 	D3D11_TEXTURE2D_DESC backBufferDesc = {};
 
-	if (FrameBuffer != nullptr)
+	if (mFrameBuffer != nullptr)
 	{
-		FrameBuffer->GetDesc(&backBufferDesc);
+		mFrameBuffer->GetDesc(&backBufferDesc);
 
-		ViewportInfo = {
+		mViewportInfo = {
 			0.0f,
 			0.0f,
 			static_cast<float>(backBufferDesc.Width),
@@ -50,20 +50,7 @@ void URenderer::Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManager
 			backBufferDesc.Width,
 			backBufferDesc.Height);
 	}
-
-	if (!createFontAtlasTexture() ||
-		!createFontSamplerState())
-	{
-		MessageBox(
-			hWindow,
-			L"영어 폰트 공통 자원 생성에 실패했습니다.",
-			L"English Font initialization error",
-			MB_OK | MB_ICONERROR
-		);
-
-		releaseFontTexture();
-		releaseFontAtlasTexture();
-	}
+}
 
 void URenderer::createDeviceAndSwapChain(HWND hWindow)
 {
@@ -235,7 +222,7 @@ void URenderer::BeginFrame()
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	//세 번째 인자에 nullptr 대신 DSV를 넘긴다
-	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
+	mDeviceContext->OMSetRenderTargets(1, mFrameBufferRTV.GetAddressOf(), mDepthStencilView.Get());
 }
 void URenderer::SetViewMode(EViewModeIndex viewMode)
 {
@@ -258,7 +245,7 @@ void URenderer::BeginView(const FViewRect& rect)
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 
-	DeviceContext->RSSetViewports(1, &viewport);
+	mDeviceContext->RSSetViewports(1, &viewport);
 
 	// 애매한 사각형 경계 자르기
 	D3D11_RECT scissor = {};
@@ -267,7 +254,7 @@ void URenderer::BeginView(const FViewRect& rect)
 	scissor.right = static_cast<LONG>(std::ceil(rect.X + rect.Width));
 	scissor.bottom = static_cast<LONG>(std::ceil(rect.Y + rect.Height));
 
-	DeviceContext->RSSetScissorRects(1, &scissor);
+	mDeviceContext->RSSetScissorRects(1, &scissor);
 }
 
 void URenderer::PrepareForUI()
@@ -276,7 +263,8 @@ void URenderer::PrepareForUI()
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 	*/
-	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
+	mDeviceContext->RSSetViewports(1, &mViewportInfo);
+	mDeviceContext->OMSetRenderTargets(1, mFrameBufferRTV.GetAddressOf(), nullptr);
 }
 
 void URenderer::PrepareSimplePrimitive()

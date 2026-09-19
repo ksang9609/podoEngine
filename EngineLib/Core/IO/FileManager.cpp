@@ -69,9 +69,35 @@ bool FFileManager::IsUnderFileDir(const std::filesystem::path& filePath) const
 
 bool IsUnder(const std::filesystem::path& targetPath, const std::filesystem::path& basePath)
 {
-	auto normalizedFile = std::filesystem::weakly_canonical(targetPath);
-	auto normalizedRoot = std::filesystem::weakly_canonical(basePath);
+	std::error_code error;
+	auto normalizedTarget = std::filesystem::weakly_canonical(targetPath, error);
+	if (error)
+	{
+		error.clear();
+		normalizedTarget = std::filesystem::absolute(targetPath, error).lexically_normal();
+	}
 
-	auto relativePath = std::filesystem::relative(normalizedFile, normalizedRoot);
-	return !relativePath.empty() && relativePath.begin()->string() != "..";
+	if (error)
+	{
+		return false;
+	}
+
+	auto normalizedBase = std::filesystem::weakly_canonical(basePath, error);
+	if (error)
+	{
+		error.clear();
+		normalizedBase = std::filesystem::absolute(basePath, error).lexically_normal();
+	}
+
+	if (error)
+	{
+		return false;
+	}
+
+	const std::filesystem::path relativePath =
+		normalizedTarget.lexically_relative(normalizedBase);
+
+	return !relativePath.empty() &&
+		!relativePath.is_absolute() &&
+		*relativePath.begin() != "..";
 }
