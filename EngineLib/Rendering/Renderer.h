@@ -35,6 +35,9 @@ public:
 	/* Create */
 	void Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManagerRef);
 
+	ID3D11Device* GetDevice() const { return mDevice.Get(); }
+	ID3D11DeviceContext* GetDeviceContext() const { return mDeviceContext.Get(); }
+
 	// Release all resources that this render holds.
 	void Release();
 

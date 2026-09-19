@@ -2,6 +2,7 @@
 
 #include <functional>
 
+#include "Core/BuiltinAssets.h"
 #include "Core/enum.h"
 #include "Core/Math/Vector.h"
 #include "Core/Math/Rotator.h"
@@ -54,10 +55,10 @@ struct FObjectFactory
 
 	static AActor* SpawnStaticMeshActor(
 		FVector3 location, FRotator rotation, FVector3 scale,
-		const UStaticMesh& staticMeshAsset);
+		const UStaticMesh& staticMeshAsset, FName textureAssetName = BuiltinAssets::DefaultWhiteTexture);
 	static AActor* SpawnStaticMeshActor(
 		FVector3 location, FRotator rotation, FVector3 scale,
-		FName staticMeshAssetName
+		FName staticMeshAssetName, FName textureAssetName = BuiltinAssets::DefaultWhiteTexture
 	);
 	
 

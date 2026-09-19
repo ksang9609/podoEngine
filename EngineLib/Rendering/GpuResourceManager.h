@@ -49,10 +49,9 @@ class FGpuResourceManager
 	using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 public:
-	FGpuResourceManager(FAssetManager& assetManager);
-
-	void SetDevice(ID3D11Device& device) { mDeviceRef = &device; }
-	void Initialize(float distanceRange);
+	FGpuResourceManager();
+	void Initialize(FAssetManager& assetManagerRef, ID3D11Device& deviceRef);
+	void SetDistanceRange(float distanceRange);
 
 	/* Getters */
 	const FBuffer* FindImmutableBufferOrAdd(FName bufferName);
@@ -90,7 +89,7 @@ public:
 private:
 	/* References */
 	ID3D11Device* mDeviceRef = nullptr;
-	FAssetManager& mAssetManagerRef;
+	FAssetManager* mAssetManagerRef;
 
 	/* Render States */
 	ComPtr<ID3D11BlendState> mBlendState[BST_Count];

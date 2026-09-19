@@ -76,15 +76,23 @@ FBoundingBox calculateBoundingBox(const TArray<FNormalVertex>& vertices)
 	return LocalBound;
 }
 
-FGpuResourceManager::FGpuResourceManager(FAssetManager& assetManager)
-	: mAssetManagerRef(assetManager)
+FGpuResourceManager::FGpuResourceManager()
 {
 }
 
-void FGpuResourceManager::Initialize(float distanceRange)
+void FGpuResourceManager::Initialize(FAssetManager& assetManagerRef,
+	ID3D11Device& deviceRef)
 {
-	assert(mDeviceRef != nullptr && "Device reference is not set. Call SetDevice() before initializing resources.");
-	create(distanceRange);
+	mAssetManagerRef = &assetManagerRef;
+	mDeviceRef = &deviceRef;
+
+	create(0);
+}
+
+void FGpuResourceManager::SetDistanceRange(float distanceRange)
+{
+	// Recreate unicode font constant buffer
+	createConstantBuffers(distanceRange);
 }
 
 const FBuffer* FGpuResourceManager::FindImmutableBufferOrAdd(FName bufferName)
@@ -95,7 +103,7 @@ const FBuffer* FGpuResourceManager::FindImmutableBufferOrAdd(FName bufferName)
 		return buffer;
 	}
 
-	const FStaticMesh* staticMeshData = mAssetManagerRef.FindStaticMeshDataOrNull(bufferName);
+	const FStaticMesh* staticMeshData = mAssetManagerRef->FindStaticMeshDataOrNull(bufferName);
 	if (staticMeshData)
 	{
 		CreateBuffer(bufferName, staticMeshData->Vertices, staticMeshData->Indices);
