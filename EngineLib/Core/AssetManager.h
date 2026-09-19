@@ -25,14 +25,14 @@ public:
 
 	void CreateStaticMeshAsset(const FName& assetName, const FStaticMesh* staticMeshData);
 
-	TArray<FName> GetAllStaticMeshAssetPaths() const;
+	TArray<FName> GetAllStaticMeshAssetKeys() const;
 
 	/* Resources */
 	const FStaticMesh* FindStaticMeshDataOrNull(const FName& assetName) const;
 
 	void CreateStaticMeshData(const FName& assetName, const FStaticMesh* staticMeshData);
 
-	TArray<FName> GetAllStaticMeshDataPaths() const;
+	TArray<FName> GetAllStaticMeshDataKeys() const;
 
 private:
 	/* Assets */
