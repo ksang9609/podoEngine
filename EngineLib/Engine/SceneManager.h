@@ -70,6 +70,7 @@ public:
 	void ResetSelectedActor() { mSelectedActor = nullptr; }
 
 	float GetPanelWidth() const;
+	
 private:
 	//static constexpr float MIN_WIDTH_RATIO = 0.2f;
 	//static constexpr float MAX_WIDTH_RATIO = 0.6f;

@@ -6,7 +6,6 @@ class UWorld;
 
 //inline constexpr std::string_view kSceneDataDir = "SceneData\\";
 //inline constexpr std::string_view kSceneDataSuffix = ".Scene";
-//FSceneManager 제거 시 FEditorFileUtils로 이동 예정
 
 class FEditorFileUtils
 {
@@ -16,10 +15,6 @@ public:
 
 	static bool SaveScene(const UWorld* world);
 	static bool SaveSceneAs(const UWorld* world);
-
-	//tk
-	//FString saveSceneFileDialog();
-	//FString openSceneFileDialog();
 	
 private:
 	static bool saveSceneToPath(const UWorld* world, const FString& filePath);

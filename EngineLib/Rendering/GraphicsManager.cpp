@@ -318,6 +318,11 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 	mRenderer->PrepareStaticMesh();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
+		if (renderInfo->StaticMesh == nullptr)
+		{
+			continue;
+		}
+
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 

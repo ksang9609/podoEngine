@@ -7,6 +7,7 @@
 #include "Core/BuiltinAssets.h"
 #include "Core/Object/Object.h"
 #include "Core/Object/ObjectFactory.h"
+#include "Core/Object/ObjectIterator.h"
 #include "Editor/Console.h"
 #include "Editor/EditorUIManager.h"
 #include "Editor/EditorFileUtils.h"
@@ -523,6 +524,26 @@ void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 	if (newWorld != nullptr)
 	{
 		mSceneManager->ReplaceWorld(newWorld);
+	}
+
+	for (TObjectIterator<UStaticMeshComponent> it; it; ++it)
+	{
+		UStaticMeshComponent* staticMeshComponent = *it;
+		const FName& assetKey = staticMeshComponent->GetStaticMeshAssetKey();
+
+		const UStaticMesh* staticMesh =
+			mAssetManager->FindStaticMeshAssetOrNull(assetKey);
+
+		// Imported meshes might not have been loaded yet in this process.
+		if (staticMesh == nullptr && !(assetKey == FName()))
+		{
+			staticMesh = mAssetManager->LoadObjMesh(assetKey.ToString());
+		}
+
+		if (staticMesh != nullptr)
+		{
+			staticMeshComponent->SetStaticMesh(*staticMesh);
+		}
 	}
 }
 

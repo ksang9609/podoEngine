@@ -28,6 +28,9 @@ public:
 	TArray<FName> GetAllStaticMeshAssetKeys() const;
 
 
+	// 이미 로드된 UStaticMesh를 FName AssetPath로 찾는 함수
+	const UStaticMesh* FindStaticMesh(const FName& assetPath) const;
+
 private:
 	/* Assets */
 	TMap<FName, std::unique_ptr<UStaticMesh>> mStaticMeshAssets;
