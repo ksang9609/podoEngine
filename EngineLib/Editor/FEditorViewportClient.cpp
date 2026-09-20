@@ -176,6 +176,7 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 		//		indexArray.Add(i);
 		//	}
 		//}
+		
 		if (RI.StaticMesh)
 		{
 			for (const auto& vertex : RI.StaticMesh->Vertices)
@@ -185,6 +186,17 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 			for (const auto& index : RI.StaticMesh->Indices)
 			{
 				indexArray.Add(index);
+			}
+		}
+		else if (HasAllRenderFlags(RI.eRenderFlags, ERenderFlags::RF_Billboard))
+		{
+			for (const auto& vertex : Quad_textured_indexed_vertices)
+			{
+				vertexArray.Add(vertex.GetPosition());
+			}
+			for (uint32 i = 0; i < sizeof(Quad_indices) / sizeof(uint32); i++)
+			{
+				indexArray.Add(Quad_indices[i]);
 			}
 		}
 		else

@@ -16,6 +16,8 @@ struct FVertexTextured
 {
 	float x, y, z;
 	float u, v;
+
+	FVector GetPosition() const { return FVector(x, y, z); }
 };
 
 struct FNormalVertex
