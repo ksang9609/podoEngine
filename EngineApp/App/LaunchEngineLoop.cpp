@@ -509,14 +509,14 @@ void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSpawnActorCommand& command)
 {
-	for (int32 i = 0; i < command.SpawnCount; ++i)
-	{
-		AActor* newActor = FObjectFactory::SpawnPrimitiveActor(
-			command.PrimitiveType,
-			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
-		);
-		mSceneManager->GetCurrentWorld()->AddActor(newActor);
-	}
+	//for (int32 i = 0; i < command.SpawnCount; ++i)
+	//{
+	//	AActor* newActor = FObjectFactory::SpawnPrimitiveActor(
+	//		command.PrimitiveType,
+	//		FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
+	//	);
+	//	mSceneManager->GetCurrentWorld()->AddActor(newActor);
+	//}
 }
 
 void FEngineLoop::processEditorCommand(const FDeleteActorCommand& command)
