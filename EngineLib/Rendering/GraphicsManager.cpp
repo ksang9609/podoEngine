@@ -802,6 +802,12 @@ void FGraphicsManager::renderHighLight(
 		return;
 	}
 
+	// Don't render highlight if the render info is a billboard
+	if (HasAllRenderFlags(renderInfo.eRenderFlags, ERenderFlags::RF_Billboard))
+	{
+		return;
+	}
+
 	auto& resources = *mGpuResourceManagerRef;
 	const FBuffer* buffer =
 		resources.FindImmutableBufferOrAdd(renderInfo.MeshName);
