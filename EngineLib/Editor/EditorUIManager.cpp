@@ -1225,6 +1225,8 @@ void FEditorUIManager::updateBottomBarGUI()
             consolePopupId,
             popupFlags))
         {
+			// Console should be updated before drawing its contents
+			ConsoleWindow::GetInstance().Update();
             ConsoleWindow::GetInstance().DrawContents();
             ImGui::EndPopup();
         }
