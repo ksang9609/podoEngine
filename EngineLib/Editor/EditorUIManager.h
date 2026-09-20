@@ -39,6 +39,7 @@ struct FGuiInputField
 {
 	/* Spawn Actor */
 	EPrimitive PrimitiveType = EPrimitive::EP_Cube;
+	int32 SelectedMeshIndex = 0;
 	int32 SpawnCount = 1;
 
 	/* Scene Control */

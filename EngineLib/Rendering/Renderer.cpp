@@ -738,7 +738,7 @@ void URenderer::RenderParticle(ID3D11ShaderResourceView* texture)
 	// Bind the index buffer
 	mDeviceContext->IASetIndexBuffer(buffer.IndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-	mDeviceContext->DrawIndexed(4, 0, 0);
+	mDeviceContext->DrawIndexed(6, 0, 0);
 }
 
 void URenderer::RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
