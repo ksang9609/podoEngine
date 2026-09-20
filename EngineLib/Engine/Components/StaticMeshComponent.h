@@ -16,5 +16,5 @@ protected:
 	virtual FRenderInfo makeRenderInfo() const override;
 
 private:
-	const UStaticMesh* mStaticMeshRef;
+	const UStaticMesh* mStaticMeshRef = nullptr;
 };

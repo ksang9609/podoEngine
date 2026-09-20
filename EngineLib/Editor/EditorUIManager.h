@@ -78,6 +78,7 @@ private:
 	static constexpr float CONTROL_PANEL_HEIGHT_RATIO = 0.45f;
 	static constexpr float WINDOW_PROPERTY_HEIGHT_RATIO = 0.3f;
 
+	void drawMainMenuBar(FEditorCommands& outCommands);
 	void updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updateObjectListPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);

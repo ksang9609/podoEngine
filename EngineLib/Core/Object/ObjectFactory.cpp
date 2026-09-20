@@ -188,5 +188,7 @@ TMap<FName, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap =
 	{"UBillboardComponent", &UBillboardComponent::GetClass },
 	{"UWorld", &UWorld::GetClass },
 	{"UNameComponent",& UNameComponent::GetClass },
-	{"UParticleSubUVComponent",&UParticleSubUVComponent::GetClass }
+	{"UParticleSubUVComponent",&UParticleSubUVComponent::GetClass },
+	{ "UMeshComponent", &UMeshComponent::GetClass },
+	{ "UStaticMeshComponent", &UStaticMeshComponent::GetClass },
 };

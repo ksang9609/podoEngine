@@ -159,6 +159,17 @@ void FSceneManager::LoadScene(std::string_view filePath, const FFileManager& fil
 	}
 }
 
+void FSceneManager::ReplaceWorld(UWorld* newWorld)
+{
+	if (!newWorld)
+		return;
+
+	delete mCurrentWorld;
+	mCurrentWorld = newWorld;
+
+	ResetSelectedActor();
+}
+
 void FSceneManager::RemoveActor(AActor* actor)
 {
 	if (mSelectedActor == actor)

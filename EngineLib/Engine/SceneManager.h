@@ -58,6 +58,8 @@ public:
 	void SaveScene(std::string_view sceneName, const FFileManager& fileManager);
 	void LoadScene(std::string_view filePath, const FFileManager& fileManager);
 
+	void ReplaceWorld(UWorld* newWorld);
+
 	UWorld* GetCurrentWorld() const { return mCurrentWorld; }
 
 	AActor* GetSelectedActor() const { return mSelectedActor; }

@@ -8,6 +8,7 @@
 #include "Core/Object/ObjectFactory.h"
 #include "Editor/Console.h"
 #include "Editor/EditorUIManager.h"
+#include "Editor/EditorFileUtils.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
@@ -376,12 +377,29 @@ void FEngineLoop::processEditorCommand(const FNewSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
 {
-	mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	FEditorFileUtils::SaveScene(
+		mSceneManager->GetCurrentWorld()
+	);
+}
+
+void FEngineLoop::processEditorCommand(const FSaveSceneAsCommand& command)
+{
+	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	FEditorFileUtils::SaveSceneAs(
+		mSceneManager->GetCurrentWorld()
+	);
 }
 
 void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 {
-	mSceneManager->LoadScene(command.SceneName, *mFileManager);
+	//mSceneManager->LoadScene(command.SceneName, *mFileManager);
+	UWorld* newWorld = FEditorFileUtils::LoadScene();
+
+	if (newWorld != nullptr)
+	{
+		mSceneManager->ReplaceWorld(newWorld);
+	}
 }
 
 void FEngineLoop::processEditorCommand(const FSpawnActorCommand& command)
