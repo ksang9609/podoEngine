@@ -416,8 +416,8 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 
 	const char* meshNames[] = { "Cube", "Sphere" };
 	const FName meshKeys[] = {
-		BuiltinAssets::Cube,
-		BuiltinAssets::Sphere
+		BuiltinAssets::CubeMesh,
+		BuiltinAssets::SphereMesh
 	};
 
 	int32 spawnCount = mGuiInputField.SpawnCount;

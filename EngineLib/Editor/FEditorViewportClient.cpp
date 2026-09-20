@@ -162,21 +162,24 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 			continue;
 		}
 
+		const FMatrix effectiveWorld = RI.GetTransformMatrix(mCamera.Rotation);
+
+		const FBoundingBox worldBounds =
+			RI.MeshName == BuiltinAssets::BillboardQuadTextured
+			? TransformBoundingBox(RI.LocalBounds, effectiveWorld)
+			: RI.WorldBounds;
+
+		// 월드 AABB 검사
+		if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
+		{
+			continue;
+		}
+
 		TArray<FVector> vertexArray;
 		TArray<uint32> indexArray;
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
-		// TODO: Remove this GetPrimitiveMesh function
-		//if (GetPrimitiveMesh(RI.ePrimitive, vertices, length))
-		//{
-		//	//continue;   // 모르는 프리미티브는 건너뛴다
-		//	for (uint32 i = 0; i < length; i++)
-		//	{
-		//		vertexArray.Add(vertices[i].GetPosition());
-		//		indexArray.Add(i);
-		//	}
-		//}
-		
+
 		if (RI.StaticMesh)
 		{
 			for (const auto& vertex : RI.StaticMesh->Vertices)
@@ -200,19 +203,6 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 			}
 		}
 		else
-		{
-			continue;
-		}
-
-		const FMatrix effectiveWorld = RI.GetTransformMatrix(mCamera.Rotation);
-
-		const FBoundingBox worldBounds =
-			RI.MeshName == BuiltinAssets::BillboardQuadTextured
-			? TransformBoundingBox(RI.LocalBounds, effectiveWorld)
-			: RI.WorldBounds;
-
-		// 월드 AABB 검사
-		if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
 		{
 			continue;
 		}

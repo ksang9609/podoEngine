@@ -351,7 +351,7 @@ FName FGizmo::GetAxisPrimitive() const
 	{
 	case TRANSLATE: return BuiltinAssets::GizmoArrow;
 	case ROTATE: return BuiltinAssets::Circle; //EP_Rotate
-	case SCALE: return BuiltinAssets::Cube;
+	case SCALE: return BuiltinAssets::CubeSimple;
 	default: return BuiltinAssets::GizmoArrow;
 	}
 }

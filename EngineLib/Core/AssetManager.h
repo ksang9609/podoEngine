@@ -9,7 +9,6 @@
 #include "Core/Name.h"
 
 #include "Rendering/Mesh/StaticMesh.h"
-#include <Rendering/Mesh/Texture.h>
 
 
 // In charge of managing assets and **resources**

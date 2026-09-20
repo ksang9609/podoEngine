@@ -217,7 +217,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	// OBJ 하드코딩 로딩 테스트
 	{
 		const UStaticMesh* objMesh =
-			mAssetManager->LoadObjMesh("Assets/grape.obj");
+			mAssetManager->LoadObjMesh("Assets/roadBike.obj");
 
 		if (objMesh)
 		{
@@ -270,7 +270,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::Cube, "Assets/Textures/CubeTextureSample.dds");
+			BuiltinAssets::CubeMesh, "Assets/Textures/CubeTextureSample.dds");
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
@@ -280,7 +280,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::Sphere, "Assets/Textures/EarthTexture.dds");
+			BuiltinAssets::SphereMesh, "Assets/Textures/EarthTexture.dds");
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 

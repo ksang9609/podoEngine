@@ -11,7 +11,7 @@
 #include <filesystem>
 #include <Editor/Console.h>
 #include <Rendering/Mesh/ObjImporter.h>
-#include <Rendering/Mesh/Material.h>
+//#include <Rendering/Mesh/Material.h>
 
 FAssetManager::FAssetManager()
 {
@@ -47,8 +47,8 @@ void FAssetManager::createPrimitiveStaticMeshAssets()
 		FObjectFactory::ConstructObject<UStaticMesh>(cubeMeshData.get())
 	);
 
-	mStaticMeshData.Add(BuiltinAssets::Cube, std::move(cubeMeshData));
-	mStaticMeshAssets.Add(BuiltinAssets::Cube, std::move(cubeMeshAsset));
+	mStaticMeshData.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshData));
+	mStaticMeshAssets.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshAsset));
 
 	/* Sphere */
 	std::unique_ptr<FStaticMesh> sphereMeshData = std::make_unique<FStaticMesh>(SphereMesh);
@@ -57,8 +57,8 @@ void FAssetManager::createPrimitiveStaticMeshAssets()
 		FObjectFactory::ConstructObject<UStaticMesh>(sphereMeshData.get())
 	);
 
-	mStaticMeshData.Add(BuiltinAssets::Sphere, std::move(sphereMeshData));
-	mStaticMeshAssets.Add(BuiltinAssets::Sphere, std::move(sphereMeshAsset));
+	mStaticMeshData.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshData));
+	mStaticMeshAssets.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshAsset));
 }
 
 TArray<FName> FAssetManager::GetAllStaticMeshAssetKeys() const
