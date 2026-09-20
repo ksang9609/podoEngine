@@ -11,7 +11,7 @@
 
 FAssetManager::FAssetManager()
 {
-	createPrimitiveStaticMeshAssets();
+	createBuiltinStaticMeshAssets();
 }
 
 const UStaticMesh* FAssetManager::FindStaticMeshAssetOrNull(const FName& assetName) const
@@ -24,45 +24,56 @@ const UStaticMesh* FAssetManager::FindStaticMeshAssetOrNull(const FName& assetNa
 	return nullptr;
 }
 
-const FStaticMesh* FAssetManager::FindStaticMeshDataOrNull(const FName& assetName) const
+const UStaticMesh& FAssetManager::FindStaticMeshAssetOrAdd(const FName& assetName)
 {
-	const std::unique_ptr<FStaticMesh>* foundData = mStaticMeshData.Find(assetName);
-	if (foundData)
+	const std::unique_ptr<UStaticMesh>* foundAsset = mStaticMeshAssets.Find(assetName);
+	if (foundAsset)
 	{
-		return foundData->get();
+		return **foundAsset;
 	}
-	return nullptr;
+
+	if (createStaticMeshAsset(assetName))
+	{
+		foundAsset = mStaticMeshAssets.Find(assetName);
+		if (foundAsset)
+		{
+			return **foundAsset;
+		}
+	}
+
+	throw std::runtime_error("Failed to find or create static mesh asset: ");
 }
 
-void FAssetManager::createPrimitiveStaticMeshAssets()
+void FAssetManager::createBuiltinStaticMeshAssets()
 {
 	/* Cube */
 	std::unique_ptr<FStaticMesh> cubeMeshData = std::make_unique<FStaticMesh>(CubeMesh);
 
 	std::unique_ptr<UStaticMesh> cubeMeshAsset = std::unique_ptr<UStaticMesh>(
-		FObjectFactory::ConstructObject<UStaticMesh>(cubeMeshData.get())
+		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cubeMeshData))
 	);
 
-	mStaticMeshData.Add(BuiltinAssets::Cube, std::move(cubeMeshData));
 	mStaticMeshAssets.Add(BuiltinAssets::Cube, std::move(cubeMeshAsset));
 
 	/* Sphere */
 	std::unique_ptr<FStaticMesh> sphereMeshData = std::make_unique<FStaticMesh>(SphereMesh);
 
 	std::unique_ptr<UStaticMesh> sphereMeshAsset = std::unique_ptr<UStaticMesh>(
-		FObjectFactory::ConstructObject<UStaticMesh>(sphereMeshData.get())
+		FObjectFactory::ConstructObject<UStaticMesh>(std::move(sphereMeshData))
 	);
 
-	mStaticMeshData.Add(BuiltinAssets::Sphere, std::move(sphereMeshData));
 	mStaticMeshAssets.Add(BuiltinAssets::Sphere, std::move(sphereMeshAsset));
+}
+
+bool FAssetManager::createStaticMeshAsset(const FName& assetName)
+{
+	assert(false && "createStaticMeshAsset is not implemented yet.");
+
+	// TODO: Load static mesh data from Obj importer by assetName
+	return false;
 }
 
 TArray<FName> FAssetManager::GetAllStaticMeshAssetKeys() const
 {
 	return mStaticMeshAssets.GetKeys();
-}
-
-TArray<FName> FAssetManager::GetAllStaticMeshDataKeys() const
-{
-	return mStaticMeshData.GetKeys();
 }

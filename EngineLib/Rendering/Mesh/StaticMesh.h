@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <memory>
+
 #include "Core/Object/Object.h"
 #include "Core/Core.h"
 #include "Core/Name.h"
@@ -22,27 +24,37 @@ class UStaticMesh : public UObject
 	DECLARE_SERIALIZATION()
 public:
 	void Initialize() {};
-	void Initialize(const FStaticMesh* inStaticMesh)
+	void Initialize(FStaticMesh* inStaticMesh)
 	{
 		SetStaticMeshAsset(inStaticMesh);
 	}
 
-	const FName& GetAssetPathFileName() const
+	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh)
 	{
-		return mStaticMeshAssetRef->PathFileName;
+		SetStaticMeshAsset(std::move(inStaticMesh));
 	}
 
-	void SetStaticMeshAsset(const FStaticMesh* inStaticMesh)
+	const FName& GetAssetPathFileName() const
 	{
-		mStaticMeshAssetRef = inStaticMesh;
+		return mStaticMeshAsset->PathFileName;
+	}
+
+	void SetStaticMeshAsset(FStaticMesh* inStaticMesh)
+	{
+		mStaticMeshAsset.reset(inStaticMesh);
+	}
+
+	void SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh)
+	{
+		mStaticMeshAsset = std::move(inStaticMesh);
 	}
 
 	const FStaticMesh* GetStaticMeshAsset() const
 	{
-		return mStaticMeshAssetRef;
+		return mStaticMeshAsset.get();
 	}
 
 private:
-	const FStaticMesh* mStaticMeshAssetRef;
+	std::unique_ptr<FStaticMesh> mStaticMeshAsset;
 };
 

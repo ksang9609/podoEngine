@@ -103,7 +103,7 @@ const FBuffer* FGpuResourceManager::FindImmutableBufferOrAdd(FName bufferName)
 		return buffer;
 	}
 
-	const FStaticMesh* staticMeshData = mAssetManagerRef->FindStaticMeshDataOrNull(bufferName);
+	const FStaticMesh* staticMeshData = mAssetManagerRef->FindStaticMeshAssetOrNull(bufferName)->GetStaticMeshAsset();
 	if (staticMeshData)
 	{
 		CreateBuffer(bufferName, staticMeshData->Vertices, staticMeshData->Indices);

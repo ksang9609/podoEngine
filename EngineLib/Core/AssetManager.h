@@ -21,25 +21,19 @@ public:
 	FAssetManager();
 
 	/* Assets */
+	// TODO: Replace or null fuction with FindStaticMeshAssetOrAdd
 	const UStaticMesh* FindStaticMeshAssetOrNull(const FName& assetName) const;
+	const UStaticMesh& FindStaticMeshAssetOrAdd(const FName& assetName);
 
-	void CreateStaticMeshAsset(const FName& assetName, const FStaticMesh* staticMeshData);
+	// TODO: Remove this function
+	void CreateStaticMeshAsset(const FName& assetName, FStaticMesh* staticMeshData);
 
 	TArray<FName> GetAllStaticMeshAssetKeys() const;
-
-	/* Resources */
-	const FStaticMesh* FindStaticMeshDataOrNull(const FName& assetName) const;
-
-	void CreateStaticMeshData(const FName& assetName, const FStaticMesh* staticMeshData);
-
-	TArray<FName> GetAllStaticMeshDataKeys() const;
 
 private:
 	/* Assets */
 	TMap<FName, std::unique_ptr<UStaticMesh>> mStaticMeshAssets;
 
-	/* Resources */
-	TMap<FName, std::unique_ptr<FStaticMesh>> mStaticMeshData;
-
-	void createPrimitiveStaticMeshAssets();
+	void createBuiltinStaticMeshAssets();
+	bool createStaticMeshAsset(const FName& assetName);
 };
