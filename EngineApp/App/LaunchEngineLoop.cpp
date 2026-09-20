@@ -12,6 +12,7 @@
 #include "Editor/EditorUIManager.h"
 #include "Editor/EditorFileUtils.h"
 #include "Editor/EditorViewportManager.h"
+
 #include "Editor/Viewport.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
@@ -531,18 +532,22 @@ void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 		UStaticMeshComponent* staticMeshComponent = *it;
 		const FName& assetKey = staticMeshComponent->GetStaticMeshAssetKey();
 
-		const UStaticMesh* staticMesh =
-			mAssetManager->FindStaticMeshAssetOrNull(assetKey);
-
-		// Imported meshes might not have been loaded yet in this process.
-		if (staticMesh == nullptr && !(assetKey == FName()))
+		if (assetKey == FName())
 		{
-			staticMesh = mAssetManager->LoadObjMesh(assetKey.ToString());
+			continue;
 		}
 
-		if (staticMesh != nullptr)
+		try
 		{
-			staticMeshComponent->SetStaticMesh(*staticMesh);
+			const UStaticMesh& staticMesh =
+				mAssetManager->FindStaticMeshAssetOrAdd(assetKey);
+			staticMeshComponent->SetStaticMesh(staticMesh);
+		}
+		catch (const std::exception& exception)
+		{
+			UE_LOG(Error, Editor,
+				"Failed to restore static mesh: %s (%s)",
+				assetKey.ToString().CStr(), exception.what());
 		}
 	}
 }

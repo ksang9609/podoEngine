@@ -57,7 +57,7 @@
                   "Name" : "UStaticMeshComponent",
                   "UUID" : 4,
                   "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mRelativeLocation" : [-2.000000, 0.000000, 0.000000],
+                  "mRelativeLocation" : [-2.000000, -16.091413, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
                   "mStaticMeshAssetKey" : "Engine/Primitives/Sphere",

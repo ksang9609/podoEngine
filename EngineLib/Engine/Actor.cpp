@@ -103,11 +103,18 @@ void AActor::DeserializeClass(const json::JSON& inJson)
 			continue;
 		}
 
-		USceneComponent* Parent = UObject::GetObjectByUUID<USceneComponent>(ParentUUID);
-		if (Parent == nullptr)
+		const int32 parentComponentIndex =
+			getComponentIndex(ParentUUID);
+
+		if (parentComponentIndex == -1)
 		{
-			throw std::runtime_error("Failed to restore component parent");
+			throw std::runtime_error(
+				"Failed to restore component parent");
 		}
+
+		USceneComponent* Parent =
+			mComponents[parentComponentIndex]
+			->Cast<USceneComponent>();
 
 		SceneComponent->AttachTo(*Parent);
 	}
@@ -123,6 +130,7 @@ void AActor::DeserializeClass(const json::JSON& inJson)
 	}
 	else
 	{
+
 		int32 rootComponentIndex = getComponentIndex(rootComponentUUID);
 		if (rootComponentIndex == -1)
 		{
