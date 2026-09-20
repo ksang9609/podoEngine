@@ -104,8 +104,8 @@ public:
 		const FInstanceData* instances,
 		UINT instanceCount);
 	void RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
-		ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState,
-		ID3D11Buffer* indexBuffer = nullptr, uint32 indexCount = 0);
+		ID3D11ShaderResourceView* diffuseTextureSRV, ID3D11ShaderResourceView* normalTextureSRV, ID3D11ShaderResourceView* specularTextureSRV, ID3D11SamplerState* samplerState,
+		ID3D11Buffer* indexBuffer = nullptr, uint32 indexCount = 0, uint32 startIndex = 0);
 
 	void SwapBuffer();
 

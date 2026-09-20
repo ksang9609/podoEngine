@@ -10,11 +10,14 @@ struct VS_INPUT
 struct PS_INPUT
 {
     float4 position : SV_Position;
+    float3 normal : NORMAL;
     float4 color : COLOR;
     float2 uv : TEXCOORD;
 };
 
 Texture2D g_txColor : register(t0);
+Texture2D NormalTexture : register(t1);
+Texture2D SpecularTexture : register(t2);
 SamplerState g_Sample : register(s0);
 
 cbuffer textureConstatnts : register(b0)

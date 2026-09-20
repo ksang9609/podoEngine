@@ -4,21 +4,14 @@
 #include "Core/Math/Vector.h"
 #include "Core/Container/TArray.h"
 #include <filesystem>
+#include "Rendering/Mesh/StaticMesh.h"
 
 struct FNormalVertex;
 struct FStaticMesh;
 
-struct FObjMaterialInfo
+struct FObjImportResult
 {
-	FString Name;
-	FVector AmbientColor = FVector(0.0f, 0.0f, 0.0f);   // Ka
-	FVector DiffuseColor = FVector(1.f, 1.0f, 1.0f);   // Kd 
-	FVector SpecularColor = FVector(0.0f, 0.0f, 0.0f);   // Ks
-	float   SpecularExponent = 0.0f;                      // Ns
-	float   Alpha = 1.0f;
-	FString DiffuseTexturePath; // map_Kd
-	FString NormalTexturePath;  // map_bump or norm
-	FString SpecularPath;
+	std::unique_ptr<FStaticMesh> meshData;
 };
 
 // f v1/vt1/vn1
@@ -67,7 +60,7 @@ class FObjImporter
 public:
 
 	//obj 파일을 읽어서 FStaticMesh로 변환하는 함수
-	static FStaticMesh* ParseAndConvert(const FString& fileName);
+	static bool ParseAndConvert(const FString& fileName, FObjImportResult& outResult);
 
 private:
 

@@ -79,6 +79,7 @@ public:
 
 	void CreateTextureFromDDS(FName texturePath);
 	void CreateUnicodeFontTexture(FName texturePath);
+	void CreateTextureFromWIC(FName texturePath);
 
 	/* Ensure Dynamic Buffers Capacity */
 	bool EnsureFontBuffer(uint32 fontCount);

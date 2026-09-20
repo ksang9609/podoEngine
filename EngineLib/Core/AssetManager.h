@@ -9,6 +9,7 @@
 #include "Core/Name.h"
 
 #include "Rendering/Mesh/StaticMesh.h"
+#include <Rendering/Mesh/Texture.h>
 
 
 // In charge of managing assets and **resources**
@@ -33,6 +34,9 @@ public:
 	void CreateStaticMeshData(const FName& assetName, const FStaticMesh* staticMeshData);
 
 	TArray<FName> GetAllStaticMeshDataKeys() const;
+
+	//테스트 및 임시용.
+	const UStaticMesh* LoadObjMesh(const FString& fileName);
 
 private:
 	/* Assets */

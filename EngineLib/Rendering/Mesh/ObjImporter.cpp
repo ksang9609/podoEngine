@@ -70,38 +70,35 @@ namespace
 	}
 }
 
-// 반환한 포인터는 무조건 FObjManager에서 관리해야 함. FObjManager에서 해제하지 않으면 메모리 누수 발생
-FStaticMesh* FObjImporter::ParseAndConvert(const FString& fileName)
+bool FObjImporter::ParseAndConvert(const FString& fileName, FObjImportResult& outResult)
 {
-	//테스트 코드 시작
+	outResult.meshData.reset(0);
+
     FObjInfo objInfo;
 
 	const bool Success = parseObjFile(fileName, objInfo);
-    UE_LOG(Log, Render, "OBJ parsing: %s", Success ? "success" : "failed");
+
+	UE_LOG(Log, Render, "OBJ parsing: %s", Success ? "success" : "failed");
+	if (!Success) return false;
+
 	auto staticMesh = std::make_unique<FStaticMesh>();
 
 	convertObjToStaticMesh(objInfo, *staticMesh);
-	return staticMesh.release();
+	if (staticMesh->Vertices.IsEmpty() ||
+		staticMesh->Indices.IsEmpty())
+	{
+		return false;
+	}
+
+	staticMesh->PathFileName = FName(fileName);
+	staticMesh->Materials = std::move(objInfo.Materials);
+	outResult.meshData = std::move(staticMesh);
+
+	return true;
 }
 
 bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 {
-	//Make sure we have a default if no tex coords or normals are defined
-	bool hasTexCoord = false;
-	bool hasNorm = false;
-
-	//Temp variables to store into vectors
-	std::wstring meshMaterialsTemp;
-	int vertPosIndexTemp;
-	int vertNormIndexTemp;
-	int vertTCIndexTemp;
-
-	wchar_t checkChar;        //The variable we will use to store one char from file at a time
-	std::wstring face;        //Holds the string containing our face vertices
-	int vIndex = 0;            //Keep track of our vertex index count
-	int triangleCount = 0;    //Total Triangles
-	int totalVerts = 0;
-	int meshTriangles = 0;
 
 	// OBJ 파일이 Assets 폴더에 있다면 kDefaultAssetsPath
 	// 실행 폴더 바로 아래에 있다면 kDefaultRootPath
@@ -137,7 +134,7 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 				continue;
 			}
 			//UE_LOG(Log, Render, "v %f %f %f", X.ToFloat(), Y.ToFloat(), Z.ToFloat());
-			outObjInfo.Positions.Add(FVector(X.ToFloat(), Y.ToFloat(), Z.ToFloat()));
+			outObjInfo.Positions.Add((FVector(X.ToFloat(), Y.ToFloat(), Z.ToFloat())));
 		}
 		else if (Prefix == "vt")
 		{
@@ -147,7 +144,14 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 				continue;
 			}
 			//UE_LOG(Log, Render, "vt %f %f", U.ToFloat(), V.ToFloat());
-			outObjInfo.UVs.Add(FVector2(U.ToFloat(), V.ToFloat()));
+
+			const FVector2 objUV(
+				U.ToFloat(),
+				V.ToFloat());
+
+			outObjInfo.UVs.Add(
+				UVToUEBasis(objUV));
+			//outObjInfo.UVs.Add(FVector2(U.ToFloat(), V.ToFloat()));
 		}
 		else if (Prefix == "vn")
 		{
@@ -169,10 +173,10 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			//UE_LOG(Log, Render, MtlFileName.CStr());
 
 			// MTL 파일 경로를 OBJ 파일 경로와 동일한 디렉토리에 있다고 가정하고 Path 등록
-			const auto& mtlFilePath = objFilePath.replace_filename(MtlFileName.CStr());
+			const auto mtlFilePath = objFilePath.parent_path() / MtlFileName.CStr();
 			parseMtlFile(mtlFilePath, outObjInfo.Materials);
 		}
-		else if (Prefix == "g")
+		else if (Prefix == "g" || Prefix == "o")
 		{
 			FString groupName;
 			int32 groupIndex = -1;
@@ -340,7 +344,7 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 			FObjMaterialInfo newMaterial;
 			newMaterial.Name = MaterialName;
 
-			//UE_LOG(Log, Render, newMaterial.Name.CStr());
+			UE_LOG(Log, Render, newMaterial.Name.CStr());
 
 			outMaterials.Add(newMaterial);
 		}
@@ -365,7 +369,7 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 					CurrentMaterial.SpecularColor = Color;
 				}
 			}
-			//UE_LOG(Log, Render, "%s %f %f %f", Prefix.CStr(), Color.x, Color.y, Color.z);
+			UE_LOG(Log, Render, "%s %f %f %f", Prefix.CStr(), Color.x, Color.y, Color.z);
 		}
 		else if (Prefix == "Ns")
 		{
@@ -376,7 +380,7 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 				FObjMaterialInfo& CurrentMaterial = outMaterials[outMaterials.Num() - 1];
 				CurrentMaterial.SpecularExponent = SpecularExponentStr.ToFloat();
 			}
-			//UE_LOG(Log, Render, "Ns %f", SpecularExponentStr.ToFloat());
+			UE_LOG(Log, Render, "Ns %f", SpecularExponentStr.ToFloat());
 		}
 		else if (Prefix == "d" || Prefix == "Tr")
 		{
@@ -393,7 +397,7 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 				CurrentMaterial.Alpha = AlphaValue;
 			}
 
-			//UE_LOG(Log, Render, "d/Tr %f", AlphaStr.ToFloat());
+			UE_LOG(Log, Render, "d/Tr %f", AlphaStr.ToFloat());
 		}
 		else if (Prefix == "map_Kd")
 		{
@@ -402,9 +406,12 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 			if (outMaterials.Num() > 0)
 			{
 				FObjMaterialInfo& CurrentMaterial = outMaterials[outMaterials.Num() - 1];
-				CurrentMaterial.DiffuseTexturePath = DiffuseTexturePath;
+
+				//실제 경로 저장
+				const std::filesystem::path texturePath =std::filesystem::absolute(filePath.parent_path() / DiffuseTexturePath.CStr()).lexically_normal();
+				CurrentMaterial.DiffuseTexturePath = FString(texturePath.string().c_str());
 			}
-			//UE_LOG(Log, Render, "map_Kd %s", DiffuseTexturePath.CStr());
+			UE_LOG(Log, Render, "map_Kd %s", DiffuseTexturePath.CStr());
 		}
 		else if (Prefix == "map_bump" || Prefix == "bump" || Prefix == "norm")
 		{
@@ -413,9 +420,12 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 			if (outMaterials.Num() > 0)
 			{
 				FObjMaterialInfo& CurrentMaterial = outMaterials[outMaterials.Num() - 1];
-				CurrentMaterial.NormalTexturePath = NormalTexturePath;
+
+				//실제 경로 저장
+				const std::filesystem::path texturePath =std::filesystem::absolute(filePath.parent_path() / NormalTexturePath.CStr()).lexically_normal();
+				CurrentMaterial.NormalTexturePath = FString(texturePath.string().c_str());
 			}
-			//UE_LOG(Log, Render, "map_bump %s", NormalTexturePath.CStr());
+			UE_LOG(Log, Render, "map_bump %s", NormalTexturePath.CStr());
 		}
 		else if (Prefix == "map_Ks")
 		{
@@ -424,9 +434,12 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 			if (outMaterials.Num() > 0)
 			{
 				FObjMaterialInfo& CurrentMaterial = outMaterials[outMaterials.Num() - 1];
-				CurrentMaterial.SpecularPath = SpecularTexturePath;
+
+				//실제 경로 저장
+				const std::filesystem::path texturePath =std::filesystem::absolute(filePath.parent_path() / SpecularTexturePath.CStr()).lexically_normal();
+				CurrentMaterial.SpecularPath = FString(texturePath.string().c_str());
 			}
-			//UE_LOG(Log, Render, "map_Ks %s", SpecularTexturePath.CStr());
+			UE_LOG(Log, Render, "map_Ks %s", SpecularTexturePath.CStr());
 		}
 	}
 
@@ -441,7 +454,6 @@ void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& 
 
 	// 일단은 std map 으로 박아놓기
 	std::unordered_map<FObjVertexIndex, uint32, FObjVertexIndexHash> vertexMap;
-	outStaticMesh.Materials = objInfo.Materials;
 	outStaticMesh.GroupNames = objInfo.GroupNames;
 
 	for (const FObjFaceGroup& group : objInfo.FaceGroups)

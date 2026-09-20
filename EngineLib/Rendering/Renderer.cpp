@@ -742,24 +742,27 @@ void URenderer::RenderParticle(ID3D11ShaderResourceView* texture)
 }
 
 void URenderer::RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
-	ID3D11ShaderResourceView* textureSRV, ID3D11SamplerState* samplerState,
-	ID3D11Buffer* indexBuffer, uint32 indexCount)
+	ID3D11ShaderResourceView* diffuseTextureSRV, ID3D11ShaderResourceView* normalTextureSRV, ID3D11ShaderResourceView* specularTextureSRV,
+	ID3D11SamplerState* samplerState,
+	ID3D11Buffer* indexBuffer, uint32 indexCount, uint32 startIndex)
 {
 	assert(mGpuResourceManagerRef && mDeviceContext);
 
-	if (!vertexBuffer || !indexBuffer || indexCount == 0 || !textureSRV || !samplerState) return;
+	if (!vertexBuffer || !indexBuffer || indexCount == 0 || !diffuseTextureSRV || !samplerState) return;
 	UINT offset = 0;
 	// Bind the vertex buffer
 	mDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &StrideNormalVertex, &offset);
 	// Bind the texture resource
-	mDeviceContext->PSSetShaderResources(0, 1, &textureSRV);
+	mDeviceContext->PSSetShaderResources(0, 1, &diffuseTextureSRV);
+	mDeviceContext->PSSetShaderResources(1, 1, &normalTextureSRV);
+	mDeviceContext->PSSetShaderResources(2, 1, &specularTextureSRV);
 	mDeviceContext->PSSetSamplers(0, 1, &samplerState);
 	// Bind the index buffer
 	mDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	if (indexBuffer)
 	{
-		mDeviceContext->DrawIndexed(indexCount, 0, 0);
+		mDeviceContext->DrawIndexed(indexCount, startIndex, 0);
 	}
 	else
 	{
@@ -833,7 +836,7 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 	//UpdateSimpleConstant(originalMatrix, mViewProjectionMatrix);
 	//RenderSimplePrimitive(pBuffer, Num);
 	UpdateTextureConstant(originalMatrix, mViewProjectionMatrix, FLinearColor(0.f, 0.f, 0.f, 0.f), FVector2(1.f, 1.f), FVector2(0.f, 0.f));
-	RenderStaticMesh(pBuffer, Num, defaultWhiteTexture, &samplerState, indexBuffer, indexCount);
+	RenderStaticMesh(pBuffer, Num, defaultWhiteTexture,nullptr,nullptr, &samplerState, indexBuffer, indexCount);
 
 	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
 	mDeviceContext->OMSetBlendState(&resources.GetBlendState(BST_Default), nullptr, 0xffffffff);
@@ -841,7 +844,7 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 	//UpdateSimpleConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f));
 	//RenderSimplePrimitive(pBuffer, Num);
 	UpdateTextureConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f), FVector2(1.f, 1.f), FVector2(0.f, 0.f));
-	RenderStaticMesh(pBuffer, Num, defaultWhiteTexture, &samplerState, indexBuffer, indexCount);
+	RenderStaticMesh(pBuffer, Num, defaultWhiteTexture, nullptr, nullptr, &samplerState, indexBuffer, indexCount);
 }
 
 void URenderer::releaseDepthStencilBuffer()

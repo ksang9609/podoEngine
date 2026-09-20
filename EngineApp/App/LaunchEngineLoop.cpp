@@ -214,6 +214,34 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager->NewScene();
 
+	// OBJ 하드코딩 로딩 테스트
+	{
+		const UStaticMesh* objMesh =
+			mAssetManager->LoadObjMesh("Assets/grape.obj");
+
+		if (objMesh)
+		{
+			AActor* objActor =
+				FObjectFactory::SpawnStaticMeshActor(
+					FVector(0.0f, 0.0f, 0.0f),     // 위치
+					FRotator(0.0f, 0.0f, 0.0f),   // 회전
+					FVector(1.0f, 1.0f, 1.0f),    // 크기
+					*objMesh
+				);
+
+			if (objActor)
+			{
+				mSceneManager
+					->GetCurrentWorld()
+					->AddActor(objActor);
+			}
+		}
+		else
+		{
+			UE_LOG(Error, Render, "Failed to load test OBJ");
+		}
+	}
+
 	// Test: static mesh
 	//{
 		//	FStaticMesh* quadMesh = new FStaticMesh();

@@ -327,28 +327,107 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			UE_LOG(Error, Render, "Static mesh buffer not found.");
 			continue;
 		}
-
-		ID3D11ShaderResourceView* texture = nullptr;
-		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+		// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
+		if(renderInfo->StaticMesh->Sections.IsEmpty())
 		{
-			// TODO: Use the texture from the renderInfo if available
-			texture = resources.FindTextureOrAdd(renderInfo->TextureName);
-			if (texture == nullptr)
+			ID3D11ShaderResourceView* texture = nullptr;
+			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
 			{
-				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
+				// TODO: Use the texture from the renderInfo if available
+				texture = resources.FindTextureOrAdd(renderInfo->TextureName);
+				if (texture == nullptr)
+				{
+					UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
+					texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+				}
+			}
+			else {
 				texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
 			}
+
+			//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
+			mRenderer->RenderStaticMesh(buffer->Buffer.Get(), buffer->SourceNum,
+				texture,
+				nullptr,
+				nullptr,
+				&resources.GetSamplerState(SST_Default),
+				buffer->IndexBuffer.Get(), buffer->IndexCount);
+
+			continue;
 		}
-		else {
-			texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+		// OBJ 메시: 섹션마다 재질과 텍스처를 선택해서 그린다.
+		for (const FStaticMeshSection& section : renderInfo->StaticMesh->Sections)
+		{
+
+			ID3D11ShaderResourceView* diffuseTexture = nullptr;
+			ID3D11ShaderResourceView* normalTexture = nullptr;
+			ID3D11ShaderResourceView* specularTexture = nullptr;
+			const FObjMaterialInfo* material = nullptr;
+
+			if (section.MaterialIndex >= 0 &&
+				section.MaterialIndex < renderInfo->StaticMesh->Materials.Num())
+			{
+				material = &renderInfo->StaticMesh->Materials[section.MaterialIndex];
+			}
+
+			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+			{
+				// OBJ/MTL에 map_Kd가 있으면 우선 사용
+				if (material &&
+					material->DiffuseTexturePath.Len() > 0)
+				{
+					diffuseTexture = resources.FindTextureOrAdd(FName(material->DiffuseTexturePath));
+				}
+				if (material && material->NormalTexturePath.Len() > 0)
+				{
+					normalTexture = resources.FindTextureOrAdd(FName(material->NormalTexturePath));
+				}
+
+				if (material && material->SpecularPath.Len() > 0)
+				{
+					specularTexture = resources.FindTextureOrAdd(FName(material->SpecularPath));
+				}
+
+				// MTL 텍스처가 없으면 기존 컴포넌트 텍스처 사용
+				if (diffuseTexture == nullptr)
+				{
+					diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
+				}
+			}
+
+			// 아무 텍스처도 없으면 흰색 텍스처
+			if (diffuseTexture == nullptr)
+			{
+				diffuseTexture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+			}
+
+			FLinearColor finalTint = renderInfo->Color;
+
+			if (material)
+			{
+				finalTint.R *= material->DiffuseColor.x;
+				finalTint.G *= material->DiffuseColor.y;
+				finalTint.B *= material->DiffuseColor.z;
+				finalTint.A = 1.0f;
+			}
+
+			// 우선 기존 컴포넌트 색상 유지
+			mRenderer->UpdateTextureConstant(worldTransform,view.viewProjectionMatrix, finalTint);
+
+			mRenderer->RenderStaticMesh(
+				buffer->Buffer.Get(),
+				buffer->SourceNum,
+				diffuseTexture,
+				normalTexture,
+				specularTexture,
+				&resources.GetSamplerState(SST_Default),
+				buffer->IndexBuffer.Get(),
+				section.IndexCount,
+				section.StartIndex);
 		}
 
-		//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
-		mRenderer->RenderStaticMesh(buffer->Buffer.Get(), buffer->SourceNum,
-			texture,
-			&resources.GetSamplerState(SST_Default),
-			buffer->IndexBuffer.Get(), buffer->IndexCount);
 	}
+
 }
 
 void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)

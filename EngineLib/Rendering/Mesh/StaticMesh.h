@@ -4,7 +4,21 @@
 #include "Core/Core.h"
 #include "Core/Name.h"
 #include "Rendering/VertexType.h"
-#include "ObjImporter.h"
+
+class UMaterial;
+
+struct FObjMaterialInfo
+{
+	FString Name;
+	FVector AmbientColor = FVector(0.0f, 0.0f, 0.0f);   // Ka
+	FVector DiffuseColor = FVector(1.f, 1.0f, 1.0f);   // Kd 
+	FVector SpecularColor = FVector(0.0f, 0.0f, 0.0f);   // Ks	
+	float   SpecularExponent = 0.0f;                      // Ns
+	float   Alpha = 1.0f;
+	FString DiffuseTexturePath; // map_Kd
+	FString NormalTexturePath;  // map_bump or norm
+	FString SpecularPath;
+};
 
 struct FStaticMeshSection
 {
@@ -47,6 +61,11 @@ public:
 	void SetStaticMeshAsset(const FStaticMesh* inStaticMesh)
 	{
 		mStaticMeshAssetRef = inStaticMesh;
+	}
+
+	const FStaticMesh* GetStaticMeshAsset() const
+	{
+		return mStaticMeshAssetRef;
 	}
 
 private:

@@ -124,7 +124,21 @@ ID3D11ShaderResourceView* FGpuResourceManager::FindTextureOrAdd(FName texturePat
 		return textureSRV->Get();
 	}
 
-	CreateTextureFromDDS(texturePath);
+	FString lowerPath = texturePath.ToString().ToLower();
+
+	if(lowerPath.EndsWith(FString(".dds")))
+	{
+		CreateTextureFromDDS(texturePath);
+	}
+	else if (lowerPath.EndsWith(FString(".png")) || lowerPath.EndsWith(FString(".jpg")) || lowerPath.EndsWith(FString(".jpeg")))
+	{
+		CreateTextureFromWIC(texturePath);
+	}
+	else
+	{
+		assert(false && "Unsupported texture format. Only .dds, .png, .jpg, and .jpeg are supported.");
+		return nullptr;
+	}
 	textureSRV = mTextureMap.Find(texturePath);
 
 	if (textureSRV)
@@ -403,6 +417,27 @@ void FGpuResourceManager::CreateTextureFromDDS(FName texturePath)
 		nullptr,
 		textureSRV.GetAddressOf());
 
+	mTextureMap.Add(texturePath, std::move(textureSRV));
+}
+
+//png, jpg, bmp, gif, tiff, ico 등 WIC 지원 포맷
+void FGpuResourceManager::CreateTextureFromWIC(FName texturePath)
+{
+	assert(mDeviceRef != nullptr && "Device reference is not set. Call SetDevice() before creating resources.");
+	ComPtr<ID3D11ShaderResourceView> textureSRV;
+	FString  texturePathStr = texturePath.ToString();
+	std::wstring texturePathW = std::wstring(texturePathStr.begin(), texturePathStr.end());
+	DirectX::CreateWICTextureFromFileEx(
+		mDeviceRef,
+		texturePathW.c_str(),				// Path to the texture file
+		0,									// Default maximum size (0 means no limit)
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,									// No CPU access flags
+		0,									// No additional resource options
+		DirectX::WIC_LOADER_IGNORE_SRGB,
+		nullptr,							// No resource pointer needed
+		textureSRV.GetAddressOf());
 	mTextureMap.Add(texturePath, std::move(textureSRV));
 }
 
