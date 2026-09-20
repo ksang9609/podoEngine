@@ -216,25 +216,23 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	// OBJ 하드코딩 로딩 테스트
 	{
-		const UStaticMesh* objMesh =
-			mAssetManager->LoadObjMesh("Assets/grape.obj");
+		const UStaticMesh& objMesh =
+			mAssetManager->FindStaticMeshAssetOrAdd(
+				FName("Assets/grape.obj"));
 
-		if (objMesh)
+		AActor* objActor =
+			FObjectFactory::SpawnStaticMeshActor(
+				FVector(0.0f, 0.0f, 0.0f),
+				FRotator(0.0f, 0.0f, 0.0f),
+				FVector(1.0f, 1.0f, 1.0f),
+				objMesh
+			);
+
+		if (objActor)
 		{
-			AActor* objActor =
-				FObjectFactory::SpawnStaticMeshActor(
-					FVector(0.0f, 0.0f, 0.0f),     // 위치
-					FRotator(0.0f, 0.0f, 0.0f),   // 회전
-					FVector(1.0f, 1.0f, 1.0f),    // 크기
-					*objMesh
-				);
-
-			if (objActor)
-			{
-				mSceneManager
-					->GetCurrentWorld()
-					->AddActor(objActor);
-			}
+			mSceneManager
+				->GetCurrentWorld()
+				->AddActor(objActor);
 		}
 		else
 		{
