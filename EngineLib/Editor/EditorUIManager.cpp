@@ -385,6 +385,9 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorComma
 	updateBottomBarGUI();
 }
 
+FString saveSceneFileDialog();
+FString openSceneFileDialog();
+FString openObjFileDialog();
 void FEditorUIManager::drawMainMenuBar(FEditorCommands& outCommands)
 {
 	if (ImGui::BeginMainMenuBar())
@@ -447,6 +450,16 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	mPanelWidth = ImGui::GetWindowWidth();
 
 	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
+
+	if (ImGui::Button("Import Obj"))
+	{
+		const FString selectedPath = openObjFileDialog();
+
+		if (selectedPath.Len() > 0)
+		{
+			outCommands.Emplace(FLoadObjCommand{ selectedPath });
+		}
+	}
 
 	/* Spawn Actor */
 	// NOTE: This name array must be edited when adding new primitive types to EPrimitive enum.
@@ -733,6 +746,116 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 
 	ImGui::End();
 }
+
+FString openSceneFileDialog()
+{
+	char fileName[MAX_PATH] = {};
+	OPENFILENAMEA openFileName = {};
+
+	openFileName.lStructSize = sizeof(OPENFILENAMEA);
+	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
+
+	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
+	openFileName.lpstrFile = fileName;
+	openFileName.nMaxFile = MAX_PATH;
+
+	openFileName.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+	openFileName.lpstrDefExt = "Scene";
+
+	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
+
+	if (!std::filesystem::exists(initialDirectory))
+	{
+		std::filesystem::create_directories(initialDirectory);
+	}
+
+	const std::string initialDirectoryString = initialDirectory.string();
+
+	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
+
+	if (GetOpenFileNameA(&openFileName))
+	{
+		return FString(fileName);
+	}
+
+	return FString("");
+}
+
+FString saveSceneFileDialog()
+{
+	char fileName[MAX_PATH] = {};
+	OPENFILENAMEA openFileName = {};
+
+	openFileName.lStructSize = sizeof(OPENFILENAMEA);
+	openFileName.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
+
+	openFileName.lpstrFilter = "Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
+	openFileName.lpstrFile = fileName;
+	openFileName.nMaxFile = MAX_PATH;
+
+	openFileName.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+	openFileName.lpstrDefExt = "Scene";
+
+	std::filesystem::path initialDirectory = std::filesystem::absolute(std::filesystem::path("Assets") / "SceneData");
+
+	if (!std::filesystem::exists(initialDirectory))
+	{
+		std::filesystem::create_directories(initialDirectory);
+	}
+
+	const std::string initialDirectoryString = initialDirectory.string();
+
+	openFileName.lpstrInitialDir = initialDirectoryString.c_str();
+
+	if (GetSaveFileNameA(&openFileName))
+	{
+		return FString(fileName);
+	}
+
+	return FString("");
+}
+
+FString openObjFileDialog()
+{
+	char fileName[MAX_PATH] = {};
+
+	OPENFILENAMEA dialog = {};
+	dialog.lStructSize = sizeof(OPENFILENAMEA);
+
+	dialog.hwndOwner = static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw);  // main window
+
+	dialog.lpstrFilter =
+		"OBJ Files (*.obj)\0*.obj\0"
+		"All Files (*.*)\0*.*\0";
+
+	dialog.lpstrFile = fileName;
+	dialog.nMaxFile = MAX_PATH;
+	dialog.lpstrDefExt = "obj";
+
+	dialog.Flags =
+		OFN_EXPLORER |
+		OFN_FILEMUSTEXIST |
+		OFN_HIDEREADONLY |
+		OFN_NOCHANGEDIR;
+
+	const std::filesystem::path assetsDirectory =
+		std::filesystem::absolute("Assets");
+
+	const std::string assetsDirectoryString =
+		assetsDirectory.string();
+
+	dialog.lpstrInitialDir =
+		assetsDirectoryString.c_str();
+
+	if (!GetOpenFileNameA(&dialog))
+	{
+		return FString();
+	}
+
+	return FString(fileName);
+	
+}
+
 
 void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands)
 {
