@@ -22,27 +22,16 @@ public:
 
 	/* Assets */
 	const UStaticMesh* FindStaticMeshAssetOrNull(const FName& assetName) const;
+	const UStaticMesh& FindStaticMeshAssetOrAdd(const FName& assetName);
 
-	void CreateStaticMeshAsset(const FName& assetName, const FStaticMesh* staticMeshData);
 
 	TArray<FName> GetAllStaticMeshAssetKeys() const;
 
-	/* Resources */
-	const FStaticMesh* FindStaticMeshDataOrNull(const FName& assetName) const;
-
-	void CreateStaticMeshData(const FName& assetName, const FStaticMesh* staticMeshData);
-
-	TArray<FName> GetAllStaticMeshDataKeys() const;
-
-	//테스트 및 임시용.
-	const UStaticMesh* LoadObjMesh(const FString& fileName);
 
 private:
 	/* Assets */
 	TMap<FName, std::unique_ptr<UStaticMesh>> mStaticMeshAssets;
 
-	/* Resources */
-	TMap<FName, std::unique_ptr<FStaticMesh>> mStaticMeshData;
-
-	void createPrimitiveStaticMeshAssets();
+	void createBuiltinStaticMeshAssets();
+	bool createStaticMeshAsset(const FName& assetName);
 };
