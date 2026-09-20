@@ -411,17 +411,25 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	// NOTE: This name array must be edited when adding new primitive types to EPrimitive enum.
 	ImGui::SeparatorText("Spawn Actor");
 
-	const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle" };
-	int32 primitiveTypeIndex = static_cast<int32>(mGuiInputField.PrimitiveType);
+	//const char* primitiveTypeNames[] = { "Sphere", "Cube", "Triangle" };
+	//int32 primitiveTypeIndex = static_cast<int32>(mGuiInputField.PrimitiveType);
+
+	const char* meshNames[] = { "Cube", "Sphere" };
+	const FName meshKeys[] = {
+		BuiltinAssets::Cube,
+		BuiltinAssets::Sphere
+	};
+
 	int32 spawnCount = mGuiInputField.SpawnCount;
 
-	if (ImGui::Combo("Primitive Type", &primitiveTypeIndex, primitiveTypeNames, IM_ARRAYSIZE(primitiveTypeNames)))
+	if (ImGui::Combo("Static Mesh", &mGuiInputField.SelectedMeshIndex, meshNames, IM_ARRAYSIZE(meshNames)))
 	{
-		mGuiInputField.PrimitiveType = static_cast<EPrimitive>(primitiveTypeIndex);
+		//mGuiInputField.StaticMeshKey = meshKeys[mGuiInputField.SelectedMeshIndex];
 	}
 	if (ImGui::Button("Spawn"))
 	{
-		outCommands.Emplace(FSpawnActorCommand{ mGuiInputField.PrimitiveType, mGuiInputField.SpawnCount });
+		//outCommands.Emplace(FSpawnActorCommand{ mGuiInputField.PrimitiveType, mGuiInputField.SpawnCount });
+		outCommands.Emplace(FSpawnStaticMeshActorCommand{ meshKeys[mGuiInputField.SelectedMeshIndex], mGuiInputField.SpawnCount});
 	}
 	ImGui::SameLine();
 	if (ImGui::InputInt("Number of spawn", &spawnCount))

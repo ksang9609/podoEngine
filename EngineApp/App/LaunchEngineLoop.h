@@ -55,6 +55,7 @@ private:
 	void processEditorCommand(const FLoadSceneCommand& command);
 
 	void processEditorCommand(const FSpawnActorCommand& command);
+	void processEditorCommand(const FSpawnStaticMeshActorCommand& command);
 	void processEditorCommand(const FDeleteActorCommand& command);
 	void processEditorCommand(const FSpawnParticleCommand& command);
 

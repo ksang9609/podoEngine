@@ -519,6 +519,18 @@ void FEngineLoop::processEditorCommand(const FSpawnActorCommand& command)
 	//}
 }
 
+void FEngineLoop::processEditorCommand(const FSpawnStaticMeshActorCommand& command)
+{
+	for (int32 i = 0; i < command.SpawnCount; ++i)
+	{
+		AActor* newActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			command.StaticMeshKey
+		);
+		mSceneManager->GetCurrentWorld()->AddActor(newActor);
+	}
+}
+
 void FEngineLoop::processEditorCommand(const FDeleteActorCommand& command)
 {
 	AActor* actor = UObject::GetObjectByInternalIndex<AActor>(command.ObjectID.InternalIndex);
