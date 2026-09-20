@@ -24,11 +24,6 @@
 #include "Engine/Components/ActorComponent.h"
 #include "Engine/Components/CubeComponent.h"
 
-FSceneManager::FSceneManager(const FCamera& viewportCameraRef)
-	: mViewportCameraRef(viewportCameraRef)
-{
-}
-
 FSceneManager::~FSceneManager()
 {
 	delete mCurrentWorld;

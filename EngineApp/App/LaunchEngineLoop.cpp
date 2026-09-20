@@ -1,5 +1,6 @@
 ﻿#include "LaunchEngineLoop.h"
 
+#include <stdexcept>
 #include <windows.h>
 
 #include "Core/Name.h"
@@ -9,6 +10,8 @@
 #include "Editor/Console.h"
 #include "Editor/EditorUIManager.h"
 #include "Editor/EditorFileUtils.h"
+#include "Editor/EditorViewportManager.h"
+#include "Editor/Viewport.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
@@ -21,6 +24,7 @@
 #include "Rendering/Primitives/GizmoArrow.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/FontResource.h"
+#include "Rendering/SceneView.h"
 
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_dx11.h"
@@ -69,20 +73,39 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
 	/* Init Managers */
-	mGraphicsManager = new FGraphicsManager(hWnd);
+	mGraphicsManager = new FGraphicsManager();
 	FrameTimer = new FFrameTimer(120);
-	ViewportClient = new FEditorViewportClient(); // Todo: cChange to class
-	mSceneManager = new FSceneManager(ViewportClient->GetCamera());
-	mFileManager = new FFileManager();
 	mAssetManager = std::make_unique<FAssetManager>();
+	mGpuResourceManager = std::make_unique<FGpuResourceManager>();
 
-	mGraphicsManager->InitializeLoadingScreen();
+	mEditorViewportManager = new FEditorViewportManager();
+	if (!mEditorViewportManager->Initialize(*mAssetManager))
+	{
+		throw std::runtime_error("Failed to initialize the editor viewport manager.");
+	}
+
+	FViewport* initialViewport = mEditorViewportManager->getActiveViewport();
+	if (initialViewport == nullptr)
+	{
+		throw std::runtime_error("The initial editor viewport was not created.");
+	}
+
+	viewportClient = &initialViewport->getClient();
+
+	mSceneManager = new FSceneManager();
+	mFileManager = new FFileManager();
+
+	mGraphicsManager->Initialize(hWnd, *mGpuResourceManager);
+	mGpuResourceManager->Initialize(
+		*mAssetManager, *mGraphicsManager->GetRenderer()->GetDevice());
+
+
 	mGraphicsManager->RenderLoadingScreen();
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init((void*)hWnd);
-	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->Device, mGraphicsManager->GetRenderer()->DeviceContext);
+	ImGui_ImplDX11_Init(mGraphicsManager->GetRenderer()->GetDevice(), mGraphicsManager->GetRenderer()->GetDeviceContext());
 	ImGui::GetIO().IniFilename = "Config/imgui.ini";
 
 
@@ -99,19 +122,18 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	const bool jsonLoaded = mDefaultFontResource->LoadUnicodeAtlas(
 		FString("Assets/Fonts/KoreanFullAtlas.json"));
 
-	mGraphicsManager->GetRenderer()->InitializeUnicodeFont(
-		L"Assets/Fonts/KoreanFullAtlas.png",
-		mDefaultFontResource->GetDistanceRange());
+	mGpuResourceManager->CreateUnicodeFontTexture("Assets/Fonts/KoreanFullAtlas.png");
+	mGpuResourceManager->SetDistanceRange(mDefaultFontResource->GetDistanceRange());
 
 	FObjectFactory::SetDefaultFont(*mDefaultFontResource);
 	FObjectFactory::SetAssetManager(*mAssetManager);
 
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_Circle, Circle_vertices, sizeof(Circle_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
-	mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Circle, Circle_vertices, sizeof(Circle_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
+	//mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
 
 	// 큐브 텍스처 6개로 나눈 버전을 사용하려면
 	/*BuildCubeAtlasVertices(CubeTextureVertices);
@@ -126,23 +148,23 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	// 24: 인덱스 방식 / 36: 기존 방식
 	FVertexTextured atlasVertices[24];
 
-	BuildCubeAtlasVertices(atlasVertices, columns, rows, faceCells);
+	//BuildCubeAtlasVertices(atlasVertices, columns, rows, faceCells);
 
-	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
-	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_BillboardQuad, Quad_textured_vertices, sizeof(Quad_textured_vertices));
-	{
-		URenderer* renderer = mGraphicsManager->GetRenderer();
+	//mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
+	//mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_BillboardQuad, Quad_textured_vertices, sizeof(Quad_textured_vertices));
+	//{
+	//	URenderer* renderer = mGraphicsManager->GetRenderer();
 
-		D3D11_BUFFER_DESC desc = {};
-		desc.Usage = D3D11_USAGE_IMMUTABLE;
-		desc.ByteWidth = sizeof(CubeTextureIndices);
-		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	//	D3D11_BUFFER_DESC desc = {};
+	//	desc.Usage = D3D11_USAGE_IMMUTABLE;
+	//	desc.ByteWidth = sizeof(CubeTextureIndices);
+	//	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
-		D3D11_SUBRESOURCE_DATA data = {};
-		data.pSysMem = CubeTextureIndices;
+	//	D3D11_SUBRESOURCE_DATA data = {};
+	//	data.pSysMem = CubeTextureIndices;
 
-		renderer->Device->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
-	}
+	//	renderer->mDevice->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
+	//}
 
 	/*
 	// 구 텍스쳐 uv 매핑
@@ -155,80 +177,111 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	TArray<FVertexTextured> sphereIndexVertices;
 	TArray<UINT> sphereIndices;
 
-	BuildSphereTextureMeshIndices(Sphere_vertices, sphereIndexVertices, sphereIndices);
-	mGraphicsManager->CreateTexturedBuffer(
-		EPrimitive::EP_Sphere,
-		&sphereIndexVertices[0],
-		static_cast<uint32>(
-			sphereIndexVertices.Num() * sizeof(FVertexTextured))
-	);
+	//BuildSphereTextureMeshIndices(Sphere_vertices, sphereIndexVertices, sphereIndices);
+	//mGraphicsManager->CreateTexturedBuffer(
+	//	EPrimitive::EP_Sphere,
+	//	&sphereIndexVertices[0],
+	//	static_cast<uint32>(
+	//		sphereIndexVertices.Num() * sizeof(FVertexTextured))
+	//);
 
-	{
-		URenderer* renderer = mGraphicsManager->GetRenderer();
+	//{
+	//	URenderer* renderer = mGraphicsManager->GetRenderer();
 
-		renderer->SphereIndexBuffer = renderer->CreatePrimitiveIndexBuffer(
-			&sphereIndices[0],
-			static_cast<UINT>(sphereIndices.Num())
-		);
+	//	renderer->SphereIndexBuffer = renderer->CreatePrimitiveIndexBuffer(
+	//		&sphereIndices[0],
+	//		static_cast<UINT>(sphereIndices.Num())
+	//	);
 
-		renderer->SphereIndexCount = renderer->SphereIndexBuffer
-			? static_cast<UINT>(sphereIndices.Num())
-			: 0;
+	//	renderer->SphereIndexCount = renderer->SphereIndexBuffer
+	//		? static_cast<UINT>(sphereIndices.Num())
+	//		: 0;
 
-		if (!renderer->SphereIndexBuffer)
-		{
-			UE_LOG(Error, Render, "Failed to create sphere index buffer.");
-		}
-	}
+	//	if (!renderer->SphereIndexBuffer)
+	//	{
+	//		UE_LOG(Error, Render, "Failed to create sphere index buffer.");
+	//	}
+	//}
 
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
-	mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion_Alpha.dds");
+	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
+	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
+	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion_Alpha.dds");
+	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/CubeTextureSample.dds");
+	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/EarthTexture.dds");
+	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/Explosion_Alpha.dds");
 
 	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
 	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
 
 	mSceneManager->NewScene();
 
-	// Test: static mesh
+	// OBJ 하드코딩 로딩 테스트
 	{
-		FStaticMesh* quadMesh = new FStaticMesh();
-		FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
-		quadMesh->Vertices = {
-			{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
-			{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {1, 0, 1, 1}, FVector2(0, 0)},
-			{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {0, 1, 1, 1}, FVector2(1, 0)},
-			{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
-		};
-		quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
-		mGraphicsManager->CreateStaticMeshBuffer(*quadMesh);
+		const UStaticMesh* objMesh =
+			mAssetManager->LoadObjMesh("Assets/grape.obj");
 
-		UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
-		staticMeshAsset->SetStaticMeshAsset(quadMesh);
+		if (objMesh)
+		{
+			AActor* objActor =
+				FObjectFactory::SpawnStaticMeshActor(
+					FVector(0.0f, 0.0f, 0.0f),     // 위치
+					FRotator(0.0f, 0.0f, 0.0f),   // 회전
+					FVector(1.0f, 1.0f, 1.0f),    // 크기
+					*objMesh
+				);
 
-		AActor* quadActor = FObjectFactory::SpawnStaticMeshActor(
-			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			*staticMeshAsset);
-		mSceneManager->GetCurrentWorld()->AddActor(quadActor);
+			if (objActor)
+			{
+				mSceneManager
+					->GetCurrentWorld()
+					->AddActor(objActor);
+			}
+		}
+		else
+		{
+			UE_LOG(Error, Render, "Failed to load test OBJ");
+		}
 	}
+
+	// Test: static mesh
+	//{
+		//	FStaticMesh* quadMesh = new FStaticMesh();
+		//	FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
+		//	quadMesh->Vertices = {
+		//		{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
+		//		{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {1, 0, 1, 1}, FVector2(0, 0)},
+		//		{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {0, 1, 1, 1}, FVector2(1, 0)},
+		//		{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
+		//	};
+		//	quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
+		//	//mGraphicsManager->CreateStaticMeshBuffer(*quadMesh);
+
+		//	UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		//	staticMeshAsset->SetStaticMeshAsset(quadMesh);
+
+		//	AActor* quadActor = FObjectFactory::SpawnStaticMeshActor(
+		//		FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+		//		*staticMeshAsset);
+		//	mSceneManager->GetCurrentWorld()->AddActor(quadActor);
+		//}
 	{
-		mGraphicsManager->CreateStaticMeshBuffer(
-			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::CubeMesh)
-		);
+		//mGraphicsManager->CreateStaticMeshBuffer(
+		//	*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::Cube)
+		//);
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::CubeMesh);
+			BuiltinAssets::Cube, "Assets/Textures/CubeTextureSample.dds");
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
-		mGraphicsManager->CreateStaticMeshBuffer(
-			*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::SphereMesh)
-		);
+		//mGraphicsManager->CreateStaticMeshBuffer(
+		//	*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::Sphere)
+		//);
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::SphereMesh);
+			BuiltinAssets::Sphere, "Assets/Textures/EarthTexture.dds");
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 
@@ -249,27 +302,58 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
 	//Input Threads
-	{
 		WindowApplication.ProcessDeferredEvents();
+
+		FViewport* activeViewport = mEditorViewportManager->getActiveViewport();
+		if (activeViewport != nullptr)
+		{
+			viewportClient = &activeViewport->getClient();
+		}
 
 		//ImGui Input
 		{
 			//mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 		}
-		FEditorCommands editorCommands;
-		mEditorUIManager->UpdateGui({
-			*FrameTimer,
-			*mSceneManager,
-			*ViewportClient,
-			*mGraphicsManager,
-			*mFileManager,
-			*mAssetManager
-			}, editorCommands);
-		processEditorCommands(editorCommands);
 
-		mGraphicsManager->UpdateProjectionTransition(deltaTime);
-		ViewportClient->Update(deltaTime, mGraphicsManager->GetRenderer()->ViewportInfo, mSceneManager, mGraphicsManager->GetPerspectiveRatio());
-	}
+		if (viewportClient != nullptr)
+		{
+			FEditorCommands editorCommands;
+			mEditorUIManager->UpdateGui({
+				*FrameTimer,
+				*mSceneManager,
+				*viewportClient,
+				*mGraphicsManager,
+				*mFileManager,
+				*mAssetManager,
+				*mEditorViewportManager,
+				}, editorCommands);
+			processEditorCommands(editorCommands);
+
+		}
+
+		// UI에서 활성 Viewport가 변경되었을 수 있으므로 다시 조회한다.
+		activeViewport = mEditorViewportManager->getActiveViewport();
+
+		if (activeViewport != nullptr)
+		{
+			viewportClient = &activeViewport->getClient();
+		}
+		else
+		{
+			viewportClient = nullptr;
+		}
+
+		//Viewports
+		const uint8 viewportCount = mEditorViewportManager->getViewportCount();
+		for (uint8 i = 0; i < viewportCount; i++)
+		{
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+			viewport->getClient().updateProjectionTransition(deltaTime);
+		}
 
 	//Physics Threads
 	{
@@ -283,26 +367,92 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		mSceneManager->Update(deltaTime);
 	}
 
+	//활성 Viewport의 카메라 입력과 RayCast 처리
+	if (activeViewport != nullptr)
+	{
+		FSceneView activeSceneView = activeViewport->buildSceneView();
+
+		if (activeSceneView.isValid())
+		{
+			const FViewportWindowState& windowState = activeViewport->getWindowState();
+			activeViewport->getClient().Update(deltaTime, activeSceneView.Rect,mSceneManager, windowState.bImageHovered, windowState.bFocused);
+		}
+	}
+
 	//Render Threads
 	{
 		if (WindowApplication.bPendingResize)
 		{
 			float viewportWidth = mEditorUIManager->GetPanelWidth();
-			float viewportHeight = (1.f - ConsoleWindow::HEIGHT_RATIO) * WindowApplication.PendingHeight;
+			float viewportHeight = static_cast<float>(WindowApplication.PendingHeight) - FEditorUIManager::BOTTOM_BAR_HEIGHT;
+
+			if (viewportHeight < 0.0f)
+			{
+				viewportHeight = 0.0f;
+			}
 
 			mGraphicsManager->GetRenderer()->OnResize(WindowApplication.PendingWidth, WindowApplication.PendingHeight, viewportWidth, viewportHeight);
 			WindowApplication.bPendingResize = false;
 		}
 
-		mGraphicsManager->Update(deltaTime);
+		mGraphicsManager->BeginFrame();
+		AActor* selectedActor = mSceneManager->GetSelectedActor();
 
-		mGraphicsManager->Render(
-			mSceneManager->GetRenderInfos(),
-			ViewportClient->mGizmo.GetGizmoRenderInfo(),
-			mSceneManager->GetAxisRenderInfos(),
-			ViewportClient->GetCamera(),
-			mSceneManager->GetSelectedActor()
-		);
+		// Viewport 수만큼 같은 Scene을 다른 Camera로 렌더링
+		for (uint8 i = 0; i < viewportCount; i++)
+		{
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+
+			FEditorViewportClient& client = viewport->getClient();
+			const FSceneView sceneView = viewport->buildSceneView();
+
+			if (!sceneView.isValid())
+			{
+				continue;
+			}
+
+			client.UpdateGizmoForView(selectedActor);
+
+			mGraphicsManager->RenderSceneView(
+				mSceneManager->GetRenderInfos(),
+				mSceneManager->GetAxisRenderInfos(),
+				sceneView,
+				selectedActor);
+		}
+
+		// Scene의 Depth만 한 번 초기화
+		mGraphicsManager->ClearDepth();
+
+		// 각 Viewport의 Gizmo 렌더링
+		for (uint8 i = 0; i < viewportCount; ++i)
+		{
+			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+
+			if (viewport == nullptr)
+			{
+				continue;
+			}
+
+			FEditorViewportClient& client = viewport->getClient();
+
+			const FSceneView sceneView = viewport->buildSceneView();
+
+			if (!sceneView.isValid())
+			{
+				continue;
+			}
+			client.UpdateGizmoForView(selectedActor);
+
+			const TArray<FRenderInfo> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
+
+			mGraphicsManager->RenderGizmoView(gizmoRenderInfos,sceneView);
+		}
+
 
 		//ImGui
 		{
@@ -323,6 +473,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	GInTick = false;
 }
 
+
 void FEngineLoop::End()
 {
 	mSceneManager->DeleteScene();
@@ -331,10 +482,10 @@ void FEngineLoop::End()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	delete ViewportClient;
 	delete mEditorUIManager;
 	delete FrameTimer;
 	delete mSceneManager;
+	delete mEditorViewportManager;
 	delete mFileManager;
 	delete mGraphicsManager;
 	mAssetManager.reset();
@@ -404,11 +555,23 @@ void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSpawnActorCommand& command)
 {
+	//for (int32 i = 0; i < command.SpawnCount; ++i)
+	//{
+	//	AActor* newActor = FObjectFactory::SpawnPrimitiveActor(
+	//		command.PrimitiveType,
+	//		FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
+	//	);
+	//	mSceneManager->GetCurrentWorld()->AddActor(newActor);
+	//}
+}
+
+void FEngineLoop::processEditorCommand(const FSpawnStaticMeshActorCommand& command)
+{
 	for (int32 i = 0; i < command.SpawnCount; ++i)
 	{
-		AActor* newActor = FObjectFactory::SpawnPrimitiveActor(
-			command.PrimitiveType,
-			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1)
+		AActor* newActor = FObjectFactory::SpawnStaticMeshActor(
+			FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
+			command.StaticMeshKey
 		);
 		mSceneManager->GetCurrentWorld()->AddActor(newActor);
 	}
@@ -594,32 +757,32 @@ void FEngineLoop::processEditorCommand(const FSetShowFlagCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSetCameraSensitivityCommand& command)
 {
-	ViewportClient->GetCamera().SetCameraSensitivity(command.Sensitivity);
+	viewportClient->GetCamera().SetCameraSensitivity(command.Sensitivity);
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraFovCommand& command)
 {
-	ViewportClient->GetCamera().mFovDegree = command.Fov;
+	viewportClient->GetCamera().mFovDegree = command.Fov;
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraLocationCommand& command)
 {
-	ViewportClient->GetCamera().Location = command.Location;
+	viewportClient->GetCamera().Location = command.Location;
 }
 
 void FEngineLoop::processEditorCommand(const FSetCameraRotationCommand& command)
 {
-	ViewportClient->GetCamera().Rotation = command.Rotation;
+	viewportClient->GetCamera().Rotation = command.Rotation;
 }
 
 void FEngineLoop::processEditorCommand(const FSetGizmoModeCommand& command)
 {
-	ViewportClient->mGizmo.SetGizmoType(command.GizmoMode);
+	viewportClient->mGizmo.SetGizmoType(command.GizmoMode);
 }
 
 void FEngineLoop::processEditorCommand(const FCycleGizmoModeCommand& command)
 {
-	ViewportClient->mGizmo.CycleGizmoType();
+	viewportClient->mGizmo.CycleGizmoType();
 }
 
 void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
@@ -629,12 +792,34 @@ void FEngineLoop::processEditorCommand(const FSetGridWidthCommand& command)
 
 void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& command)
 {
+	FViewport* activeViewport = mEditorViewportManager->getActiveViewport();
 	AActor* selectedActor = mSceneManager->GetSelectedActor();
-	if (selectedActor && command.bOrthographic && mGraphicsManager->GetPerspectiveRatio() == 1.0f)
+	if (selectedActor && command.bOrthographic && activeViewport->getClient().getProjectionRatio() == 1.0f)
 	{
-		const FVector offset = selectedActor->GetTransform().Location - ViewportClient->GetCamera().Location;
-		const float depth = FVector::dot(offset, ViewportClient->GetCamera().GetForwardVector());
-		ViewportClient->GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
+		const FVector offset = selectedActor->GetTransform().Location - activeViewport->getClient().GetCamera().Location;
+		const float depth = FVector::dot(offset, activeViewport->getClient().GetCamera().GetForwardVector());
+		activeViewport->getClient().GetCamera().mOrthoDistance = FMath::Max(depth, 0.1f);
 	}
-	mGraphicsManager->StartProjectionTransition(command.bOrthographic);
+	activeViewport->getClient().startProjectionTransition(command.bOrthographic);
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportTypeCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->setType(command.Type);
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->getRenderSettings().ViewMode = command.ViewMode;
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
+	if (viewport == nullptr) { return; }
+	viewport->getRenderSettings().SetShowFlag(command.Flag, command.bEnabled);
 }

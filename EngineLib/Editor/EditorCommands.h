@@ -1,6 +1,9 @@
-﻿#include "Core/Core.h"
+﻿#pragma once
+
+#include "Core/Core.h"
 #include "Core/enum.h"
 #include "Core/Math/Color.h"
+#include "ViewportTypes.h"
 
 /* Editor Commands */
 /* SceneManager Commands */
@@ -10,6 +13,7 @@ struct FSaveSceneAsCommand { FString SceneName; };
 struct FLoadSceneCommand { FString SceneName; };
 
 struct FSpawnActorCommand { EPrimitive PrimitiveType; int32 SpawnCount; };
+struct FSpawnStaticMeshActorCommand { FName StaticMeshKey; int32 SpawnCount; };
 struct FDeleteActorCommand { FObjectID ObjectID; };
 struct FSpawnParticleCommand { };
 
@@ -38,6 +42,10 @@ struct FSetCameraRotationCommand { FRotator Rotation; };
 struct FSetGizmoModeCommand { EGIZMO_TYPE GizmoMode; };
 struct FCycleGizmoModeCommand {};
 
+struct FSetViewportTypeCommand { uint8 viewportId; EViewportType Type; };
+struct FSetViewportViewModeCommand { uint8 viewportId; EViewModeIndex ViewMode; };
+struct FSetViewportShowFlagCommand { uint8 viewportId; EEngineShowFlags Flag; bool bEnabled; };
+
 /* GraphicsManager Commands */
 struct FSetGridWidthCommand { float GridWidth; };
 struct FStartProjectionTransitionCommand { bool bOrthographic; };
@@ -51,6 +59,7 @@ using FEditorCommand = std::variant <
 	FSpawnActorCommand,
 	FDeleteActorCommand,
 	FSpawnParticleCommand,
+	FSpawnStaticMeshActorCommand,
 
 	FSetActorLocationCommand,
 	FSetActorRotationCommand,
@@ -75,6 +84,10 @@ using FEditorCommand = std::variant <
 	FSetCameraRotationCommand,
 	FSetGizmoModeCommand,
 	FCycleGizmoModeCommand,
+
+	FSetViewportTypeCommand,
+	FSetViewportViewModeCommand,
+	FSetViewportShowFlagCommand,
 
 	FSetGridWidthCommand,
 	FStartProjectionTransitionCommand

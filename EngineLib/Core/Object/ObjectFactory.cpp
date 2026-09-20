@@ -10,6 +10,7 @@
 #include "Engine/Components/CubeComponent.h"
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/Components/StaticMeshComponent.h"
+#include "Engine/Components/SceneComponent.h"
 
 #include "Rendering/FontResource.h"
 
@@ -62,62 +63,53 @@ UObject* FObjectFactory::LoadObject(const FClassInfo* classInfo, const json::JSO
 	return instance;
 }
 
-AActor* FObjectFactory::SpawnPrimitiveActor(
-	EPrimitive primitiveType,
-	FVector3 Location, FRotator Rotation, FVector3 Scale)
-{
-	FName PrimitiveName(PrimitiveToString(primitiveType));
-
-	AActor* actor = ConstructObjectWithName<AActor>(PrimitiveName);
-
-	UPrimitiveComponent* component = nullptr;
-
-	if (primitiveType == EPrimitive::EP_Cube)
-	{
-		component = ConstructObject<UCubeComponent>(Location, Rotation, Scale);
-	}
-	else if (primitiveType == EPrimitive::EP_Sphere)
-	{
-		component = ConstructObject<USphereComponent>(Location, Rotation, Scale);
-	}
-	else
-	{
-		component = ConstructObject<UPrimitiveComponent>(
-			primitiveType, Location, Rotation, Scale);
-	}
-
-	actor->AddRootSceneComponent(component);
-
-	/* DEBUG */
-	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnPrimitiveActor.");
-	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
-		actor->GetName().ToString(), FVector3{0, 0, 1}, *mDefaultFontResource);
-	billboardComponent.AttachTo(*component);
-	return actor;
-}
+//AActor* FObjectFactory::SpawnPrimitiveActor(
+//	EPrimitive primitiveType,
+//	FVector3 Location, FRotator Rotation, FVector3 Scale)
+//{
+//	FName PrimitiveName(PrimitiveToString(primitiveType));
+//
+//	AActor* actor = ConstructObjectWithName<AActor>(PrimitiveName);
+//
+//	UPrimitiveComponent* component = nullptr;
+//
+//	if (primitiveType == EPrimitive::EP_Cube)
+//	{
+//		component = ConstructObject<UCubeComponent>(Location, Rotation, Scale);
+//	}
+//	else if (primitiveType == EPrimitive::EP_Sphere)
+//	{
+//		component = ConstructObject<USphereComponent>(Location, Rotation, Scale);
+//	}
+//	else
+//	{
+//		component = ConstructObject<UPrimitiveComponent>(
+//			primitiveType, Location, Rotation, Scale);
+//	}
+//
+//	actor->AddRootSceneComponent(component);
+//
+//	/* DEBUG */
+//	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnPrimitiveActor.");
+//	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
+//		actor->GetName().ToString(), FVector3{0, 0, 1}, *mDefaultFontResource);
+//	billboardComponent.AttachTo(*component);
+//	return actor;
+//}
 
 AActor* FObjectFactory::SpawnStaticMeshActor(
 	FVector3 location, FRotator rotation, FVector3 scale,
-	const UStaticMesh& staticMeshAsset)
+	const UStaticMesh& staticMeshAsset, FName textureAssetName)
 {
 	FName StaticMeshName("StaticMesh");
-	AActor* actor = ConstructObjectWithName<AActor>(StaticMeshName);
-	UStaticMeshComponent* component = ConstructObject<UStaticMeshComponent>(
-		location, rotation, scale,
-		&staticMeshAsset);
-	actor->AddRootSceneComponent(component);
 
-	// Add name component
-	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
-	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
-		actor->GetName().ToString(), FVector3{ 0, 0, 1 }, *mDefaultFontResource);
-	billboardComponent.AttachTo(*component);
-	return actor;
+	return SpawnActorWithRootComponent<UStaticMeshComponent>(
+		StaticMeshName, location, rotation, scale, textureAssetName, &staticMeshAsset);
 }
 
 AActor* FObjectFactory::SpawnStaticMeshActor(
 	FVector3 location, FRotator rotation, FVector3 scale,
-	FName staticMeshAssetName)
+	FName staticMeshAssetName, FName textureAssetName)
 {
 	assert(mAssetManagerRef && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
 
@@ -126,7 +118,7 @@ AActor* FObjectFactory::SpawnStaticMeshActor(
 	{
 		return nullptr;
 	}
-	return SpawnStaticMeshActor(location, rotation, scale, *staticMeshAsset);
+	return SpawnStaticMeshActor(location, rotation, scale, *staticMeshAsset, textureAssetName);
 }
 
 AActor* FObjectFactory::SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale)
@@ -169,6 +161,29 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 	mClassInfoMap.Add(classKey, [classInfo]() -> const FClassInfo* { return classInfo; });
 	return true;
 }
+
+AActor* FObjectFactory::createActorWithRootComponent(const FName& Name, USceneComponent* rootComponent)
+{
+	AActor* actor = ConstructObjectWithName<AActor>(Name);
+	if (!actor)
+	{
+		return nullptr;
+	}
+	if (rootComponent)
+	{
+		actor->AddRootSceneComponent(rootComponent);
+	}
+
+	// Add name component
+	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
+	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
+		actor->GetName().ToString(), FVector3{ 0, 0, 1 }, *mDefaultFontResource);
+	billboardComponent.AttachTo(*rootComponent);
+
+	return actor;
+}
+
+
 
 #include "Engine/Components/SceneComponent.h"
 #include "Engine/Components/CubeComponent.h"

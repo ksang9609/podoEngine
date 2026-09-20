@@ -8,6 +8,20 @@
 
 namespace
 {
+	struct FObjVertexIndexHash
+	{
+		size_t operator()(const FObjVertexIndex& Key) const
+		{
+			size_t Hash = std::hash<int32>{}(Key.PositionIndex);
+
+			Hash ^= std::hash<int32>{}(Key.UVIndex) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+
+			Hash ^= std::hash<int32>{}(Key.NormalIndex) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+
+			return Hash;
+		}
+	};
+
 	bool ReadLine(std::ifstream& File, FString& OutLine)
 	{
 		OutLine.Reset();
@@ -56,41 +70,35 @@ namespace
 	}
 }
 
-FStaticMesh* FObjImporter::ParseAndConvert(const FString& fileName)
+bool FObjImporter::ParseAndConvert(const FString& fileName, FObjImportResult& outResult)
 {
-	//테스트 코드 시작
+	outResult.meshData.reset(0);
+
     FObjInfo objInfo;
-	FStaticMesh staticMesh;
-    const bool Success = parseObjFile(fileName, objInfo);
 
-    UE_LOG(Log, Render, "OBJ parsing: %s",
-        Success ? "success" : "failed");
+	const bool Success = parseObjFile(fileName, objInfo);
 
-	convertObjToStaticMesh(objInfo, staticMesh);
+	UE_LOG(Log, Render, "OBJ parsing: %s", Success ? "success" : "failed");
+	if (!Success) return false;
 
-    return nullptr; // 지금은 파싱만 테스트
+	auto staticMesh = std::make_unique<FStaticMesh>();
 
-	//테스트 코드 끝
+	convertObjToStaticMesh(objInfo, *staticMesh);
+	if (staticMesh->Vertices.IsEmpty() ||
+		staticMesh->Indices.IsEmpty())
+	{
+		return false;
+	}
+
+	staticMesh->PathFileName = FName(fileName);
+	staticMesh->Materials = std::move(objInfo.Materials);
+	outResult.meshData = std::move(staticMesh);
+
+	return true;
 }
 
 bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 {
-	//Make sure we have a default if no tex coords or normals are defined
-	bool hasTexCoord = false;
-	bool hasNorm = false;
-
-	//Temp variables to store into vectors
-	std::wstring meshMaterialsTemp;
-	int vertPosIndexTemp;
-	int vertNormIndexTemp;
-	int vertTCIndexTemp;
-
-	wchar_t checkChar;        //The variable we will use to store one char from file at a time
-	std::wstring face;        //Holds the string containing our face vertices
-	int vIndex = 0;            //Keep track of our vertex index count
-	int triangleCount = 0;    //Total Triangles
-	int totalVerts = 0;
-	int meshTriangles = 0;
 
 	// OBJ 파일이 Assets 폴더에 있다면 kDefaultAssetsPath
 	// 실행 폴더 바로 아래에 있다면 kDefaultRootPath
@@ -103,7 +111,12 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 	}
 
 	FString line;
-	FString currentMaterialName;
+	int32 currentGroupIndex = -1;
+	int32 currentMaterialIndex = -1;
+
+	// 그룹 또는 재질이 바뀌면, 다음 면부터 새 구간을 생성.
+	bool startNewFaceGroup = true;
+
 	uint32 faceCount = 0;
 
 	while (ReadLine(fileIn, line))
@@ -121,7 +134,7 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 				continue;
 			}
 			//UE_LOG(Log, Render, "v %f %f %f", X.ToFloat(), Y.ToFloat(), Z.ToFloat());
-			outObjInfo.Positions.Add(FVector(X.ToFloat(), Y.ToFloat(), Z.ToFloat()));
+			outObjInfo.Positions.Add((FVector(X.ToFloat(), Y.ToFloat(), Z.ToFloat())));
 		}
 		else if (Prefix == "vt")
 		{
@@ -131,7 +144,14 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 				continue;
 			}
 			//UE_LOG(Log, Render, "vt %f %f", U.ToFloat(), V.ToFloat());
-			outObjInfo.UVs.Add(FVector2(U.ToFloat(), V.ToFloat()));
+
+			const FVector2 objUV(
+				U.ToFloat(),
+				V.ToFloat());
+
+			outObjInfo.UVs.Add(
+				UVToUEBasis(objUV));
+			//outObjInfo.UVs.Add(FVector2(U.ToFloat(), V.ToFloat()));
 		}
 		else if (Prefix == "vn")
 		{
@@ -151,8 +171,40 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 				continue;
 			}
 			//UE_LOG(Log, Render, MtlFileName.CStr());
-			const auto& mtlFilePath = objFilePath.replace_filename(MtlFileName.CStr());
+
+			// MTL 파일 경로를 OBJ 파일 경로와 동일한 디렉토리에 있다고 가정하고 Path 등록
+			const auto mtlFilePath = objFilePath.parent_path() / MtlFileName.CStr();
 			parseMtlFile(mtlFilePath, outObjInfo.Materials);
+		}
+		else if (Prefix == "g" || Prefix == "o")
+		{
+			FString groupName;
+			int32 groupIndex = -1;
+
+			if (ReadToken(Cursor, groupName))
+			{
+				// 같은 이름이 다시 나오면 기존 인덱스를 재사용.
+				for (int32 i = 0; i < outObjInfo.GroupNames.Num(); ++i)
+				{
+					if (outObjInfo.GroupNames[i] == groupName)
+					{
+						groupIndex = i;
+						break;
+					}
+				}
+
+				if (groupIndex == -1)
+				{
+					groupIndex =
+						static_cast<int32>(outObjInfo.GroupNames.Add(groupName));
+				}
+			}
+
+			if (currentGroupIndex != groupIndex)
+			{
+				currentGroupIndex = groupIndex;
+				startNewFaceGroup = true;
+			}
 		}
 		else if (Prefix == "usemtl")
 		{
@@ -177,10 +229,11 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			UE_LOG(Log, Render, CurrentMaterialNameStr.CStr());
 
 			//인덱스 찾음 
-			FObjFaceGroup newGroup = {};
-			newGroup.MaterialIndex = MatIndex;
-			newGroup.FirstFaceIndex = faceCount;
-			outObjInfo.FaceGroups.Add(newGroup);
+			if (currentMaterialIndex != MatIndex)
+			{
+				currentMaterialIndex = MatIndex;
+				startNewFaceGroup = true;
+			}
 		}
 		else if (Prefix == "f")
 		{
@@ -189,18 +242,22 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			while (ReadToken(Cursor, faceData))
 			{
 				const FString Slash("/");
-				size_t Pos = faceData.Find(Slash);
-				size_t Normal = (Pos == -1) ? -1 : faceData.Find(Slash, Pos + 1);
+				int32 Pos = faceData.Find(Slash);
+				int32 Normal = (Pos == -1) ? -1 : faceData.Find(Slash, Pos + 1);
 
 				FObjVertexIndex VertexIndex;
 
-				VertexIndex.PositionIndex = faceData.Left(Pos).ToInt() - 1;
+				const FString positionStr = (Pos == -1) ? faceData : faceData.Left(Pos);
 
+				// 음수 인덱스 지원
+				VertexIndex.PositionIndex = positionStr.ToInt() > 0 ? positionStr.ToInt() - 1
+					: static_cast<int32>(outObjInfo.Positions.Num()) + positionStr.ToInt();
 
-				if (Pos != -1 && Normal == -1)
+				// v/vt
+				if (Pos != -1 && Normal == -1 )
 				{
-					// v/vt
-					VertexIndex.UVIndex = faceData.RightChop(Pos + 1).ToInt() - 1;
+					VertexIndex.UVIndex = faceData.RightChop(Pos + 1).ToInt() > 0 ? faceData.RightChop(Pos + 1).ToInt() - 1
+						: static_cast<int32>(outObjInfo.UVs.Num()) + faceData.RightChop(Pos + 1).ToInt();
 				}
 				else if (Normal != -1)
 				{
@@ -208,11 +265,13 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 					// v//vn이면 건너뛰고 UVIndex는 -1 유지
 					if (Normal > Pos + 1)
 					{
-						VertexIndex.UVIndex = faceData.Mid(Pos + 1, Normal - Pos - 1).ToInt() - 1;
+						VertexIndex.UVIndex = faceData.Mid(Pos + 1, Normal - Pos - 1).ToInt() > 0 ? faceData.Mid(Pos + 1, Normal - Pos - 1).ToInt() - 1
+							: static_cast<int32>(outObjInfo.UVs.Num()) + faceData.Mid(Pos + 1, Normal - Pos - 1).ToInt();
 					}
 
 					// v/vt/vn 또는 v//vn의 노멀
-					VertexIndex.NormalIndex = faceData.RightChop(Normal + 1).ToInt() - 1;
+					VertexIndex.NormalIndex = faceData.RightChop(Normal + 1).ToInt() > 0 ? faceData.RightChop(Normal + 1).ToInt() - 1
+						: static_cast<int32>(outObjInfo.Normals.Num()) + faceData.RightChop(Normal + 1).ToInt();
 				}
 
 				newFace.VertexIndices.Add(VertexIndex);
@@ -230,7 +289,29 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			}*/
 			//테스트 코드 끝
 
-			outObjInfo.VertexIndices.Add(newFace);
+			if (newFace.VertexIndices.Num() < 3)
+			{
+				continue;
+			}
+
+			// usemtl 없이 시작하는 면은 기본 재질 그룹에 저장
+			if (outObjInfo.FaceGroups.Num() == 0 || startNewFaceGroup)
+			{
+				FObjFaceGroup newGroup;
+				newGroup.GroupIndex = currentGroupIndex;
+				newGroup.MaterialIndex = currentMaterialIndex;
+				newGroup.FirstFaceIndex = faceCount;
+
+				outObjInfo.FaceGroups.Add(newGroup);
+				startNewFaceGroup = false;
+			}
+
+			// 현재 그룹의 FaceCount 증가
+			outObjInfo.FaceGroups[outObjInfo.FaceGroups.Num() - 1].FaceCount++;
+
+			outObjInfo.Faces.Add(newFace);
+
+			// 전체 면 수 증가
 			faceCount++;
 		}
 	}
@@ -263,7 +344,7 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 			FObjMaterialInfo newMaterial;
 			newMaterial.Name = MaterialName;
 
-			//UE_LOG(Log, Render, newMaterial.Name.CStr());
+			UE_LOG(Log, Render, newMaterial.Name.CStr());
 
 			outMaterials.Add(newMaterial);
 		}
@@ -288,7 +369,7 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 					CurrentMaterial.SpecularColor = Color;
 				}
 			}
-			//UE_LOG(Log, Render, "%s %f %f %f", Prefix.CStr(), Color.x, Color.y, Color.z);
+			UE_LOG(Log, Render, "%s %f %f %f", Prefix.CStr(), Color.x, Color.y, Color.z);
 		}
 		else if (Prefix == "Ns")
 		{
@@ -299,7 +380,7 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 				FObjMaterialInfo& CurrentMaterial = outMaterials[outMaterials.Num() - 1];
 				CurrentMaterial.SpecularExponent = SpecularExponentStr.ToFloat();
 			}
-			//UE_LOG(Log, Render, "Ns %f", SpecularExponentStr.ToFloat());
+			UE_LOG(Log, Render, "Ns %f", SpecularExponentStr.ToFloat());
 		}
 		else if (Prefix == "d" || Prefix == "Tr")
 		{
@@ -316,7 +397,7 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 				CurrentMaterial.Alpha = AlphaValue;
 			}
 
-			//UE_LOG(Log, Render, "d/Tr %f", AlphaStr.ToFloat());
+			UE_LOG(Log, Render, "d/Tr %f", AlphaStr.ToFloat());
 		}
 		else if (Prefix == "map_Kd")
 		{
@@ -325,9 +406,12 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 			if (outMaterials.Num() > 0)
 			{
 				FObjMaterialInfo& CurrentMaterial = outMaterials[outMaterials.Num() - 1];
-				CurrentMaterial.DiffuseTexturePath = DiffuseTexturePath;
+
+				//실제 경로 저장
+				const std::filesystem::path texturePath =std::filesystem::absolute(filePath.parent_path() / DiffuseTexturePath.CStr()).lexically_normal();
+				CurrentMaterial.DiffuseTexturePath = FString(texturePath.string().c_str());
 			}
-			//UE_LOG(Log, Render, "map_Kd %s", DiffuseTexturePath.CStr());
+			UE_LOG(Log, Render, "map_Kd %s", DiffuseTexturePath.CStr());
 		}
 		else if (Prefix == "map_bump" || Prefix == "bump" || Prefix == "norm")
 		{
@@ -336,9 +420,12 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 			if (outMaterials.Num() > 0)
 			{
 				FObjMaterialInfo& CurrentMaterial = outMaterials[outMaterials.Num() - 1];
-				CurrentMaterial.NormalTexturePath = NormalTexturePath;
+
+				//실제 경로 저장
+				const std::filesystem::path texturePath =std::filesystem::absolute(filePath.parent_path() / NormalTexturePath.CStr()).lexically_normal();
+				CurrentMaterial.NormalTexturePath = FString(texturePath.string().c_str());
 			}
-			//UE_LOG(Log, Render, "map_bump %s", NormalTexturePath.CStr());
+			UE_LOG(Log, Render, "map_bump %s", NormalTexturePath.CStr());
 		}
 		else if (Prefix == "map_Ks")
 		{
@@ -347,9 +434,12 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 			if (outMaterials.Num() > 0)
 			{
 				FObjMaterialInfo& CurrentMaterial = outMaterials[outMaterials.Num() - 1];
-				CurrentMaterial.SpecularPath = SpecularTexturePath;
+
+				//실제 경로 저장
+				const std::filesystem::path texturePath =std::filesystem::absolute(filePath.parent_path() / SpecularTexturePath.CStr()).lexically_normal();
+				CurrentMaterial.SpecularPath = FString(texturePath.string().c_str());
 			}
-			//UE_LOG(Log, Render, "map_Ks %s", SpecularTexturePath.CStr());
+			UE_LOG(Log, Render, "map_Ks %s", SpecularTexturePath.CStr());
 		}
 	}
 
@@ -358,17 +448,93 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FO
 
 void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& outStaticMesh)
 {
+	outStaticMesh.Vertices.Reset(0);
+	outStaticMesh.Indices.Reset(0);
+	outStaticMesh.Sections.Reset(0);
 
-	for(const FObjFace& face : objInfo.VertexIndices)
+	// 일단은 std map 으로 박아놓기
+	std::unordered_map<FObjVertexIndex, uint32, FObjVertexIndexHash> vertexMap;
+	outStaticMesh.GroupNames = objInfo.GroupNames;
+
+	for (const FObjFaceGroup& group : objInfo.FaceGroups)
 	{
-		for(const FObjVertexIndex& vertexIndex : face.VertexIndices)
+		FStaticMeshSection section;
+		section.MaterialIndex = group.MaterialIndex;
+		section.GroupIndex = group.GroupIndex;
+		section.StartIndex = static_cast<uint32>(outStaticMesh.Indices.Num());
+		section.IndexCount = 0;
+
+		for (uint32 FaceOffset = 0; FaceOffset < group.FaceCount; ++FaceOffset)
 		{
-			outStaticMesh.Vertices.Add(FNormalVertex{
-				objInfo.Positions[vertexIndex.PositionIndex],
-				vertexIndex.NormalIndex >= 0 ? objInfo.Normals[vertexIndex.NormalIndex] : FVector(0, 0, 1),
-				FLinearColor(1.0f, 1.0f, 1.0f, 1.0f),
-				vertexIndex.UVIndex >= 0 ? objInfo.UVs[vertexIndex.UVIndex] : FVector2(0, 0)
-				});
+			const FObjFace& face = objInfo.Faces[group.FirstFaceIndex + FaceOffset];
+
+			// Triangle Fan으로 삼각분할
+			for (int32 i = 1; i + 1 < face.VertexIndices.Num(); ++i)
+			{
+				const FObjVertexIndex vertices[3] =
+				{
+					face.VertexIndices[0],
+					face.VertexIndices[i],
+					face.VertexIndices[i + 1]
+				};
+
+				// 원본 노말이 없을 경우 면의 노말을 계산하여 사용
+				const FVector& A = objInfo.Positions[vertices[0].PositionIndex];
+				const FVector& B = objInfo.Positions[vertices[1].PositionIndex];
+				const FVector& C = objInfo.Positions[vertices[2].PositionIndex];
+				FVector FaceNormal = FVector::cross(B - A, C - A);
+
+				FaceNormal.Normalize();
+
+				for (const FObjVertexIndex& vertex : vertices)
+				{
+					const bool HasNormal = vertex.NormalIndex >= 0;
+
+					// 원본 노멀이 있으면 기존 정점을 재사용
+					if (HasNormal)
+					{
+						auto It = vertexMap.find(vertex);
+
+						if (It != vertexMap.end())
+						{
+							outStaticMesh.Indices.Add(It->second);
+							continue;
+						}
+					}
+
+					const uint32 NewIndex = static_cast<uint32>( outStaticMesh.Vertices.Num());
+
+					outStaticMesh.Vertices.Add(FNormalVertex{
+						objInfo.Positions[vertex.PositionIndex],
+
+						HasNormal ? objInfo.Normals[vertex.NormalIndex]
+							: FaceNormal,
+
+						FLinearColor(1.f, 1.f, 1.f, 1.f),
+
+						vertex.UVIndex >= 0
+							? objInfo.UVs[vertex.UVIndex]
+							: FVector2(0.f, 0.f)
+						});
+
+					outStaticMesh.Indices.Add(NewIndex);
+
+					// 노멀 없는 점은 면별 노멀을 유지하도록 공유 안 함
+					if (HasNormal)
+					{
+						vertexMap.emplace(vertex, NewIndex);
+					}
+				}
+			}
+		}
+
+		// 섹션의 인덱스 개수 계산
+		// 섹션의 인덱스 개수는 현재 인덱스 배열의 크기에서 섹션 시작 인덱스를 뺀 값
+		section.IndexCount = static_cast<uint32>(outStaticMesh.Indices.Num()) - section.StartIndex;
+
+		if (section.IndexCount > 0)
+		{
+			outStaticMesh.Sections.Add(section);
 		}
 	}
 }

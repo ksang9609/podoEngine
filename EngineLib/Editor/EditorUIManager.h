@@ -18,6 +18,7 @@ class FEditorViewportClient;
 class FFileManager;
 class FSceneManager;
 class FAssetManager;
+class FEditorViewportManager;
 
 struct ID3D11ShaderResourceView;
 
@@ -31,12 +32,14 @@ struct FGuiReference
 	const FGraphicsManager& GraphicsManager;
 	const FFileManager& FileManager;
 	const FAssetManager& AssetManager;
+	FEditorViewportManager& ViewportManager;
 };
 
 struct FGuiInputField
 {
 	/* Spawn Actor */
 	EPrimitive PrimitiveType = EPrimitive::EP_Cube;
+	int32 SelectedMeshIndex = 0;
 	int32 SpawnCount = 1;
 
 	/* Scene Control */
@@ -55,6 +58,8 @@ class FEditorUIManager
 {
 public:
 	FEditorUIManager(const ImGuiIO& io);
+
+	static constexpr float BOTTOM_BAR_HEIGHT = 32.0f;
 
 	void LoadSettings(FEditorCommands& outCommands);
 
@@ -77,9 +82,12 @@ private:
 
 	static constexpr float CONTROL_PANEL_HEIGHT_RATIO = 0.45f;
 	static constexpr float WINDOW_PROPERTY_HEIGHT_RATIO = 0.3f;
+	static constexpr float CONSOLE_POPUP_HEIGHT_RATIO = 0.35f;
 
 	void drawMainMenuBar(FEditorCommands& outCommands);
+	void updateBottomBarGUI();
 	void updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updateObjectListPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
+	void updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FEditorCommands& outCommands);
 };

@@ -93,6 +93,10 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 	FRenderInfo renderInfo = UBillboardComponent::makeRenderInfo();
 	renderInfo.SubUVMesh = &mSubUVMesh;
 
+	// TODO: Get texture name at initialization and return it
+	renderInfo.MeshName = BuiltinAssets::BillboardQuadTextured;
+	renderInfo.TextureName = FName("Assets/Textures/Explosion_Alpha.dds");
+
 	renderInfo.eRenderFlags =
 		ERenderFlags::RF_Raycastable |
 		ERenderFlags::RF_Billboard |

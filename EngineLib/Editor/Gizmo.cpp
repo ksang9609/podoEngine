@@ -1,5 +1,6 @@
 ﻿#include "Gizmo.h"
 
+#include "Core/BuiltinAssets.h"
 #include "Core/Math/Color.h"
 #include "Engine/Actor.h"
 
@@ -344,14 +345,14 @@ void FGizmo::Reset()
 	mDraggingAxis = NONE;
 }
 
-EPrimitive FGizmo::GetAxisPrimitive() const
+FName FGizmo::GetAxisPrimitive() const
 {
 	switch (eType)
 	{
-	case TRANSLATE: return EPrimitive::EP_GizmoArrow;
-	case ROTATE: return EPrimitive::EP_Circle; //EP_Rotate
-	case SCALE: return EPrimitive::EP_Cube;
-	default: return EPrimitive::EP_GizmoArrow;
+	case TRANSLATE: return BuiltinAssets::GizmoArrow;
+	case ROTATE: return BuiltinAssets::Circle; //EP_Rotate
+	case SCALE: return BuiltinAssets::Cube;
+	default: return BuiltinAssets::GizmoArrow;
 	}
 }
 
@@ -428,6 +429,7 @@ TArray<FRenderInfo>	FGizmo::GetGizmoRenderInfo() const // Gizmo 모형 렌더정
 		{
 			renderInfos.Add({
 				GetAxisPrimitive(),
+				BuiltinAssets::DefaultWhiteTexture,
 				GetScaleHandleMatrix(axis[i]),
 				FObjectID{},
 				GetAxisColor(axis[i]),
@@ -440,6 +442,7 @@ TArray<FRenderInfo>	FGizmo::GetGizmoRenderInfo() const // Gizmo 모형 렌더정
 		}
 		renderInfos.Add({
 			GetAxisPrimitive(),
+			BuiltinAssets::DefaultWhiteTexture,
 			GetAxisMatrix(axis[i]),
 			FObjectID{},
 			GetAxisColor(axis[i]),

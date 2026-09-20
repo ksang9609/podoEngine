@@ -4,25 +4,18 @@
 #include "Core/Math/Vector.h"
 #include "Core/Container/TArray.h"
 #include <filesystem>
+#include "Rendering/Mesh/StaticMesh.h"
 
 struct FNormalVertex;
 struct FStaticMesh;
 
-struct FObjMaterialInfo
+struct FObjImportResult
 {
-	FString Name;
-	FVector AmbientColor = FVector(0.0f, 0.0f, 0.0f);   // Ka
-	FVector DiffuseColor = FVector(1.f, 1.0f, 1.0f);   // Kd 
-	FVector SpecularColor = FVector(0.0f, 0.0f, 0.0f);   // Ks
-	float   SpecularExponent = 0.0f;                      // Ns
-	float   Alpha = 1.0f;
-	FString DiffuseTexturePath; // map_Kd
-	FString NormalTexturePath;  // map_bump or norm
-	FString SpecularPath;
+	std::unique_ptr<FStaticMesh> meshData;
 };
 
 // f v1/vt1/vn1
-// vertex 한개의 정보를 만들기 위해 어느 인덱스들을 참조해야 하는지 나타내는 구조체
+// FObjVertexIndex는 하나의 정점에 대한 위치, UV, 노멀들의 인덱스를 저장함.
 struct FObjVertexIndex
 {
 	int32 PositionIndex = -1;
@@ -32,9 +25,11 @@ struct FObjVertexIndex
 	bool operator==(const FObjVertexIndex&) const = default;
 };
 
+/// FObjFace는 하나의 면을 나타냄 (n각형 : 정점 n개)
 struct FObjFace
 {
 	TArray<FObjVertexIndex> VertexIndices; // Face의 각 Vertex에 대한 Position, UV, Normal Index
+
 	int32 smoothingGroup = 0;
 };
 
@@ -53,7 +48,7 @@ struct FObjInfo
 	TArray<FVector2> UVs;
 	TArray<FVector> Normals;
 
-	TArray<FObjFace> VertexIndices;
+	TArray<FObjFace> Faces;
 	TArray<FObjMaterialInfo> Materials;
 	TArray<FString> GroupNames;
 	TArray<FObjFaceGroup> FaceGroups;
@@ -65,7 +60,7 @@ class FObjImporter
 public:
 
 	//obj 파일을 읽어서 FStaticMesh로 변환하는 함수
-	static FStaticMesh* ParseAndConvert(const FString& fileName);
+	static bool ParseAndConvert(const FString& fileName, FObjImportResult& outResult);
 
 private:
 

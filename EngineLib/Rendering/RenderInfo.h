@@ -11,7 +11,10 @@ struct FSubUVMesh;
 struct FStaticMesh;
 struct FRenderInfo
 {
-	EPrimitive ePrimitive;
+	//EPrimitive ePrimitive;
+	FName MeshName;
+	FName TextureName;
+
 	FMatrix WorldTransformMatrix;
 	FObjectID ObejctID;
 	FLinearColor Color;
@@ -46,12 +49,12 @@ struct FRenderInfo
 		}
 		const FMatrix& world = WorldTransformMatrix;
 		const FVector location = FVector(world.M[3][0], world.M[3][1], world.M[3][2]);
-		//const FVector scale = {
-		//	world.GetUnitAxis(EAxis::X).Length(),
-		//	world.GetUnitAxis(EAxis::Y).Length(),
-		//	world.GetUnitAxis(EAxis::Z).Length(),
-		//};
-		const FVector scale = FVector(1); // Billboard quad should not be scaled by world matrix, keep it uniform scale
+		const FVector scale = {
+			world.GetUnitAxis(EAxis::X).Length(),
+			world.GetUnitAxis(EAxis::Y).Length(),
+			world.GetUnitAxis(EAxis::Z).Length(),
+		};
+		//const FVector scale = FVector(1); // Billboard quad should not be scaled by world matrix, keep it uniform scale
 		return FMatrix::Scale(scale) * FMatrix::Rotate(cameraRotation) * FMatrix::Translation(location);
 	}
 

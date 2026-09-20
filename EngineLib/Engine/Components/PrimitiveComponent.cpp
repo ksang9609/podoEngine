@@ -100,7 +100,7 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 	}
 
 	FRenderInfo renderInfo{};
-	renderInfo.ePrimitive = mePrimitive;
+	//renderInfo.ePrimitive = mePrimitive;
 	renderInfo.WorldTransformMatrix = GetTransformMatrix();
 	renderInfo.ObejctID = { mOwner->UUID, mOwner->InternalIndex };
 	renderInfo.Color = mColor;

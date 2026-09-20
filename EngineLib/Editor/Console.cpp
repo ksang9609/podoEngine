@@ -109,44 +109,36 @@ void ConsoleWindow::Init(std::string_view title, int capacity)
 	mFont = io.Fonts->AddFontFromFileTTF("Assets/Fonts/consola.ttf", 16.0f);
 }
 
-void ConsoleWindow::Draw(float panelWidth)
+void ConsoleWindow::Update()
 {
 	FlushPending();
+}
 
-	ImGuiIO& io = ImGui::GetIO();
-
-	// Set Font
+void ConsoleWindow::DrawContents()
+{
 	if (mFont)
 	{
 		ImGui::PushFont(mFont);
 	}
 
-	float consolHeight = io.DisplaySize.y * HEIGHT_RATIO;
+	// BeginPopup은 제목 표시줄이 없으므로 직접 표시
+	ImGui::TextUnformatted(mTitle.CStr());
+	ImGui::Separator();
 
-	ImGui::SetNextWindowPos(
-		ImVec2(panelWidth, io.DisplaySize.y - consolHeight),
-		ImGuiCond_Always
-	);
+	const float footerHeight =
+		ImGui::GetFrameHeightWithSpacing() * 2.0f;
 
-	ImGui::SetNextWindowSize(
-		ImVec2(io.DisplaySize.x - panelWidth, consolHeight),
-		ImGuiCond_Always
-	);
-
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
-
-	ImGui::Begin(mTitle.CStr(), nullptr, flags);
-
-	float FooterHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
-	if (ImGui::BeginChild("ConsoleMessage", ImVec2(0, -FooterHeight), true))
+	if (ImGui::BeginChild(
+		"ConsoleMessage",
+		ImVec2(0.0f, -footerHeight),
+		true))
 	{
-		// Auto-scroll to bottom if enabled
-		const bool bWasAtBottom = (ImGui::GetScrollY() >= ImGui::GetScrollMaxY());
+		const bool bWasAtBottom =
+			ImGui::GetScrollY() >= ImGui::GetScrollMaxY();
 
-		for (uint32 Index = 0; Index < mCount; ++Index)
+		for (uint32 index = 0; index < mCount; ++index)
 		{
-			const FConsoleMessage& Message = GetMessage(Index);
-			DrawConsoleMessage(Message);
+			DrawConsoleMessage(GetMessage(index));
 		}
 
 		if (mbAutoScroll && bWasAtBottom)
@@ -168,15 +160,12 @@ void ConsoleWindow::Draw(float panelWidth)
 		{
 			ExecuteCommand(mInputBuffer);
 			mInputBuffer[0] = '\0';
-
 			ImGui::SetKeyboardFocusHere(-1);
 		}
 	}
 
-	ImGui::TextDisabled("Type 'help' and press ENTER for available commands.");
-
-
-	ImGui::End();
+	ImGui::TextDisabled(
+		"Type 'help' and press ENTER for available commands.");
 
 	if (mFont)
 	{

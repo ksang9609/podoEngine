@@ -2,16 +2,20 @@
 
 #include <functional>
 
+#include "Core/BuiltinAssets.h"
 #include "Core/enum.h"
 #include "Core/Math/Vector.h"
 #include "Core/Math/Rotator.h"
 #include "Core/Container/TMap.h"
 #include "Core/Name.h"
+//#include "Engine/Components/SceneComponent.h"
+//#include "Engine/Actor.h"
 
 namespace json { class JSON; }
 
 class UObject;
 class AActor;
+class USceneComponent;
 class FClassInfo;
 class FFontResource;
 class UStaticMesh;
@@ -48,18 +52,24 @@ struct FObjectFactory
 		requires std::derived_from<TObject, UObject>
 	static TObject* LoadObject(const json::JSON& inJson);
 
-	static AActor* SpawnPrimitiveActor(EPrimitive primitiveType,
-		FVector3 Location, FRotator Rotation, FVector3 Scale
-	);
+
+	/* Spawn Actors */
+	template<typename TComponent, typename... Args>
+		requires(std::derived_from<TComponent, USceneComponent>)
+	static AActor* SpawnActorWithRootComponent(const FName& Name, Args&&... args);
+
+	//static AActor* SpawnPrimitiveActor(EPrimitive primitiveType,
+	//	FVector3 Location, FRotator Rotation, FVector3 Scale
+	//);
 
 	static AActor* SpawnStaticMeshActor(
 		FVector3 location, FRotator rotation, FVector3 scale,
-		const UStaticMesh& staticMeshAsset);
+		const UStaticMesh& staticMeshAsset, FName textureAssetName = BuiltinAssets::DefaultWhiteTexture);
 	static AActor* SpawnStaticMeshActor(
 		FVector3 location, FRotator rotation, FVector3 scale,
-		FName staticMeshAssetName
+		FName staticMeshAssetName, FName textureAssetName = BuiltinAssets::DefaultWhiteTexture
 	);
-	
+
 
 	static AActor* SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale);
 
@@ -74,6 +84,8 @@ private:
 	// TODO?: Does really need a default font resource?
 	static const FFontResource* mDefaultFontResource;
 	static const FAssetManager* mAssetManagerRef;
+
+	static AActor* createActorWithRootComponent(const FName& Name, USceneComponent* rootComponent);
 };
 
 

@@ -16,7 +16,6 @@ class FFrameTimer;
 class FEditorViewportClient;
 class FGraphicsManager;
 class UWorld;
-class FCamera;
 
 //struct FGuiReference
 //{
@@ -43,7 +42,7 @@ class FCamera;
 class FSceneManager
 {
 public:
-	FSceneManager(const FCamera& viewportCameraRef);
+	FSceneManager() = default;
 	~FSceneManager();
 
 	void Update(float deltaTime);
@@ -83,8 +82,6 @@ private:
 	UWorld* mCurrentWorld = nullptr;
 	AActor* mSelectedActor = nullptr;
 	std::string LoadScenename;
-
-	const FCamera& mViewportCameraRef;
 
 	FEditorSetting mEditorSetting;
 };
