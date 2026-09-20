@@ -54,8 +54,7 @@ const UStaticMesh& FAssetManager::FindStaticMeshAssetOrAdd(const FName& assetNam
 
 		if (createStaticMeshAsset(meshKey))
 		{
-			if (const UStaticMesh* created =
-				FindStaticMeshAssetOrNull(meshKey))
+			if (const UStaticMesh* created =FindStaticMeshAssetOrNull(meshKey))
 			{
 				return *created;
 			}

@@ -214,31 +214,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager->NewScene();
 
-	// OBJ 하드코딩 로딩 테스트
-	{
-		const UStaticMesh& objMesh =
-			mAssetManager->FindStaticMeshAssetOrAdd(
-				FName("Assets/grape.obj"));
-
-		AActor* objActor =
-			FObjectFactory::SpawnStaticMeshActor(
-				FVector(0.0f, 0.0f, 0.0f),
-				FRotator(0.0f, 0.0f, 0.0f),
-				FVector(1.0f, 1.0f, 1.0f),
-				objMesh
-			);
-
-		if (objActor)
-		{
-			mSceneManager
-				->GetCurrentWorld()
-				->AddActor(objActor);
-		}
-		else
-		{
-			UE_LOG(Error, Render, "Failed to load test OBJ");
-		}
-	}
 
 	// Test: static mesh
 	//{
@@ -531,6 +506,20 @@ void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
 void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 {
 	mSceneManager->LoadScene(command.SceneName, *mFileManager);
+}
+
+void FEngineLoop::processEditorCommand(const FLoadObjCommand& command)
+{
+	try
+	{
+		const UStaticMesh& importedMesh = mAssetManager->FindStaticMeshAssetOrAdd(FName(command.ObjFilePath));
+
+		UE_LOG(Log, Editor, "OBJ imported: %s", importedMesh.GetAssetPathFileName().ToString().CStr());
+	}
+	catch (const std::exception& exception)
+	{
+		UE_LOG(Error, Editor, "Failed to import OBJ: %s (%s)", command.ObjFilePath.CStr(), exception.what());
+	}
 }
 
 void FEngineLoop::processEditorCommand(const FSpawnActorCommand& command)

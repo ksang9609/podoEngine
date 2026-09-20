@@ -10,6 +10,7 @@
 struct FNewSceneCommand {};
 struct FSaveSceneCommand { FString SceneName; };
 struct FLoadSceneCommand { FString SceneName; };
+struct FLoadObjCommand { FString ObjFilePath; };
 
 struct FSpawnActorCommand { EPrimitive PrimitiveType; int32 SpawnCount; };
 struct FSpawnStaticMeshActorCommand { FName StaticMeshKey; int32 SpawnCount; };
@@ -53,6 +54,7 @@ using FEditorCommand = std::variant <
 	FNewSceneCommand,
 	FSaveSceneCommand,
 	FLoadSceneCommand,
+	FLoadObjCommand,
 
 	FSpawnActorCommand,
 	FDeleteActorCommand,
