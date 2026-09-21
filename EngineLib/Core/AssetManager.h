@@ -27,7 +27,6 @@ public:
 
 	TArray<FName> GetAllStaticMeshAssetKeys() const;
 
-
 private:
 	/* Assets */
 	TMap<FName, std::unique_ptr<UStaticMesh>> mStaticMeshAssets;

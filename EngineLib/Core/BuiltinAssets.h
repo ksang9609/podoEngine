@@ -7,8 +7,12 @@
 namespace BuiltinAssets
 {
 	/* Mesh */
-	inline const FName Cube{ "Engine/Primitives/Cube" };
-	inline const FName Sphere{ "Engine/Primitives/Sphere" };
+	/* Static Mesh*/
+	inline const FName CubeMesh{ "Engine/Primitives/CubeMesh" };
+	inline const FName SphereMesh{ "Engine/Primitives/SphereMesh" };
+
+	/* Simple */
+	inline const FName CubeSimple{ "Engine/Primitives/CubeSimple" };
 	inline const FName GizmoArrow{ "Engine/Primitives/GizmoArrow" };
 	inline const FName Circle{ "Engine/Primitives/Circle" };
 	inline const FName Triangle{ "Engine/Primitives/Triangle" };

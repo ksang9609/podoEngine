@@ -73,7 +73,7 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cubeMeshData))
 	);
 
-	mStaticMeshAssets.Add(BuiltinAssets::Cube, std::move(cubeMeshAsset));
+	mStaticMeshAssets.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshAsset));
 
 	/* Sphere */
 	std::unique_ptr<FStaticMesh> sphereMeshData = std::make_unique<FStaticMesh>(SphereMesh);
@@ -82,7 +82,7 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 		FObjectFactory::ConstructObject<UStaticMesh>(std::move(sphereMeshData))
 	);
 
-	mStaticMeshAssets.Add(BuiltinAssets::Sphere, std::move(sphereMeshAsset));
+	mStaticMeshAssets.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshAsset));
 }
 
 bool FAssetManager::createStaticMeshAsset(const FName& assetName)

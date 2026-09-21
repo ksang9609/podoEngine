@@ -52,6 +52,7 @@ private:
 	void processEditorCommands(const FEditorCommands& commands);
 	void processEditorCommand(const FNewSceneCommand& command);
 	void processEditorCommand(const FSaveSceneCommand& command);
+	void processEditorCommand(const FSaveSceneAsCommand& command);
 	void processEditorCommand(const FLoadSceneCommand& command);
 	void processEditorCommand(const FLoadObjCommand& command);
 

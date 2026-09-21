@@ -318,6 +318,11 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 	mRenderer->PrepareStaticMesh();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
+		if (renderInfo->StaticMesh == nullptr)
+		{
+			continue;
+		}
+
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 
@@ -819,7 +824,7 @@ URenderer* FGraphicsManager::GetRenderer() const
 
 FVector FGraphicsManager::GetPrimitiveCenter(FName meshName)
 {
-	if (meshName == BuiltinAssets::Sphere)
+	if (meshName == BuiltinAssets::SphereMesh)
 	{
 		return FVector(0, 0, 0);
 	}
@@ -843,11 +848,11 @@ static float GetOutlineAxisScale(float worldHalfExtent, float worldThickness)
 
 FVector FGraphicsManager::GetPrimitiveHalfExtent(FName meshName)
 {
-	if (meshName == BuiltinAssets::Sphere)
+	if (meshName == BuiltinAssets::SphereMesh)
 	{
 		return FVector(1.0f, 1.0f, 1.0f);
 	}
-	else if (meshName == BuiltinAssets::Cube)
+	else if (meshName == BuiltinAssets::CubeMesh)
 	{
 		return FVector(0.5f, 0.5f, 0.5f);
 	}

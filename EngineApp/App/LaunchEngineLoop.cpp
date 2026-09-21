@@ -7,9 +7,12 @@
 #include "Core/BuiltinAssets.h"
 #include "Core/Object/Object.h"
 #include "Core/Object/ObjectFactory.h"
+#include "Core/Object/ObjectIterator.h"
 #include "Editor/Console.h"
 #include "Editor/EditorUIManager.h"
+#include "Editor/EditorFileUtils.h"
 #include "Editor/EditorViewportManager.h"
+
 #include "Editor/Viewport.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
@@ -243,7 +246,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::Cube, "Assets/Textures/CubeTextureSample.dds");
+			BuiltinAssets::CubeMesh, "Assets/Textures/CubeTextureSample.dds");
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
@@ -253,7 +256,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::Sphere, "Assets/Textures/EarthTexture.dds");
+			BuiltinAssets::SphereMesh, "Assets/Textures/EarthTexture.dds");
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 
@@ -500,12 +503,53 @@ void FEngineLoop::processEditorCommand(const FNewSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
 {
-	mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	FEditorFileUtils::SaveScene(
+		mSceneManager->GetCurrentWorld()
+	);
+}
+
+void FEngineLoop::processEditorCommand(const FSaveSceneAsCommand& command)
+{
+	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	FEditorFileUtils::SaveSceneAs(
+		mSceneManager->GetCurrentWorld()
+	);
 }
 
 void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 {
-	mSceneManager->LoadScene(command.SceneName, *mFileManager);
+	//mSceneManager->LoadScene(command.SceneName, *mFileManager);
+	UWorld* newWorld = FEditorFileUtils::LoadScene();
+
+	if (newWorld != nullptr)
+	{
+		mSceneManager->ReplaceWorld(newWorld);
+	}
+
+	for (TObjectIterator<UStaticMeshComponent> it; it; ++it)
+	{
+		UStaticMeshComponent* staticMeshComponent = *it;
+		const FName& assetKey = staticMeshComponent->GetStaticMeshAssetKey();
+
+		if (assetKey == FName())
+		{
+			continue;
+		}
+
+		try
+		{
+			const UStaticMesh& staticMesh =
+				mAssetManager->FindStaticMeshAssetOrAdd(assetKey);
+			staticMeshComponent->SetStaticMesh(staticMesh);
+		}
+		catch (const std::exception& exception)
+		{
+			UE_LOG(Error, Editor,
+				"Failed to restore static mesh: %s (%s)",
+				assetKey.ToString().CStr(), exception.what());
+		}
+	}
 }
 
 void FEngineLoop::processEditorCommand(const FLoadObjCommand& command)

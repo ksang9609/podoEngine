@@ -57,6 +57,8 @@ public:
 	void SaveScene(std::string_view sceneName, const FFileManager& fileManager);
 	void LoadScene(std::string_view filePath, const FFileManager& fileManager);
 
+	void ReplaceWorld(UWorld* newWorld);
+
 	UWorld* GetCurrentWorld() const { return mCurrentWorld; }
 
 	AActor* GetSelectedActor() const { return mSelectedActor; }
@@ -68,6 +70,7 @@ public:
 	void ResetSelectedActor() { mSelectedActor = nullptr; }
 
 	float GetPanelWidth() const;
+	
 private:
 	//static constexpr float MIN_WIDTH_RATIO = 0.2f;
 	//static constexpr float MAX_WIDTH_RATIO = 0.6f;

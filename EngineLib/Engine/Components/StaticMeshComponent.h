@@ -13,11 +13,20 @@ class UStaticMeshComponent : public UMeshComponent
 	DECLARE_OBJECT(UStaticMeshComponent, UMeshComponent)
 	DECLARE_SERIALIZATION()
 
-	void Initialize(FVector location, FRotator rotation, FVector scale3D,
+	void Initialize(
+		FVector location,
+		FRotator rotation,
+		FVector scale3D,
 		FName textureName,
-		const UStaticMesh* staticMeshOrNull = nullptr, bool bUseTexture = false);
+		const UStaticMesh* staticMeshOrNull,
+		bool bUseTexture = false
+	);
+
+	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 	void SetStaticMesh(const UStaticMesh& staticMeshRef);
+	const FName& GetStaticMeshAssetKey() const { return mStaticMeshAssetKey; }
+
 
 	const FStaticMesh* GetStaticMeshAsset() const;
 

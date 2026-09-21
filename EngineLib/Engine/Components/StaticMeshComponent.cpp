@@ -3,22 +3,56 @@
 static FBoundingBox calculateBounds(const TArray<FNormalVertex> vertices);
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UStaticMeshComponent, UMeshComponent);
-IMPLEMENT_SERIALIZATION(UStaticMeshComponent, UMeshComponent,
-	{
-		// TODO: Get static mesh reference from asset manager?
-		mStaticMeshRef = nullptr;
-	}
-)
 
-void UStaticMeshComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
+void UStaticMeshComponent::SerializeClass(json::JSON& outJson) const
+{
+	UMeshComponent::SerializeClass(outJson);
+	for (const FPropertyInfo& property : ClassInfo.DeclaredProperties)
+	{
+		property.Serialize(property, this, outJson["Properties"]);
+	}
+}
+
+void UStaticMeshComponent::DeserializeClass(const json::JSON& inJson)
+{
+	UMeshComponent::DeserializeClass(inJson);
+	const json::JSON& properties = inJson.at("Properties");
+
+	for (const FPropertyInfo& property : ClassInfo.DeclaredProperties)
+	{
+		// Older scene files do not contain the static mesh asset key.
+		if (!properties.hasKey(property.JsonKey))
+		{
+			continue;
+		}
+
+		property.Deserialize(property, this, properties);
+	}
+}
+
+void UStaticMeshComponent::PostDeserialize()
+{
+	UMeshComponent::PostDeserialize();
+	mStaticMeshRef = nullptr;
+}
+
+void UStaticMeshComponent::Initialize(
+	FVector location,
+	FRotator rotation,
+	FVector scale3D,
 	FName textureName,
-	const UStaticMesh* staticMeshOrNull, bool bUseTexture)
+	const UStaticMesh* staticMeshOrNull,
+	bool bUseTexture
+)
 {
 	UPrimitiveComponent::Initialize(EPrimitive::EP_StaticMesh, location, rotation, scale3D, bUseTexture);
 	mStaticMeshRef = staticMeshOrNull;
+	mStaticMeshAssetKey = staticMeshOrNull
+		? staticMeshOrNull->GetAssetPathFileName()
+		: FName();
 	mTextureName = textureName;
 
-	resetMaterialOverrides();
+	mLocalBounds = FBoundingBox{};
 
 	if (mStaticMeshRef)
 	{
@@ -33,8 +67,7 @@ void UStaticMeshComponent::Initialize(FVector location, FRotator rotation, FVect
 void UStaticMeshComponent::SetStaticMesh(const UStaticMesh& staticMeshRef)
 {
 	mStaticMeshRef = &staticMeshRef;
-
-	resetMaterialOverrides();
+	mStaticMeshAssetKey = staticMeshRef.GetAssetPathFileName();
 
 	mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);
 }
@@ -157,4 +190,22 @@ static FBoundingBox calculateBounds(
 	}
 
 	return result;
+}
+
+std::span<const FPropertyInfo> UStaticMeshComponent::GetDeclaredProperties()
+{
+	static const FPropertyInfo Properties[] =
+	{
+		REFLECT_PROPERTY(
+			UStaticMeshComponent,
+			mStaticMeshAssetKey
+		),
+
+		REFLECT_PROPERTY(
+			UStaticMeshComponent,
+			mTextureName
+		)
+	};
+
+	return Properties;
 }

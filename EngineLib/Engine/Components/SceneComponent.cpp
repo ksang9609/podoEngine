@@ -43,10 +43,7 @@ void USceneComponent::DeserializeClass(const json::JSON& inJson)
 
 	for (const FPropertyInfo& Property : ClassInfo.DeclaredProperties)
 	{
-		Property.Deserialize(
-			Property,
-			this,
-			propertiesJson);
+		Property.Deserialize(Property, this, propertiesJson);
 	}
 
 	if (inJson.hasKey("ParentUUID"))

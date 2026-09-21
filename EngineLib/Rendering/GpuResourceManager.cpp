@@ -365,9 +365,10 @@ void FGpuResourceManager::createBuiltinBuffers()
 
 	/* Immutable buffers */
 	// Static mesh
-	CreateBuffer(BuiltinAssets::Cube, CubeNormal_vertices, Cube_indices);
-	CreateBuffer(BuiltinAssets::Sphere, SphereNormal_vertices, Sphere_indices);
+	CreateBuffer(BuiltinAssets::CubeMesh, CubeNormal_vertices, Cube_indices);
+	CreateBuffer(BuiltinAssets::SphereMesh, SphereNormal_vertices, Sphere_indices);
 	// Simple
+	CreateBuffer(BuiltinAssets::CubeSimple, Cube_vertices);
 	CreateBuffer(BuiltinAssets::Triangle, Triangle_vertices);
 	CreateBuffer(BuiltinAssets::GizmoArrow, GizmoArrow_vertices);
 	CreateBuffer(BuiltinAssets::Circle, Circle_vertices);

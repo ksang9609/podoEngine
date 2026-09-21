@@ -376,6 +376,7 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorComma
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
+	drawMainMenuBar(outCommands);
 	updateControlPanelGUI(guiReference, outCommands);
 	updatePropertyWindowGUI(guiReference, outCommands);
 	updateObjectListPanelGUI(guiReference, outCommands);
@@ -387,12 +388,54 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorComma
 FString saveSceneFileDialog();
 FString openSceneFileDialog();
 FString openObjFileDialog();
+void FEditorUIManager::drawMainMenuBar(FEditorCommands& outCommands)
+{
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("New Scene"))
+			{
+				outCommands.Emplace(FNewSceneCommand{});
+			}
+			if (ImGui::MenuItem("Open Scene..."))
+			{
+				outCommands.Emplace(FLoadSceneCommand{ });
+			}
+			if (ImGui::MenuItem("Save"))
+			{
+				outCommands.Emplace(FSaveSceneCommand{ FString(mGuiInputField.SceneName) });
+			}
+			if(ImGui::MenuItem("Save As..."))
+			{
+				outCommands.Emplace(FSaveSceneAsCommand{ FString(mGuiInputField.SceneName) });
+			}
+
+
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMainMenuBar();
+	}
+}
 
 void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands)
 {
-	float panelHeight = mImGuiIO.DisplaySize.y * CONTROL_PANEL_HEIGHT_RATIO;
+	const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
 
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+	const float workPosY = mainViewport->WorkPos.y;
+	const float workHeight = mainViewport->WorkSize.y;
+	const float panelHeight = workHeight * CONTROL_PANEL_HEIGHT_RATIO;
+
+
+	//float panelHeight = mImGuiIO.DisplaySize.y * CONTROL_PANEL_HEIGHT_RATIO;
+
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+	ImGui::SetNextWindowPos(
+		ImVec2(0.0f, viewport->WorkPos.y),
+		ImGuiCond_Always
+	);
 
 	ImGui::SetNextWindowSizeConstraints(
 		ImVec2(mImGuiIO.DisplaySize.x * MIN_WIDTH_RATIO, panelHeight),
@@ -427,8 +470,8 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 
 	const char* meshNames[] = { "Cube", "Sphere" };
 	const FName meshKeys[] = {
-		BuiltinAssets::Cube,
-		BuiltinAssets::Sphere
+		BuiltinAssets::CubeMesh,
+		BuiltinAssets::SphereMesh
 	};
 
 	int32 spawnCount = mGuiInputField.SpawnCount;
@@ -456,50 +499,50 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 		outCommands.Emplace(FSpawnParticleCommand{});
 	}
 
-	/* Scene Control */
-	ImGui::SeparatorText("Scene Control");
+	/* Scene Control 삭제예정 */
+	//ImGui::SeparatorText("Scene Control");
 
-	ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName), ImGuiInputTextFlags_ReadOnly);
-	if (ImGui::Button("New scene"))
-	{
-		// TODO: add clear depth buffer function in renderer
-		//guiReference.ViewportClient->Reset();
-		//NewScene();
-		outCommands.Emplace(FNewSceneCommand{});
-		strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), "Default");
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Save scene"))
-	{
-		const FString selectedFile = saveSceneFileDialog();
+	//ImGui::InputText("Scene Name", mGuiInputField.SceneName, IM_ARRAYSIZE(mGuiInputField.SceneName), ImGuiInputTextFlags_ReadOnly);
+	//if (ImGui::Button("New scene"))
+	//{
+	//	// TODO: add clear depth buffer function in renderer
+	//	//guiReference.ViewportClient->Reset();
+	//	//NewScene();
+	//	outCommands.Emplace(FNewSceneCommand{});
+	//	strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), "Default");
+	//}
+	//ImGui::SameLine();
+	//if (ImGui::Button("Save scene"))
+	//{
+	//	const FString selectedFile = saveSceneFileDialog();
 
-		if (selectedFile.Len() > 0)
-		{
-			const std::filesystem::path selectedPath(selectedFile.CStr());
-			const FString sceneName(selectedPath.stem().string());
+	//	if (selectedFile.Len() > 0)
+	//	{
+	//		const std::filesystem::path selectedPath(selectedFile.CStr());
+	//		const FString sceneName(selectedPath.stem().string());
 
-			outCommands.Emplace(FSaveSceneCommand{ sceneName });
-			strcpy_s(
-				mGuiInputField.SceneName,
-				sizeof(mGuiInputField.SceneName),
-				sceneName.CStr());
-		}
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Load scene"))
-	{
-		const FString selectedFile = openSceneFileDialog();
+	//		outCommands.Emplace(FSaveSceneCommand{ sceneName });
+	//		strcpy_s(
+	//			mGuiInputField.SceneName,
+	//			sizeof(mGuiInputField.SceneName),
+	//			sceneName.CStr());
+	//	}
+	//}
+	//ImGui::SameLine();
+	//if (ImGui::Button("Load scene"))
+	//{
+	//	const FString selectedFile = openSceneFileDialog();
 
-		if (selectedFile.Len() > 0)
-		{
-			//LoadScene(selectedFile, *guiReference.FileManager);
-			//std::filesystem::path p(selectedFile.CStr());
-			//std::string LoadScenename = p.stem().string();
-			//strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), LoadScenename.c_str());
-			//guiReference.ViewportClient->Reset();
-			outCommands.Emplace(FLoadSceneCommand{ selectedFile });
-		}
-	}
+	//	if (selectedFile.Len() > 0)
+	//	{
+	//		//LoadScene(selectedFile, *guiReference.FileManager);
+	//		//std::filesystem::path p(selectedFile.CStr());
+	//		//std::string LoadScenename = p.stem().string();
+	//		//strcpy_s(mGuiInputField.SceneName, sizeof(mGuiInputField.SceneName), LoadScenename.c_str());
+	//		//guiReference.ViewportClient->Reset();
+	//		outCommands.Emplace(FLoadSceneCommand{ selectedFile });
+	//	}
+	//}
 
 	//const FCamera& camera = guiReference.ViewportClient.GetCamera();
 
@@ -816,8 +859,18 @@ FString openObjFileDialog()
 
 void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands)
 {
-	float controlPanelHeight = mImGuiIO.DisplaySize.y * CONTROL_PANEL_HEIGHT_RATIO;
-	float propertyHeight = mImGuiIO.DisplaySize.y * WINDOW_PROPERTY_HEIGHT_RATIO;
+
+	const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+
+	const float workPosY = mainViewport->WorkPos.y;
+	const float workHeight = mainViewport->WorkSize.y;
+
+	const float controlPanelHeight = workHeight * CONTROL_PANEL_HEIGHT_RATIO;
+	const float propertyHeight = workHeight * WINDOW_PROPERTY_HEIGHT_RATIO;
+
+	//const float controlPanelHeight = mImGuiIO.DisplaySize.y * CONTROL_PANEL_HEIGHT_RATIO;
+	//const float propertyHeight = mImGuiIO.DisplaySize.y * WINDOW_PROPERTY_HEIGHT_RATIO;
+
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, controlPanelHeight), ImGuiCond_Always);
 
@@ -967,8 +1020,17 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 
 void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands)
 {
-	float offsetHeight = mImGuiIO.DisplaySize.y * (CONTROL_PANEL_HEIGHT_RATIO + WINDOW_PROPERTY_HEIGHT_RATIO);
-	float objectListPanelHeight = mImGuiIO.DisplaySize.y - offsetHeight;
+	const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+
+	const float workPosY = mainViewport->WorkPos.y;
+	const float workHeight = mainViewport->WorkSize.y;
+
+	const float offsetHeight = workHeight * (CONTROL_PANEL_HEIGHT_RATIO + WINDOW_PROPERTY_HEIGHT_RATIO);
+
+	const float objectListPanelHeight = workHeight - offsetHeight;;
+
+	//float offsetHeight = mImGuiIO.DisplaySize.y * (CONTROL_PANEL_HEIGHT_RATIO + WINDOW_PROPERTY_HEIGHT_RATIO);
+	//float objectListPanelHeight = mImGuiIO.DisplaySize.y - offsetHeight;
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, offsetHeight), ImGuiCond_Always);
 
