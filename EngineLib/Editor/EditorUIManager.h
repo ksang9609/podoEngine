@@ -84,6 +84,7 @@ private:
 	static constexpr float WINDOW_PROPERTY_HEIGHT_RATIO = 0.3f;
 	static constexpr float CONSOLE_POPUP_HEIGHT_RATIO = 0.35f;
 
+	void drawMainMenuBar(FEditorCommands& outCommands);
 	void updateBottomBarGUI();
 	void updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);

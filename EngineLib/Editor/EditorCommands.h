@@ -9,7 +9,9 @@
 /* SceneManager Commands */
 struct FNewSceneCommand {};
 struct FSaveSceneCommand { FString SceneName; };
+struct FSaveSceneAsCommand { FString SceneName; };
 struct FLoadSceneCommand { FString SceneName; };
+struct FLoadObjCommand { FString ObjFilePath; };
 
 struct FSpawnActorCommand { EPrimitive PrimitiveType; int32 SpawnCount; };
 struct FSpawnStaticMeshActorCommand { FName StaticMeshKey; int32 SpawnCount; };
@@ -52,7 +54,9 @@ struct FStartProjectionTransitionCommand { bool bOrthographic; };
 using FEditorCommand = std::variant <
 	FNewSceneCommand,
 	FSaveSceneCommand,
+	FSaveSceneAsCommand,
 	FLoadSceneCommand,
+	FLoadObjCommand,
 
 	FSpawnActorCommand,
 	FDeleteActorCommand,

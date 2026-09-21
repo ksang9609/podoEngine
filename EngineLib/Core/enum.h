@@ -123,6 +123,10 @@ inline EPrimitive StringToEPrimitive(const char* str)
 	{
 		return EPrimitive::EP_BillboardQuad;
 	}
+	else if (strcmp(str, "StaticMesh") == 0)
+	{
+		return EPrimitive::EP_StaticMesh;
+	}
 	else
 	{
 		throw std::runtime_error("Unknown EPrimitive value");
@@ -150,6 +154,9 @@ inline const char* PrimitiveToString(EPrimitive primitiveType)
 
 	case EPrimitive::EP_BillboardQuad:
 		return "BillboardQuad";
+
+	case EPrimitive::EP_StaticMesh:
+		return "StaticMesh";
 
 	default:
 		return "Unknown";

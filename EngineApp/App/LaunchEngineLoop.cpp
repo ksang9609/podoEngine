@@ -7,9 +7,12 @@
 #include "Core/BuiltinAssets.h"
 #include "Core/Object/Object.h"
 #include "Core/Object/ObjectFactory.h"
+#include "Core/Object/ObjectIterator.h"
 #include "Editor/Console.h"
 #include "Editor/EditorUIManager.h"
+#include "Editor/EditorFileUtils.h"
 #include "Editor/EditorViewportManager.h"
+
 #include "Editor/Viewport.h"
 #include "Engine/Actor.h"
 #include "Engine/Components/CubeComponent.h"
@@ -214,31 +217,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mSceneManager->NewScene();
 
-	// OBJ 하드코딩 로딩 테스트
-	{
-		const UStaticMesh& objMesh =
-			mAssetManager->FindStaticMeshAssetOrAdd(
-				FName("Assets/grape.obj"));
-
-		AActor* objActor =
-			FObjectFactory::SpawnStaticMeshActor(
-				FVector(0.0f, 0.0f, 0.0f),
-				FRotator(0.0f, 0.0f, 0.0f),
-				FVector(1.0f, 1.0f, 1.0f),
-				objMesh
-			);
-
-		if (objActor)
-		{
-			mSceneManager
-				->GetCurrentWorld()
-				->AddActor(objActor);
-		}
-		else
-		{
-			UE_LOG(Error, Render, "Failed to load test OBJ");
-		}
-	}
 
 	// Test: static mesh
 	//{
@@ -525,12 +503,67 @@ void FEngineLoop::processEditorCommand(const FNewSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
 {
-	mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	FEditorFileUtils::SaveScene(
+		mSceneManager->GetCurrentWorld()
+	);
+}
+
+void FEngineLoop::processEditorCommand(const FSaveSceneAsCommand& command)
+{
+	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
+	FEditorFileUtils::SaveSceneAs(
+		mSceneManager->GetCurrentWorld()
+	);
 }
 
 void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 {
-	mSceneManager->LoadScene(command.SceneName, *mFileManager);
+	//mSceneManager->LoadScene(command.SceneName, *mFileManager);
+	UWorld* newWorld = FEditorFileUtils::LoadScene();
+
+	if (newWorld != nullptr)
+	{
+		mSceneManager->ReplaceWorld(newWorld);
+	}
+
+	for (TObjectIterator<UStaticMeshComponent> it; it; ++it)
+	{
+		UStaticMeshComponent* staticMeshComponent = *it;
+		const FName& assetKey = staticMeshComponent->GetStaticMeshAssetKey();
+
+		if (assetKey == FName())
+		{
+			continue;
+		}
+
+		try
+		{
+			const UStaticMesh& staticMesh =
+				mAssetManager->FindStaticMeshAssetOrAdd(assetKey);
+			staticMeshComponent->SetStaticMesh(staticMesh);
+		}
+		catch (const std::exception& exception)
+		{
+			UE_LOG(Error, Editor,
+				"Failed to restore static mesh: %s (%s)",
+				assetKey.ToString().CStr(), exception.what());
+		}
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FLoadObjCommand& command)
+{
+	try
+	{
+		const UStaticMesh& importedMesh = mAssetManager->FindStaticMeshAssetOrAdd(FName(command.ObjFilePath));
+
+		UE_LOG(Log, Editor, "OBJ imported: %s", importedMesh.GetAssetPathFileName().ToString().CStr());
+	}
+	catch (const std::exception& exception)
+	{
+		UE_LOG(Error, Editor, "Failed to import OBJ: %s (%s)", command.ObjFilePath.CStr(), exception.what());
+	}
 }
 
 void FEngineLoop::processEditorCommand(const FSpawnActorCommand& command)

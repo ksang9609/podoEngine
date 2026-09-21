@@ -119,6 +119,8 @@ public:
 
 	bool operator== (const FString& str) const;
 
+	bool IsEmpty() const { return mData->empty(); }
+
 
 private:
 	std::unique_ptr<std::string> mData;
