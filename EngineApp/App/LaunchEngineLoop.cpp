@@ -246,7 +246,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::CubeMesh, "Assets/Textures/CubeTextureSample.dds");
+			BuiltinAssets::CubeMesh, "");
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
@@ -256,7 +256,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::SphereMesh, "Assets/Textures/EarthTexture.dds");
+			BuiltinAssets::SphereMesh, "");
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 

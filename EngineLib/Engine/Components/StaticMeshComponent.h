@@ -19,7 +19,7 @@ class UStaticMeshComponent : public UMeshComponent
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 	void SetStaticMesh(const UStaticMesh& staticMeshRef);
-	const FName& GetStaticMeshAssetKey() const { return mStaticMeshAssetKey; }
+	const FName& GetStaticMeshAssetKey() const { return mStaticMeshRef->GetAssetPathFileName(); }
 
 
 protected:

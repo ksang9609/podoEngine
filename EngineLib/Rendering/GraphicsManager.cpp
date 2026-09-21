@@ -393,11 +393,11 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 					specularTexture = resources.FindTextureOrAdd(FName(material->SpecularPath));
 				}
 
-				// MTL 텍스처가 없으면 기존 컴포넌트 텍스처 사용
-				if (diffuseTexture == nullptr)
-				{
-					diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
-				}
+				//// MTL 텍스처가 없으면 기존 컴포넌트 텍스처 사용
+				//if (diffuseTexture == nullptr)
+				//{
+				//	diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
+				//}
 			}
 
 			// 아무 텍스처도 없으면 흰색 텍스처

@@ -144,4 +144,24 @@ inline uint32 Cube_indices[36] =
     20, 21, 22,		20, 22, 23, // -Y
 };
 
-inline FStaticMesh CubeMesh = { BuiltinAssets::CubeMesh, CubeNormal_vertices, Cube_indices };
+inline FStaticMesh CubeMesh = {
+	.PathFileName = BuiltinAssets::CubeMesh,
+	.Vertices = CubeNormal_vertices,
+	.Indices = Cube_indices,
+
+	.Materials = {
+		{
+			.Name = "CubeMaterial",
+			.DiffuseTexturePath = "Assets/Textures/CubeTextureSample.dds",
+		}
+	},
+
+	.Sections = {
+		{
+			.Name = "CubeSection",
+			.MaterialIndex = 0,
+			.StartIndex = 0,
+			.IndexCount = 36,
+		}
+	}
+};
