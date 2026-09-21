@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// EngineLib/Rendering/Mesh/StaticMesh.h
+
+#pragma once
 
 #include <memory>
 
@@ -6,7 +8,7 @@
 #include "Core/Core.h"
 #include "Core/Name.h"
 #include "Rendering/VertexType.h"
-#include "../Mesh/Material.h"
+#include "Material.h"
 
 class UMaterial;
 
@@ -32,7 +34,7 @@ struct FStaticMesh
 	TArray<uint32> Indices;
 
 	// 매시가 제공하는 기본 Material 슬롯
-	TArray<FMaterialSlot> MaterialSlots;
+	//TArray<FMaterialSlot> MaterialSlots;
 
 	TArray<FStaticMeshSection> Sections;
 	TArray<FString> GroupNames;
@@ -44,37 +46,24 @@ class UStaticMesh : public UObject
 	DECLARE_SERIALIZATION()
 public:
 	void Initialize() {};
-	void Initialize(FStaticMesh* inStaticMesh)
-	{
-		SetStaticMeshAsset(inStaticMesh);
-	}
+	void Initialize(FStaticMesh* inStaticMesh);
+	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh);
+	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh, TArray<const UMaterial*>&& inDefaultMaterialRefs);
+	const FName& GetAssetPathFileName() const;
 
-	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh)
-	{
-		SetStaticMeshAsset(std::move(inStaticMesh));
-	}
+	void SetStaticMeshAsset(FStaticMesh* inStaticMesh);
 
-	const FName& GetAssetPathFileName() const
-	{
-		return mStaticMeshAsset->PathFileName;
-	}
+	void SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh);
 
-	void SetStaticMeshAsset(FStaticMesh* inStaticMesh)
-	{
-		mStaticMeshAsset.reset(inStaticMesh);
-	}
+	const FStaticMesh* GetStaticMeshAsset() const;
 
-	void SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh)
-	{
-		mStaticMeshAsset = std::move(inStaticMesh);
-	}
+	const UMaterial* GetDefaultMaterialOrNull(int32 slotIndex) const;
 
-	const FStaticMesh* GetStaticMeshAsset() const
-	{
-		return mStaticMeshAsset.get();
-	}
+	const TArray<const UMaterial*>& GetDefaultMaterials() const;
 
 private:
 	std::unique_ptr<FStaticMesh> mStaticMeshAsset;
+
+	TArray<const UMaterial*> mDefaultMaterialRefs;
 };
 

@@ -20,6 +20,11 @@ namespace BuiltinAssets
 	inline const FName BillboardQuadTextured{ "Engine/Primitives/BillboardQuadTextured" };
 	inline const FName LoadingScreenQuad{ "Engine/Primitives/LoadingScreenQuad" };
 
+	/* Material */
+	inline const FName DefaultMaterial{ "Engine/Materials/DefaultMaterial" };
+	inline const FName CubeMaterial{ "Engine/Materials/CubeMaterial" };
+	inline const FName SphereMaterial{ "Engine/Materials/SphereMaterial" };
+
 	/* Texture */
 	inline const FName EnglishFontAtlas{ "Assets/Fonts/EnglishBigFontAtlas.dds" };
 	inline const FName KoreanFontAtlas{ "Assets/Fonts/KoreanFullAtlas.png" };

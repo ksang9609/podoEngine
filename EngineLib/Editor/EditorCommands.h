@@ -28,7 +28,8 @@ struct FSetComponentUseTextureCommand { FObjectID ObjectID; bool bUseTexture; };
 struct FSetComponentColorCommand { FObjectID ObjectID; FLinearColor Color; };
 struct FSetSphereComponentSpinCommand { FObjectID ObjectID; bool bSpin; };
 struct FSetSphereComponentSpinSpeedCommand { FObjectID ObjectID; float SpinSpeed; };
-struct FSetStaticMeshCommand { FObjectID ObjectID;	FName StaticMeshAssetKey; };
+struct FSetStaticMeshComponentStaticMeshCommand { FObjectID ObjectID;	FName StaticMeshAssetKey; };
+struct FSetStaticMeshComponentMaterialCommand { FObjectID ObjectID; int32 MaterialSlotIndex; FName MaterialAssetKey; };
 struct FSetParticleSubUVComponentLoopingCommand { FObjectID ObjectID; bool bLooping; };
 struct FSetParticleSubUVComponentPlayRateCommand { FObjectID ObjectID; float PlayRate; };
 struct FSetParticleSubUVComponentBlendStateTypeCommand { FObjectID ObjectID; EBlendStateType BlendStateType; };
@@ -74,7 +75,8 @@ using FEditorCommand = std::variant <
 
 	FSetComponentUseTextureCommand,
 	FSetComponentColorCommand,
-	FSetStaticMeshCommand,
+	FSetStaticMeshComponentStaticMeshCommand,
+	FSetStaticMeshComponentMaterialCommand,
 	FSetSphereComponentSpinCommand,
 	FSetSphereComponentSpinSpeedCommand,
 	FSetParticleSubUVComponentLoopingCommand,

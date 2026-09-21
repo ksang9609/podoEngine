@@ -5,7 +5,7 @@
 struct FMaterialOverride
 {
 	bool bIsSet = false;
-	FMaterial Material;
+	const UMaterial* OverridedMaterialRef = nullptr;
 };
 
 class UStaticMeshComponent : public UMeshComponent
@@ -25,13 +25,14 @@ class UStaticMeshComponent : public UMeshComponent
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 	void SetStaticMesh(const UStaticMesh& staticMeshRef);
-	const FName& GetStaticMeshAssetKey() const { return mStaticMeshAssetKey; }
+	const FName& GetStaticMeshAssetKey() const { return mStaticMeshRef->GetAssetPathFileName(); }
+	const FName& GetMaterialAssetKey(int32 slotIndex) const;
+	uint32 GetMaterialSlotCount() const { return mStaticMeshRef ? mStaticMeshRef->GetDefaultMaterials().Num() : 0; }
 
+	const UStaticMesh* GetStaticMeshAsset() const;
 
-	const FStaticMesh* GetStaticMeshAsset() const;
-
-	const FMaterial* GetMaterial(int32 slotIndex) const;
-	bool SetMaterial(int32 slotIndex, const FMaterial& material);
+	const UMaterial* GetMaterialAsset(int32 slotIndex) const;
+	bool SetMaterial(int32 slotIndex, const UMaterial& materialAsset);
 	bool ClearMaterialOverride(int32 slotIndex);
 
 

@@ -60,8 +60,7 @@ namespace
 
 		while (*Cursor != '\0' &&
 			*Cursor != ' ' &&
-			*Cursor != '\t' &&
-			*Cursor != '#')
+			*Cursor != '\t')
 		{
 			OutToken.AppendChar(*Cursor++);
 		}
@@ -91,8 +90,10 @@ bool FObjImporter::ParseAndConvert(const FString& fileName, FObjImportResult& ou
 	}
 
 	staticMesh->PathFileName = FName(fileName);
-	staticMesh->MaterialSlots = std::move(objInfo.MaterialSlots);
+	//staticMesh->MaterialSlots = std::move(objInfo.MaterialSlots);
+
 	outResult.meshData = std::move(staticMesh);
+	outResult.materialSlots = std::move(objInfo.MaterialSlots);
 
 	return true;
 }

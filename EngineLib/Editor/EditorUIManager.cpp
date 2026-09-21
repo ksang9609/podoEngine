@@ -279,7 +279,7 @@ namespace
 				outCommands.Emplace(FSetViewportTypeCommand{
 					viewport.getId(),
 					option.Type
-				});
+					});
 			}
 		}
 
@@ -319,7 +319,7 @@ namespace
 				outCommands.Emplace(FSetViewportViewModeCommand{
 					viewport.getId(),
 					option.Mode
-				});
+					});
 			}
 		}
 
@@ -360,7 +360,7 @@ namespace
 					viewport.getId(),
 					option.Flag,
 					!bEnabled
-				});
+					});
 			}
 		}
 
@@ -649,13 +649,13 @@ void FEditorUIManager::drawMainMenuBar(FEditorCommands& outCommands)
 			}
 			if (ImGui::MenuItem("Open Scene..."))
 			{
-				outCommands.Emplace(FLoadSceneCommand{ });
+				outCommands.Emplace(FLoadSceneCommand{});
 			}
 			if (ImGui::MenuItem("Save"))
 			{
 				outCommands.Emplace(FSaveSceneCommand{ FString(mGuiInputField.SceneName) });
 			}
-			if(ImGui::MenuItem("Save As..."))
+			if (ImGui::MenuItem("Save As..."))
 			{
 				outCommands.Emplace(FSaveSceneAsCommand{ FString(mGuiInputField.SceneName) });
 			}
@@ -732,7 +732,7 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	if (ImGui::Button("Spawn"))
 	{
 		//outCommands.Emplace(FSpawnActorCommand{ mGuiInputField.PrimitiveType, mGuiInputField.SpawnCount });
-		outCommands.Emplace(FSpawnStaticMeshActorCommand{ meshKeys[mGuiInputField.SelectedMeshIndex], mGuiInputField.SpawnCount});
+		outCommands.Emplace(FSpawnStaticMeshActorCommand{ meshKeys[mGuiInputField.SelectedMeshIndex], mGuiInputField.SpawnCount });
 	}
 	ImGui::SameLine();
 	if (ImGui::InputInt("Number of spawn", &spawnCount))
@@ -995,7 +995,7 @@ FString openObjFileDialog()
 	}
 
 	return FString(fileName);
-	
+
 }
 
 
@@ -1095,13 +1095,28 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 					// StaticMesh DropList
 					if (const UStaticMeshComponent* staticMeshComponent = component->Cast<UStaticMeshComponent>())
 					{
-						if (FAssetPicker::DrawStaticMeshPicker(guiReference.AssetManager, mGuiInputField.SelectedStaticMeshKey))
+						FName currentStaticMeshKey = staticMeshComponent->GetStaticMeshAssetKey();
+						if (FAssetPicker::DrawStaticMeshPicker(guiReference.AssetManager, currentStaticMeshKey))
 						{
-							outCommands.Emplace(FSetStaticMeshCommand{
+							outCommands.Emplace(FSetStaticMeshComponentStaticMeshCommand{
 								staticMeshComponent->GetObjectID(),
-								mGuiInputField.SelectedStaticMeshKey
+								currentStaticMeshKey
 								});
 						}
+
+						for (int i = 0; i < staticMeshComponent->GetMaterialSlotCount(); ++i)
+						{
+							FName selectedMaterialKey = staticMeshComponent->GetMaterialAssetKey(i);
+							if (FAssetPicker::DrawMaterialPicker(guiReference.AssetManager, selectedMaterialKey, i))
+							{
+								outCommands.Emplace(FSetStaticMeshComponentMaterialCommand{
+									staticMeshComponent->GetObjectID(),
+									i,
+									selectedMaterialKey
+									});
+							}
+						}
+
 					}
 
 					if (const UPrimitiveComponent* primitiveComponent = component->Cast<UPrimitiveComponent>())
@@ -1312,11 +1327,11 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 
 				//	delete deleteActor;
 				//}
-				
+
 			}
 			ImGui::EndChild();
 		}
-		
+
 	}
 	ImGui::End();
 }
@@ -1414,89 +1429,89 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 
 void FEditorUIManager::updateBottomBarGUI()
 {
-    const float displayWidth = mImGuiIO.DisplaySize.x;
-    const float displayHeight = mImGuiIO.DisplaySize.y;
+	const float displayWidth = mImGuiIO.DisplaySize.x;
+	const float displayHeight = mImGuiIO.DisplaySize.y;
 
-    const float barWidth =
-        (std::max)(displayWidth - mPanelWidth, 0.0f);
+	const float barWidth =
+		(std::max)(displayWidth - mPanelWidth, 0.0f);
 
-    if (barWidth <= 0.0f)
-    {
-        return;
-    }
+	if (barWidth <= 0.0f)
+	{
+		return;
+	}
 
-    ImGui::SetNextWindowPos(
-        ImVec2(mPanelWidth, displayHeight - BOTTOM_BAR_HEIGHT),
-        ImGuiCond_Always);
+	ImGui::SetNextWindowPos(
+		ImVec2(mPanelWidth, displayHeight - BOTTOM_BAR_HEIGHT),
+		ImGuiCond_Always);
 
-    ImGui::SetNextWindowSize(
-        ImVec2(barWidth, BOTTOM_BAR_HEIGHT),
-        ImGuiCond_Always);
+	ImGui::SetNextWindowSize(
+		ImVec2(barWidth, BOTTOM_BAR_HEIGHT),
+		ImGuiCond_Always);
 
-    const ImGuiWindowFlags barFlags =
-        ImGuiWindowFlags_NoTitleBar |
-        ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoCollapse |
-        ImGuiWindowFlags_NoScrollbar |
-        ImGuiWindowFlags_NoSavedSettings;
+	const ImGuiWindowFlags barFlags =
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoSavedSettings;
 
-    ImGui::PushStyleVar(
-        ImGuiStyleVar_WindowPadding,
-        ImVec2(6.0f, 3.0f));
+	ImGui::PushStyleVar(
+		ImGuiStyleVar_WindowPadding,
+		ImVec2(6.0f, 3.0f));
 
-    if (ImGui::Begin("##EditorBottomBar", nullptr, barFlags))
-    {
-        constexpr const char* consolePopupId =
-            "ConsoleDrawer";
+	if (ImGui::Begin("##EditorBottomBar", nullptr, barFlags))
+	{
+		constexpr const char* consolePopupId =
+			"ConsoleDrawer";
 
-        const bool bConsoleOpen =
-            ImGui::IsPopupOpen(consolePopupId);
+		const bool bConsoleOpen =
+			ImGui::IsPopupOpen(consolePopupId);
 
-        if (ImGui::Button(
-            bConsoleOpen ? "Console *" : "Console"))
-        {
-            // 열려 있을 때 버튼을 누르면 그 클릭은
-            // 팝업 외부 클릭으로 처리되어 닫힌다.
-            if (!bConsoleOpen)
-            {
-                ImGui::OpenPopup(consolePopupId);
-            }
-        }
+		if (ImGui::Button(
+			bConsoleOpen ? "Console *" : "Console"))
+		{
+			// 열려 있을 때 버튼을 누르면 그 클릭은
+			// 팝업 외부 클릭으로 처리되어 닫힌다.
+			if (!bConsoleOpen)
+			{
+				ImGui::OpenPopup(consolePopupId);
+			}
+		}
 
-        const float popupHeight =
-            displayHeight * CONSOLE_POPUP_HEIGHT_RATIO;
+		const float popupHeight =
+			displayHeight * CONSOLE_POPUP_HEIGHT_RATIO;
 
-        // 팝업의 왼쪽 아래를 하단 바의 왼쪽 위에 고정한다.
-        ImGui::SetNextWindowPos(
-            ImVec2(
-                mPanelWidth,
-                displayHeight - BOTTOM_BAR_HEIGHT),
-            ImGuiCond_Always,
-            ImVec2(0.0f, 1.0f));
+		// 팝업의 왼쪽 아래를 하단 바의 왼쪽 위에 고정한다.
+		ImGui::SetNextWindowPos(
+			ImVec2(
+				mPanelWidth,
+				displayHeight - BOTTOM_BAR_HEIGHT),
+			ImGuiCond_Always,
+			ImVec2(0.0f, 1.0f));
 
-        ImGui::SetNextWindowSize(
-            ImVec2(barWidth, popupHeight),
-            ImGuiCond_Always);
+		ImGui::SetNextWindowSize(
+			ImVec2(barWidth, popupHeight),
+			ImGuiCond_Always);
 
-        const ImGuiWindowFlags popupFlags =
-            ImGuiWindowFlags_NoMove |
-            ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoCollapse;
+		const ImGuiWindowFlags popupFlags =
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoCollapse;
 
-        // OpenPopup과 BeginPopup은 반드시 같은 ImGui 창/ID
-        // 스코프 안에 있어야 한다.
-        if (ImGui::BeginPopup(
-            consolePopupId,
-            popupFlags))
-        {
+		// OpenPopup과 BeginPopup은 반드시 같은 ImGui 창/ID
+		// 스코프 안에 있어야 한다.
+		if (ImGui::BeginPopup(
+			consolePopupId,
+			popupFlags))
+		{
 			// Console should be updated before drawing its contents
 			ConsoleWindow::GetInstance().Update();
-            ConsoleWindow::GetInstance().DrawContents();
-            ImGui::EndPopup();
-        }
-    }
+			ConsoleWindow::GetInstance().DrawContents();
+			ImGui::EndPopup();
+		}
+	}
 
-    ImGui::End();
-    ImGui::PopStyleVar();
+	ImGui::End();
+	ImGui::PopStyleVar();
 }
