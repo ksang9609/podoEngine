@@ -110,6 +110,8 @@ void SSplitterV::Arrange(const FRect& rect)
 	const FRect leftRect = { Rect.Left, Rect.Top, handleRect.Left, Rect.Bottom };
 	const FRect rightRect = { handleRect.Right, Rect.Top, Rect.Right, Rect.Bottom };
 
+
+
 	if (SideLT != nullptr)
 	{
 		SideLT->Arrange(leftRect);
@@ -136,10 +138,15 @@ void SSplitterV::updateSplitFromPoint(const FPoint& point)
 	const float desiredLeftWidth = point.X - Rect.Left - actualHandleThickness * 0.5f;
 	const float desiredRatio = desiredLeftWidth / usableWidth;
 
-	splitRatio = clampSplitRatio(desiredRatio, usableWidth);
+	setSplitRatio(clampSplitRatio(desiredRatio, usableWidth));
 
 	// 변경된 비율로 현재 Splitter의 자식들을 다시 배치한다.
 	Arrange(Rect);
+	if (linkedSplitter != nullptr)
+	{
+		const FRect linkedRect = linkedSplitter->getRect();
+		linkedSplitter->Arrange(linkedRect);
+	}
 }
 // 가로 막대를 기준으로 위 아래 나눔
 void SSplitterH::Arrange(const FRect& rect)
@@ -185,7 +192,28 @@ void SSplitterH::updateSplitFromPoint(const FPoint& point)
 	const float desiredTopHeight = point.Y - Rect.Top - actualHandleThickness * 0.5f;
 	const float desiredRatio = desiredTopHeight / usableHeight;
 
-	splitRatio = clampSplitRatio(desiredRatio,usableHeight);
+	setSplitRatio(clampSplitRatio(desiredRatio, usableHeight));
 
 	Arrange(Rect);
+	if (linkedSplitter != nullptr)
+	{
+		const FRect linkedRect = linkedSplitter->getRect();
+		linkedSplitter->Arrange(linkedRect);
+	}
+}
+
+void SSplitter::linkSplitRatio(SSplitter& other)
+{
+	linkedSplitter = &other;
+	other.linkedSplitter = this;
+}
+
+void SSplitter::setSplitRatio(float ratio)
+{
+	splitRatio = ratio;
+
+	if (linkedSplitter != nullptr)
+	{
+		linkedSplitter->splitRatio = ratio;
+	}
 }

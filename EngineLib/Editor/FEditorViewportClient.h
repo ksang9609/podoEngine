@@ -32,6 +32,7 @@ public:
 	float GetFov() const { return mCamera.mFovDegree; }
 	void Update(float deltaTime, const FViewRect& viewrect, FSceneManager* sceneManager, bool bViewportHoverd, bool bViewportFocused);
 	bool IsMouseHit() const { return bMouseHit; }
+	FViewportSharedSettings& getSharedSettings() const { return mSharedSettings; };
 
 	void Reset();
 

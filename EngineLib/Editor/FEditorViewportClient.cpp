@@ -298,7 +298,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 
 	//Camera Translate
-	if (bCanUseMouse && !bOrthographic && Input.MouseWheelDelta != 0.0f)
+	if (bCanUseMouse && Input.MouseWheelDelta != 0.0f)
 	{
 		//키 입력이 없으면 마우스 휠은 줌인/줌아웃
 		if (!bMoveKeyDown)
@@ -314,13 +314,25 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 			}
 		}
 		//입력이 있으면 마우스 휠은 카메라 이동속도 조절
+		
 		else
 		{
-			mCamera.Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
-			mCamera.Speed = FMath::Clamp(mCamera.Speed, 0.1f, 100.0f);
+			if (mProjectionRatio < 1.0f)
+			{
+				mCamera.mOrthoDistance *= FMath::Pow(1.2f, -Input.MouseWheelDelta);
+				mCamera.mOrthoDistance = FMath::Clamp(mCamera.mOrthoDistance, 0.1f, 100.0f);
+			}
+			//mCamera.Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
+			//mCamera.Speed = FMath::Clamp(mCamera.Speed, 0.1f, 100.0f);
 		}
+		
+	}
+	if (bOrthographic)
+	{
+
 	}
 
+	mCamera.Speed = mSharedSettings.cameraSpeed;
 	const FVector TargetVelocity = MoveDir * mCamera.Speed;
 
 	// 지수 감쇠만큼 카메라 속도가 서서히 줄어듬
@@ -461,7 +473,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다
 			FVector newLocation;
-			if (mGizmo.GetDragLocation(mRayNear, mRayFar, newLocation))
+			if (mGizmo.GetDragLocation(mRayNear, mRayFar, newLocation, mSharedSettings.getSnapSize()))
 			{
 				sceneManager->GetSelectedActor()->SetLocation(newLocation);
 			}

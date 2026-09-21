@@ -67,7 +67,7 @@ struct FGizmo {
 	// 축을 잡은 순간의 기준값을 저장한다. 이후 드래그는 전부 이 기준에 대한 상대량이다.
 	void BeginDrag(const FVector& nearPoint, const FVector& farPoint, const FTransform& ActorTransform);
 	// 드래그 중인 축을 따라 액터가 있어야 할 위치. 축이 시선과 나란하면 false (이번 프레임은 건너뛴다)
-	bool GetDragLocation(const FVector& nearPoint, const FVector& farPoint, FVector& outLocation) const;
+	bool GetDragLocation(const FVector& nearPoint, const FVector& farPoint, FVector& outLocation, float snapSize) const;
 
 	// 드래그 중인 축의 스케일. 이동과 달리 거리를 그대로 더하지 않고 막대 길이 대비 비율로 환산한다.
 	// 그래야 감도가 카메라 거리에 좌우되지 않고, 막대 끝까지 끌면 언제나 2배가 된다.
