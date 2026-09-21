@@ -137,9 +137,11 @@ bool FAssetManager::createStaticMeshAsset(const FName& assetName)
 			std::unique_ptr<UMaterial> materialAsset = std::unique_ptr<UMaterial>(
 				FObjectFactory::ConstructObject<UMaterial>(materialKey, std::move(materialData))
 			);
-			defaultMaterialRefs.Add(materialAsset.get());
 			mMaterialAssets.Add(materialKey, std::move(materialAsset));
 		}
+
+		// 생성 여부와 관계없이, 원본 슬롯 순서대로 추가
+		defaultMaterialRefs.Add(FindMaterialAssetOrNull(materialKey));
 	}
 
 	// Create Static Mesh Asset
