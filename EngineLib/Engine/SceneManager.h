@@ -54,8 +54,8 @@ public:
 	void NewScene();
 	void DeleteScene();
 
-	void SaveScene(std::string_view sceneName, const FFileManager& fileManager);
-	void LoadScene(std::string_view filePath, const FFileManager& fileManager);
+	//void SaveScene(std::string_view sceneName, const FFileManager& fileManager);
+	//void LoadScene(std::string_view filePath, const FFileManager& fileManager);
 
 	void ReplaceWorld(UWorld* newWorld);
 

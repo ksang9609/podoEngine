@@ -3,11 +3,15 @@
 #include "Core/Core.h"
 #include "ThirdParty/Json/json.hpp"
 
-class UWorld;
+struct FJsonArchiveData
+{
+	uint32 NextUUID = 0;
+	json::JSON WorldJson;
+};
 
 class FJsonArchive
 {
 public:
-	static json::JSON SerializeWorld(const UWorld& world);
-	static UWorld* DeserializeWorld(const json::JSON& inJson);
+	static json::JSON Serialize(const json::JSON& worldJson, uint32 nextUUID);
+	static FJsonArchiveData Deserialize(const json::JSON& archiveJson);
 };

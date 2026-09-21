@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <filesystem>
 
@@ -14,8 +14,8 @@ public:
 	FFileManager(std::string_view fileDirPath);
 	FFileManager(std::string_view fileDirPath, std::string_view rootPath);
 
-	FString ReadFileToString(std::string_view fileName) const;
-	void WriteStringToFile(std::string_view fileName, std::string_view content) const;
+	FString ReadFileToString(std::string_view filePath) const;
+	void WriteStringToFile(std::string_view filePath, std::string_view content) const;
 
 private:
 	std::filesystem::path mFileDirPath;

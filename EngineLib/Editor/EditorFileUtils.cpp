@@ -14,7 +14,7 @@
 
 FString FEditorFileUtils::mCurrentScenePath = "";
 
-bool FEditorFileUtils::SaveScene(const UWorld* world)
+bool FEditorFileUtils::SaveScene(const UWorld* world, FFileManager& fileManager)
 {
 	if (!world)
 	{
@@ -22,14 +22,14 @@ bool FEditorFileUtils::SaveScene(const UWorld* world)
 		return false;
 	}
 
-	// 저장 경로 결정
 	if (mCurrentScenePath.IsEmpty())
 	{
 		UE_LOG_F(Log, Core, "SaveScene: No current scene path. Redirecting to Save As");
-		return SaveSceneAs(world);
+		return SaveSceneAs(world, fileManager);
 	}
 
-	if (!saveSceneToPath(world, mCurrentScenePath))
+	//Path = CurrentScenePath;
+	if (!saveSceneToPath(world, mCurrentScenePath, fileManager))
 	{
 		return false;
 	}
@@ -38,7 +38,7 @@ bool FEditorFileUtils::SaveScene(const UWorld* world)
 	return true;
 }
 
-bool FEditorFileUtils::SaveSceneAs(const UWorld* world)
+bool FEditorFileUtils::SaveSceneAs(const UWorld* world, FFileManager& fileManager)
 {
 	if (!world)
 	{
@@ -57,7 +57,7 @@ bool FEditorFileUtils::SaveSceneAs(const UWorld* world)
 	std::filesystem::path normalizedPath = std::filesystem::absolute(filePath.CStr()).lexically_normal();
 	FString normalizedScenePath(normalizedPath.string());
 
-	if (!saveSceneToPath(world, normalizedScenePath))
+	if (!saveSceneToPath(world, normalizedScenePath, fileManager))
 	{
 		UE_LOG_F(Error, Core, "SaveSceneAs failed: {}", normalizedPath.string().c_str());
 		return false;
@@ -70,19 +70,19 @@ bool FEditorFileUtils::SaveSceneAs(const UWorld* world)
 	return true;
 }
 
-bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& filePath)
+bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& filePath, FFileManager& fileManager)
 {
 	try
 	{
-		json::JSON sceneJson = FJsonArchive::SerializeWorld(*world);
+		json::JSON worldJson = json::JSON::Make(json::JSON::Class::Object);
+		world->SerializeClass(worldJson);
+
+		json::JSON sceneJson = FJsonArchive::Serialize(worldJson, UEngineStatics::GetNextUUID());
+	
 		//FString sceneJsonText(sceneJson.dump()); // 한줄로 저장
 		FString sceneJsonText(sceneJson.dump(1, "  "));
 
-		std::filesystem::path scenePath(filePath.CStr());
-
-		FFileManager fileManager(scenePath.parent_path().string());
-
-		fileManager.WriteStringToFile(scenePath.filename().string(), sceneJsonText);
+		fileManager.WriteStringToFile(filePath, sceneJsonText);
 	}
 	catch (const std::exception& e)
 	{
@@ -93,7 +93,7 @@ bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& fileP
 	return true;
 }
 
-UWorld* FEditorFileUtils::LoadScene()
+UWorld* FEditorFileUtils::LoadScene(FFileManager& fileManager)
 {
 	FString filePath = openLoadSceneDialog();
 
@@ -108,25 +108,36 @@ UWorld* FEditorFileUtils::LoadScene()
 
 	try
 	{
-		FFileManager fileManager(normalizedPath.parent_path().string());
-
-		FString sceneJsonText = fileManager.ReadFileToString(normalizedPath.filename().string());
+		FString sceneJsonText = fileManager.ReadFileToString(normalizedPath.string());
 
 		json::JSON sceneJson = json::JSON::Load(sceneJsonText);
 
-		UWorld* newWorld = FJsonArchive::DeserializeWorld(sceneJson);
+		FJsonArchiveData archive = FJsonArchive::Deserialize(sceneJson);
+		const json::JSON& worldJson = archive.WorldJson;
+
+		if (!worldJson.hasKey("ClassName")
+			|| worldJson.at("ClassName").JSONType() != json::JSON::Class::String
+			|| FString(worldJson.at("ClassName").ToString()) != UWorld::GetClass()->Name)
+		{
+			throw std::runtime_error(
+				"Scene object must have class UWorld");
+		}
+
+		std::unique_ptr<UWorld> newWorld(FObjectFactory::ConstructUnInitializedObject<UWorld>());
 
 		if (!newWorld)
 		{
-			UE_LOG_F(Error, Core, "LoadScene failed: World creation failed");
-			return nullptr;
+			throw std::runtime_error("Failed to create UWorld");
 		}
 
+		newWorld->DeserializeClass(worldJson);
+
+		UEngineStatics::SetNextUUID(archive.NextUUID);
 		mCurrentScenePath = normalizedScenePath;
 
 		UE_LOG_F(Log, Core, "Scene loaded: {}", mCurrentScenePath);
 
-		return newWorld;
+		return newWorld.release();
 	}
 	catch (const std::exception& e)
 	{

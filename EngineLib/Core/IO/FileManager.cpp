@@ -20,37 +20,30 @@ FFileManager::FFileManager(std::string_view fileDirPath, std::string_view rootPa
 {
 }
 
-FString FFileManager::ReadFileToString(std::string_view fileName) const
+FString FFileManager::ReadFileToString(std::string_view filePath) const
 {
-	std::filesystem::path filePath = mFileDirPath / fileName;
-	if (!IsUnderFileDir(filePath))
-	{
-		throw std::runtime_error("Attempted to read outside of the file directory: " + filePath.string());
-	}
+	std::filesystem::path path(filePath);
 
-	std::ifstream fileStream(filePath, std::ios::in);
+	std::ifstream fileStream(path, std::ios::in);
 	if (!fileStream.is_open())
 	{
-		throw std::runtime_error("Failed to open file for reading: " + filePath.string());
+		throw std::runtime_error("Failed to open file for reading: " + path.string());
 	}
 
 	std::stringstream buffer;
 	buffer << fileStream.rdbuf();
+
 	return FString(buffer.str());
 }
 
-void FFileManager::WriteStringToFile(std::string_view fileName, std::string_view content) const
+void FFileManager::WriteStringToFile(std::string_view filePath, std::string_view content) const
 {
-	std::filesystem::path filePath = mFileDirPath / fileName;
-	if (!IsUnderFileDir(filePath))
-	{
-		throw std::runtime_error("Attempted to write outside of the file directory: " + filePath.string());
-	}
+	std::filesystem::path path(filePath);
 
-	std::ofstream fileStream(filePath, std::ios::out);
+	std::ofstream fileStream(path, std::ios::out);
 	if (!fileStream.is_open())
 	{
-		throw std::runtime_error("Failed to open file for writing: " + filePath.string());
+		throw std::runtime_error("Failed to open file for writing: " + path.string());
 	}
 
 	fileStream << content;

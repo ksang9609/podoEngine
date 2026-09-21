@@ -503,24 +503,19 @@ void FEngineLoop::processEditorCommand(const FNewSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
 {
-	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
-	FEditorFileUtils::SaveScene(
-		mSceneManager->GetCurrentWorld()
-	);
+	UWorld* world = mSceneManager->GetCurrentWorld();
+	FEditorFileUtils::SaveScene(world, *mFileManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSaveSceneAsCommand& command)
 {
-	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
-	FEditorFileUtils::SaveSceneAs(
-		mSceneManager->GetCurrentWorld()
-	);
+	UWorld* world = mSceneManager->GetCurrentWorld();
+	FEditorFileUtils::SaveSceneAs(world, *mFileManager);
 }
 
 void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 {
-	//mSceneManager->LoadScene(command.SceneName, *mFileManager);
-	UWorld* newWorld = FEditorFileUtils::LoadScene();
+	UWorld* newWorld = FEditorFileUtils::LoadScene(*mFileManager);
 
 	if (newWorld != nullptr)
 	{
