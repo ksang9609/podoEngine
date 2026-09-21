@@ -49,5 +49,4 @@ private:
 	// 인덱스는 FStaticMesh::MaterialSlots 인덱스와 동일하다.
 	TArray<FMaterialOverride> mMaterialOverrides;
 
-	FName mTextureName;
 };

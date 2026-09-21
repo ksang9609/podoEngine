@@ -50,7 +50,6 @@ void UStaticMeshComponent::Initialize(
 	mStaticMeshAssetKey = staticMeshOrNull
 		? staticMeshOrNull->GetAssetPathFileName()
 		: FName();
-	mTextureName = textureName;
 	resetMaterialOverrides();
 
 	mLocalBounds = FBoundingBox{};
@@ -156,7 +155,6 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 	FRenderInfo renderInfo = UMeshComponent::makeRenderInfo();
 
 	renderInfo.MeshName = mStaticMeshRef ? mStaticMeshRef->GetAssetPathFileName() : FName();
-	renderInfo.TextureName = mTextureName;
 	renderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
 
 	if (renderInfo.StaticMesh)
@@ -220,11 +218,6 @@ std::span<const FPropertyInfo> UStaticMeshComponent::GetDeclaredProperties()
 			UStaticMeshComponent,
 			mStaticMeshAssetKey
 		),
-
-		REFLECT_PROPERTY(
-			UStaticMeshComponent,
-			mTextureName
-		)
 	};
 
 	return Properties;
