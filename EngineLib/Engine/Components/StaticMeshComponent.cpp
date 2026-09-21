@@ -161,16 +161,16 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 
 	if (renderInfo.StaticMesh)
 	{
-		renderInfo.Materials.Reserve(renderInfo.StaticMesh->Sections.Num());
+		const int32 slotCount = mStaticMeshRef->GetDefaultMaterials().Num();
 
-		for (int32 slotIndex = 0; slotIndex < renderInfo.StaticMesh->Sections.Num(); ++slotIndex)
+		renderInfo.Materials.Reserve(slotCount);
+
+		for (int32 slotIndex = 0; slotIndex < slotCount; ++slotIndex)
 		{
-			const FMaterial* material = GetMaterialAsset(slotIndex)->GetMaterial();
+			const UMaterial* materialAsset = GetMaterialAsset(slotIndex);
+			const FMaterial* material = materialAsset ? materialAsset->GetMaterial() : nullptr;
 
-			if (material)
-			{
-				renderInfo.Materials.Add(*material);
-			}
+			renderInfo.Materials.Add(material ? *material : FMaterial{});
 		}
 	}
 

@@ -60,8 +60,7 @@ namespace
 
 		while (*Cursor != '\0' &&
 			*Cursor != ' ' &&
-			*Cursor != '\t' &&
-			*Cursor != '#')
+			*Cursor != '\t')
 		{
 			OutToken.AppendChar(*Cursor++);
 		}
