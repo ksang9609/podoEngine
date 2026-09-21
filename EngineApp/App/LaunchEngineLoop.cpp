@@ -787,6 +787,19 @@ void FEngineLoop::processEditorCommand(const FSetParticleSubUVComponentBlendStat
 	}
 }
 
+void FEngineLoop::processEditorCommand(const FSetPropertyCommand& command)
+{
+	UObject* object = UObject::GetObjectByInternalIndex<UObject>(command.ObjectID.InternalIndex);
+	if (object)
+	{
+		object->SetPropertyValue(command.PropertyName, command.NewValue);
+	}
+	else
+	{
+		UE_LOG_F(Warning, Editor, "Object with ObjectID {} not found.", command.ObjectID.InternalIndex);
+	}
+}
+
 void FEngineLoop::processEditorCommand(const FSetViewModeCommand& command)
 {
 	mGraphicsManager->SetViewMode(command.ViewMode);

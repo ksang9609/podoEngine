@@ -77,6 +77,7 @@ private:
 	void processEditorCommand(const FSetParticleSubUVComponentLoopingCommand& command);
 	void processEditorCommand(const FSetParticleSubUVComponentPlayRateCommand& command);
 	void processEditorCommand(const FSetParticleSubUVComponentBlendStateTypeCommand& command);
+	void processEditorCommand(const FSetPropertyCommand& command);
 
 	void processEditorCommand(const FSetViewModeCommand& command);
 	void processEditorCommand(const FSetShowFlagCommand& command);

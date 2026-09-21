@@ -1157,10 +1157,15 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 						float spinSpeed = sphereComponent->GetSpinSpeed();
 
 						if (ImGui::Checkbox("Spin", &bSpin))
-							outCommands.Emplace(FSetSphereComponentSpinCommand{ sphereComponent->GetObjectID(), bSpin });
+							outCommands.Emplace(FSetPropertyCommand{ sphereComponent->GetObjectID(), "mbSpin", bSpin });
 
 						if (ImGui::DragFloat("Spin Speed", &spinSpeed, 0.1f, 0.0f, 3600.0f))
 							outCommands.Emplace(FSetSphereComponentSpinSpeedCommand{ sphereComponent->GetObjectID(), spinSpeed });
+
+						//FPropertyValue value = sphereComponent->GetRuntimeClass()->FindProperty("mSpinSpeed")->GetValue(sphereComponent);
+						//const float* spinSpeedValue = std::get_if<float>(&value);
+						const float* spinSpeedValue = sphereComponent->GetPropertyValueOrNull<float>("mSpinSpeed");
+						UE_LOG_F(Log, Editor, "SphereComponent::mSpinSpeed: {}", *spinSpeedValue);
 					}
 
 					if (const UParticleSubUVComponent* particleSubUVComponent = component->Cast<UParticleSubUVComponent>())

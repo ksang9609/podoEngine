@@ -143,6 +143,32 @@ public:
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
+	template<typename T>
+	T* GetPropertyValueOrNull(std::string_view propertyKey) const
+	{
+		const FPropertyInfo* propertyInfo = GetRuntimeClass()->FindProperty(propertyKey);
+		if (!propertyInfo)
+		{
+			return nullptr;
+		}
+		FPropertyValue value = propertyInfo->GetValue(this);
+		if (std::holds_alternative<T>(value))
+		{
+			return &std::get<T>(value);
+		}
+		return nullptr;
+	}
+
+	void SetPropertyValue(std::string_view propertyKey, const FPropertyValue& value)
+	{
+		const FPropertyInfo* propertyInfo = GetRuntimeClass()->FindProperty(propertyKey);
+		if (!propertyInfo)
+		{
+			throw std::runtime_error("Property not found: " + std::string(propertyKey));
+		}
+		propertyInfo->SetValue(*propertyInfo, this, value);
+	}
+
 public:
 	static TSparseArray<UObject*> GUObjectArray;
 

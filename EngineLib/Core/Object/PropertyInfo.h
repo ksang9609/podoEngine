@@ -22,6 +22,7 @@ struct FPropertyInfo
 	using SerializeFunc = void (*)(const FPropertyInfo& Property, const UObject* Object, json::JSON& OutProperties);
 	using DeserializeFunc = void (*)(const FPropertyInfo& Property, UObject* Object, const json::JSON& InProperties);
 	using GetValueFunc = FPropertyValue(*)(const UObject* Object);
+	using SetValueFunc = void (*)(const FPropertyInfo& Property, UObject* Object, const FPropertyValue& Value);
 
 	const char* JsonKey = nullptr;
 
@@ -29,6 +30,7 @@ struct FPropertyInfo
 	EPropertyFlags PropertyFlags = EPropertyFlags::Serializable;
 
 	GetValueFunc GetValue = nullptr;
+	SetValueFunc SetValue = nullptr;
 
 	/* (De)Serialize function */
 	SerializeFunc Serialize = nullptr;
@@ -67,6 +69,25 @@ FPropertyInfo MakeProperty(const char* JsonKey, EPropertyFlags PropertyFlags = E
 					std::in_place_type<TValue>,
 					Owner->*Member
 				};
+			};
+
+		Property.SetValue =
+			[](const FPropertyInfo& Property, UObject* Object, const FPropertyValue& value) -> void
+			{
+				if ((Property.PropertyFlags & EPropertyFlags::Editable) == EPropertyFlags::None)
+				{
+					throw std::runtime_error("Property is not editable");
+				}
+
+				const TValue* typedValue = std::get_if<TValue>(&value);
+
+				if (!typedValue)
+				{
+					throw std::runtime_error("Property value type mismatch");
+				}
+
+				TOwner* Owner = static_cast<TOwner*>(Object);
+				Owner->*Member = std::get<TValue>(value);
 			};
 	}
 
