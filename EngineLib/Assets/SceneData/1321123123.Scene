@@ -1,5 +1,5 @@
 {
-  "NextUUID" : 7,
+  "NextUUID" : 10,
   "Version" : 0,
   "World" : {
     "ClassName" : "UWorld",
@@ -21,8 +21,7 @@
                   "mRelativeLocation" : [2.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mStaticMeshAssetKey" : "Engine/Primitives/Cube",
-                  "mTextureName" : "Assets/Textures/CubeTextureSample.dds",
+                  "mStaticMeshAssetKey" : "Engine/Primitives/CubeMesh",
                   "mbShowBoundingBox" : true,
                   "mbUseTexture" : false,
                   "mePrimitive" : "StaticMesh"
@@ -57,11 +56,10 @@
                   "Name" : "UStaticMeshComponent",
                   "UUID" : 4,
                   "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mRelativeLocation" : [-2.000000, -16.091413, 0.000000],
+                  "mRelativeLocation" : [-2.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mStaticMeshAssetKey" : "Engine/Primitives/Sphere",
-                  "mTextureName" : "Assets/Textures/EarthTexture.dds",
+                  "mStaticMeshAssetKey" : "Engine/Primitives/SphereMesh",
                   "mbShowBoundingBox" : true,
                   "mbUseTexture" : false,
                   "mePrimitive" : "StaticMesh"
@@ -83,6 +81,46 @@
                 }
               }],
             "mRootComponentUUID" : 4
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Name" : "EarthActor",
+            "UUID" : 8,
+            "mComponents" : [{
+                "ClassName" : "USphereComponent",
+                "ParentUUID" : -1,
+                "Properties" : {
+                  "Name" : "USphereComponent",
+                  "UUID" : 7,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mSpinSpeed" : 90.000000,
+                  "mStaticMeshAssetKey" : "Engine/Primitives/SphereMesh",
+                  "mbShowBoundingBox" : true,
+                  "mbSpin" : true,
+                  "mbUseTexture" : true,
+                  "mePrimitive" : "StaticMesh"
+                }
+              }, {
+                "ClassName" : "UNameComponent",
+                "ParentUUID" : 7,
+                "Properties" : {
+                  "Name" : "UNameComponent",
+                  "UUID" : 9,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mNameText" : "Name: EarthActor, UUID: 8",
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbShowBoundingBox" : true,
+                  "mbUseTexture" : false,
+                  "mePrimitive" : "BillboardQuad"
+                }
+              }],
+            "mRootComponentUUID" : 7
           }
         }]
     }

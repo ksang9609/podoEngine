@@ -1,5 +1,12 @@
-﻿#pragma once
+﻿// EngineLib/Core/Object/PropertyInfo.h
 
+#pragma once
+
+#include <functional>
+#include <type_traits>
+
+#include "Core/enum.h"
+#include "Core/PropertyEnum.h"
 #include "Engine/Serialization/PropertyJson.h"
 
 namespace json
@@ -9,37 +16,61 @@ namespace json
 
 class UObject;
 
+
 struct FPropertyInfo
 {
+	using SerializeFunc = void (*)(const FPropertyInfo& Property, const UObject* Object, json::JSON& OutProperties);
+	using DeserializeFunc = void (*)(const FPropertyInfo& Property, UObject* Object, const json::JSON& InProperties);
+	using GetValueFunc = FPropertyValue(*)(const UObject* Object);
+
 	const char* JsonKey = nullptr;
 
-	void (*Serialize)(
-		const FPropertyInfo& Property,
-		const UObject* Object,
-		json::JSON& OutProperties) = nullptr;
+	EPropertyType PropertyType = EPropertyType::None;
+	EPropertyFlags PropertyFlags = EPropertyFlags::Serializable;
 
-	void (*Deserialize)(
-		const FPropertyInfo& Property,
-		UObject* Object,
-		const json::JSON& InProperties) = nullptr;
+	GetValueFunc GetValue = nullptr;
+
+	/* (De)Serialize function */
+	SerializeFunc Serialize = nullptr;
+	DeserializeFunc Deserialize = nullptr;
 };
 
-#define REFLECT_PROPERTY(OwnerType, MemberName)                 \
+#define REFLECT_PROPERTY(OwnerType, MemberName, ...)                 \
     MakeProperty<                                               \
         OwnerType,                                              \
         decltype(OwnerType::MemberName),                        \
         &OwnerType::MemberName                                  \
->(#MemberName)
+>(#MemberName, ##__VA_ARGS__)
 
 template<
 	typename TOwner,
 	typename TValue,
 	TValue TOwner::* Member>
-FPropertyInfo MakeProperty(const char* JsonKey)
+FPropertyInfo MakeProperty(const char* JsonKey, EPropertyFlags PropertyFlags = EPropertyFlags::Serializable)
 {
 	FPropertyInfo Property;
 
 	Property.JsonKey = JsonKey;
+	Property.PropertyFlags = PropertyFlags;
+
+	// Skip GetValue if TValue is not constructible from const TValue&
+	if constexpr (
+		std::is_constructible_v<FPropertyValue,
+		std::in_place_type_t<TValue>, const TValue&>)
+	{
+		Property.GetValue =
+			[](const UObject* Object) -> FPropertyValue
+			{
+				const TOwner* Owner = static_cast<const TOwner*>(Object);
+
+				return FPropertyValue{
+					std::in_place_type<TValue>,
+					Owner->*Member
+				};
+			};
+	}
+
+	Property.PropertyType = GetPropertyType<TValue>();
 
 	Property.Serialize =
 		[](const FPropertyInfo& Property,

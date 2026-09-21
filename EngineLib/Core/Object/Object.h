@@ -31,6 +31,37 @@ struct FClassInfo
 		DeclaredProperties(declaredProperties) {
 	}
 
+	template<typename TVisitor>
+	void ForEachProperty(TVisitor&& Visitor) const
+	{
+		if (SuperClass)
+		{
+			SuperClass->ForEachProperty(Visitor);
+		}
+
+		for (const FPropertyInfo& property : DeclaredProperties)
+		{
+			Visitor(property);
+		}
+	}
+
+	const FPropertyInfo* FindProperty(std::string_view Key) const
+	{
+		// Find property in the current class's declared properties
+		for (const FPropertyInfo& property : DeclaredProperties)
+		{
+			if (property.JsonKey && Key == std::string_view(property.JsonKey))
+			{
+				return &property;
+			}
+		}
+
+		// If not found, check the superclass
+		return SuperClass ? SuperClass->FindProperty(Key) : nullptr;
+	}
+
+
+
 	UObject* CreateInstance() const;
 
 private:
