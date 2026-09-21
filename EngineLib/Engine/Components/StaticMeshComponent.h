@@ -2,6 +2,12 @@
 
 #include "Rendering/Mesh/StaticMesh.h"
 
+struct FMaterialOverride
+{
+	bool bIsSet = false;
+	FMaterial Material;
+};
+
 class UStaticMeshComponent : public UMeshComponent
 {
 	DECLARE_OBJECT(UStaticMeshComponent, UMeshComponent)
@@ -22,11 +28,25 @@ class UStaticMeshComponent : public UMeshComponent
 	const FName& GetStaticMeshAssetKey() const { return mStaticMeshRef->GetAssetPathFileName(); }
 
 
+	const FStaticMesh* GetStaticMeshAsset() const;
+
+	const FMaterial* GetMaterial(int32 slotIndex) const;
+	bool SetMaterial(int32 slotIndex, const FMaterial& material);
+	bool ClearMaterialOverride(int32 slotIndex);
+
+
 protected:
 	virtual FRenderInfo makeRenderInfo() const override;
 
 private:
+	void resetMaterialOverrides();
+
+private:
 	const UStaticMesh* mStaticMeshRef = nullptr;
 	FName mStaticMeshAssetKey;
+
+	// 인덱스는 FStaticMesh::MaterialSlots 인덱스와 동일하다.
+	TArray<FMaterialOverride> mMaterialOverrides;
+
 	FName mTextureName;
 };

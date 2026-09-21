@@ -364,40 +364,37 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 		for (const FStaticMeshSection& section : renderInfo->StaticMesh->Sections)
 		{
 
+			const FMaterial* material = nullptr;
+
+			if (section.MaterialSlotIndex >= 0 && section.MaterialSlotIndex < renderInfo->Materials.Num())
+			{
+				material = &renderInfo->Materials[section.MaterialSlotIndex];
+			}
+
 			ID3D11ShaderResourceView* diffuseTexture = nullptr;
 			ID3D11ShaderResourceView* normalTexture = nullptr;
 			ID3D11ShaderResourceView* specularTexture = nullptr;
-			const FObjMaterialInfo* material = nullptr;
 
-			if (section.MaterialIndex >= 0 &&
-				section.MaterialIndex < renderInfo->StaticMesh->Materials.Num())
+			if (material)
 			{
-				material = &renderInfo->StaticMesh->Materials[section.MaterialIndex];
+				if(material->DiffuseTexture.DisplayIndex >= 0)
+				{
+					diffuseTexture = resources.FindTextureOrAdd(material->DiffuseTexture);
+				}
+				if (material->NormalTexture.DisplayIndex >= 0)
+				{
+					normalTexture = resources.FindTextureOrAdd(material->NormalTexture);
+				}
+
+				if (material->SpecularTexture.DisplayIndex >= 0)
+				{
+					specularTexture = resources.FindTextureOrAdd(material->SpecularTexture);
+				}
 			}
 
-			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+			if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
 			{
-				// OBJ/MTL에 map_Kd가 있으면 우선 사용
-				if (material &&
-					material->DiffuseTexturePath.Len() > 0)
-				{
-					diffuseTexture = resources.FindTextureOrAdd(FName(material->DiffuseTexturePath));
-				}
-				if (material && material->NormalTexturePath.Len() > 0)
-				{
-					normalTexture = resources.FindTextureOrAdd(FName(material->NormalTexturePath));
-				}
-
-				if (material && material->SpecularPath.Len() > 0)
-				{
-					specularTexture = resources.FindTextureOrAdd(FName(material->SpecularPath));
-				}
-
-				//// MTL 텍스처가 없으면 기존 컴포넌트 텍스처 사용
-				//if (diffuseTexture == nullptr)
-				//{
-				//	diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
-				//}
+				diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
 			}
 
 			// 아무 텍스처도 없으면 흰색 텍스처
@@ -425,7 +422,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 				diffuseTexture,
 				normalTexture,
 				specularTexture,
-				&resources.GetSamplerState(SST_Default),
+				&resources.GetSamplerState(SST_Wrap),
 				buffer->IndexBuffer.Get(),
 				section.IndexCount,
 				section.StartIndex);

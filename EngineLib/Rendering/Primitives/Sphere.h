@@ -3105,17 +3105,19 @@ inline FStaticMesh SphereMesh = {
 	.Vertices = SphereNormal_vertices,
 	.Indices = Sphere_indices,
 
-	.Materials = {
+	.MaterialSlots = {
 		{
 			.Name = "SphereMaterial",
-			.DiffuseTexturePath = "Assets/Textures/EarthTexture.dds",
+			.DefaultMaterial = {
+				.DiffuseTexture = "Assets/Textures/EarthTexture.dds",
+			}
 		}
 	},
 
 	.Sections = {
 		{
 			.Name = "SphereSection",
-			.MaterialIndex = 0,
+			.MaterialSlotIndex = 0,
 			.StartIndex = 0,
 			.IndexCount = 2400,
 			.GroupIndex = 0,

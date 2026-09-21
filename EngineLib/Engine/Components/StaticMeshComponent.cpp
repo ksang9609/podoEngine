@@ -51,6 +51,7 @@ void UStaticMeshComponent::Initialize(
 		? staticMeshOrNull->GetAssetPathFileName()
 		: FName();
 	mTextureName = textureName;
+	resetMaterialOverrides();
 
 	mLocalBounds = FBoundingBox{};
 
@@ -67,9 +68,63 @@ void UStaticMeshComponent::Initialize(
 void UStaticMeshComponent::SetStaticMesh(const UStaticMesh& staticMeshRef)
 {
 	mStaticMeshRef = &staticMeshRef;
+	resetMaterialOverrides();
 	mStaticMeshAssetKey = staticMeshRef.GetAssetPathFileName();
 
 	mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);
+}
+
+const FStaticMesh* UStaticMeshComponent::GetStaticMeshAsset() const
+{
+	return mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
+}
+
+const FMaterial* UStaticMeshComponent::GetMaterial(int32 slotIndex) const
+{
+	const FStaticMesh* mesh = GetStaticMeshAsset();
+
+	if (!mesh || slotIndex < 0 || slotIndex >= mesh->MaterialSlots.Num())
+	{
+		return nullptr;
+	}
+
+	if (slotIndex < mMaterialOverrides.Num())
+	{
+		const FMaterialOverride& materialOverride = mMaterialOverrides[slotIndex];
+
+		if (materialOverride.bIsSet)
+		{
+			return &materialOverride.Material;
+		}
+	}
+
+	return &mesh->MaterialSlots[slotIndex].DefaultMaterial;
+}
+
+bool UStaticMeshComponent::SetMaterial(int32 slotIndex, const FMaterial& material)
+{
+	if (slotIndex < 0 || slotIndex >= mMaterialOverrides.Num())
+	{
+		return false;
+	}
+
+	FMaterialOverride& materialOverride = mMaterialOverrides[slotIndex];
+
+	materialOverride.bIsSet = true;
+	materialOverride.Material = material;
+
+	return true;
+}
+
+bool UStaticMeshComponent::ClearMaterialOverride(int32 slotIndex)
+{
+	if (slotIndex < 0 || slotIndex >= mMaterialOverrides.Num())
+	{
+		return false;
+	}
+
+	mMaterialOverrides[slotIndex] = FMaterialOverride{};
+	return true;
 }
 
 FRenderInfo UStaticMeshComponent::makeRenderInfo() const
@@ -80,10 +135,44 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 	renderInfo.TextureName = mTextureName;
 	renderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
 
+	if (renderInfo.StaticMesh)
+	{
+		renderInfo.Materials.Reserve(renderInfo.StaticMesh->MaterialSlots.Num());
+
+		for (int32 slotIndex = 0; slotIndex < renderInfo.StaticMesh->MaterialSlots.Num(); ++slotIndex)
+		{
+			const FMaterial* material = GetMaterial(slotIndex);
+
+			if (material)
+			{
+				renderInfo.Materials.Add(*material);
+			}
+		}
+	}
+
 	return renderInfo;
 }
 
-static FBoundingBox calculateBounds(const TArray<FNormalVertex> vertices)
+void UStaticMeshComponent::resetMaterialOverrides()
+{
+	mMaterialOverrides.Reset(0);
+
+	const FStaticMesh* mesh = GetStaticMeshAsset();
+	if (!mesh)
+	{
+		return;
+	}
+
+	mMaterialOverrides.Reserve(mesh->MaterialSlots.Num());
+
+	for (int32 i = 0; i < mesh->MaterialSlots.Num(); ++i)
+	{
+		mMaterialOverrides.Add(FMaterialOverride{});
+	}
+}
+
+static FBoundingBox calculateBounds(
+	const TArray<FNormalVertex> vertices)
 {
 	FBoundingBox result{};
 	result.min = vertices[0].pos;
