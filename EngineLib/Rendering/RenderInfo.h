@@ -5,6 +5,8 @@
 #include "Core/Math/FBoundingBox.h"
 #include "Core/Math/Transform.h"
 #include "Core/Object/Object.h"
+#include "../Rendering/Mesh/Material.h"
+
 
 struct FTextMesh;
 struct FSubUVMesh;
@@ -23,6 +25,7 @@ struct FRenderInfo
 	const FTextMesh* Textmesh;
 	const FSubUVMesh* SubUVMesh;
 	const FStaticMesh* StaticMesh;
+	TArray<FMaterial> Materials; 
 
 	// For particle rendering
 	int32 numRows;

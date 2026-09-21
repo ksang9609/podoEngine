@@ -407,3 +407,5 @@ imgui.ini
 *.slnx
 *.vcxproj
 *.vcxproj.*
+
+!**/Assets/**/*.obj

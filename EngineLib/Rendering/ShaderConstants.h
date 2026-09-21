@@ -91,3 +91,20 @@ struct FFontConstants
 	FMatrix ViewProjection;
 	FLinearColor Tint;
 };
+
+/* Hightlight */
+struct alignas(16) FMaskConstants
+{
+	FMatrix World;
+	FMatrix ViewProjection;
+};
+
+struct alignas(16) FOutlineConstants
+{
+	FLinearColor OutlineColor;
+
+	int ViewMin[2];
+	int ViewMax[2];
+
+	int RadiusPixels;
+};

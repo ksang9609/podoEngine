@@ -9,9 +9,17 @@
 struct FNormalVertex;
 struct FStaticMesh;
 
+// 슬롯 이름은 OBJ의 usemtl과 연결하기 위해 매시가 소유한다.
+struct FMaterialSlot
+{
+	FString Name;
+	FMaterial DefaultMaterial;
+};
+
 struct FObjImportResult
 {
 	std::unique_ptr<FStaticMesh> meshData;
+	TArray<FMaterialSlot> materialSlots;
 };
 
 // f v1/vt1/vn1
@@ -35,7 +43,7 @@ struct FObjFace
 
 struct FObjFaceGroup
 {
-	int32 MaterialIndex = -1;
+	int32 MaterialSlotIndex = -1;
 	int32 GroupIndex = -1;
 
 	uint32 FirstFaceIndex = 0;
@@ -49,7 +57,7 @@ struct FObjInfo
 	TArray<FVector> Normals;
 
 	TArray<FObjFace> Faces;
-	TArray<FObjMaterialInfo> Materials;
+	TArray<FMaterialSlot> MaterialSlots;
 	TArray<FString> GroupNames;
 	TArray<FObjFaceGroup> FaceGroups;
 };
@@ -71,7 +79,7 @@ private:
 	static bool parseObjFile(const FString& fileName, FObjInfo& outObjInfo);
 
 	// Parsing Mtl File 에서 FObjMaterialInfo
-	static bool parseMtlFile(const std::filesystem::path& filePath, TArray<FObjMaterialInfo>& outMaterials);
+	static bool parseMtlFile(const std::filesystem::path& filePath, TArray<FMaterialSlot>& outMaterials);
 
 	//FObjInfo 에서 FStaticMesh로 변환
 	static void convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& outStaticMesh);

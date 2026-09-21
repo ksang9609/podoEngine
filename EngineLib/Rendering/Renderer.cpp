@@ -49,6 +49,10 @@ void URenderer::Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManager
 		createDepthStencilBuffer(
 			backBufferDesc.Width,
 			backBufferDesc.Height);
+
+		createSelectionMaskResources(
+			backBufferDesc.Width,
+			backBufferDesc.Height);
 	}
 }
 
@@ -128,6 +132,39 @@ void URenderer::createDepthStencilBuffer(UINT width, UINT height)
 	dsvdesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
 	mDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), &dsvdesc, &mDepthStencilView);
+}
+
+void URenderer::createSelectionMaskResources(UINT width, UINT height)
+{
+	assert(width != 0 && height != 0);
+
+	D3D11_TEXTURE2D_DESC desc = {
+		.Width = width,
+		.Height = height,
+		.MipLevels = 1,
+		.ArraySize = 1,
+		.Format = DXGI_FORMAT_R8_UNORM,
+		.SampleDesc = {
+			.Count = 1,
+		},
+		.Usage = D3D11_USAGE_DEFAULT,
+
+		.BindFlags = // Used for highlighting shader
+			D3D11_BIND_RENDER_TARGET |
+			D3D11_BIND_SHADER_RESOURCE,
+	};
+
+	mDevice->CreateTexture2D(&desc, nullptr, &mSelectionMaskTexture);
+
+	mDevice->CreateRenderTargetView(
+		mSelectionMaskTexture.Get(),
+		nullptr,
+		&mSelectionMaskRTV);
+
+	mDevice->CreateShaderResourceView(
+		mSelectionMaskTexture.Get(),
+		nullptr,
+		&mSelectionMaskSRV);
 }
 
 void URenderer::releaseFrameBuffer()
@@ -572,6 +609,35 @@ void URenderer::prepareStaticMeshShader()
 	mDeviceContext->PSSetConstantBuffers(0, 1, &constantBuffer);
 }
 
+void URenderer::prepareHighlightMaskShader()
+{
+	assert(mGpuResourceManagerRef && mDeviceContext);
+
+	auto& resources = *mGpuResourceManagerRef;
+
+	mDeviceContext->VSSetShader(&resources.GetVertexShader(VST_HighlightMask), nullptr, 0);
+	mDeviceContext->PSSetShader(&resources.GetPixelShader(PST_HighlightMask), nullptr, 0);
+	mDeviceContext->IASetInputLayout(&resources.GetInputLayout(ILT_Position));
+
+	auto constantBuffer = &resources.GetConstantBuffer(CBT_HighlightMask);
+	mDeviceContext->VSSetConstantBuffers(0, 1, &constantBuffer);
+}
+
+void URenderer::prepareHighlightOutlineShader()
+{
+	assert(mGpuResourceManagerRef && mDeviceContext);
+	auto& resources = *mGpuResourceManagerRef;
+
+	mDeviceContext->VSSetShader(&resources.GetVertexShader(VST_HighlightOutline), nullptr, 0);
+	mDeviceContext->PSSetShader(&resources.GetPixelShader(PST_HighlightOutline), nullptr, 0);
+	mDeviceContext->IASetInputLayout(nullptr);
+
+	auto constantBuffer = &resources.GetConstantBuffer(CBT_HighlightOutline);
+	//mDeviceContext->VSSetConstantBuffers(0, 1, &constantBuffer);
+	mDeviceContext->PSSetConstantBuffers(0, 1, &constantBuffer);
+}
+
+
 void URenderer::RenderSimplePrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
 {
 	UINT offset = 0;
@@ -817,8 +883,9 @@ void URenderer::RenderLines(const FVertexSimple* vertices, uint32 numVertices, c
 	mDeviceContext->DrawIndexed(numindices, 0, 0);
 }
 
-void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix,
-	FMatrix OutlineMatrix, const FMatrix originalMatrix,
+void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix viewProjectionMatrix,
+	const FMatrix originalMatrix,
+	int viewMin[2], int viewMax[2],
 	ID3D11Buffer* indexBuffer, uint32 indexCount)
 {
 	assert(mGpuResourceManagerRef && mDeviceContext);
@@ -828,29 +895,65 @@ void URenderer::RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mView
 	auto* defaultWhiteTexture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
 	auto& samplerState = resources.GetSamplerState(ESamplerStateType::SST_Clamp);
 
-	// (a) 스텐실에 1 마킹. 색은 쓰지 않으므로 화면 변화 없음.
-	//     다른 오브젝트에 가려진 부분도 반드시 마킹해야 한다. 여기서 빠지면
-	//     (b)의 != 1 조건을 통과해 버려서 겹친 영역 전체가 단색으로 칠해진다.
-	mDeviceContext->OMSetBlendState(&resources.GetBlendState(BST_NoColorWrite), nullptr, 0xffffffff);
-	mDeviceContext->OMSetDepthStencilState(&resources.GetDepthStencilState(DSS_StencilMark), 1);
-	//UpdateSimpleConstant(originalMatrix, mViewProjectionMatrix);
-	//RenderSimplePrimitive(pBuffer, Num);
-	UpdateTextureConstant(originalMatrix, mViewProjectionMatrix, FLinearColor(0.f, 0.f, 0.f, 0.f), FVector2(1.f, 1.f), FVector2(0.f, 0.f));
-	RenderStaticMesh(pBuffer, Num, defaultWhiteTexture,nullptr,nullptr, &samplerState, indexBuffer, indexCount);
+	/* Render Mask */
+	{
+		prepareHighlightMaskShader();
 
-	// (b) 확대판을 단색으로. 스텐실 != 1 인 곳만 통과 -> 테두리
-	mDeviceContext->OMSetBlendState(&resources.GetBlendState(BST_Default), nullptr, 0xffffffff);
-	mDeviceContext->OMSetDepthStencilState(&resources.GetDepthStencilState(DSS_StencilOutline), 1);
-	//UpdateSimpleConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f));
-	//RenderSimplePrimitive(pBuffer, Num);
-	UpdateTextureConstant(OutlineMatrix, mViewProjectionMatrix, FLinearColor(1.f, 0.6f, 0.f, 1.f), FVector2(1.f, 1.f), FVector2(0.f, 0.f));
-	RenderStaticMesh(pBuffer, Num, defaultWhiteTexture, nullptr, nullptr, &samplerState, indexBuffer, indexCount);
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		mDeviceContext->PSSetShaderResources(0, 1, &nullSRV);
+		mDeviceContext->OMSetRenderTargets(1, mSelectionMaskRTV.GetAddressOf(), nullptr);
+		const float clearColor[4] = { 0.f, 0.f, 0.f, 0.f };
+		mDeviceContext->ClearRenderTargetView(mSelectionMaskRTV.Get(), clearColor);
+
+		UpdateHighlightMaskConstant(originalMatrix, viewProjectionMatrix);
+
+		// Render the object to the selection mask
+		UINT offset = 0;
+		auto* maskBuffer = &resources.GetConstantBuffer(CBT_HighlightMask);
+		mDeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &StrideNormalVertex, &offset);
+
+		mDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		mDeviceContext->DrawIndexed(indexCount, 0, 0);
+	}
+
+	/* Render Outline */
+	{
+		prepareHighlightOutlineShader();
+
+		mDeviceContext->OMSetRenderTargets(1, mFrameBufferRTV.GetAddressOf(), nullptr);
+
+		const FLinearColor outlineColor = FLinearColor(1.f, 0.6f, 0.f, 1.f); // Orange color for the outline
+		constexpr int outlineThickness = 3; // Thickness of the outline in pixels
+
+		UpdateHighlightOutlineConstant(
+			outlineColor,
+			viewMin,
+			viewMax,
+			outlineThickness
+			);
+
+		// Render the outline using the selection mask
+		mDeviceContext->PSSetShaderResources(0, 1, mSelectionMaskSRV.GetAddressOf());
+		// Vertex buffer is not needed for full-screen quad rendering
+
+		mDeviceContext->Draw(3, 0); // Draw a full-screen triangle
+	}
+
+	/* Reset State */
+	mDeviceContext->OMSetRenderTargets(1, mFrameBufferRTV.GetAddressOf(), mDepthStencilView.Get());
 }
 
 void URenderer::releaseDepthStencilBuffer()
 {
 	mDepthStencilView.Reset();
 	mDepthStencilBuffer.Reset();
+}
+
+void URenderer::releaseSelectionMaskResources()
+{
+	mSelectionMaskRTV.Reset();
+	mSelectionMaskSRV.Reset();
 }
 
 void URenderer::UpdateSimpleConstant(FMatrix world, FMatrix viewProjection, FLinearColor tint)
@@ -1112,6 +1215,39 @@ bool URenderer::UpdateUnicodeFontBuffer(const FTextMesh& textMesh)
 	return true;
 }
 
+void URenderer::UpdateHighlightMaskConstant(FMatrix world, FMatrix viewProjection)
+{
+	assert(mGpuResourceManagerRef && mDeviceContext);
+	auto& constantBuffer = mGpuResourceManagerRef->GetConstantBuffer(CBT_HighlightMask);
+	D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+	mDeviceContext->Map(&constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+	FMaskConstants* constants = (FMaskConstants*)constantbufferMSR.pData;
+	{
+		constants->World = world;
+		constants->ViewProjection = viewProjection;
+	}
+	mDeviceContext->Unmap(&constantBuffer, 0);
+}
+
+void URenderer::UpdateHighlightOutlineConstant(FLinearColor outlineColor,
+	int viewMin[2], int viewMax[2], int outlineThickness)
+{
+	assert(mGpuResourceManagerRef && mDeviceContext);
+	auto& constantBuffer = mGpuResourceManagerRef->GetConstantBuffer(CBT_HighlightOutline);
+	D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+	mDeviceContext->Map(&constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+	FOutlineConstants* constants = (FOutlineConstants*)constantbufferMSR.pData;
+	{
+		constants->OutlineColor = outlineColor;
+		constants->ViewMin[0] = viewMin[0];
+		constants->ViewMin[1] = viewMin[1];
+		constants->ViewMax[0] = viewMax[0];
+		constants->ViewMax[1] = viewMax[1];
+		constants->RadiusPixels = outlineThickness;
+	}
+	mDeviceContext->Unmap(&constantBuffer, 0);
+}
+
 void URenderer::UpdateBlendState(EBlendStateType blendState)
 {
 	assert(mGpuResourceManagerRef && mDeviceContext);
@@ -1152,6 +1288,7 @@ void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float vie
 	mDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 	releaseFrameBuffer();
 	releaseDepthStencilBuffer();
+	releaseSelectionMaskResources();
 
 	HRESULT hr = mSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
 	if (FAILED(hr)) return;
@@ -1164,6 +1301,7 @@ void URenderer::OnResize(UINT width, UINT height, float viewportWidth, float vie
 	//상태는 이전에 생성한 걸 그대로 재사용
 	createFrameBuffer();
 	createDepthStencilBuffer(width, height);
+	createSelectionMaskResources(width, height);
 }
 
 void URenderer::RenderFullscreenTexture(ID3D11ShaderResourceView* texture)

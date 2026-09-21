@@ -246,7 +246,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::CubeMesh, "Assets/Textures/CubeTextureSample.dds");
+			BuiltinAssets::CubeMesh, "");
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
@@ -256,7 +256,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::SphereMesh, "Assets/Textures/EarthTexture.dds");
+			BuiltinAssets::SphereMesh, "");
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
 	}
 
@@ -277,58 +277,72 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
 	//Input Threads
-		WindowApplication.ProcessDeferredEvents();
 
-		FViewport* activeViewport = mEditorViewportManager->getActiveViewport();
-		if (activeViewport != nullptr)
+	WindowApplication.ProcessDeferredEvents();
+
+	FViewport* activeViewport = mEditorViewportManager->getActiveViewport();
+	if (activeViewport != nullptr)
+	{
+		viewportClient = &activeViewport->getClient();
+	}
+
+	//ImGui Input
+	{
+		//mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
+	}
+
+	if (viewportClient != nullptr)
+	{
+		FEditorCommands editorCommands;
+		mEditorUIManager->UpdateGui({
+			*FrameTimer,
+			*mSceneManager,
+			*viewportClient,
+			*mGraphicsManager,
+			*mFileManager,
+			*mAssetManager,
+			*mEditorViewportManager,
+			}, editorCommands);
+		processEditorCommands(editorCommands);
+
+	}
+
+	// UI에서 활성 Viewport가 변경되었을 수 있으므로 다시 조회한다.
+	activeViewport = mEditorViewportManager->getActiveViewport();
+
+	if (activeViewport != nullptr)
+	{
+		viewportClient = &activeViewport->getClient();
+	}
+	else
+	{
+		viewportClient = nullptr;
+	}
+
+	//Viewports
+	const uint8 viewportCount = mEditorViewportManager->getViewportCount();
+	for (uint8 i = 0; i < viewportCount; i++)
+	{
+		FViewport* viewport = mEditorViewportManager->getViewportAt(i);
+		if (viewport == nullptr)
 		{
-			viewportClient = &activeViewport->getClient();
+			continue;
 		}
+		viewport->getClient().updateProjectionTransition(deltaTime);
+	}
 
-		//ImGui Input
+	//활성 Viewport의 카메라 입력과 RayCast 처리
+	if (activeViewport != nullptr)
+	{
+		FSceneView activeSceneView = activeViewport->buildSceneView();
+
+		if (activeSceneView.isValid())
 		{
-			//mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
+			const FViewportWindowState& windowState = activeViewport->getWindowState();
+			activeViewport->getClient().Update(deltaTime, activeSceneView.Rect, mSceneManager, windowState.bImageHovered, windowState.bFocused);
 		}
+	}
 
-		if (viewportClient != nullptr)
-		{
-			FEditorCommands editorCommands;
-			mEditorUIManager->UpdateGui({
-				*FrameTimer,
-				*mSceneManager,
-				*viewportClient,
-				*mGraphicsManager,
-				*mFileManager,
-				*mAssetManager,
-				*mEditorViewportManager,
-				}, editorCommands);
-			processEditorCommands(editorCommands);
-
-		}
-
-		// UI에서 활성 Viewport가 변경되었을 수 있으므로 다시 조회한다.
-		activeViewport = mEditorViewportManager->getActiveViewport();
-
-		if (activeViewport != nullptr)
-		{
-			viewportClient = &activeViewport->getClient();
-		}
-		else
-		{
-			viewportClient = nullptr;
-		}
-
-		//Viewports
-		const uint8 viewportCount = mEditorViewportManager->getViewportCount();
-		for (uint8 i = 0; i < viewportCount; i++)
-		{
-			FViewport* viewport = mEditorViewportManager->getViewportAt(i);
-			if (viewport == nullptr)
-			{
-				continue;
-			}
-			viewport->getClient().updateProjectionTransition(deltaTime);
-		}
 
 	//Physics Threads
 	{
@@ -340,18 +354,6 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		// 레이캐스트보다 먼저 돌려야 한다.
 		// 여기서 RenderInfos 가 갱신되고, RayCast 가 그걸 읽는다.
 		mSceneManager->Update(deltaTime);
-	}
-
-	//활성 Viewport의 카메라 입력과 RayCast 처리
-	if (activeViewport != nullptr)
-	{
-		FSceneView activeSceneView = activeViewport->buildSceneView();
-
-		if (activeSceneView.isValid())
-		{
-			const FViewportWindowState& windowState = activeViewport->getWindowState();
-			activeViewport->getClient().Update(deltaTime, activeSceneView.Rect,mSceneManager, windowState.bImageHovered, windowState.bFocused);
-		}
 	}
 
 	//Render Threads
@@ -425,7 +427,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 			const TArray<FRenderInfo> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
 
-			mGraphicsManager->RenderGizmoView(gizmoRenderInfos,sceneView);
+			mGraphicsManager->RenderGizmoView(gizmoRenderInfos, sceneView);
 		}
 
 
@@ -651,7 +653,7 @@ void FEngineLoop::processEditorCommand(const FSetSelectedActorCommand& command)
 	}
 }
 
-void FEngineLoop::processEditorCommand(const FSetStaticMeshCommand& command)
+void FEngineLoop::processEditorCommand(const FSetStaticMeshComponentStaticMeshCommand& command)
 {
 	UStaticMeshComponent* staticMeshComponent = UObject::GetObjectByInternalIndex<UStaticMeshComponent>(command.ObjectID.InternalIndex);
 	if (!staticMeshComponent) return;
@@ -660,6 +662,15 @@ void FEngineLoop::processEditorCommand(const FSetStaticMeshCommand& command)
 	if (!staticMesh) return;
 
 	staticMeshComponent->SetStaticMesh(*staticMesh);
+}
+
+void FEngineLoop::processEditorCommand(const FSetStaticMeshComponentMaterialCommand& command)
+{
+	UStaticMeshComponent* staticMeshComponent = UObject::GetObjectByInternalIndex<UStaticMeshComponent>(command.ObjectID.InternalIndex);
+	if (!staticMeshComponent) return;
+	const UMaterial* material = mAssetManager->FindMaterialAssetOrNull(command.MaterialAssetKey);
+	if (!material) return;
+	staticMeshComponent->SetMaterial(command.MaterialSlotIndex, *material);
 }
 
 void FEngineLoop::processEditorCommand(const FSetComponentUseTextureCommand& command)
