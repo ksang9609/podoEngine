@@ -159,11 +159,7 @@ inline FStaticMesh CubeMesh = {
 	}
 };
 
-inline TArray<FMaterialSlot> CubeMaterialSlots = {
-	{
-		.Name = "CubeMaterial",
-		.DefaultMaterial = {	
-			.DiffuseTexture = FName("Assets/Textures/CubeTextureSample.dds")
-		},
-	}
+
+inline FMaterial CubeMaterial = {
+	.DiffuseTexture = FName("Assets/Textures/CubeTextureSample.dds")
 };

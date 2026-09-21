@@ -3116,11 +3116,6 @@ inline FStaticMesh SphereMesh = {
 	}
 };
 
-inline TArray<FMaterialSlot> SphereMaterialSlots = {
-	{
-		.Name = "SphereMaterial",
-		.DefaultMaterial = {
-			.DiffuseTexture = FName("Assets/Textures/EarthTexture.dds"),
-		}
-	}
+inline FMaterial SphereMaterial = {
+	.DiffuseTexture = FName("Assets/Textures/EarthTexture.dds"),
 };

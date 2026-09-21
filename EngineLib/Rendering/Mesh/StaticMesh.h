@@ -46,59 +46,24 @@ class UStaticMesh : public UObject
 	DECLARE_SERIALIZATION()
 public:
 	void Initialize() {};
-	void Initialize(FStaticMesh* inStaticMesh)
-	{
-		SetStaticMeshAsset(inStaticMesh);
-	}
+	void Initialize(FStaticMesh* inStaticMesh);
+	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh);
+	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh, TArray<const UMaterial*>&& inDefaultMaterialRefs);
+	const FName& GetAssetPathFileName() const;
 
-	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh, TArray<FMaterialSlot>&& inDefaultMaterials)
-	{
-		mStaticMeshAsset = std::move(inStaticMesh);
-		mDefaultMaterials = std::move(inDefaultMaterials);
-	}
+	void SetStaticMeshAsset(FStaticMesh* inStaticMesh);
 
-	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh)
-	{
-		SetStaticMeshAsset(std::move(inStaticMesh));
-	}
+	void SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh);
 
-	const FName& GetAssetPathFileName() const
-	{
-		return mStaticMeshAsset->PathFileName;
-	}
+	const FStaticMesh* GetStaticMeshAsset() const;
 
-	void SetStaticMeshAsset(FStaticMesh* inStaticMesh)
-	{
-		mStaticMeshAsset.reset(inStaticMesh);
-	}
+	const UMaterial* GetDefaultMaterialOrNull(int32 slotIndex) const;
 
-	void SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh)
-	{
-		mStaticMeshAsset = std::move(inStaticMesh);
-	}
-
-	const FStaticMesh* GetStaticMeshAsset() const
-	{
-		return mStaticMeshAsset.get();
-	}
-
-	const FMaterialSlot* GetMaterialSlot(int32 slotIndex) const
-	{
-		if (slotIndex < 0 || slotIndex >= mDefaultMaterials.Num())
-		{
-			return nullptr;
-		}
-		return &mDefaultMaterials[slotIndex];
-	}
-
-	const TArray<FMaterialSlot>& GetMaterialSlots() const
-	{
-		return mDefaultMaterials;
-	}
+	const TArray<const UMaterial*>& GetDefaultMaterials() const;
 
 private:
 	std::unique_ptr<FStaticMesh> mStaticMeshAsset;
 
-	TArray<FMaterialSlot> mDefaultMaterials;
+	TArray<const UMaterial*> mDefaultMaterialRefs;
 };
 

@@ -23,14 +23,15 @@ public:
 	/* Assets */
 	const UStaticMesh* FindStaticMeshAssetOrNull(const FName& assetName) const;
 	const UStaticMesh& FindStaticMeshAssetOrAdd(const FName& assetName);
-
+	const UMaterial* FindMaterialAssetOrNull(const FName& assetName) const;
 
 	TArray<FName> GetAllStaticMeshAssetKeys() const;
+	TArray<FName> GetAllMaterialAssetKeys() const;
 
 private:
 	/* Assets */
 	TMap<FName, std::unique_ptr<UStaticMesh>> mStaticMeshAssets;
-	//TMap<FName, std::unique_ptr<UMaterial>> mMaterialAssets;
+	TMap<FName, std::unique_ptr<UMaterial>> mMaterialAssets;
 
 	void createBuiltinStaticMeshAssets();
 	bool createStaticMeshAsset(const FName& assetName);

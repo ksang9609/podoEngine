@@ -9,6 +9,13 @@
 struct FNormalVertex;
 struct FStaticMesh;
 
+// 슬롯 이름은 OBJ의 usemtl과 연결하기 위해 매시가 소유한다.
+struct FMaterialSlot
+{
+	FString Name;
+	FMaterial DefaultMaterial;
+};
+
 struct FObjImportResult
 {
 	std::unique_ptr<FStaticMesh> meshData;

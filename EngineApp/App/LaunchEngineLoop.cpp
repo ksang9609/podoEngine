@@ -656,7 +656,7 @@ void FEngineLoop::processEditorCommand(const FSetSelectedActorCommand& command)
 	}
 }
 
-void FEngineLoop::processEditorCommand(const FSetStaticMeshCommand& command)
+void FEngineLoop::processEditorCommand(const FSetStaticMeshComponentStaticMeshCommand& command)
 {
 	UStaticMeshComponent* staticMeshComponent = UObject::GetObjectByInternalIndex<UStaticMeshComponent>(command.ObjectID.InternalIndex);
 	if (!staticMeshComponent) return;
@@ -665,6 +665,15 @@ void FEngineLoop::processEditorCommand(const FSetStaticMeshCommand& command)
 	if (!staticMesh) return;
 
 	staticMeshComponent->SetStaticMesh(*staticMesh);
+}
+
+void FEngineLoop::processEditorCommand(const FSetStaticMeshComponentMaterialCommand& command)
+{
+	UStaticMeshComponent* staticMeshComponent = UObject::GetObjectByInternalIndex<UStaticMeshComponent>(command.ObjectID.InternalIndex);
+	if (!staticMeshComponent) return;
+	const UMaterial* material = mAssetManager->FindMaterialAssetOrNull(command.MaterialAssetKey);
+	if (!material) return;
+	staticMeshComponent->SetMaterial(command.MaterialSlotIndex, *material);
 }
 
 void FEngineLoop::processEditorCommand(const FSetComponentUseTextureCommand& command)

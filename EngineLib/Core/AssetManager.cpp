@@ -11,6 +11,8 @@
 #include <filesystem>
 #include <Editor/Console.h>
 #include <Rendering/Mesh/ObjImporter.h>
+#include "Rendering/Mesh/Material.h"
+#include "Rendering/Mesh/StaticMesh.h"
 
 FAssetManager::FAssetManager()
 {
@@ -64,24 +66,50 @@ const UStaticMesh& FAssetManager::FindStaticMeshAssetOrAdd(const FName& assetNam
 	throw std::runtime_error( std::string("Failed to find or create static mesh asset: ") + fileName.CStr());
 }
 
+const UMaterial* FAssetManager::FindMaterialAssetOrNull(const FName& assetName) const
+{
+	const std::unique_ptr<UMaterial>* foundAsset = mMaterialAssets.Find(assetName);
+	if (foundAsset)
+	{
+		return foundAsset->get();
+	}
+	return nullptr;
+}
+
 void FAssetManager::createBuiltinStaticMeshAssets()
 {
 	/* Cube */
+	std::unique_ptr<FMaterial> cubeMaterialData = std::make_unique<FMaterial>(CubeMaterial);
+	std::unique_ptr<UMaterial> cubeMaterialAsset(
+		FObjectFactory::ConstructObject<UMaterial>(BuiltinAssets::CubeMaterial, std::move(cubeMaterialData))
+	);
+	TArray<const UMaterial*> cubeDefaultMaterials;
+	cubeDefaultMaterials.Add(cubeMaterialAsset.get());
+
 	std::unique_ptr<FStaticMesh> cubeMeshData = std::make_unique<FStaticMesh>(CubeMesh);
 
 	std::unique_ptr<UStaticMesh> cubeMeshAsset = std::unique_ptr<UStaticMesh>(
-		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cubeMeshData), std::move(CubeMaterialSlots))
+		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cubeMeshData), std::move(cubeDefaultMaterials))
 	);
 
+	mMaterialAssets.Add(BuiltinAssets::CubeMaterial, std::move(cubeMaterialAsset));
 	mStaticMeshAssets.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshAsset));
 
 	/* Sphere */
+	std::unique_ptr<FMaterial> sphereMaterialData = std::make_unique<FMaterial>(SphereMaterial);
+	std::unique_ptr<UMaterial> sphereMaterialAsset(
+		FObjectFactory::ConstructObject<UMaterial>(BuiltinAssets::SphereMaterial, std::move(sphereMaterialData))
+	);
+	TArray<const UMaterial*> sphereDefaultMaterials;
+	sphereDefaultMaterials.Add(sphereMaterialAsset.get());
+
 	std::unique_ptr<FStaticMesh> sphereMeshData = std::make_unique<FStaticMesh>(SphereMesh);
 
 	std::unique_ptr<UStaticMesh> sphereMeshAsset = std::unique_ptr<UStaticMesh>(
-		FObjectFactory::ConstructObject<UStaticMesh>(std::move(sphereMeshData), std::move(SphereMaterialSlots))
+		FObjectFactory::ConstructObject<UStaticMesh>(std::move(sphereMeshData), std::move(sphereDefaultMaterials))
 	);
 
+	mMaterialAssets.Add(BuiltinAssets::SphereMaterial, std::move(sphereMaterialAsset));
 	mStaticMeshAssets.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshAsset));
 }
 
@@ -98,10 +126,28 @@ bool FAssetManager::createStaticMeshAsset(const FName& assetName)
 		return false;
 	}
 
+	// Create Material Assets
+	TArray<const UMaterial*> defaultMaterialRefs;
+	for (auto& materialSlot : imported.materialSlots)
+	{
+		const FName materialKey = FName(materialSlot.Name);
+		if (!mMaterialAssets.Contains(materialKey))
+		{
+			std::unique_ptr<FMaterial> materialData = std::make_unique<FMaterial>(materialSlot.DefaultMaterial);
+			std::unique_ptr<UMaterial> materialAsset = std::unique_ptr<UMaterial>(
+				FObjectFactory::ConstructObject<UMaterial>(materialKey, std::move(materialData))
+			);
+			defaultMaterialRefs.Add(materialAsset.get());
+			mMaterialAssets.Add(materialKey, std::move(materialAsset));
+		}
+	}
+
+	// Create Static Mesh Asset
 	imported.meshData->PathFileName = assetName;
 
-	std::unique_ptr<UStaticMesh> asset
-	( FObjectFactory::ConstructObject<UStaticMesh>(std::move(imported.meshData), std::move(imported.materialSlots)));
+	std::unique_ptr<UStaticMesh> asset(
+		FObjectFactory::ConstructObject<UStaticMesh>(std::move(imported.meshData), std::move(defaultMaterialRefs))
+	);
 
 	if (!asset)
 	{
@@ -118,3 +164,7 @@ TArray<FName> FAssetManager::GetAllStaticMeshAssetKeys() const
 	return mStaticMeshAssets.GetKeys();
 }
 
+TArray<FName> FAssetManager::GetAllMaterialAssetKeys() const
+{
+	return mMaterialAssets.GetKeys();
+}
