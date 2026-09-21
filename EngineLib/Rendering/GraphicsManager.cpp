@@ -832,6 +832,11 @@ FVector FGraphicsManager::GetPrimitiveCenter(FName meshName)
 	return FVector(0, 0, 0);
 }
 
+FVector GetMeshCenter(FBoundingBox bounds)
+{
+	return (bounds.min + bounds.max) * 0.5f;
+}
+
 // 테두리가 화면에서 차지할 두께(픽셀). 물체 크기와 카메라 거리 어느 쪽에도 영향받지 않는다.
 static constexpr float OUTLINE_PIXELS = 3.0f;
 
@@ -860,6 +865,11 @@ FVector FGraphicsManager::GetPrimitiveHalfExtent(FName meshName)
 	{
 		return FVector(0.5f, 0.5f, 0.5f);
 	}
+}
+
+FVector GetMeshHalfExtent(FBoundingBox bounds)
+{
+	return (bounds.max - bounds.min) * 0.5f;
 }
 
 float FGraphicsManager::GetGridWidth() const
@@ -901,8 +911,10 @@ void FGraphicsManager::renderHighLight(
 
 	mRenderer->PrepareHighlight();
 
-	const FVector center = GetPrimitiveCenter(renderInfo.MeshName);
-	const FVector halfExtent = GetPrimitiveHalfExtent(renderInfo.MeshName);
+	const FBoundingBox& bounds = renderInfo.LocalBounds;
+
+	const FVector center = GetMeshCenter(bounds);
+	const FVector halfExtent = GetMeshHalfExtent(bounds);
 	const FMatrix worldTransform =
 		renderInfo.GetTransformMatrix(view.cameraRotation);
 
