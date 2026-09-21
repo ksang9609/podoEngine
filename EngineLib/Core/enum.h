@@ -206,6 +206,8 @@ enum EContantBufferType
 	CBT_Font,
 	CBT_UnicodeFont,
 	CBT_Particle,
+	CBT_HighlightMask,
+	CBT_HighlightOutline,
 	CBT_Count,
 };
 
@@ -220,6 +222,8 @@ enum EVertexShaderType
 	VST_Particle,
 	VST_StaticMesh,
 	VST_LoadingScreen,
+	VST_HighlightMask,
+	VST_HighlightOutline,
 	VST_Count,
 };
 
@@ -234,11 +238,14 @@ enum EPixelShaderType
 	PST_Particle,
 	PST_StaticMesh,
 	PST_LoadingScreen,
+	PST_HighlightMask,
+	PST_HighlightOutline,
 	PST_Count,
 };
 
 enum EInputLayoutType
 {
+	ILT_Position,
 	ILT_PositionColor,
 	ILT_PositionTexture,
 	ILT_PositionColorMatrixTint,

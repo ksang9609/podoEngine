@@ -768,7 +768,18 @@ void FGpuResourceManager::createShadersAndInputLayout()
 	createVertexShaderFromFile(L"Shaders/ShaderLoadingScreen.hlsl", "mainVS", "vs_5_0", VST_LoadingScreen);
 	createPixelShaderFromFile(L"Shaders/ShaderLoadingScreen.hlsl", "mainPS", "ps_5_0", PST_LoadingScreen);
 
+	// Hightlight shader
+	auto maskCSO = createVertexShaderFromFile(L"Shaders/ShaderHighlight.hlsl", "mainVS", "vs_5_0", VST_HighlightMask);
+	createPixelShaderFromFile(L"Shaders/ShaderHighlight.hlsl", "mainPS", "ps_5_0", PST_HighlightMask);
+	createVertexShaderFromFile(L"Shaders/ShaderHighlight.hlsl", "outlineVS", "vs_5_0", VST_HighlightOutline);
+	createPixelShaderFromFile(L"Shaders/ShaderHighlight.hlsl", "outlinePS", "ps_5_0", PST_HighlightOutline);
+
 	/* Create input layouts */
+	const D3D11_INPUT_ELEMENT_DESC position[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
 	const D3D11_INPUT_ELEMENT_DESC positionColor[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -803,6 +814,10 @@ void FGpuResourceManager::createShadersAndInputLayout()
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
+
+	mDeviceRef->CreateInputLayout(position, ARRAYSIZE(position),
+		maskCSO->GetBufferPointer(), maskCSO->GetBufferSize(),
+		&mInputLayout[ILT_Position]);
 
 	mDeviceRef->CreateInputLayout(positionColor, ARRAYSIZE(positionColor),
 		simpleCSO->GetBufferPointer(), simpleCSO->GetBufferSize(),
@@ -1061,6 +1076,28 @@ void FGpuResourceManager::createConstantBuffers(float distanceRange)
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 		mDeviceRef->CreateBuffer(&bufferDesc, nullptr, &mConstantBuffer[CBT_Particle]);
+	}
+
+	/* Highlight */
+	// Mask
+	{
+		D3D11_BUFFER_DESC bufferDesc{
+			.ByteWidth = (sizeof(FMaskConstants) + 0xF) & 0xFFFFFFF0,
+			.Usage = D3D11_USAGE_DYNAMIC,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		};
+		mDeviceRef->CreateBuffer(&bufferDesc, nullptr, &mConstantBuffer[CBT_HighlightMask]);
+	}
+	// Outline
+	{
+		D3D11_BUFFER_DESC bufferDesc{
+			.ByteWidth = (sizeof(FOutlineConstants) + 0xF) & 0xFFFFFFF0,
+			.Usage = D3D11_USAGE_DYNAMIC,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		};
+		mDeviceRef->CreateBuffer(&bufferDesc, nullptr, &mConstantBuffer[CBT_HighlightOutline]);
 	}
 }
 

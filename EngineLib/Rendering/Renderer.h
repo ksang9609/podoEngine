@@ -20,6 +20,7 @@
 //static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 //static constexpr uint32 LINE_INDEX_CAPACITY = 16384;
 
+constexpr uint32 StridePosition = sizeof(FVector);
 constexpr uint32 StrideSimple = sizeof(FVertexSimple);
 constexpr uint32 StrideTextured = sizeof(FVertexTextured);
 constexpr uint32 StrideNormalVertex = sizeof(FNormalVertex);
@@ -78,6 +79,9 @@ public:
 		int32 numRows = 1, int32 numCols = 1, int32 currentFrame = 0, int32 nextFrame = 0, float frameRatio = 0.0f,
 		FLinearColor tint = FLinearColor(0, 0, 0, 0)
 	);
+	void UpdateHighlightMaskConstant(FMatrix world, FMatrix viewProjection);
+	void UpdateHighlightOutlineConstant(FLinearColor outlineColor,
+		int viewMin[2], int viewMax[2], int outlineThickness);
 
 	void UpdateFontBuffer(const TArray<FVertexTextured>& vertices, const TArray<uint32>& indices, uint32 numCharacter);
 	bool UpdateUnicodeFontBuffer(const FTextMesh& textMesh);
@@ -92,9 +96,12 @@ public:
 	// It doesn't recieve buffer parameters since it use the internal buffers.
 	void RenderFontTexture(uint32 numCharacter);
 	void RenderLines(const FVertexSimple* vertices, uint32 numVertices, const uint32* indices, uint32 numindices);
-	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix mViewProjectionMatrix,
-		FMatrix OutlineMatrix, const FMatrix originalMatrix,
+	void RenderHighlight(ID3D11Buffer* pBuffer, uint32 Num, FMatrix viewProjectionMatrix,
+		const FMatrix originalMatrix,
+		int viewMin[2], int viewMax[2],
 		ID3D11Buffer* indexBuffer, uint32 indexCount);
+
+
 	void RenderUnicodeFontTexture(uint32 indexCount);
 	void RenderParticle(ID3D11ShaderResourceView* texture);
 	bool RenderSimpleInstanced(
@@ -134,10 +141,16 @@ private:
 	ComPtr<ID3D11DeviceContext> mDeviceContext = nullptr;
 	ComPtr<IDXGISwapChain> mSwapChain = nullptr;
 
+	/* Render target and depth stencil resources */
 	ComPtr<ID3D11Texture2D> mFrameBuffer = nullptr;
 	ComPtr<ID3D11RenderTargetView> mFrameBufferRTV = nullptr;
 	ComPtr<ID3D11Texture2D> mDepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ComPtr<ID3D11DepthStencilView> mDepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
+
+	/* Resources for highlighting */
+	ComPtr<ID3D11Texture2D> mSelectionMaskTexture = nullptr;
+	ComPtr<ID3D11RenderTargetView> mSelectionMaskRTV = nullptr;
+	ComPtr<ID3D11ShaderResourceView> mSelectionMaskSRV = nullptr;
 
 	FLOAT mClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT mViewportInfo;
@@ -146,6 +159,7 @@ private:
 	void createDeviceAndSwapChain(HWND hWindow);
 	void createFrameBuffer();
 	void createDepthStencilBuffer(UINT width, UINT height);
+	void createSelectionMaskResources(UINT width, UINT height);
 
 	/* Prepare methods for each shader */
 	void prepareSimpleShader();
@@ -157,10 +171,14 @@ private:
 	void prepareUnicodeFontShader();
 	void prepareParticleShader();
 	void prepareStaticMeshShader();
+	void prepareHighlightMaskShader();
+	void prepareHighlightOutlineShader();
+
 
 	/* Release methods for all resources */
 	void releaseDeviceAndSwapChain();
 	void releaseFrameBuffer();
 	void releaseDepthStencilBuffer();
+	void releaseSelectionMaskResources();
 };
 

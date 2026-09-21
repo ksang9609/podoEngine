@@ -103,7 +103,7 @@ void FGraphicsManager::updateRenderQueue(
 
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
 			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
-			HasViewShowFlag(showFlags,EEngineShowFlags::SF_Primitives))
+			HasViewShowFlag(showFlags, EEngineShowFlags::SF_Primitives))
 		{
 			// TODO: Unify all of these into just static mesh
 			//if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
@@ -121,12 +121,12 @@ void FGraphicsManager::updateRenderQueue(
 		}
 		if (HasAllRenderFlags(renderFlags,
 			ERenderFlags::RF_Billboard | ERenderFlags::RF_Text) &&
-			HasViewShowFlag(showFlags,EEngineShowFlags::SF_BillboardText))
+			HasViewShowFlag(showFlags, EEngineShowFlags::SF_BillboardText))
 		{
 			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_WorldAxis) &&
-			HasViewShowFlag(showFlags,EEngineShowFlags::SF_WorldAxis))
+			HasViewShowFlag(showFlags, EEngineShowFlags::SF_WorldAxis))
 		{
 			outRenderQueueMap[RQT_WorldAxis].Add(&renderInfo);
 		}
@@ -135,7 +135,7 @@ void FGraphicsManager::updateRenderQueue(
 			outRenderQueueMap[RQT_Gizmo].Add(&renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox) &&
-			HasViewShowFlag(showFlags,EEngineShowFlags::SF_BoundingBox))
+			HasViewShowFlag(showFlags, EEngineShowFlags::SF_BoundingBox))
 		{
 			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
 		}
@@ -216,19 +216,19 @@ void FGraphicsManager::RenderSceneView(
 	}
 }
 
-void FGraphicsManager::RenderGizmoView(const TArray<FRenderInfo>& gizmoRenderInfos,const FSceneView& view)
+void FGraphicsManager::RenderGizmoView(const TArray<FRenderInfo>& gizmoRenderInfos, const FSceneView& view)
 {
-	if (!view.isValid() ||gizmoRenderInfos.IsEmpty())
+	if (!view.isValid() || gizmoRenderInfos.IsEmpty())
 	{
 		return;
 	}
 
 	mRenderer->BeginView(view.Rect);
 
-	TMap<ERenderQueueType,TArray<const FRenderInfo*>> renderQueueMap;
+	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
 
-	updateRenderQueue(gizmoRenderInfos,renderQueueMap,nullptr, view.showFlags);
-	renderGizmo(renderQueueMap[RQT_Gizmo],view);
+	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr, view.showFlags);
+	renderGizmo(renderQueueMap[RQT_Gizmo], view);
 }
 
 void FGraphicsManager::renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
@@ -333,7 +333,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			continue;
 		}
 		// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
-		if(renderInfo->StaticMesh->Sections.IsEmpty())
+		if (renderInfo->StaticMesh->Sections.IsEmpty())
 		{
 			ID3D11ShaderResourceView* texture = nullptr;
 			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
@@ -377,7 +377,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 
 			if (material)
 			{
-				if(material->DiffuseTexture.DisplayIndex >= 0)
+				if (material->DiffuseTexture.DisplayIndex >= 0)
 				{
 					diffuseTexture = resources.FindTextureOrAdd(material->DiffuseTexture);
 				}
@@ -414,7 +414,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			}
 
 			// 우선 기존 컴포넌트 색상 유지
-			mRenderer->UpdateTextureConstant(worldTransform,view.viewProjectionMatrix, finalTint);
+			mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, finalTint);
 
 			mRenderer->RenderStaticMesh(
 				buffer->Buffer.Get(),
@@ -911,59 +911,25 @@ void FGraphicsManager::renderHighLight(
 
 	mRenderer->PrepareHighlight();
 
-	const FBoundingBox& bounds = renderInfo.LocalBounds;
-
-	const FVector center = GetMeshCenter(bounds);
-	const FVector halfExtent = GetMeshHalfExtent(bounds);
 	const FMatrix worldTransform =
 		renderInfo.GetTransformMatrix(view.cameraRotation);
 
-	const FVector objectLocation =
-		worldTransform.TransformPosition(center);
-	const float depth = FVector::dot(
-		objectLocation - view.cameraLocation,
-		view.cameraForward);
-	const float tanHalfFov = tanf(
-		FMath::DegreesToRadians(view.fovDegree * 0.5f));
-	const float effectiveDepth = FMath::Max(
-		(1.0f - view.projectionRatio) * view.orthoDistance +
-		view.projectionRatio * depth,
-		0.01f);
-	const float visibleWorldHeight =
-		2.0f * effectiveDepth * tanHalfFov;
-	const float worldThickness =
-		OUTLINE_PIXELS * visibleWorldHeight / view.Rect.Height;
-
-	const FVector worldScale(
-		worldTransform.GetUnitAxis(EAxis::X).Length(),
-		worldTransform.GetUnitAxis(EAxis::Y).Length(),
-		worldTransform.GetUnitAxis(EAxis::Z).Length());
-
-	const FVector outlineScale = {
-		GetOutlineAxisScale(
-			halfExtent.x * worldScale.x,
-			worldThickness),
-		GetOutlineAxisScale(
-			halfExtent.y * worldScale.y,
-			worldThickness),
-		GetOutlineAxisScale(
-			halfExtent.z * worldScale.z,
-			worldThickness)
+	int viewMin[2] = {
+		static_cast<int>(std::floor(view.Rect.X)),
+		static_cast<int>(std::floor(view.Rect.Y))
 	};
-
-	const FMatrix outline =
-		FMatrix::Translation(
-			FVector(-center.x, -center.y, -center.z)) *
-		FMatrix::Scale(outlineScale) *
-		FMatrix::Translation(center) *
-		worldTransform;
+	int viewMax[2] = {
+		static_cast<int>(std::ceil(view.Rect.X + view.Rect.Width)),
+		static_cast<int>(std::ceil(view.Rect.Y + view.Rect.Height))
+	};
 
 	mRenderer->RenderHighlight(
 		buffer->Buffer.Get(),
 		buffer->SourceNum,
 		view.viewProjectionMatrix,
-		outline,
 		worldTransform,
+		viewMin,
+		viewMax,
 		buffer->IndexBuffer.Get(),
 		buffer->IndexCount);
 }
