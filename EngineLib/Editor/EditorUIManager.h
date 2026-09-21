@@ -61,7 +61,7 @@ public:
 
 	static constexpr float BOTTOM_BAR_HEIGHT = 32.0f;
 
-	void LoadSettings(FEditorCommands& outCommands);
+	void LoadSettings(FEditorViewportManager& viewportManager, FEditorCommands& outCommands);
 
 	void UpdateGui(const FGuiReference& guiReference,FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands);
 	float GetPanelWidth() const { return mPanelWidth; }

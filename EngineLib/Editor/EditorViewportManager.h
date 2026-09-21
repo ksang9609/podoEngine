@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "../Core/Container/TArray.h"
+#include "EditorSetting.h"
 #include "Viewport.h"
 #include "ViewportLayout.h"
 
@@ -16,6 +17,11 @@ private :
 	FViewportSharedSettings mSharedSettings;
 	TArray<std::unique_ptr<FViewport>> Viewports;
 	FAssetManager* mAssetManager = nullptr;
+
+	FEditorSetting mEditorSetting;
+
+	SSplitter* mPrimarySplitter = nullptr;
+	SSplitter* mSecondarySplitter = nullptr;
 
 	EViewportLayoutMode layoutMode = EViewportLayoutMode::SinglePane;
 	uint8 activeViewportId = invalidViewportId;
@@ -49,7 +55,10 @@ public :
 
 	bool beginSplitterDrag(const FPoint& point);
 	void updateSplitterDrag(const FPoint& point);
-	void endSplitterDrag();
+
+	void applyLayoutSetting(const FEditorSetting& setting);
+	void captureLayoutSetting(FEditorSetting& outSetting) const;
+	bool endSplitterDrag();
 
 	inline const FViewportSharedSettings& getSharedSettings() const { return mSharedSettings;  }
 

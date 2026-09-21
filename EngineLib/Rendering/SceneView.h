@@ -38,7 +38,7 @@ struct FSceneView
 	float projectionRatio = 1.0f;
 
 	float nearZ = 0.1f;
-	float farZ = 100.0f;
+	float farZ = 1000.0f;
 
 	bool isValid() const { return Rect.isValid(); }
 
@@ -50,4 +50,4 @@ struct FSceneView
 };
 
 FSceneView makeSceneView(const FCamera& camera, const FViewRect& rect, float projectionratio,
-	float nearz = 0.1f, float farz = 100.0f);
+	float nearz = 0.1f, float farz = 1000.0f);

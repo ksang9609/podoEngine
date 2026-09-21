@@ -263,7 +263,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
 	FEditorCommands startupCommands;
-	mEditorUIManager->LoadSettings(startupCommands);
+	mEditorUIManager->LoadSettings(*mEditorViewportManager, startupCommands);
 	processEditorCommands(startupCommands);
 }
 
