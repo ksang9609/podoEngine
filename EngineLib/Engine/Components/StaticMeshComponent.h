@@ -1,4 +1,6 @@
-﻿#include "MeshComponent.h"
+﻿#pragma once
+
+#include "MeshComponent.h"
 
 #include "Rendering/Mesh/StaticMesh.h"
 #include "Rendering/SubUVMesh.h"
@@ -18,7 +20,6 @@ class UStaticMeshComponent : public UMeshComponent
 		FVector location,
 		FRotator rotation,
 		FVector scale3D,
-		FName textureName,
 		const UStaticMesh* staticMeshOrNull,
 		bool bUseTexture = false
 	);
@@ -44,6 +45,7 @@ class UStaticMeshComponent : public UMeshComponent
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const override;
+	FSubUVMesh mSubUVMesh = {};
 
 private:
 	void resetMaterialOverrides();
@@ -55,5 +57,4 @@ private:
 	// 인덱스는 FStaticMesh::MaterialSlots 인덱스와 동일하다.
 	TArray<FMaterialOverride> mMaterialOverrides;
 
-	FSubUVMesh mSubUVMesh = {};
 };

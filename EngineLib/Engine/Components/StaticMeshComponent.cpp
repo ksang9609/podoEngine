@@ -40,7 +40,6 @@ void UStaticMeshComponent::Initialize(
 	FVector location,
 	FRotator rotation,
 	FVector scale3D,
-	FName textureName,
 	const UStaticMesh* staticMeshOrNull,
 	bool bUseTexture
 )

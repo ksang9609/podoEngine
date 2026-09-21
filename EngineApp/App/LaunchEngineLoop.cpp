@@ -246,7 +246,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* cubeActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::CubeMesh, "");
+			BuiltinAssets::CubeMesh);
 		mSceneManager->GetCurrentWorld()->AddActor(cubeActor);
 	}
 	{
@@ -256,8 +256,18 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 
 		AActor* sphereActor = FObjectFactory::SpawnStaticMeshActor(
 			FVector(-2, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-			BuiltinAssets::SphereMesh, "");
+			BuiltinAssets::SphereMesh);
 		mSceneManager->GetCurrentWorld()->AddActor(sphereActor);
+	}
+	{
+		const UStaticMesh& earthMesh = mAssetManager->FindStaticMeshAssetOrAdd(BuiltinAssets::SphereMesh);
+		AActor* earthActor = FObjectFactory::SpawnActorWithRootComponent<USphereComponent>(
+			FName("EarthActor"),
+			FVector(0, 0, 1), FRotator(0, 0, 0), FVector(1, 1, 1),
+			&earthMesh,
+			true
+		);
+		mSceneManager->GetCurrentWorld()->AddActor(earthActor);
 	}
 
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
