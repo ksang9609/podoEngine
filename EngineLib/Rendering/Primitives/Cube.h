@@ -149,15 +149,6 @@ inline FStaticMesh CubeMesh = {
 	.Vertices = CubeNormal_vertices,
 	.Indices = Cube_indices,
 
-	.MaterialSlots = {
-		{
-			.Name = "CubeMaterial",
-			.DefaultMaterial = {
-				.DiffuseTexture = "Assets/Textures/CubeTextureSample.dds",
-			}
-		}
-	},
-
 	.Sections = {
 		{
 			.Name = "CubeSection",
@@ -165,5 +156,14 @@ inline FStaticMesh CubeMesh = {
 			.StartIndex = 0,
 			.IndexCount = 36,
 		}
+	}
+};
+
+inline TArray<FMaterialSlot> CubeMaterialSlots = {
+	{
+		.Name = "CubeMaterial",
+		.DefaultMaterial = {	
+			.DiffuseTexture = FName("Assets/Textures/CubeTextureSample.dds")
+		},
 	}
 };

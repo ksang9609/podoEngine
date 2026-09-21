@@ -30,6 +30,7 @@ public:
 private:
 	/* Assets */
 	TMap<FName, std::unique_ptr<UStaticMesh>> mStaticMeshAssets;
+	//TMap<FName, std::unique_ptr<UMaterial>> mMaterialAssets;
 
 	void createBuiltinStaticMeshAssets();
 	bool createStaticMeshAsset(const FName& assetName);

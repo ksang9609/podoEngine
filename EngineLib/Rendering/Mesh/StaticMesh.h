@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// EngineLib/Rendering/Mesh/StaticMesh.h
+
+#pragma once
 
 #include <memory>
 
@@ -6,7 +8,7 @@
 #include "Core/Core.h"
 #include "Core/Name.h"
 #include "Rendering/VertexType.h"
-#include "../Mesh/Material.h"
+#include "Material.h"
 
 class UMaterial;
 
@@ -32,7 +34,7 @@ struct FStaticMesh
 	TArray<uint32> Indices;
 
 	// 매시가 제공하는 기본 Material 슬롯
-	TArray<FMaterialSlot> MaterialSlots;
+	//TArray<FMaterialSlot> MaterialSlots;
 
 	TArray<FStaticMeshSection> Sections;
 	TArray<FString> GroupNames;
@@ -47,6 +49,12 @@ public:
 	void Initialize(FStaticMesh* inStaticMesh)
 	{
 		SetStaticMeshAsset(inStaticMesh);
+	}
+
+	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh, TArray<FMaterialSlot>&& inDefaultMaterials)
+	{
+		mStaticMeshAsset = std::move(inStaticMesh);
+		mDefaultMaterials = std::move(inDefaultMaterials);
 	}
 
 	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh)
@@ -74,7 +82,23 @@ public:
 		return mStaticMeshAsset.get();
 	}
 
+	const FMaterialSlot* GetMaterialSlot(int32 slotIndex) const
+	{
+		if (slotIndex < 0 || slotIndex >= mDefaultMaterials.Num())
+		{
+			return nullptr;
+		}
+		return &mDefaultMaterials[slotIndex];
+	}
+
+	const TArray<FMaterialSlot>& GetMaterialSlots() const
+	{
+		return mDefaultMaterials;
+	}
+
 private:
 	std::unique_ptr<FStaticMesh> mStaticMeshAsset;
+
+	TArray<FMaterialSlot> mDefaultMaterials;
 };
 

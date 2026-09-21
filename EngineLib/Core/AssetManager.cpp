@@ -70,7 +70,7 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 	std::unique_ptr<FStaticMesh> cubeMeshData = std::make_unique<FStaticMesh>(CubeMesh);
 
 	std::unique_ptr<UStaticMesh> cubeMeshAsset = std::unique_ptr<UStaticMesh>(
-		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cubeMeshData))
+		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cubeMeshData), std::move(CubeMaterialSlots))
 	);
 
 	mStaticMeshAssets.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshAsset));
@@ -79,7 +79,7 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 	std::unique_ptr<FStaticMesh> sphereMeshData = std::make_unique<FStaticMesh>(SphereMesh);
 
 	std::unique_ptr<UStaticMesh> sphereMeshAsset = std::unique_ptr<UStaticMesh>(
-		FObjectFactory::ConstructObject<UStaticMesh>(std::move(sphereMeshData))
+		FObjectFactory::ConstructObject<UStaticMesh>(std::move(sphereMeshData), std::move(SphereMaterialSlots))
 	);
 
 	mStaticMeshAssets.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshAsset));
@@ -91,7 +91,9 @@ bool FAssetManager::createStaticMeshAsset(const FName& assetName)
 
 	FObjImportResult imported;
 
-	if (!FObjImporter::ParseAndConvert(fileName, imported) || !imported.meshData)
+	if (!FObjImporter::ParseAndConvert(fileName, imported) ||
+		!imported.meshData ||
+		imported.materialSlots.IsEmpty())
 	{
 		return false;
 	}
@@ -99,7 +101,7 @@ bool FAssetManager::createStaticMeshAsset(const FName& assetName)
 	imported.meshData->PathFileName = assetName;
 
 	std::unique_ptr<UStaticMesh> asset
-	( FObjectFactory::ConstructObject<UStaticMesh>(std::move(imported.meshData)));
+	( FObjectFactory::ConstructObject<UStaticMesh>(std::move(imported.meshData), std::move(imported.materialSlots)));
 
 	if (!asset)
 	{

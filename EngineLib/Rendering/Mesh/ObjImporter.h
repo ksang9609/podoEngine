@@ -12,6 +12,7 @@ struct FStaticMesh;
 struct FObjImportResult
 {
 	std::unique_ptr<FStaticMesh> meshData;
+	TArray<FMaterialSlot> materialSlots;
 };
 
 // f v1/vt1/vn1

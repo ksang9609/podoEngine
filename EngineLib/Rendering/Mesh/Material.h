@@ -1,4 +1,8 @@
-﻿#pragma once
+﻿// EngineLib/Rendering/Mesh/Material.h
+
+#pragma once
+
+#include <memory>
 
 #include "Core/Core.h"
 #include "Core/Name.h"
@@ -25,4 +29,14 @@ struct FMaterialSlot
 {
 	FString Name;
 	FMaterial DefaultMaterial;
+};
+
+class UMaterial : public UObject
+{
+	DECLARE_OBJECT(UMaterial, UObject)
+	DECLARE_SERIALIZATION()
+public:
+
+private:
+	std::unique_ptr<FMaterial> mMaterial;
 };
