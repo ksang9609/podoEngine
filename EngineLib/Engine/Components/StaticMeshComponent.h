@@ -1,6 +1,7 @@
 ﻿#include "MeshComponent.h"
 
 #include "Rendering/Mesh/StaticMesh.h"
+#include "Rendering/SubUVMesh.h"
 
 struct FMaterialOverride
 {
@@ -35,6 +36,11 @@ class UStaticMeshComponent : public UMeshComponent
 	bool SetMaterial(int32 slotIndex, const UMaterial& materialAsset);
 	bool ClearMaterialOverride(int32 slotIndex);
 
+	/* SubUV */
+	const FSubUVMesh& GetSubUVMesh() const { return mSubUVMesh; }
+	void SetSubUVMesh(const FSubUVMesh& subUVMesh) { mSubUVMesh = subUVMesh; }
+	void SetSubUVMesh(FVector2 uvOffset, FVector2 uvScale) { mSubUVMesh.UVOffset = uvOffset; mSubUVMesh.UVScale = uvScale; }
+
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const override;
@@ -49,4 +55,5 @@ private:
 	// 인덱스는 FStaticMesh::MaterialSlots 인덱스와 동일하다.
 	TArray<FMaterialOverride> mMaterialOverrides;
 
+	FSubUVMesh mSubUVMesh = {};
 };

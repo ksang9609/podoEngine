@@ -414,7 +414,17 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			}
 
 			// 우선 기존 컴포넌트 색상 유지
-			mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, finalTint);
+			FVector2 uvOffset = renderInfo->SubUVMesh
+				? renderInfo->SubUVMesh->UVOffset
+				: FVector2(0.0f, 0.0f);
+			FVector2 uvScale = renderInfo->SubUVMesh
+				? renderInfo->SubUVMesh->UVScale
+				: FVector2(1.0f, 1.0f);
+
+			mRenderer->UpdateTextureConstant(
+				worldTransform, view.viewProjectionMatrix, finalTint,
+				uvScale, uvOffset
+			);
 
 			mRenderer->RenderStaticMesh(
 				buffer->Buffer.Get(),

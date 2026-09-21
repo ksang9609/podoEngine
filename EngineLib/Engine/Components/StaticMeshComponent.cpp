@@ -172,6 +172,8 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 		}
 	}
 
+	renderInfo.SubUVMesh = &mSubUVMesh;
+
 	return renderInfo;
 }
 

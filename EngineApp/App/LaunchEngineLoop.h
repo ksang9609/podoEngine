@@ -71,6 +71,7 @@ private:
 	void processEditorCommand(const FSetComponentColorCommand& command);
 	void processEditorCommand(const FSetStaticMeshComponentStaticMeshCommand& command);
 	void processEditorCommand(const FSetStaticMeshComponentMaterialCommand& command);
+	void processEditorCommand(const FSetStaticMeshComponentSubUVCommand& command);
 	void processEditorCommand(const FSetSphereComponentSpinCommand& command);
 	void processEditorCommand(const FSetSphereComponentSpinSpeedCommand& command);
 	void processEditorCommand(const FSetParticleSubUVComponentLoopingCommand& command);

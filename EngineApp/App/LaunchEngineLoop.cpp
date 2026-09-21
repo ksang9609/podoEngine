@@ -678,6 +678,14 @@ void FEngineLoop::processEditorCommand(const FSetStaticMeshComponentMaterialComm
 	staticMeshComponent->SetMaterial(command.MaterialSlotIndex, *material);
 }
 
+void FEngineLoop::processEditorCommand(const FSetStaticMeshComponentSubUVCommand& command)
+{
+	UStaticMeshComponent* staticMeshComponent = UObject::GetObjectByInternalIndex<UStaticMeshComponent>(command.ObjectID.InternalIndex);
+	if (!staticMeshComponent) return;
+
+	staticMeshComponent->SetSubUVMesh(command.UVOffset, command.UVScale);
+}
+
 void FEngineLoop::processEditorCommand(const FSetComponentUseTextureCommand& command)
 {
 	UPrimitiveComponent* component = UObject::GetObjectByInternalIndex<UPrimitiveComponent>(command.ObjectID.InternalIndex);
