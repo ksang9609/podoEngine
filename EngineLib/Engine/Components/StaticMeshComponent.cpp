@@ -51,6 +51,7 @@ void UStaticMeshComponent::Initialize(
 		? staticMeshOrNull->GetAssetPathFileName()
 		: FName();
 	mTextureName = textureName;
+	resetMaterialOverrides();
 
 	mLocalBounds = FBoundingBox{};
 
@@ -67,6 +68,7 @@ void UStaticMeshComponent::Initialize(
 void UStaticMeshComponent::SetStaticMesh(const UStaticMesh& staticMeshRef)
 {
 	mStaticMeshRef = &staticMeshRef;
+	resetMaterialOverrides();
 	mStaticMeshAssetKey = staticMeshRef.GetAssetPathFileName();
 
 	mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);

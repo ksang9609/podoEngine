@@ -42,7 +42,8 @@ private:
 	void resetMaterialOverrides();
 
 private:
-	const UStaticMesh* mStaticMeshRef;
+	const UStaticMesh* mStaticMeshRef = nullptr;
+	FName mStaticMeshAssetKey;
 
 	// 인덱스는 FStaticMesh::MaterialSlots 인덱스와 동일하다.
 	TArray<FMaterialOverride> mMaterialOverrides;
