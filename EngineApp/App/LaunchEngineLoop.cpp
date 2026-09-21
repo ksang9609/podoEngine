@@ -291,19 +291,19 @@ void FEngineLoop::Tick(bool bPumpMessages)
 		//mSceneManager->UpdateGUI({ *FrameTimer, mGraphicsManager, ViewportClient, mFileManager });
 	}
 
-	if (viewportClient != nullptr)
-	{
-		FEditorCommands editorCommands;
-		mEditorUIManager->UpdateGui({
-			*FrameTimer,
-			*mSceneManager,
-			*viewportClient,
-			*mGraphicsManager,
-			*mFileManager,
-			*mAssetManager,
-			*mEditorViewportManager,
-			}, editorCommands);
-		processEditorCommands(editorCommands);
+		if (viewportClient != nullptr)
+		{
+			FEditorCommands editorCommands;
+			mEditorUIManager->UpdateGui({
+				*FrameTimer,
+				*mSceneManager,
+				*viewportClient,
+				*mGraphicsManager,
+				*mFileManager,
+				*mAssetManager,
+				*mEditorViewportManager,
+				},viewportClient->getSharedSettings(), editorCommands);
+			processEditorCommands(editorCommands);
 
 	}
 
@@ -846,4 +846,27 @@ void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& comman
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->getRenderSettings().SetShowFlag(command.Flag, command.bEnabled);
+}
+
+void FEngineLoop::processEditorCommand(const FSetSharedCameraSpeedCommand& command)
+{
+	mEditorViewportManager->setCameraSpeed(FMath::Clamp(command.Speed, 0.1f, 100.0f));
+}
+
+void FEngineLoop::processEditorCommand(const FSetSharedSnapPresetCommand& command)
+{
+	mEditorViewportManager->setSnapPreset(command.PresetIndex);
+
+	const float gridSpacing = mEditorViewportManager->getSharedSettings().getSnapSize();
+
+	mGraphicsManager->SetGridWidth(gridSpacing);
+}
+
+void FEngineLoop::processEditorCommand(const FSetViewportFovCommand& command)
+{
+	FViewport* viewport = mEditorViewportManager->findViewport(command.ViewportId);
+	if (viewport != nullptr)
+	{
+		viewport->getClient().GetCamera().mFovDegree = FMath::Clamp(command.Fov, 5.0f, 175.0f);
+	}
 }

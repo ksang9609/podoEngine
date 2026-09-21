@@ -143,7 +143,7 @@ private:
 
 	// Grid 간격, 최대 한계선
 	float mgridExtent = 1000.0f;
-	float mgridSpacing = 1.0f;
+	float mgridSpacing = 0.5f;
 
 	EViewModeIndex mViewMode = EViewModeIndex::VMI_Lit;
 
