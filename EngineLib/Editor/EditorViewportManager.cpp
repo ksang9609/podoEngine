@@ -83,7 +83,16 @@ std::unique_ptr<SWindow> FEditorViewportManager::makeFourPaneLayout()
 {
 	auto top = std::make_unique<SSplitterV>(makeViewportPanel(0), makeViewportPanel(1), 0.5f);
 	auto bottom = std::make_unique<SSplitterV>(makeViewportPanel(2), makeViewportPanel(3), 0.5f);
+
+	top->linkSplitRatio(*bottom);
+	bottom->linkSplitRatio(*top);
+
 	return std::make_unique<SSplitterH>(std::move(top), std::move(bottom), 0.5f);
+	/*
+	auto bottom1 = std::make_unique<SSplitterH>(makeViewportPanel(2), makeViewportPanel(3), 0.5f);
+	auto bottom = std::make_unique<SSplitterH>(makeViewportPanel(1), std::move(bottom1), 0.33f);
+	return std::make_unique<SSplitterV>(makeViewportPanel(0), std::move(bottom), 0.5f);
+	*/
 }
 uint8 FEditorViewportManager::addViewport()
 {

@@ -76,10 +76,10 @@ namespace
 
 	constexpr ImU32 viewportToolbarColors[] =
 	{
-		IM_COL32(55, 85, 120, 255),
-		IM_COL32(80, 105, 70, 255),
-		IM_COL32(110, 75, 80, 255),
-		IM_COL32(90, 75, 120, 255)
+		IM_COL32(2, 2, 2, 255),
+		IM_COL32(2, 2, 2, 255),
+		IM_COL32(2, 2, 2, 255),
+		IM_COL32(2, 2, 2, 255)
 	};
 
 	const char* getViewportTypeName(EViewportType type)
@@ -113,7 +113,7 @@ namespace
 		const uint8 viewportCount = viewportManager.getViewportCount();
 
 		ImGui::BeginDisabled(viewportCount >= maxViewportCount);
-		if (ImGui::Button("+ Viewport"))
+		if (ImGui::Button(" + "))
 		{
 			viewportManager.addViewport();
 		}
@@ -121,7 +121,7 @@ namespace
 
 		ImGui::SameLine();
 		ImGui::BeginDisabled(viewportCount <= 1);
-		if (ImGui::Button("- Last Viewport"))
+		if (ImGui::Button(" - "))
 		{
 			const FViewport* lastViewport =
 				viewportManager.getViewportAt(viewportCount - 1);
@@ -209,11 +209,21 @@ namespace
 		const FViewport& viewport,
 		FEditorCommands& outCommands)
 	{
-		if (ImGui::SmallButton(getViewportTypeName(viewport.getType())))
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Hover
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); // 클릭
+		ImVec2 Pos = ImGui::GetCursorPos();
+		ImGui::SetCursorPos(ImVec2(Pos.x, Pos.y + 3.5f));
+		ImGui::SetWindowFontScale(1.3f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f, 0.5f));
+		if (ImGui::Button(getViewportTypeName(viewport.getType()), ImVec2(100.0f, 23.0f)))
 		{
 			ImGui::OpenPopup("CameraMenu");
 		}
-
+		ImGui::SetWindowFontScale(1.0f);
+		ImGui::PopStyleColor(3);
+		ImGui::PopStyleVar();
 		if (!ImGui::BeginPopup("CameraMenu"))
 		{
 			return;
@@ -246,12 +256,20 @@ namespace
 		FEditorCommands& outCommands)
 	{
 		const FViewportRenderSettings& settings = viewport.getRenderSettings();
-
-		if (ImGui::SmallButton(getViewModeName(settings.ViewMode)))
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Hover
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); // 클릭
+		ImVec2 Pos = ImGui::GetCursorPos();
+		ImGui::SetCursorPos(ImVec2(Pos.x, Pos.y));
+		ImGui::SetWindowFontScale(1.3f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f, 0.5f));
+		if (ImGui::Button(getViewModeName(settings.ViewMode), ImVec2(80.0f, 23.0f)))
 		{
 			ImGui::OpenPopup("ViewModeMenu");
 		}
-
+		ImGui::PopStyleColor(3);
+		ImGui::SetWindowFontScale(1.0f);
+		ImGui::PopStyleVar();
 		if (!ImGui::BeginPopup("ViewModeMenu"))
 		{
 			return;
@@ -277,11 +295,20 @@ namespace
 		const FViewport& viewport,
 		FEditorCommands& outCommands)
 	{
-		if (ImGui::SmallButton("Show"))
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Hover
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); // 클릭
+		ImVec2 Pos = ImGui::GetCursorPos();
+		ImGui::SetCursorPos(ImVec2(Pos.x, Pos.y));
+		ImGui::SetWindowFontScale(1.3f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f, 0.5f));
+		if (ImGui::Button("Show", ImVec2(80.0f, 23.0f)))
 		{
 			ImGui::OpenPopup("ShowFlagsMenu");
 		}
-
+		ImGui::PopStyleColor(3);
+		ImGui::SetWindowFontScale(1.0f);
+		ImGui::PopStyleVar();
 		if (!ImGui::BeginPopup("ShowFlagsMenu"))
 		{
 			return;

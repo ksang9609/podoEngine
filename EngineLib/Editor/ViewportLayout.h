@@ -23,7 +23,7 @@ public :
 	void Arrange(const FRect& rect) override;
 private:
 	FViewport* Viewport = nullptr;
-	float menuBarSize = 20.0f;
+	float menuBarSize = 30.0f;
 };
 
 class SSplitter : public SWindow
@@ -36,11 +36,16 @@ public:
 	const FRect& getHandleRect() const;
 	float getSplitRatio() const;
 
+	void linkSplitRatio(SSplitter& other);
+
 protected:
 	float clampSplitRatio(float ratio, float usableExtent) const;
 
 	std::unique_ptr<SWindow> SideLT;
 	std::unique_ptr<SWindow> SideRB;
+
+	void setSplitRatio(float ratio);
+	SSplitter* linkedSplitter = nullptr;
 
 	FRect handleRect;
 	float splitRatio = 0.5f;
