@@ -129,7 +129,7 @@ void FGizmo::BeginDrag(const FVector& nearPoint, const FVector& farPoint, const 
 	}
 }
 
-bool FGizmo::GetDragLocation(const FVector& nearPoint, const FVector& farPoint, FVector& outLocation) const
+bool FGizmo::GetDragLocation(const FVector& nearPoint, const FVector& farPoint, FVector& outLocation, float snapSize) const
 {
 	if (mDraggingAxis == NONE) return false;
 
@@ -139,7 +139,14 @@ bool FGizmo::GetDragLocation(const FVector& nearPoint, const FVector& farPoint, 
 		return false;
 	}
 
-	outLocation = mDragStartTransform.Location + AxisDirection(mDraggingAxis) * (axisS - mDragStartAxisS);
+	float dragDelta = axisS - mDragStartAxisS;
+
+	if (snapSize > SMALL_NUMBER)
+	{
+		dragDelta = std::round(dragDelta / snapSize) * snapSize;
+	}
+
+	outLocation = mDragStartTransform.Location + AxisDirection(mDraggingAxis) * dragDelta;
 
 	return true;
 }

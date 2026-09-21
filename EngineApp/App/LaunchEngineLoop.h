@@ -88,6 +88,9 @@ private:
 	void processEditorCommand(const FSetViewportTypeCommand& command);
 	void processEditorCommand(const FSetViewportViewModeCommand& command);
 	void processEditorCommand(const FSetViewportShowFlagCommand& command);
+	void processEditorCommand(const FSetSharedCameraSpeedCommand& command);
+	void processEditorCommand(const FSetSharedSnapPresetCommand& command);
+	void processEditorCommand(const FSetViewportFovCommand& command);
 
 	void processEditorCommand(const FSetGridWidthCommand& command);
 	void processEditorCommand(const FStartProjectionTransitionCommand& command);

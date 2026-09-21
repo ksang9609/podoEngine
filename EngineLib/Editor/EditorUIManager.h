@@ -63,7 +63,7 @@ public:
 
 	void LoadSettings(FEditorCommands& outCommands);
 
-	void UpdateGui(const FGuiReference& guiReference, FEditorCommands& outCommands);
+	void UpdateGui(const FGuiReference& guiReference,FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands);
 	float GetPanelWidth() const { return mPanelWidth; }
 	/*void RenderLoadingScreen(FGraphicsManager& graphicsManager);*/
 
@@ -89,5 +89,5 @@ private:
 	void updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updateObjectListPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
-	void updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FEditorCommands& outCommands);
+	void updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands);
 };

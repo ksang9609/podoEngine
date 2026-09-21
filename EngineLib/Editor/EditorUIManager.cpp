@@ -108,8 +108,13 @@ namespace
 		return "Unknown";
 	}
 
-	void drawViewportCountControls(FEditorViewportManager& viewportManager)
+	void drawViewportSharedControls(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedSettings, FEditorCommands& outCommands)
 	{
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Hover
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); // 클릭
+
 		const uint8 viewportCount = viewportManager.getViewportCount();
 
 		ImGui::BeginDisabled(viewportCount >= maxViewportCount);
@@ -139,7 +144,37 @@ namespace
 			viewportManager.getViewportCount(),
 			static_cast<int32>(maxViewportCount));
 
+		ImGui::SameLine();
+
+		ImGui::PushStyleColor(ImGuiCol_FrameBg,ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,ImVec4(0.50f, 0.50f, 0.50f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive,ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+
+		float speed = sharedSettings.cameraSpeed;
+		ImGui::SetNextItemWidth(80.0f);
+		if (ImGui::DragFloat("Camera Speed", &speed, 0.1f, 0.1f, 100.0f))
+		{
+			outCommands.Emplace(FSetSharedCameraSpeedCommand{ speed });
+		}
+
+		int presetIndex = sharedSettings.snapPresetIndex;
+		const char* presets[] = {  "0.1", "0.5", "1.0", "2.0", "3.0", "4.0", "5.0" };
+
+		ImGui::PushStyleColor(ImGuiCol_Header,ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered,ImVec4(0.50f, 0.50f, 0.50f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive,ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100.0f);
+		if (ImGui::Combo(
+			"Grid Snap", &presetIndex,
+			presets, IM_ARRAYSIZE(presets)))
+		{
+			outCommands.Emplace(FSetSharedSnapPresetCommand{ static_cast<uint8>(presetIndex) });
+		}
+
 		ImGui::Separator();
+		ImGui::PopStyleColor(9);
 	}
 
 	void updateSplitterInteraction(
@@ -207,21 +242,21 @@ namespace
 
 	void drawViewportTypeSelector(
 		const FViewport& viewport,
+		float buttonWidth,
+		float buttonHeight,
 		FEditorCommands& outCommands)
 	{
-
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Hover
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); // 클릭
-		ImVec2 Pos = ImGui::GetCursorPos();
-		ImGui::SetCursorPos(ImVec2(Pos.x, Pos.y + 3.5f));
-		ImGui::SetWindowFontScale(1.3f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f, 0.5f));
-		if (ImGui::Button(getViewportTypeName(viewport.getType()), ImVec2(100.0f, 23.0f)))
+
+		if (ImGui::Button(
+			getViewportTypeName(viewport.getType()),
+			ImVec2(buttonWidth, buttonHeight)))
 		{
 			ImGui::OpenPopup("CameraMenu");
 		}
-		ImGui::SetWindowFontScale(1.0f);
 		ImGui::PopStyleColor(3);
 		ImGui::PopStyleVar();
 		if (!ImGui::BeginPopup("CameraMenu"))
@@ -253,22 +288,22 @@ namespace
 
 	void drawViewportViewModeSelector(
 		const FViewport& viewport,
+		float buttonWidth,
+		float buttonHeight,
 		FEditorCommands& outCommands)
 	{
 		const FViewportRenderSettings& settings = viewport.getRenderSettings();
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Hover
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); // 클릭
-		ImVec2 Pos = ImGui::GetCursorPos();
-		ImGui::SetCursorPos(ImVec2(Pos.x, Pos.y));
-		ImGui::SetWindowFontScale(1.3f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f, 0.5f));
-		if (ImGui::Button(getViewModeName(settings.ViewMode), ImVec2(80.0f, 23.0f)))
+		if (ImGui::Button(
+			getViewModeName(settings.ViewMode),
+			ImVec2(buttonWidth, buttonHeight)))
 		{
 			ImGui::OpenPopup("ViewModeMenu");
 		}
 		ImGui::PopStyleColor(3);
-		ImGui::SetWindowFontScale(1.0f);
 		ImGui::PopStyleVar();
 		if (!ImGui::BeginPopup("ViewModeMenu"))
 		{
@@ -293,21 +328,20 @@ namespace
 
 	void drawViewportShowFlagSelector(
 		const FViewport& viewport,
+		float buttonWidth,
+		float buttonHeight,
 		FEditorCommands& outCommands)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Hover
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); // 클릭
-		ImVec2 Pos = ImGui::GetCursorPos();
-		ImGui::SetCursorPos(ImVec2(Pos.x, Pos.y));
-		ImGui::SetWindowFontScale(1.3f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f, 0.5f));
-		if (ImGui::Button("Show", ImVec2(80.0f, 23.0f)))
+
+		if (ImGui::Button("Show", ImVec2(buttonWidth, buttonHeight)))
 		{
 			ImGui::OpenPopup("ShowFlagsMenu");
 		}
 		ImGui::PopStyleColor(3);
-		ImGui::SetWindowFontScale(1.0f);
 		ImGui::PopStyleVar();
 		if (!ImGui::BeginPopup("ShowFlagsMenu"))
 		{
@@ -327,6 +361,150 @@ namespace
 					option.Flag,
 					!bEnabled
 				});
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+
+	void drawViewportFovSelector(
+		const FViewport& viewport,
+		float buttonWidth,
+		float buttonHeight,
+		FEditorCommands& outCommands)
+	{
+		if (viewport.getType() != EViewportType::Perspective)
+		{
+			return;
+		}
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::Button("FOV", ImVec2(buttonWidth, buttonHeight)))
+		{
+			ImGui::OpenPopup("FovMenu");
+		}
+
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(3);
+
+		if (ImGui::BeginPopup("FovMenu"))
+		{
+			float fov = viewport.getClient().GetFov();
+			ImGui::SetNextItemWidth(180.0f);
+
+			if (ImGui::SliderFloat("##FOV", &fov, 5.0f, 175.0f, "%.0f"))
+			{
+				outCommands.Emplace(FSetViewportFovCommand{ viewport.getId(), fov });
+			}
+
+			ImGui::SameLine();
+			ImGui::TextUnformatted("FOV");
+			ImGui::EndPopup();
+		}
+	}
+
+	void drawCompactViewportMenu(
+		const FViewport& viewport,
+		float buttonWidth,
+		float buttonHeight,
+		FEditorCommands& outCommands)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::Button("Options", ImVec2(buttonWidth, buttonHeight)))
+		{
+			ImGui::OpenPopup("CompactViewportMenu");
+		}
+
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(3);
+
+		if (!ImGui::BeginPopup("CompactViewportMenu"))
+		{
+			return;
+		}
+
+		if (ImGui::BeginMenu("View"))
+		{
+			for (int32 index = 0; index < IM_ARRAYSIZE(viewportTypeOptions); ++index)
+			{
+				if (index == 1)
+				{
+					ImGui::Separator();
+				}
+
+				const FViewportTypeOption& option = viewportTypeOptions[index];
+				const bool bSelected = viewport.getType() == option.Type;
+
+				if (ImGui::MenuItem(option.Label, nullptr, bSelected))
+				{
+					outCommands.Emplace(FSetViewportTypeCommand{
+						viewport.getId(),
+						option.Type
+					});
+				}
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("View Mode"))
+		{
+			const FViewportRenderSettings& settings = viewport.getRenderSettings();
+
+			for (const FViewModeOption& option : viewModeOptions)
+			{
+				const bool bSelected = settings.ViewMode == option.Mode;
+
+				if (ImGui::MenuItem(option.Label, nullptr, bSelected))
+				{
+					outCommands.Emplace(FSetViewportViewModeCommand{
+						viewport.getId(),
+						option.Mode
+					});
+				}
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Show"))
+		{
+			const FViewportRenderSettings& settings = viewport.getRenderSettings();
+
+			for (const FShowFlagOption& option : showFlagOptions)
+			{
+				const bool bEnabled = settings.HasShowFlag(option.Flag);
+
+				if (ImGui::MenuItem(option.Label, nullptr, bEnabled))
+				{
+					outCommands.Emplace(FSetViewportShowFlagCommand{
+						viewport.getId(),
+						option.Flag,
+						!bEnabled
+					});
+				}
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (viewport.getType() == EViewportType::Perspective)
+		{
+			ImGui::Separator();
+			float fov = viewport.getClient().GetFov();
+			ImGui::SetNextItemWidth(180.0f);
+
+			if (ImGui::SliderFloat("FOV", &fov, 5.0f, 175.0f, "%.0f"))
+			{
+				outCommands.Emplace(FSetViewportFovCommand{ viewport.getId(), fov });
 			}
 		}
 
@@ -364,19 +542,63 @@ namespace
 			0,
 			bActive ? 3.0f : 1.0f);
 
+		constexpr float sidePadding = 4.0f;
+		constexpr float buttonHeight = 23.0f;
+		constexpr float minButtonWidth = 82.0f;
+
+		const float toolbarWidth = panelRect.getWidth();
+		const float contentWidth = (std::max)(toolbarWidth - sidePadding * 2.0f, 1.0f);
+		const bool bPerspective = viewport.getType() == EViewportType::Perspective;
+		const int32 itemCount = bPerspective ? 4 : 3;
+		const float spacing = ImGui::GetStyle().ItemSpacing.x;
+		const float requiredWidth =
+			minButtonWidth * static_cast<float>(itemCount) +
+			spacing * static_cast<float>(itemCount - 1);
+		const bool bCompact = contentWidth < requiredWidth;
+
 		const ImVec2 savedCursor = ImGui::GetCursorScreenPos();
+		const ImVec2 toolbarMin(panelRect.Left, panelRect.Top);
+		const ImVec2 toolbarMax(panelRect.Right, imageRect.Top);
+
+		ImGui::PushClipRect(toolbarMin, toolbarMax, true);
 		ImGui::SetCursorScreenPos(
-			ImVec2(panelRect.Left + 4.0f, panelRect.Top + 1.0f));
-
+			ImVec2(panelRect.Left + sidePadding, panelRect.Top + 3.0f));
 		ImGui::PushID(static_cast<int>(viewport.getId()));
-		drawViewportTypeSelector(viewport, outCommands);
-		ImGui::SameLine();
-		drawViewportViewModeSelector(viewport, outCommands);
-		ImGui::SameLine();
-		drawViewportShowFlagSelector(viewport, outCommands);
-		ImGui::PopID();
 
+		if (bCompact)
+		{
+			drawCompactViewportMenu(
+				viewport,
+				contentWidth,
+				buttonHeight,
+				outCommands);
+		}
+		else
+		{
+			const float buttonWidth =
+				(contentWidth - spacing * static_cast<float>(itemCount - 1)) /
+				static_cast<float>(itemCount);
+
+			ImGui::SetWindowFontScale(1.3f);
+
+			drawViewportTypeSelector(viewport, buttonWidth, buttonHeight, outCommands);
+			ImGui::SameLine();
+			drawViewportViewModeSelector(viewport, buttonWidth, buttonHeight, outCommands);
+			ImGui::SameLine();
+			drawViewportShowFlagSelector(viewport, buttonWidth, buttonHeight, outCommands);
+
+			ImGui::SetWindowFontScale(1.0f);
+
+			if (bPerspective)
+			{
+				ImGui::SameLine();
+				drawViewportFovSelector(viewport, buttonWidth, buttonHeight, outCommands);
+			}
+		}
+
+		ImGui::PopID();
 		ImGui::SetCursorScreenPos(savedCursor);
+		ImGui::PopClipRect();
 	}
 }
 
@@ -397,7 +619,7 @@ void FEditorUIManager::LoadSettings(FEditorCommands& outCommands)
 	outCommands.Emplace(FSetGridWidthCommand{ mEditorSetting.GridSpacing });
 }
 
-void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorCommands& outCommands)
+void FEditorUIManager::UpdateGui(const FGuiReference& guiReference,FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands)
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -407,7 +629,7 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FEditorComma
 	updateControlPanelGUI(guiReference, outCommands);
 	updatePropertyWindowGUI(guiReference, outCommands);
 	updateObjectListPanelGUI(guiReference, outCommands);
-	updateViewportLayoutPanelGUI(guiReference.ViewportManager, outCommands);
+	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings,outCommands);
 
 	updateBottomBarGUI();
 }
@@ -573,102 +795,15 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 
 	//const FCamera& camera = guiReference.ViewportClient.GetCamera();
 
-	ImGui::SeparatorText("View Mode");
-	static EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
-	const char* ViewModeNames[] = { "Lit", "Unlit", "Wireframe" };
-
-	int32 ViewModeIndex = static_cast<int32>(ViewMode);
-
-	if (ImGui::Combo("View Mode", &ViewModeIndex, ViewModeNames, IM_ARRAYSIZE(ViewModeNames)))
-	{
-		ViewMode = static_cast<EViewModeIndex>(ViewModeIndex);
-		//guiReference.GraphicsManager->SetViewMode(ViewMode);
-		outCommands.Emplace(FSetViewModeCommand{ ViewMode });
-	}
-
-	if (ImGui::BeginCombo("##ShowFlags", "Show Flags"))
-	{
-		uint32 showFlags = guiReference.GraphicsManager.GetShowFlags();
-		bool bShowFlagsChanged = false;
-
-		bool bPrimitives = showFlags & static_cast<uint32>(EEngineShowFlags::SF_Primitives);
-		if (ImGui::Checkbox("Primitives", &bPrimitives))
-		{
-			//guiReference.GraphicsManager.SetShowFlag(EEngineShowFlags::SF_Primitives, bPrimitives);
-			bShowFlagsChanged = true;
-		}
-
-		bool bBillboardText = showFlags & static_cast<uint32>(EEngineShowFlags::SF_BillboardText);
-		if (ImGui::Checkbox("Billboard Text", &bBillboardText))
-		{
-			//guiReference.GraphicsManager.SetShowFlag(EEngineShowFlags::SF_BillboardText, bBillboardText);
-			bShowFlagsChanged = true;
-		}
-
-		bool bShowWorldAxis = showFlags & static_cast<uint32>(EEngineShowFlags::SF_WorldAxis);
-		if (ImGui::Checkbox("World axis", &bShowWorldAxis))
-		{
-			//guiReference.GraphicsManager.SetShowFlag(EEngineShowFlags::SF_WorldAxis, bShowWorldAxis);
-			bShowFlagsChanged = true;
-		}
-
-		bool bShowBoundingBox = showFlags & static_cast<uint32>(EEngineShowFlags::SF_BoundingBox);
-		if (ImGui::Checkbox("Bounding Box", &bShowBoundingBox))
-		{
-			bShowFlagsChanged = true;
-		}
-
-		bool bShowGrid = showFlags & static_cast<uint32>(EEngineShowFlags::SF_Grid);
-		if (ImGui::Checkbox("Grid", &bShowGrid))
-		{
-			bShowFlagsChanged = true;
-		}
-
-		// Set the show flags based on the checkbox values
-		if (bShowFlagsChanged)
-		{
-			showFlags = 0;
-			showFlags += bPrimitives ? static_cast<uint32>(EEngineShowFlags::SF_Primitives) : 0;
-			showFlags += bBillboardText ? static_cast<uint32>(EEngineShowFlags::SF_BillboardText) : 0;
-			showFlags += bShowWorldAxis ? static_cast<uint32>(EEngineShowFlags::SF_WorldAxis) : 0;
-			showFlags += bShowBoundingBox ? static_cast<uint32>(EEngineShowFlags::SF_BoundingBox) : 0;
-			showFlags += bShowGrid ? static_cast<uint32>(EEngineShowFlags::SF_Grid) : 0;
-
-			outCommands.Emplace(FSetShowFlagCommand{ showFlags });
-		}
-		ImGui::EndCombo();
-	}
-
-	bool bOrthographic = guiReference.ViewportClient.isOrthographicTarget();
-	if (ImGui::Checkbox("Orthogonal", &bOrthographic))
-	{
-		//if (selectedActor && bOrthographic && guiReference.GraphicsManager.GetPerspectiveRatio() == 1.0f)
-		//{
-		//	const FVector offset = selectedActor->GetTransform().Location - camera.Location;
-		//	const float depth = FVector::dot(offset, camera.GetForwardVector());
-		//	camera.mOrthoDistance = FMath::Max(depth, 0.1f);
-		//}
-		//guiReference.GraphicsManager.StartProjectionTransition(bOrthographic);
-		outCommands.Emplace(FStartProjectionTransitionCommand{ bOrthographic });
-	}
-
 	/* Camera Control */
 	ImGui::SeparatorText("Camera Control");
 
 	const FCamera& camera = guiReference.ViewportClient.GetCamera();
-	float cameraFov = camera.mFovDegree;
 	float cameraLocation[3] = { camera.Location.x, camera.Location.y, camera.Location.z };
 	float cameraRotation[3] = { camera.Rotation.Roll, camera.Rotation.Pitch, camera.Rotation.Yaw };
 	float cameraSensitivity = camera.Sensitivity;
 	bool bCameraLocationChanged = false;
 	bool bCameraRotationChanged = false;
-
-	ImGui::Text("FOV       ");
-	ImGui::SameLine();
-	if (ImGui::SliderFloat("##FOV", &cameraFov, 5.0f, 175.0f))
-	{
-		outCommands.Emplace(FSetCameraFovCommand{ cameraFov });
-	}
 
 	// 1) 라벨 텍스트를 먼저 그리고 같은 줄로
 	ImGui::Text("Location ");
@@ -724,26 +859,6 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	if (bCameraRotationChanged)
 	{
 		outCommands.Emplace(FSetCameraRotationCommand{ FRotator{ cameraRotation[1], cameraRotation[2], cameraRotation[0] } });
-	}
-
-	ImGui::Text("GridWidth");
-	ImGui::SameLine();
-	float gridWidth = guiReference.GraphicsManager.GetGridWidth();
-	if (ImGui::SliderFloat("##GridWidth", &gridWidth, 0.1f, 10.0f))
-	{
-		//guiReference.GraphicsManager->SetGridWidth(gridWidth);
-		outCommands.Emplace(FSetGridWidthCommand{ gridWidth });
-		mEditorSetting.GridSpacing = gridWidth;
-		mEditorSetting.Save();
-	}
-
-	ImGui::Text("Sensitivity");
-	ImGui::SameLine();
-	if (ImGui::SliderFloat("##Sensitivity", &cameraSensitivity, 0.0f, 1.0f))
-	{
-		outCommands.Emplace(FSetCameraSensitivityCommand{ cameraSensitivity });
-		mEditorSetting.CameraSensitivity = cameraSensitivity;
-		mEditorSetting.Save();
 	}
 
 	/* Memory Info */
@@ -1206,7 +1321,7 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 	ImGui::End();
 }
 
-void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FEditorCommands& outCommands)
+void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands)
 {
 	const float hostWidth =
 		(std::max)(mImGuiIO.DisplaySize.x - mPanelWidth, 0.0f);
@@ -1233,13 +1348,13 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		ImGuiWindowFlags_NoScrollWithMouse |
 		ImGuiWindowFlags_NoBackground;
 
-	if (!ImGui::Begin("Viewport Layout Debug", nullptr, windowFlags))
+	if (!ImGui::Begin("Viewport", nullptr, windowFlags))
 	{
 		ImGui::End();
 		return;
 	}
 
-	drawViewportCountControls(viewportManager);
+	drawViewportSharedControls(viewportManager, sharedsettings, outCommands);
 
 	const ImVec2 hostMin = ImGui::GetCursorScreenPos();
 	const ImVec2 availableSize = ImGui::GetContentRegionAvail();

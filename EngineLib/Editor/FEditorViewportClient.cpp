@@ -332,6 +332,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	}
 
+	mCamera.Speed = mSharedSettings.cameraSpeed;
 	const FVector TargetVelocity = MoveDir * mCamera.Speed;
 
 	// 지수 감쇠만큼 카메라 속도가 서서히 줄어듬
@@ -472,7 +473,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다
 			FVector newLocation;
-			if (mGizmo.GetDragLocation(mRayNear, mRayFar, newLocation))
+			if (mGizmo.GetDragLocation(mRayNear, mRayFar, newLocation, mSharedSettings.getSnapSize()))
 			{
 				sceneManager->GetSelectedActor()->SetLocation(newLocation);
 			}

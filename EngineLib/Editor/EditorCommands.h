@@ -46,6 +46,9 @@ struct FCycleGizmoModeCommand {};
 struct FSetViewportTypeCommand { uint8 viewportId; EViewportType Type; };
 struct FSetViewportViewModeCommand { uint8 viewportId; EViewModeIndex ViewMode; };
 struct FSetViewportShowFlagCommand { uint8 viewportId; EEngineShowFlags Flag; bool bEnabled; };
+struct FSetSharedCameraSpeedCommand { float Speed; };
+struct FSetSharedSnapPresetCommand { uint8 PresetIndex; };
+struct FSetViewportFovCommand { uint8 ViewportId; float Fov; };
 
 /* GraphicsManager Commands */
 struct FSetGridWidthCommand { float GridWidth; };
@@ -90,6 +93,9 @@ using FEditorCommand = std::variant <
 	FSetViewportTypeCommand,
 	FSetViewportViewModeCommand,
 	FSetViewportShowFlagCommand,
+	FSetSharedCameraSpeedCommand,
+	FSetSharedSnapPresetCommand,
+	FSetViewportFovCommand,
 
 	FSetGridWidthCommand,
 	FStartProjectionTransitionCommand

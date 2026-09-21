@@ -50,7 +50,7 @@ enum class EViewportLayoutMode : uint8_t
 // Viewport들이 공유하는 정보들
 struct FViewportSharedSettings
 {
-	inline static constexpr std::array<float, 4> snapPresets{ 0.01f, 0.1f, 1.0f, 5.0f };
+	inline static constexpr std::array<float, 7> snapPresets{ 0.1, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0 };
 	uint8_t snapPresetIndex = 1;
 	float cameraSpeed = 5.0f;
 	float getSnapSize() const { return snapPresets[snapPresetIndex]; }
