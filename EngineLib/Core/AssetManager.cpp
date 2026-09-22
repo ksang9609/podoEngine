@@ -14,6 +14,21 @@
 #include "Rendering/Mesh/Material.h"
 #include "Rendering/Mesh/StaticMesh.h"
 
+// Default white material
+inline FMaterial defaultMaterial =
+{
+	.AmbientColor = FVector(0.0f, 0.0f, 0.0f),
+	.DiffuseColor = FVector(1.0f, 1.0f, 1.0f),
+	.SpecularColor = FVector(0.0f, 0.0f, 0.0f),
+
+	.SpecularExponent = 0.0f,
+	.Opacity = 1.0f,
+
+	.DiffuseTexture = BuiltinAssets::DefaultWhiteTexture,
+	.NormalTexture = FName(),
+	.SpecularTexture = FName(),
+};
+
 namespace
 {
 	// 서로 다른 메시에서 동일한 이름의 Material을 사용하더라도 AssetManager에서 충돌하지 않도록 고유한 material 식별자를 만드는 함수
@@ -30,6 +45,7 @@ namespace
 FAssetManager::FAssetManager()
 {
 	createBuiltinStaticMeshAssets();
+	createBuiltinMaterialAssets();
 }
 
 const UStaticMesh* FAssetManager::FindStaticMeshAssetOrNull(const FName& assetName) const
@@ -96,6 +112,7 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 	std::unique_ptr<UMaterial> cubeMaterialAsset(
 		FObjectFactory::ConstructObject<UMaterial>(BuiltinAssets::CubeMaterial, std::move(cubeMaterialData))
 	);
+	cubeMaterialAsset->SetName(BuiltinAssets::CubeMaterial);
 	TArray<const UMaterial*> cubeDefaultMaterials;
 	cubeDefaultMaterials.Add(cubeMaterialAsset.get());
 
@@ -104,6 +121,7 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 	std::unique_ptr<UStaticMesh> cubeMeshAsset = std::unique_ptr<UStaticMesh>(
 		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cubeMeshData), std::move(cubeDefaultMaterials))
 	);
+	cubeMeshAsset->SetName(BuiltinAssets::CubeMesh);
 
 	mMaterialAssets.Add(BuiltinAssets::CubeMaterial, std::move(cubeMaterialAsset));
 	mStaticMeshAssets.Add(BuiltinAssets::CubeMesh, std::move(cubeMeshAsset));
@@ -113,6 +131,7 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 	std::unique_ptr<UMaterial> sphereMaterialAsset(
 		FObjectFactory::ConstructObject<UMaterial>(BuiltinAssets::SphereMaterial, std::move(sphereMaterialData))
 	);
+	sphereMaterialAsset->SetName(BuiltinAssets::SphereMaterial);
 	TArray<const UMaterial*> sphereDefaultMaterials;
 	sphereDefaultMaterials.Add(sphereMaterialAsset.get());
 
@@ -121,9 +140,21 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 	std::unique_ptr<UStaticMesh> sphereMeshAsset = std::unique_ptr<UStaticMesh>(
 		FObjectFactory::ConstructObject<UStaticMesh>(std::move(sphereMeshData), std::move(sphereDefaultMaterials))
 	);
+	sphereMeshAsset->SetName(BuiltinAssets::SphereMesh);
 
 	mMaterialAssets.Add(BuiltinAssets::SphereMaterial, std::move(sphereMaterialAsset));
 	mStaticMeshAssets.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshAsset));
+}
+
+void FAssetManager::createBuiltinMaterialAssets()
+{
+	/* Default Material */
+	std::unique_ptr<FMaterial> defaultMaterialData = std::make_unique<FMaterial>(defaultMaterial);
+	std::unique_ptr<UMaterial> defaultMaterialAsset(
+		FObjectFactory::ConstructObject<UMaterial>(BuiltinAssets::DefaultMaterial, std::move(defaultMaterialData))
+	);
+	defaultMaterialAsset->SetName(BuiltinAssets::DefaultMaterial);
+	mMaterialAssets.Add(BuiltinAssets::DefaultMaterial, std::move(defaultMaterialAsset));
 }
 
 bool FAssetManager::createStaticMeshAsset(const FName& assetName)
@@ -150,6 +181,8 @@ bool FAssetManager::createStaticMeshAsset(const FName& assetName)
 			std::unique_ptr<UMaterial> materialAsset = std::unique_ptr<UMaterial>(
 				FObjectFactory::ConstructObject<UMaterial>(materialKey, std::move(materialData))
 			);
+			materialAsset->SetName(materialKey);
+
 			mMaterialAssets.Add(materialKey, std::move(materialAsset));
 		}
 
@@ -163,6 +196,7 @@ bool FAssetManager::createStaticMeshAsset(const FName& assetName)
 	std::unique_ptr<UStaticMesh> asset(
 		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cookedData.meshData), std::move(defaultMaterialRefs))
 	);
+	asset->SetName(assetName);
 
 	if (!asset)
 	{

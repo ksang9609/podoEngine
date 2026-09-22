@@ -125,6 +125,13 @@ const FBuffer* FGpuResourceManager::FindImmutableBufferOrAdd(FName bufferName)
 
 ID3D11ShaderResourceView* FGpuResourceManager::FindTextureOrAdd(FName texturePath)
 {
+
+	// 비어 있는 FName("None")은 텍스처 경로가 아니다.
+	if (texturePath.DisplayIndex < 0)
+	{
+		return nullptr;
+	}
+
 	ComPtr<ID3D11ShaderResourceView>* textureSRV = mTextureMap.Find(texturePath);
 	if (textureSRV)
 	{

@@ -28,12 +28,14 @@ FGraphicsManager::~FGraphicsManager()
 
 void FGraphicsManager::Initialize(
 	HWND hWindow,
-	FGpuResourceManager& gpuResourceManager)
+	FGpuResourceManager& gpuResourceManager,
+	FAssetManager& assetManager)
 {
 	mRenderer = std::make_unique<URenderer>();
 	mRenderer->Initialize(hWindow, gpuResourceManager);
 
 	mGpuResourceManagerRef = &gpuResourceManager;
+	mAssetManagerRef = &assetManager;
 }
 
 void FGraphicsManager::BeginFrame()
@@ -314,6 +316,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 {
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
+	auto& assets = *mAssetManagerRef;
 
 	mRenderer->PrepareStaticMesh();
 	for (const FRenderInfo* renderInfo : renderInfos)
@@ -366,33 +369,48 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 
 			const FMaterial* material = nullptr;
 
-			if (section.MaterialSlotIndex >= 0 && section.MaterialSlotIndex < renderInfo->Materials.Num())
-			{
-				material = &renderInfo->Materials[section.MaterialSlotIndex];
-			}
-
 			ID3D11ShaderResourceView* diffuseTexture = nullptr;
 			ID3D11ShaderResourceView* normalTexture = nullptr;
 			ID3D11ShaderResourceView* specularTexture = nullptr;
 
-			if (material)
+			// Find the material only if the render flags indicate that textures should be used
+			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
 			{
-				if (material->DiffuseTexture.DisplayIndex >= 0)
+				if (section.MaterialSlotIndex >= 0 && section.MaterialSlotIndex < renderInfo->Materials.Num())
 				{
-					diffuseTexture = resources.FindTextureOrAdd(material->DiffuseTexture);
-				}
-				if (material->NormalTexture.DisplayIndex >= 0)
-				{
-					normalTexture = resources.FindTextureOrAdd(material->NormalTexture);
+					material = &renderInfo->Materials[section.MaterialSlotIndex];
 				}
 
-				if (material->SpecularTexture.DisplayIndex >= 0)
+				if (!material)
 				{
-					specularTexture = resources.FindTextureOrAdd(material->SpecularTexture);
+					UE_LOG_F(Warning, Render, "Material not found for section {} of static mesh {}. Using default white material.",
+						section.Name, renderInfo->MeshName.ToString());
+
+					material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
 				}
 			}
+			else
+			{
+				material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
+			}
 
-			if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+			if (material->DiffuseTexture.DisplayIndex >= 0)
+			{
+				diffuseTexture = resources.FindTextureOrAdd(material->DiffuseTexture);
+			}
+			if (material->NormalTexture.DisplayIndex >= 0)
+			{
+				normalTexture = resources.FindTextureOrAdd(material->NormalTexture);
+			}
+
+			if (material->SpecularTexture.DisplayIndex >= 0)
+			{
+				specularTexture = resources.FindTextureOrAdd(material->SpecularTexture);
+			}
+
+
+			if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture) &&
+				renderInfo->TextureName.DisplayIndex >= 0)
 			{
 				diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
 			}

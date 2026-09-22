@@ -97,7 +97,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager = new FSceneManager();
 	mFileManager = new FFileManager();
 
-	mGraphicsManager->Initialize(hWnd, *mGpuResourceManager);
+	mGraphicsManager->Initialize(hWnd, *mGpuResourceManager, *mAssetManager);
 	mGpuResourceManager->Initialize(
 		*mAssetManager, *mGraphicsManager->GetRenderer()->GetDevice());
 
@@ -130,18 +130,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	FObjectFactory::SetDefaultFont(*mDefaultFontResource);
 	FObjectFactory::SetAssetManager(*mAssetManager);
 
-	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Cube, Cube_vertices, sizeof(Cube_vertices));
-	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Sphere, Sphere_vertices, sizeof(Sphere_vertices));
-	//mGraphicsManager->CreateBuffer(EPrimitive::EP_GizmoArrow, GizmoArrow_vertices, sizeof(GizmoArrow_vertices));
-	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Circle, Circle_vertices, sizeof(Circle_vertices));
-	//mGraphicsManager->CreateBuffer(EPrimitive::EP_Triangle, Triangle_vertices, sizeof(Triangle_vertices));
-	//mGraphicsManager->CreateBuffer(EPrimitive::EP_BillboardQuad, Quad_vertices, sizeof(Quad_vertices));
-
-	// 큐브 텍스처 6개로 나눈 버전을 사용하려면
-	/*BuildCubeAtlasVertices(CubeTextureVertices);
-
-	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, CubeTextureVertices, sizeof(CubeTextureVertices));*/
-
 	// 예시 텍스쳐 사용용
 	const int columns = 4;
 	const int rows = 4;
@@ -150,64 +138,9 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	// 24: 인덱스 방식 / 36: 기존 방식
 	FVertexTextured atlasVertices[24];
 
-	//BuildCubeAtlasVertices(atlasVertices, columns, rows, faceCells);
-
-	//mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Cube, atlasVertices, sizeof(atlasVertices));
-	//mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_BillboardQuad, Quad_textured_vertices, sizeof(Quad_textured_vertices));
-	//{
-	//	URenderer* renderer = mGraphicsManager->GetRenderer();
-
-	//	D3D11_BUFFER_DESC desc = {};
-	//	desc.Usage = D3D11_USAGE_IMMUTABLE;
-	//	desc.ByteWidth = sizeof(CubeTextureIndices);
-	//	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-	//	D3D11_SUBRESOURCE_DATA data = {};
-	//	data.pSysMem = CubeTextureIndices;
-
-	//	renderer->mDevice->CreateBuffer(&desc, &data, &renderer->CubeIndexBuffer);
-	//}
-
-	/*
-	// 구 텍스쳐 uv 매핑
-	constexpr std::size_t sphereVertexCount = sizeof(Sphere_vertices) / sizeof(Sphere_vertices[0]);
-
-	FVertexTextured sphereTextureVertices[sphereVertexCount];
-	BuildSphereTextureVertices(Sphere_vertices, sphereTextureVertices);
-	mGraphicsManager->CreateTexturedBuffer(EPrimitive::EP_Sphere, sphereTextureVertices, sizeof(sphereTextureVertices)); */
-
 	TArray<FVertexTextured> sphereIndexVertices;
 	TArray<UINT> sphereIndices;
 
-	//BuildSphereTextureMeshIndices(Sphere_vertices, sphereIndexVertices, sphereIndices);
-	//mGraphicsManager->CreateTexturedBuffer(
-	//	EPrimitive::EP_Sphere,
-	//	&sphereIndexVertices[0],
-	//	static_cast<uint32>(
-	//		sphereIndexVertices.Num() * sizeof(FVertexTextured))
-	//);
-
-	//{
-	//	URenderer* renderer = mGraphicsManager->GetRenderer();
-
-	//	renderer->SphereIndexBuffer = renderer->CreatePrimitiveIndexBuffer(
-	//		&sphereIndices[0],
-	//		static_cast<UINT>(sphereIndices.Num())
-	//	);
-
-	//	renderer->SphereIndexCount = renderer->SphereIndexBuffer
-	//		? static_cast<UINT>(sphereIndices.Num())
-	//		: 0;
-
-	//	if (!renderer->SphereIndexBuffer)
-	//	{
-	//		UE_LOG(Error, Render, "Failed to create sphere index buffer.");
-	//	}
-	//}
-
-	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Cube, L"Assets/Textures/CubeTextureSample.dds");
-	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_Sphere, L"Assets/Textures/EarthTexture.dds");
-	//mGraphicsManager->CreatePrimitiveTexture(EPrimitive::EP_BillboardQuad, L"Assets/Textures/Explosion_Alpha.dds");
 	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/CubeTextureSample.dds");
 	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/EarthTexture.dds");
 	mGpuResourceManager->CreateTextureFromDDS("Assets/Textures/Explosion_Alpha.dds");
@@ -218,27 +151,6 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mSceneManager->NewScene();
 
 
-	// Test: static mesh
-	//{
-		//	FStaticMesh* quadMesh = new FStaticMesh();
-		//	FLinearColor whiteColor(1.0f, 1.0f, 1.0f, 1.0f);
-		//	quadMesh->Vertices = {
-		//		{ FVector(-0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(0, 1) },
-		//		{ FVector(-0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {1, 0, 1, 1}, FVector2(0, 0)},
-		//		{ FVector(0.5f,  0.5f, 0.0f), FVector(0, 0, -1), {0, 1, 1, 1}, FVector2(1, 0)},
-		//		{ FVector(0.5f, -0.5f, 0.0f), FVector(0, 0, -1), whiteColor, FVector2(1, 1) },
-		//	};
-		//	quadMesh->Indices = { 0, 2, 1, 0, 3, 2 };
-		//	//mGraphicsManager->CreateStaticMeshBuffer(*quadMesh);
-
-		//	UStaticMesh* staticMeshAsset = FObjectFactory::ConstructObject<UStaticMesh>();
-		//	staticMeshAsset->SetStaticMeshAsset(quadMesh);
-
-		//	AActor* quadActor = FObjectFactory::SpawnStaticMeshActor(
-		//		FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1),
-		//		*staticMeshAsset);
-		//	mSceneManager->GetCurrentWorld()->AddActor(quadActor);
-		//}
 	{
 		//mGraphicsManager->CreateStaticMeshBuffer(
 		//	*mAssetManager->FindStaticMeshDataOrNull(BuiltinAssets::Cube)
