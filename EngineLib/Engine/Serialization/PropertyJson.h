@@ -4,6 +4,7 @@
 #include "Core/IO/JsonUtil.h"
 #include "Core/Name.h"
 #include "Core/Math/Color.h"
+#include "Core/Container/TArray.h"
 
 
 template<typename T>
@@ -336,5 +337,52 @@ struct TPropertyJsonSerializer<FLinearColor>
 			static_cast<float>(Value.at(1).ToFloat()),
 			static_cast<float>(Value.at(2).ToFloat()),
 			static_cast<float>(Value.at(3).ToFloat()));
+	}
+};
+
+template<typename T>
+struct TPropertyJsonSerializer<TArray<T>>
+{
+	static void Serialize(
+		json::JSON& OutJson,
+		const char* Key,
+		const TArray<T>& Value)
+	{
+		json::JSON arrayJson = json::JSON::Make(json::JSON::Class::Array);
+		for (const T& element : Value)
+		{
+			json::JSON elementJson;
+			TPropertyJsonSerializer<T>::Serialize(elementJson, "Value", element);
+			arrayJson.append(std::move(elementJson["Value"]));
+		}
+		OutJson[Key] = std::move(arrayJson);
+	}
+	static void Deserialize(
+		const json::JSON& InJson,
+		const char* Key,
+		TArray<T>& OutValue)
+	{
+		if (!InJson.hasKey(Key))
+		{
+			throw std::runtime_error("Missing TArray property");
+		}
+		const json::JSON& arrayJson = InJson.at(Key);
+		if (arrayJson.JSONType() != json::JSON::Class::Array)
+		{
+			throw std::runtime_error("Property requires TArray");
+		}
+
+		TArray<T> LoadedValues;
+
+		for (const auto& elementJson : arrayJson.ArrayRange())
+		{
+			json::JSON wrapper = json::JSON::Make(json::JSON::Class::Object);
+			wrapper["Value"] = elementJson;
+			T element{};
+			TPropertyJsonSerializer<T>::Deserialize(wrapper, "Value", element);
+			LoadedValues.Add(std::move(element));
+		}
+
+		OutValue = std::move(LoadedValues);
 	}
 };

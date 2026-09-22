@@ -27,8 +27,9 @@ class UStaticMeshComponent : public UMeshComponent
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 	void SetStaticMesh(const UStaticMesh& staticMeshRef);
-	const FName& GetStaticMeshAssetKey() const { return mStaticMeshRef->GetAssetPathFileName(); }
+	const FName& GetStaticMeshAssetKey() const { return mStaticMeshAssetKey; }
 	const FName& GetMaterialAssetKey(int32 slotIndex) const;
+	const TArray<FName>& GetMaterialAssetKeys() const { return mMaterialAssetKeys; }
 	uint32 GetMaterialSlotCount() const { return mStaticMeshRef ? mStaticMeshRef->GetDefaultMaterials().Num() : 0; }
 
 	const UStaticMesh* GetStaticMeshAsset() const;
@@ -52,9 +53,10 @@ private:
 
 private:
 	const UStaticMesh* mStaticMeshRef = nullptr;
-	FName mStaticMeshAssetKey;
+	FName mStaticMeshAssetKey; // Temporary, for serialization and editor purposes
 
 	// 인덱스는 FStaticMesh::MaterialSlots 인덱스와 동일하다.
 	TArray<FMaterialOverride> mMaterialOverrides;
+	TArray<FName> mMaterialAssetKeys; // Temporary, for serialization and editor purposes
 
 };

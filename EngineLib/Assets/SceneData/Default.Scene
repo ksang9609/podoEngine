@@ -1,5 +1,14 @@
 {
-  "NextUUID" : 19,
+  "EditorState" : {
+    "PerspectiveCamera" : {
+      "FOV" : 60.000000,
+      "FarZ" : 1000.000000,
+      "Location" : [-25.350653, 14.741779, 11.795405],
+      "NearZ" : 0.100000,
+      "Rotation" : [-20.494841, -33.665051, 0.000000]
+    }
+  },
+  "NextUUID" : 12,
   "Version" : 0,
   "World" : {
     "ClassName" : "UWorld",
@@ -10,29 +19,31 @@
           "ClassName" : "AActor",
           "Properties" : {
             "Name" : "StaticMesh",
-            "UUID" : 1,
+            "UUID" : 2,
             "mComponents" : [{
                 "ClassName" : "UStaticMeshComponent",
                 "ParentUUID" : -1,
                 "Properties" : {
                   "Name" : "UStaticMeshComponent",
-                  "UUID" : 2,
+                  "UUID" : 1,
                   "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mMaterialAssetKeys" : [""],
+                  "mRelativeLocation" : [2.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mStaticMeshAssetKey" : "Engine/Primitives/CubeMesh",
                   "mbShowBoundingBox" : true,
                   "mbUseTexture" : false,
-                  "mePrimitive" : "Unknown"
+                  "mePrimitive" : "StaticMesh"
                 }
               }, {
                 "ClassName" : "UNameComponent",
-                "ParentUUID" : 2,
+                "ParentUUID" : 1,
                 "Properties" : {
                   "Name" : "UNameComponent",
                   "UUID" : 3,
                   "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-                  "mNameText" : "Name: StaticMesh, UUID: 1",
+                  "mNameText" : "Name: StaticMesh, UUID: 2",
                   "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
@@ -41,35 +52,37 @@
                   "mePrimitive" : "BillboardQuad"
                 }
               }],
-            "mRootComponentUUID" : 2
+            "mRootComponentUUID" : 1
           }
         }, {
           "ClassName" : "AActor",
           "Properties" : {
             "Name" : "StaticMesh",
-            "UUID" : 4,
+            "UUID" : 5,
             "mComponents" : [{
                 "ClassName" : "UStaticMeshComponent",
                 "ParentUUID" : -1,
                 "Properties" : {
                   "Name" : "UStaticMeshComponent",
-                  "UUID" : 5,
+                  "UUID" : 4,
                   "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mRelativeLocation" : [2.000000, 0.000000, 0.000000],
+                  "mMaterialAssetKeys" : ["", "", "", "Engine/Materials/SphereMaterial", "", "", ""],
+                  "mRelativeLocation" : [-11.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mStaticMeshAssetKey" : "C:/Projects/week4/podoEngine/EngineLib/Assets/Rayquaza.obj",
                   "mbShowBoundingBox" : true,
                   "mbUseTexture" : false,
-                  "mePrimitive" : "Unknown"
+                  "mePrimitive" : "StaticMesh"
                 }
               }, {
                 "ClassName" : "UNameComponent",
-                "ParentUUID" : 5,
+                "ParentUUID" : 4,
                 "Properties" : {
                   "Name" : "UNameComponent",
                   "UUID" : 6,
                   "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-                  "mNameText" : "Name: StaticMesh, UUID: 4",
+                  "mNameText" : "Name: StaticMesh, UUID: 5",
                   "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
@@ -78,35 +91,39 @@
                   "mePrimitive" : "BillboardQuad"
                 }
               }],
-            "mRootComponentUUID" : 5
+            "mRootComponentUUID" : 4
           }
         }, {
           "ClassName" : "AActor",
           "Properties" : {
-            "Name" : "StaticMesh",
-            "UUID" : 7,
+            "Name" : "EarthActor",
+            "UUID" : 8,
             "mComponents" : [{
-                "ClassName" : "UStaticMeshComponent",
+                "ClassName" : "USphereComponent",
                 "ParentUUID" : -1,
                 "Properties" : {
-                  "Name" : "UStaticMeshComponent",
-                  "UUID" : 8,
-                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mRelativeLocation" : [-2.000000, -5.250913, 0.534766],
+                  "Name" : "USphereComponent",
+                  "UUID" : 7,
+                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "mMaterialAssetKeys" : ["Engine/Materials/CubeMaterial"],
+                  "mRelativeLocation" : [0.000000, -6.000000, 1.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mSpinSpeed" : 90.000000,
+                  "mStaticMeshAssetKey" : "Engine/Primitives/SphereMesh",
                   "mbShowBoundingBox" : true,
-                  "mbUseTexture" : false,
-                  "mePrimitive" : "Unknown"
+                  "mbSpin" : true,
+                  "mbUseTexture" : true,
+                  "mePrimitive" : "StaticMesh"
                 }
               }, {
                 "ClassName" : "UNameComponent",
-                "ParentUUID" : 8,
+                "ParentUUID" : 7,
                 "Properties" : {
                   "Name" : "UNameComponent",
                   "UUID" : 9,
                   "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-                  "mNameText" : "Name: StaticMesh, UUID: 7",
+                  "mNameText" : "Name: EarthActor, UUID: 8",
                   "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
@@ -115,118 +132,35 @@
                   "mePrimitive" : "BillboardQuad"
                 }
               }],
-            "mRootComponentUUID" : 8
+            "mRootComponentUUID" : 7
           }
         }, {
           "ClassName" : "AActor",
           "Properties" : {
-            "Name" : "Cube",
+            "Name" : "Particle",
             "UUID" : 10,
             "mComponents" : [{
-                "ClassName" : "UCubeComponent",
+                "ClassName" : "UParticleSubUVComponent",
                 "ParentUUID" : -1,
                 "Properties" : {
-                  "Name" : "UCubeComponent",
+                  "Name" : "UParticleSubUVComponent",
                   "UUID" : 11,
-                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mRelativeLocation" : [0.000000, 3.376552, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mbShowBoundingBox" : true,
-                  "mbUseTexture" : false,
-                  "mePrimitive" : "Cube"
-                }
-              }, {
-                "ClassName" : "UNameComponent",
-                "ParentUUID" : 11,
-                "Properties" : {
-                  "Name" : "UNameComponent",
-                  "UUID" : 12,
+                  "mBlendStateType" : 1,
                   "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-                  "mNameText" : "Name: Cube, UUID: 10",
-                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
+                  "mFrameDuration" : 0.100000,
+                  "mNumCols" : 6,
+                  "mNumRows" : 6,
+                  "mPlayRate" : 1.000000,
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
+                  "mbLooping" : true,
                   "mbShowBoundingBox" : true,
                   "mbUseTexture" : false,
                   "mePrimitive" : "BillboardQuad"
                 }
               }],
             "mRootComponentUUID" : 11
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "Cube",
-            "UUID" : 13,
-            "mComponents" : [{
-                "ClassName" : "UCubeComponent",
-                "ParentUUID" : -1,
-                "Properties" : {
-                  "Name" : "UCubeComponent",
-                  "UUID" : 14,
-                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mRelativeLocation" : [0.000000, 1.750932, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mbShowBoundingBox" : true,
-                  "mbUseTexture" : false,
-                  "mePrimitive" : "Cube"
-                }
-              }, {
-                "ClassName" : "UNameComponent",
-                "ParentUUID" : 14,
-                "Properties" : {
-                  "Name" : "UNameComponent",
-                  "UUID" : 15,
-                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-                  "mNameText" : "Name: Cube, UUID: 13",
-                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mbShowBoundingBox" : true,
-                  "mbUseTexture" : false,
-                  "mePrimitive" : "BillboardQuad"
-                }
-              }],
-            "mRootComponentUUID" : 14
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "Cube",
-            "UUID" : 16,
-            "mComponents" : [{
-                "ClassName" : "UCubeComponent",
-                "ParentUUID" : -1,
-                "Properties" : {
-                  "Name" : "UCubeComponent",
-                  "UUID" : 17,
-                  "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mRelativeLocation" : [-2.988118, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mbShowBoundingBox" : true,
-                  "mbUseTexture" : false,
-                  "mePrimitive" : "Cube"
-                }
-              }, {
-                "ClassName" : "UNameComponent",
-                "ParentUUID" : 17,
-                "Properties" : {
-                  "Name" : "UNameComponent",
-                  "UUID" : 18,
-                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-                  "mNameText" : "Name: Cube, UUID: 16",
-                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mbShowBoundingBox" : true,
-                  "mbUseTexture" : false,
-                  "mePrimitive" : "BillboardQuad"
-                }
-              }],
-            "mRootComponentUUID" : 17
           }
         }]
     }

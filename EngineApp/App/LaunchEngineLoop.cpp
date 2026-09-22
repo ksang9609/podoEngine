@@ -563,7 +563,9 @@ void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 	{
 		UStaticMeshComponent* staticMeshComponent = *it;
 		const FName& assetKey = staticMeshComponent->GetStaticMeshAssetKey();
+		const TArray<FName> materialKeys = staticMeshComponent->GetMaterialAssetKeys();
 
+		/* Load Static Mesh */
 		if (assetKey == FName())
 		{
 			continue;
@@ -580,6 +582,29 @@ void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 			UE_LOG(Error, Editor,
 				"Failed to restore static mesh: %s (%s)",
 				assetKey.ToString().CStr(), exception.what());
+		}
+
+		/* Load Materials */
+		{
+			for (uint32 i = 0; i < materialKeys.Num(); ++i)
+			{
+				if (materialKeys[i] == FName())
+				{
+					continue;
+				}
+				const UMaterial* material =
+					mAssetManager->FindMaterialAssetOrNull(materialKeys[i]);
+
+				if (!material)
+				{
+					UE_LOG_F(Error, Editor,
+						"Failed to restore material: {}",
+						materialKeys[i].ToString().CStr());
+					continue;
+				}
+
+				staticMeshComponent->SetMaterial(i, *material);
+			}
 		}
 	}
 }
