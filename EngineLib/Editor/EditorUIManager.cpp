@@ -210,9 +210,19 @@ namespace
 		FEditorViewportManager& viewportManager,
 		const FPoint& mousePoint)
 	{
+		const bool bViewportWindowHovered =
+			ImGui::IsWindowHovered();
+
+		const bool bAssetDragging =
+			ImGui::GetDragDropPayload() != nullptr;
+
+		const bool bCanInteractWithViewport =
+			bViewportWindowHovered && !bAssetDragging;
+
 		const bool bActivationClick =
-			ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
-			ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+			bCanInteractWithViewport && (
+				ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+				ImGui::IsMouseClicked(ImGuiMouseButton_Right));
 
 		FViewport* clickedViewport = nullptr;
 
@@ -227,7 +237,9 @@ namespace
 			}
 
 			FViewportWindowState& windowState = viewport->getWindowState();
-			windowState.bImageHovered = windowState.imageRect.contains(mousePoint);
+			windowState.bImageHovered =
+				bCanInteractWithViewport &&
+				windowState.imageRect.contains(mousePoint);
 
 			if (bActivationClick)
 			{
@@ -1753,8 +1765,26 @@ void FEditorUIManager::drawAssetBrowserContents(
 				const FString assetName = assetKey.ToString();
 
 				ImGui::PushID(assetKey.ComparisonIndex);
-				ImGui::Selectable(assetName.CStr(), false);
-				// 다음 단계: 여기에 메시 드래그 시작 코드 추가
+
+				{ /* Dragable */
+					ImGui::Selectable(
+						assetName.CStr(),
+						false,
+						ImGuiSelectableFlags_NoAutoClosePopups);
+
+					if (ImGui::BeginDragDropSource())
+					{
+						ImGui::SetDragDropPayload(
+							"ASSET_STATIC_MESH",
+							&assetKey,
+							sizeof(assetKey));
+
+						// 마우스를 따라다니는 미리보기
+						ImGui::Text("Static Mesh: %s", assetName.CStr());
+
+						ImGui::EndDragDropSource();
+					}
+				}
 				ImGui::PopID();
 			}
 
@@ -1774,8 +1804,25 @@ void FEditorUIManager::drawAssetBrowserContents(
 				const FString assetName = assetKey.ToString();
 
 				ImGui::PushID(assetKey.ComparisonIndex);
-				ImGui::Selectable(assetName.CStr(), false);
-				// 다음 단계: 여기에 머티리얼 드래그 시작 코드 추가
+
+				{ /* Dragable */
+					ImGui::Selectable(
+						assetName.CStr(),
+						false,
+						ImGuiSelectableFlags_NoAutoClosePopups);
+
+					if (ImGui::BeginDragDropSource())
+					{
+						ImGui::SetDragDropPayload(
+							"ASSET_MATERIAL",
+							&assetKey,
+							sizeof(assetKey));
+
+						ImGui::Text("Material: %s", assetName.CStr());
+
+						ImGui::EndDragDropSource();
+					}
+				}
 				ImGui::PopID();
 			}
 
