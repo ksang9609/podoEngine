@@ -645,7 +645,7 @@ bool drawPropertyValue(
 			else if constexpr (std::is_same_v<T, float>)
 			{
 				float value = typedValue;
-				if (ImGui::InputFloat(label, &value))
+				if (ImGui::DragFloat(label, &value, 0.1f))
 				{
 					outValue = value;
 					return true;
@@ -1311,54 +1311,6 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 								});
 						}
 
-					}
-
-					if (const UPrimitiveComponent* primitiveComponent = component->Cast<UPrimitiveComponent>())
-					{
-						bool bUseTexture = primitiveComponent->GetUseTexture();
-						FLinearColor color = primitiveComponent->GetColor();
-
-						if (ImGui::Checkbox("Use Texture", &bUseTexture))
-							outCommands.Emplace(FSetComponentUseTextureCommand{ primitiveComponent->GetObjectID(), bUseTexture });
-
-						if (ImGui::ColorEdit4("Color", &color.R))
-							outCommands.Emplace(FSetComponentColorCommand{ primitiveComponent->GetObjectID(), color });
-					}
-
-					if (const USphereComponent* sphereComponent = component->Cast<USphereComponent>())
-					{
-						bool bSpin = sphereComponent->GetSpin();
-						float spinSpeed = sphereComponent->GetSpinSpeed();
-
-						//if (ImGui::Checkbox("Spin", &bSpin))
-						//	outCommands.Emplace(FSetPropertyCommand{ sphereComponent->GetObjectID(), "mbSpin", bSpin });
-						FPropertyValue outValue;
-						if (drawPropertyValue("Spin", *sphereComponent->GetPropertyValueOrNull("mbSpin"), outValue))
-							outCommands.Emplace(FSetPropertyCommand{ sphereComponent->GetObjectID(), "mbSpin", outValue });
-
-						if (ImGui::DragFloat("Spin Speed", &spinSpeed, 0.1f, 0.0f, 3600.0f))
-							outCommands.Emplace(FSetSphereComponentSpinSpeedCommand{ sphereComponent->GetObjectID(), spinSpeed });
-
-						//FPropertyValue value = sphereComponent->GetRuntimeClass()->FindProperty("mSpinSpeed")->GetValue(sphereComponent);
-						//const float* spinSpeedValue = std::get_if<float>(&value);
-						const float* spinSpeedValue = sphereComponent->GetPropertyValueOrNull<float>("mSpinSpeed");
-						UE_LOG_F(Log, Editor, "SphereComponent::mSpinSpeed: {}", *spinSpeedValue);
-					}
-
-					if (const UParticleSubUVComponent* particleSubUVComponent = component->Cast<UParticleSubUVComponent>())
-					{
-						bool bLooping = particleSubUVComponent->IsLooping();
-						float playRate = particleSubUVComponent->GetPlayRate();
-						bool bUseAddtiveBlend = particleSubUVComponent->GetBlendStateType() == EBlendStateType::BST_Additive;
-
-						if (ImGui::Checkbox("Looping", &bLooping))
-							outCommands.Emplace(FSetParticleSubUVComponentLoopingCommand{ particleSubUVComponent->GetObjectID(), bLooping });
-
-						if (ImGui::DragFloat("Play Rate", &playRate, 0.1f, 0.0f, 10.0f))
-							outCommands.Emplace(FSetParticleSubUVComponentPlayRateCommand{ particleSubUVComponent->GetObjectID(), playRate });
-
-						if (ImGui::Checkbox("Additive Blend", &bUseAddtiveBlend))
-							outCommands.Emplace(FSetParticleSubUVComponentBlendStateTypeCommand{ particleSubUVComponent->GetObjectID(), bUseAddtiveBlend ? EBlendStateType::BST_Additive : EBlendStateType::BST_AlphaBlend });
 					}
 				}
 

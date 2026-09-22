@@ -37,17 +37,26 @@ struct FPropertyInfo
 	DeserializeFunc Deserialize = nullptr;
 };
 
-#define REFLECT_PROPERTY(OwnerType, MemberName, ...)                 \
-    MakeProperty<                                               \
-        OwnerType,                                              \
-        decltype(OwnerType::MemberName),                        \
-        &OwnerType::MemberName                                  \
+#define REFLECT_PROPERTY(OwnerType, MemberName, ...)					\
+    MakeProperty<														\
+        OwnerType,														\
+        decltype(OwnerType::MemberName),								\
+        &OwnerType::MemberName											\
+	>(#MemberName, ##__VA_ARGS__)
+
+#define REFLECT_PROPERTY_SETTER(OwnerType, MemberName, SetterFunc, ...)		\
+	MakeProperty<															\
+		OwnerType,															\
+		decltype(OwnerType::MemberName),									\
+		&OwnerType::MemberName,												\
+		SetterFunc															\
 >(#MemberName, ##__VA_ARGS__)
 
 template<
 	typename TOwner,
 	typename TValue,
-	TValue TOwner::* Member>
+	TValue TOwner::* Member,
+	auto Setter = nullptr>
 FPropertyInfo MakeProperty(const char* JsonKey, EPropertyFlags PropertyFlags = EPropertyFlags::Serializable)
 {
 	FPropertyInfo Property;
@@ -87,7 +96,22 @@ FPropertyInfo MakeProperty(const char* JsonKey, EPropertyFlags PropertyFlags = E
 				}
 
 				TOwner* Owner = static_cast<TOwner*>(Object);
-				Owner->*Member = std::get<TValue>(value);
+
+				if constexpr (std::is_same_v<decltype(Setter), std::nullptr_t>)
+				{
+					Owner->*Member = std::get<TValue>(value);
+				}
+				else
+				{
+					static_assert(std::is_invocable_r_v<
+						void,
+						decltype(Setter),
+						TOwner*,
+						const TValue&>,
+						"Setter must be invocable with (TOwner*, const TValue&)");
+
+					std::invoke(Setter, Owner, *typedValue);
+				}
 			};
 	}
 
