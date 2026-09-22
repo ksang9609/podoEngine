@@ -6,6 +6,7 @@
 
 #include "Core/Core.h"
 #include "Core/Container/TArray.h"
+#include "Editor/EditorCommands.h"
 
 enum class ELogLevel { Log, Warning, Error, Fatal };
 enum class ELogCategory { Core, Editor, Render, Physics, Etc };
@@ -65,7 +66,9 @@ public:
 
 	void Clear();
 	void Update();
-	void DrawContents();
+	void DrawContents(FEditorCommands& outCommands);
+
+
 
 private:
 	FString mTitle;
@@ -78,7 +81,7 @@ private:
 	void FlushPending();
 
 	const FConsoleMessage& GetMessage(size_t Index) const;
-	void ExecuteCommand(const char* Input);
+	void ExecuteCommand(const char* Input, FEditorCommands& outCommands);
 
 	size_t mCapacity = 1000;
 	size_t mFront = 0;

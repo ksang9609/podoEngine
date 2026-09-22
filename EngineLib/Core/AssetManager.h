@@ -28,6 +28,9 @@ public:
 	TArray<FName> GetAllStaticMeshAssetKeys() const;
 	TArray<FName> GetAllMaterialAssetKeys() const;
 
+	uint32 GetStaticMeshAssetCount() const { return mStaticMeshAssets.Num(); }
+	uint32 GetMaterialAssetCount() const { return mMaterialAssets.Num(); }
+
 private:
 	/* Assets */
 	TMap<FName, std::unique_ptr<UStaticMesh>> mStaticMeshAssets;
