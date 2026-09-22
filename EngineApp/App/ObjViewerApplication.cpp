@@ -255,7 +255,7 @@ bool FObjViewerApplication::InitializeRenderer()
 
 	mGraphicsManager = std::make_unique<FGraphicsManager>();
 
-	mGraphicsManager->Initialize(mWindow, *mGpuResourceManager);
+	mGraphicsManager->Initialize(mWindow, *mGpuResourceManager, *mAssetManager);
 
 	ID3D11Device* device = mGraphicsManager->GetRenderer()->GetDevice();
 
@@ -512,6 +512,14 @@ bool FObjViewerApplication::LoadObjFile(const std::filesystem::path& objPath)
 		if (newActor == nullptr)
 		{
 			return false;
+		}
+
+		UStaticMeshComponent* meshComponent =
+			newActor->GetComponentByType<UStaticMeshComponent>();
+
+		if (meshComponent != nullptr)
+		{
+			meshComponent->SetUseTexture(true);
 		}
 
 		if (mDisplayedActor != nullptr)
