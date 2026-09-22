@@ -124,7 +124,7 @@ namespace
 		ImGui::BeginDisabled(viewportCount >= maxViewportCount);
 		if (ImGui::Button(" + "))
 		{
-			layoutChanged =viewportManager.addViewport() != invalidViewportId;
+			layoutChanged = viewportManager.addViewport() != invalidViewportId;
 		}
 		ImGui::EndDisabled();
 
@@ -150,9 +150,9 @@ namespace
 
 		ImGui::SameLine();
 
-		ImGui::PushStyleColor(ImGuiCol_FrameBg,ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,ImVec4(0.50f, 0.50f, 0.50f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgActive,ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.50f, 0.50f, 0.50f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
 
 		float speed = sharedSettings.cameraSpeed;
 		ImGui::SetNextItemWidth(80.0f);
@@ -162,11 +162,11 @@ namespace
 		}
 
 		int presetIndex = sharedSettings.snapPresetIndex;
-		const char* presets[] = {  "0.1", "0.5", "1.0", "2.0", "3.0", "4.0", "5.0" };
+		const char* presets[] = { "0.1", "0.5", "1.0", "2.0", "3.0", "4.0", "5.0" };
 
-		ImGui::PushStyleColor(ImGuiCol_Header,ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_HeaderHovered,ImVec4(0.50f, 0.50f, 0.50f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_HeaderActive,ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.50f, 0.50f, 0.50f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(100.0f);
@@ -455,7 +455,7 @@ namespace
 					outCommands.Emplace(FSetViewportTypeCommand{
 						viewport.getId(),
 						option.Type
-					});
+						});
 				}
 			}
 
@@ -475,7 +475,7 @@ namespace
 					outCommands.Emplace(FSetViewportViewModeCommand{
 						viewport.getId(),
 						option.Mode
-					});
+						});
 				}
 			}
 
@@ -496,7 +496,7 @@ namespace
 						viewport.getId(),
 						option.Flag,
 						!bEnabled
-					});
+						});
 				}
 			}
 
@@ -769,7 +769,7 @@ void FEditorUIManager::LoadSettings(FEditorViewportManager& viewportManager, FEd
 	outCommands.Emplace(FSetGridWidthCommand{ mEditorSetting.GridSpacing });
 }
 
-void FEditorUIManager::UpdateGui(const FGuiReference& guiReference,FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands)
+void FEditorUIManager::UpdateGui(const FGuiReference& guiReference, FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands)
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -779,9 +779,9 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference,FViewportShar
 	updateControlPanelGUI(guiReference, outCommands);
 	updatePropertyWindowGUI(guiReference, outCommands);
 	updateObjectListPanelGUI(guiReference, outCommands);
-	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings, guiReference.StatManager,outCommands);
+	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings, guiReference.StatManager, outCommands);
 
-	updateBottomBarGUI(outCommands);
+	updateBottomBarGUI(guiReference, outCommands);
 }
 
 FString saveSceneFileDialog();
@@ -1607,7 +1607,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 	ImGui::End();
 }
 
-void FEditorUIManager::updateBottomBarGUI(FEditorCommands& outCommands)
+void FEditorUIManager::updateBottomBarGUI(const FGuiReference& guiReference, FEditorCommands& outCommands)
 {
 	const float displayWidth = mImGuiIO.DisplaySize.x;
 	const float displayHeight = mImGuiIO.DisplaySize.y;
@@ -1642,6 +1642,7 @@ void FEditorUIManager::updateBottomBarGUI(FEditorCommands& outCommands)
 
 	if (ImGui::Begin("##EditorBottomBar", nullptr, barFlags))
 	{
+		/* Console */
 		constexpr const char* consolePopupId =
 			"ConsoleDrawer";
 
@@ -1690,10 +1691,100 @@ void FEditorUIManager::updateBottomBarGUI(FEditorCommands& outCommands)
 			ConsoleWindow::GetInstance().DrawContents(outCommands);
 			ImGui::EndPopup();
 		}
+
+		/* Asset Browser */
+		ImGui::SameLine();
+
+		constexpr const char* assetPopupId = "AssetBrowserDrawer";
+		const bool bAssetBrowserOpen =
+			ImGui::IsPopupOpen(assetPopupId);
+
+		if (ImGui::Button(
+			bAssetBrowserOpen
+			? "Asset Browser *###AssetBrowserButton"
+			: "Asset Browser###AssetBrowserButton"))
+		{
+			if (!bAssetBrowserOpen)
+			{
+				ImGui::OpenPopup(assetPopupId);
+			}
+		}
+
+		ImGui::SetNextWindowPos(
+			ImVec2(
+				mPanelWidth,
+				displayHeight - BOTTOM_BAR_HEIGHT),
+			ImGuiCond_Always,
+			ImVec2(0.0f, 1.0f));
+
+		ImGui::SetNextWindowSize(
+			ImVec2(barWidth, popupHeight),
+			ImGuiCond_Always);
+
+		if (ImGui::BeginPopup(assetPopupId, popupFlags))
+		{
+			drawAssetBrowserContents(guiReference.AssetManager);
+			ImGui::EndPopup();
+		}
+
 	}
 
 	ImGui::End();
 	ImGui::PopStyleVar();
+}
+
+void FEditorUIManager::drawAssetBrowserContents(
+	const FAssetManager& assetManager)
+{
+	ImGui::TextUnformatted("Asset Browser");
+	ImGui::Separator();
+
+	if (ImGui::BeginTabBar("AssetBrowserTabs"))
+	{
+		if (ImGui::BeginTabItem("Static Meshes"))
+		{
+			const TArray<FName> assetKeys =
+				assetManager.GetAllStaticMeshAssetKeys();
+
+			ImGui::PushID("StaticMeshes");
+
+			for (const FName& assetKey : assetKeys)
+			{
+				const FString assetName = assetKey.ToString();
+
+				ImGui::PushID(assetKey.ComparisonIndex);
+				ImGui::Selectable(assetName.CStr(), false);
+				// 다음 단계: 여기에 메시 드래그 시작 코드 추가
+				ImGui::PopID();
+			}
+
+			ImGui::PopID();
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Materials"))
+		{
+			const TArray<FName> assetKeys =
+				assetManager.GetAllMaterialAssetKeys();
+
+			ImGui::PushID("Materials");
+
+			for (const FName& assetKey : assetKeys)
+			{
+				const FString assetName = assetKey.ToString();
+
+				ImGui::PushID(assetKey.ComparisonIndex);
+				ImGui::Selectable(assetName.CStr(), false);
+				// 다음 단계: 여기에 머티리얼 드래그 시작 코드 추가
+				ImGui::PopID();
+			}
+
+			ImGui::PopID();
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
 }
 
 void FEditorUIManager::saveSettings(const FEditorViewportManager& viewportManager)
