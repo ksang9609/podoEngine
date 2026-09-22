@@ -19,6 +19,7 @@ class FFileManager;
 class FSceneManager;
 class FAssetManager;
 class FEditorViewportManager;
+class FStatManager;
 
 struct ID3D11ShaderResourceView;
 
@@ -33,6 +34,7 @@ struct FGuiReference
 	const FFileManager& FileManager;
 	const FAssetManager& AssetManager;
 	FEditorViewportManager& ViewportManager;
+	const FStatManager& StatManager;
 };
 
 struct FGuiInputField
@@ -61,8 +63,8 @@ public:
 
 	static constexpr float BOTTOM_BAR_HEIGHT = 32.0f;
 
-	void LoadSettings(FEditorCommands& outCommands);
-
+	void LoadSettings(FEditorViewportManager& viewportManager, FEditorCommands& outCommands);
+	void saveSettings(const FEditorViewportManager& viewportManager);
 	void UpdateGui(const FGuiReference& guiReference,FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands);
 	float GetPanelWidth() const { return mPanelWidth; }
 	/*void RenderLoadingScreen(FGraphicsManager& graphicsManager);*/
@@ -85,9 +87,9 @@ private:
 	static constexpr float CONSOLE_POPUP_HEIGHT_RATIO = 0.35f;
 
 	void drawMainMenuBar(FEditorCommands& outCommands);
-	void updateBottomBarGUI();
+	void updateBottomBarGUI(FEditorCommands& outCommands);
 	void updateControlPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updatePropertyWindowGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
 	void updateObjectListPanelGUI(const FGuiReference& guiReference, FEditorCommands& outCommands);
-	void updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands);
+	void updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, const FStatManager& statManager, FEditorCommands& outCommands);
 };

@@ -4,10 +4,11 @@
 #include "Rendering/RenderInfo.h"
 
 #include "PrimitiveComponent.h"
+#include "StaticMeshComponent.h"
 
-class USphereComponent : public UPrimitiveComponent
+class USphereComponent : public UStaticMeshComponent
 {
-	DECLARE_OBJECT(USphereComponent, UPrimitiveComponent)
+	DECLARE_OBJECT(USphereComponent, UStaticMeshComponent)
 	DECLARE_SERIALIZATION()
 
 public:
@@ -18,6 +19,7 @@ public:
 
 	void Initialize();
 	void Initialize(FVector location, FRotator rotation, FVector scale3D,
+		const UStaticMesh* sphereMeshOrNull,
 		bool bSpin = false, float spinSpeed = 90.0f);
 
 	bool GetSpin() const { return mbSpin; }
@@ -28,14 +30,13 @@ public:
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
-private:
-	FSubUVMesh mSubUVMesh;
+protected:
+	virtual FRenderInfo makeRenderInfo() const override;
 
+private:
 	bool mbSpin = false;
 	float mSpinSpeed = 90.0f; // degrees per second
 
 	/* Internal State */
 	float mElapsedDegrees = 0.0f; // Total degrees rotated
-
-	virtual FRenderInfo makeRenderInfo() const override;
 };

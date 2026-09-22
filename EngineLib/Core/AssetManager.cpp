@@ -10,9 +10,22 @@
 #include "Rendering/Primitives/Sphere.h"
 #include <filesystem>
 #include <Editor/Console.h>
-#include <Rendering/Mesh/ObjImporter.h>
+#include "Rendering/Mesh/StaticMeshLoader.h"
 #include "Rendering/Mesh/Material.h"
 #include "Rendering/Mesh/StaticMesh.h"
+
+namespace
+{
+	// 서로 다른 메시에서 동일한 이름의 Material을 사용하더라도 AssetManager에서 충돌하지 않도록 고유한 material 식별자를 만드는 함수
+	FName MakeImportedMaterialKey(const FName& meshKey, const FString& slotName)
+	{
+		FString key = meshKey.ToString();
+		key.AppendChar('#');
+		key.Append(slotName);
+
+		return FName(key);
+	}
+}
 
 FAssetManager::FAssetManager()
 {
@@ -117,20 +130,20 @@ bool FAssetManager::createStaticMeshAsset(const FName& assetName)
 {
 	const FString fileName = assetName.ToString();
 
-	FObjImportResult imported;
+	FStaticMeshCookedData cookedData;
 
-	if (!FObjImporter::ParseAndConvert(fileName, imported) ||
-		!imported.meshData ||
-		imported.materialSlots.IsEmpty())
+	if (!StaticMeshLoader::Load(fileName, cookedData) ||
+		!cookedData.meshData ||
+		cookedData.materialSlots.IsEmpty())
 	{
 		return false;
 	}
 
 	// Create Material Assets
 	TArray<const UMaterial*> defaultMaterialRefs;
-	for (auto& materialSlot : imported.materialSlots)
+	for (auto& materialSlot : cookedData.materialSlots)
 	{
-		const FName materialKey = FName(materialSlot.Name);
+		const FName materialKey = MakeImportedMaterialKey(assetName,materialSlot.Name);
 		if (!mMaterialAssets.Contains(materialKey))
 		{
 			std::unique_ptr<FMaterial> materialData = std::make_unique<FMaterial>(materialSlot.DefaultMaterial);
@@ -145,10 +158,10 @@ bool FAssetManager::createStaticMeshAsset(const FName& assetName)
 	}
 
 	// Create Static Mesh Asset
-	imported.meshData->PathFileName = assetName;
+	cookedData.meshData->PathFileName = assetName;
 
 	std::unique_ptr<UStaticMesh> asset(
-		FObjectFactory::ConstructObject<UStaticMesh>(std::move(imported.meshData), std::move(defaultMaterialRefs))
+		FObjectFactory::ConstructObject<UStaticMesh>(std::move(cookedData.meshData), std::move(defaultMaterialRefs))
 	);
 
 	if (!asset)

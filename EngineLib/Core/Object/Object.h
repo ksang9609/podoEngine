@@ -31,6 +31,37 @@ struct FClassInfo
 		DeclaredProperties(declaredProperties) {
 	}
 
+	template<typename TVisitor>
+	void ForEachProperty(TVisitor&& Visitor) const
+	{
+		if (SuperClass)
+		{
+			SuperClass->ForEachProperty(Visitor);
+		}
+
+		for (const FPropertyInfo& property : DeclaredProperties)
+		{
+			Visitor(property);
+		}
+	}
+
+	const FPropertyInfo* FindProperty(std::string_view Key) const
+	{
+		// Find property in the current class's declared properties
+		for (const FPropertyInfo& property : DeclaredProperties)
+		{
+			if (property.JsonKey && Key == std::string_view(property.JsonKey))
+			{
+				return &property;
+			}
+		}
+
+		// If not found, check the superclass
+		return SuperClass ? SuperClass->FindProperty(Key) : nullptr;
+	}
+
+
+
 	UObject* CreateInstance() const;
 
 private:
@@ -111,6 +142,51 @@ public:
 	inline static uint64 GetGObjectRevision() { return GUObjectRevision; }
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
+
+
+	/* Property Reflection */
+	template<typename T>
+	T* GetPropertyValueOrNull(std::string_view propertyKey) const
+	{
+		const FPropertyInfo* propertyInfo = GetRuntimeClass()->FindProperty(propertyKey);
+		if (!propertyInfo)
+		{
+			return nullptr;
+		}
+		FPropertyValue value = propertyInfo->GetValue(this);
+		if (std::holds_alternative<T>(value))
+		{
+			return &std::get<T>(value);
+		}
+		return nullptr;
+	}
+
+	FPropertyValue* GetPropertyValueOrNull(std::string_view propertyKey) const
+	{
+		const FPropertyInfo* propertyInfo = GetRuntimeClass()->FindProperty(propertyKey);
+		if (!propertyInfo)
+		{
+			return nullptr;
+		}
+		FPropertyValue value = propertyInfo->GetValue(this);
+		return new FPropertyValue(value);
+	}
+
+	void SetPropertyValue(std::string_view propertyKey, const FPropertyValue& value)
+	{
+		const FPropertyInfo* propertyInfo = GetRuntimeClass()->FindProperty(propertyKey);
+		if (!propertyInfo)
+		{
+			throw std::runtime_error("Property not found: " + std::string(propertyKey));
+		}
+		propertyInfo->SetValue(*propertyInfo, this, value);
+	}
+
+	template<typename TVisitor>
+	void ForEachProperty(TVisitor&& Visitor) const
+	{
+		GetRuntimeClass()->ForEachProperty(std::forward<TVisitor>(Visitor));
+	}
 
 public:
 	static TSparseArray<UObject*> GUObjectArray;

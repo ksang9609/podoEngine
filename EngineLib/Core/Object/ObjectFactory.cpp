@@ -99,17 +99,17 @@ UObject* FObjectFactory::LoadObject(const FClassInfo* classInfo, const json::JSO
 
 AActor* FObjectFactory::SpawnStaticMeshActor(
 	FVector3 location, FRotator rotation, FVector3 scale,
-	const UStaticMesh& staticMeshAsset, FName textureAssetName)
+	const UStaticMesh& staticMeshAsset)
 {
 	FName StaticMeshName("StaticMesh");
 
 	return SpawnActorWithRootComponent<UStaticMeshComponent>(
-		StaticMeshName, location, rotation, scale, textureAssetName, &staticMeshAsset);
+		StaticMeshName, location, rotation, scale, &staticMeshAsset);
 }
 
 AActor* FObjectFactory::SpawnStaticMeshActor(
 	FVector3 location, FRotator rotation, FVector3 scale,
-	FName staticMeshAssetName, FName textureAssetName)
+	FName staticMeshAssetName)
 {
 	assert(mAssetManagerRef && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
 
@@ -118,7 +118,7 @@ AActor* FObjectFactory::SpawnStaticMeshActor(
 	{
 		return nullptr;
 	}
-	return SpawnStaticMeshActor(location, rotation, scale, *staticMeshAsset, textureAssetName);
+	return SpawnStaticMeshActor(location, rotation, scale, *staticMeshAsset);
 }
 
 AActor* FObjectFactory::SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale)
@@ -177,7 +177,7 @@ AActor* FObjectFactory::createActorWithRootComponent(const FName& Name, USceneCo
 	// Add name component
 	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
 	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
-		actor->GetName().ToString(), FVector3{ 0, 0, 1 }, *mDefaultFontResource);
+		actor->GetName().ToString(), FVector3{ 0, 0, 0.2 }, *mDefaultFontResource);
 	billboardComponent.AttachTo(*rootComponent);
 
 	return actor;

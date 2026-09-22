@@ -72,6 +72,8 @@ namespace
 bool FObjImporter::ParseAndConvert(const FString& fileName, FObjImportResult& outResult)
 {
 	outResult.meshData.reset(0);
+	outResult.materialSlots.Reset(0);
+	outResult.materialLibraryPaths.Reset(0);
 
     FObjInfo objInfo;
 
@@ -94,6 +96,8 @@ bool FObjImporter::ParseAndConvert(const FString& fileName, FObjImportResult& ou
 
 	outResult.meshData = std::move(staticMesh);
 	outResult.materialSlots = std::move(objInfo.MaterialSlots);
+	outResult.materialLibraryPaths = std::move(objInfo.MaterialLibraryPaths);
+
 
 	return true;
 }
@@ -167,15 +171,20 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 		else if (Prefix == "mtllib")
 		{
 			FString MtlFileName;
-			if(!ReadToken(Cursor, MtlFileName))
-			{
-				continue;
-			}
-			//UE_LOG(Log, Render, MtlFileName.CStr());
 
-			// MTL 파일 경로를 OBJ 파일 경로와 동일한 디렉토리에 있다고 가정하고 Path 등록
-			const auto mtlFilePath = objFilePath.parent_path() / MtlFileName.CStr();
-			parseMtlFile(mtlFilePath, outObjInfo.MaterialSlots);
+			while (ReadToken(Cursor, MtlFileName))
+			{
+				//UE_LOG(Log, Render, MtlFileName.CStr());
+
+				const std::filesystem::path relativePath = std::filesystem::path(MtlFileName.CStr());
+				const FString normalizedPath(relativePath.string().c_str());
+				outObjInfo.MaterialLibraryPaths.Add(normalizedPath);
+
+
+				// MTL 파일 경로를 OBJ 파일 경로와 동일한 디렉토리에 있다고 가정하고 Path 등록
+				const auto mtlFilePath = objFilePath.parent_path() / MtlFileName.CStr();
+				parseMtlFile(mtlFilePath, outObjInfo.MaterialSlots);
+			}
 		}
 		else if (Prefix == "g" || Prefix == "o")
 		{

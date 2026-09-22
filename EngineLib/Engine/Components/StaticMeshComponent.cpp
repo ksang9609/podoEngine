@@ -40,7 +40,6 @@ void UStaticMeshComponent::Initialize(
 	FVector location,
 	FRotator rotation,
 	FVector scale3D,
-	FName textureName,
 	const UStaticMesh* staticMeshOrNull,
 	bool bUseTexture
 )
@@ -50,7 +49,6 @@ void UStaticMeshComponent::Initialize(
 	mStaticMeshAssetKey = staticMeshOrNull
 		? staticMeshOrNull->GetAssetPathFileName()
 		: FName();
-	mTextureName = textureName;
 	resetMaterialOverrides();
 
 	mLocalBounds = FBoundingBox{};
@@ -138,6 +136,7 @@ bool UStaticMeshComponent::SetMaterial(int32 slotIndex, const UMaterial& materia
 
 	materialOverride.bIsSet = true;
 	materialOverride.OverridedMaterialRef = &materialAsset;
+	mMaterialAssetKeys[slotIndex] = materialAsset.GetMaterialName();
 
 	return true;
 }
@@ -150,6 +149,7 @@ bool UStaticMeshComponent::ClearMaterialOverride(int32 slotIndex)
 	}
 
 	mMaterialOverrides[slotIndex] = FMaterialOverride{};
+	mMaterialAssetKeys[slotIndex] = FName("");
 	return true;
 }
 
@@ -158,7 +158,6 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 	FRenderInfo renderInfo = UMeshComponent::makeRenderInfo();
 
 	renderInfo.MeshName = mStaticMeshRef ? mStaticMeshRef->GetAssetPathFileName() : FName();
-	renderInfo.TextureName = mTextureName;
 	renderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
 
 	if (renderInfo.StaticMesh)
@@ -176,18 +175,20 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 		}
 	}
 
+	renderInfo.SubUVMesh = &mSubUVMesh;
+
 	return renderInfo;
 }
 
 void UStaticMeshComponent::resetMaterialOverrides()
 {
-	mMaterialOverrides.Reset(0);
-
-	mMaterialOverrides.Reserve(mStaticMeshRef->GetDefaultMaterials().Num());
+	mMaterialOverrides.Reset(mStaticMeshRef->GetDefaultMaterials().Num());
+	mMaterialAssetKeys.Reset(mStaticMeshRef->GetDefaultMaterials().Num());
 
 	for (int32 i = 0; i < mStaticMeshRef->GetDefaultMaterials().Num(); ++i)
 	{
 		mMaterialOverrides.Add(FMaterialOverride{});
+		mMaterialAssetKeys.Add(FName(""));
 	}
 }
 
@@ -222,11 +223,10 @@ std::span<const FPropertyInfo> UStaticMeshComponent::GetDeclaredProperties()
 			UStaticMeshComponent,
 			mStaticMeshAssetKey
 		),
-
 		REFLECT_PROPERTY(
 			UStaticMeshComponent,
-			mTextureName
-		)
+			mMaterialAssetKeys
+		),
 	};
 
 	return Properties;

@@ -14,7 +14,7 @@
 
 FString FEditorFileUtils::mCurrentScenePath = "";
 
-bool FEditorFileUtils::SaveScene(const UWorld* world, FFileManager& fileManager)
+bool FEditorFileUtils::SaveScene(const UWorld* world, FCamera* perspectiveCamera)
 {
 	if (!world)
 	{
@@ -25,11 +25,10 @@ bool FEditorFileUtils::SaveScene(const UWorld* world, FFileManager& fileManager)
 	if (mCurrentScenePath.IsEmpty())
 	{
 		UE_LOG_F(Log, Core, "SaveScene: No current scene path. Redirecting to Save As");
-		return SaveSceneAs(world, fileManager);
+		return SaveSceneAs(world, perspectiveCamera);
 	}
 
-	//Path = CurrentScenePath;
-	if (!saveSceneToPath(world, mCurrentScenePath, fileManager))
+	if (!saveSceneToPath(world, mCurrentScenePath, perspectiveCamera))
 	{
 		return false;
 	}
@@ -38,7 +37,7 @@ bool FEditorFileUtils::SaveScene(const UWorld* world, FFileManager& fileManager)
 	return true;
 }
 
-bool FEditorFileUtils::SaveSceneAs(const UWorld* world, FFileManager& fileManager)
+bool FEditorFileUtils::SaveSceneAs(const UWorld* world, FCamera* perspectiveCamera)
 {
 	if (!world)
 	{
@@ -57,7 +56,7 @@ bool FEditorFileUtils::SaveSceneAs(const UWorld* world, FFileManager& fileManage
 	std::filesystem::path normalizedPath = std::filesystem::absolute(filePath.CStr()).lexically_normal();
 	FString normalizedScenePath(normalizedPath.string());
 
-	if (!saveSceneToPath(world, normalizedScenePath, fileManager))
+	if (!saveSceneToPath(world, normalizedScenePath, perspectiveCamera))
 	{
 		UE_LOG_F(Error, Core, "SaveSceneAs failed: {}", normalizedPath.string().c_str());
 		return false;
@@ -70,15 +69,11 @@ bool FEditorFileUtils::SaveSceneAs(const UWorld* world, FFileManager& fileManage
 	return true;
 }
 
-bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& filePath, FFileManager& fileManager)
+bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& filePath, FCamera* perspectiveCamera)
 {
 	try
 	{
-		json::JSON worldJson = json::JSON::Make(json::JSON::Class::Object);
-		world->SerializeClass(worldJson);
-
-		json::JSON sceneJson = FJsonArchive::Serialize(worldJson, UEngineStatics::GetNextUUID());
-	
+		json::JSON sceneJson = FJsonArchive::SerializeWorld(*world, perspectiveCamera);
 		//FString sceneJsonText(sceneJson.dump()); // 한줄로 저장
 		FString sceneJsonText(sceneJson.dump(1, "  "));
 
@@ -93,14 +88,16 @@ bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& fileP
 	return true;
 }
 
-UWorld* FEditorFileUtils::LoadScene(FFileManager& fileManager)
+FLoadedScene FEditorFileUtils::LoadScene()
 {
+	FLoadedScene result;
+
 	FString filePath = openLoadSceneDialog();
 
 	if (filePath.IsEmpty())
 	{
 		UE_LOG_F(Log, Core, "LoadScene canceled");
-		return nullptr;
+		return result;
 	}
 
 	std::filesystem::path normalizedPath = std::filesystem::absolute(filePath.CStr()).lexically_normal();
@@ -111,23 +108,20 @@ UWorld* FEditorFileUtils::LoadScene(FFileManager& fileManager)
 		FString sceneJsonText = fileManager.ReadFileToString(normalizedPath.string());
 
 		json::JSON sceneJson = json::JSON::Load(sceneJsonText);
+		
+		FCamera camera;
 
-		FJsonArchiveData archive = FJsonArchive::Deserialize(sceneJson);
-		const json::JSON& worldJson = archive.WorldJson;
-
-		if (!worldJson.hasKey("ClassName")
-			|| worldJson.at("ClassName").JSONType() != json::JSON::Class::String
-			|| FString(worldJson.at("ClassName").ToString()) != UWorld::GetClass()->Name)
+		if (FJsonArchive::DeserializePerspectiveCamera(sceneJson,camera))
 		{
-			throw std::runtime_error(
-				"Scene object must have class UWorld");
+			result.PerspectiveCamera = camera;
 		}
 
-		std::unique_ptr<UWorld> newWorld(FObjectFactory::ConstructUnInitializedObject<UWorld>());
+		result.World = FJsonArchive::DeserializeWorld(sceneJson);
 
-		if (!newWorld)
+		if (!result.World)
 		{
-			throw std::runtime_error("Failed to create UWorld");
+			UE_LOG_F(Error, Core, "LoadScene failed: World creation failed");
+			return {};
 		}
 
 		newWorld->DeserializeClass(worldJson);
@@ -137,13 +131,13 @@ UWorld* FEditorFileUtils::LoadScene(FFileManager& fileManager)
 
 		UE_LOG_F(Log, Core, "Scene loaded: {}", mCurrentScenePath);
 
-		return newWorld.release();
+		return result;
 	}
 	catch (const std::exception& e)
 	{
 		UE_LOG_F(Error, Core, "LoadScene failed: {} - {}", e.what(), mCurrentScenePath);
 
-		return nullptr;
+		return {};
 	}
 }
 

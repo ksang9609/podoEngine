@@ -208,15 +208,21 @@ UPrimitiveComponent::GetDeclaredProperties()
 
 		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			mbUseTexture),
+			mbUseTexture,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable
+		),
 
 		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			mbShowBoundingBox),
+			mbShowBoundingBox,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable
+		),
 
 		REFLECT_PROPERTY(
 			UPrimitiveComponent,
-			mColor),
+			mColor,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable
+		),
 	};
 
 	return Properties;

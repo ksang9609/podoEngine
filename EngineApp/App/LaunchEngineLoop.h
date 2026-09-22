@@ -10,6 +10,7 @@
 #include "Editor/EditorUIManager.h"
 #include "Engine/SceneManager.h"
 #include "Engine/World.h"
+#include "Engine/Stats/StatManager.h"
 #include "Rendering/Camera.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/FontResource.h"
@@ -20,6 +21,7 @@
 class Sphere;
 class FGraphicsManager;
 class FEditorViewportManager;
+
 class FEngineLoop
 {
 public:
@@ -44,6 +46,7 @@ private:
 	std::unique_ptr<FAssetManager> mAssetManager;
 	FEditorViewportManager* mEditorViewportManager;
 	FEditorViewportClient* viewportClient = nullptr;
+	FStatManager mStatManager;
 
 	std::unique_ptr<FFontResource> mDefaultFontResource;
 	std::unique_ptr<FGpuResourceManager> mGpuResourceManager;
@@ -71,11 +74,13 @@ private:
 	void processEditorCommand(const FSetComponentColorCommand& command);
 	void processEditorCommand(const FSetStaticMeshComponentStaticMeshCommand& command);
 	void processEditorCommand(const FSetStaticMeshComponentMaterialCommand& command);
+	void processEditorCommand(const FSetStaticMeshComponentSubUVCommand& command);
 	void processEditorCommand(const FSetSphereComponentSpinCommand& command);
 	void processEditorCommand(const FSetSphereComponentSpinSpeedCommand& command);
 	void processEditorCommand(const FSetParticleSubUVComponentLoopingCommand& command);
 	void processEditorCommand(const FSetParticleSubUVComponentPlayRateCommand& command);
 	void processEditorCommand(const FSetParticleSubUVComponentBlendStateTypeCommand& command);
+	void processEditorCommand(const FSetPropertyCommand& command);
 
 	void processEditorCommand(const FSetViewModeCommand& command);
 	void processEditorCommand(const FSetShowFlagCommand& command);
@@ -95,6 +100,9 @@ private:
 
 	void processEditorCommand(const FSetGridWidthCommand& command);
 	void processEditorCommand(const FStartProjectionTransitionCommand& command);
+
+	void processEditorCommand(const FToggleStatCommand& command);
+	void processEditorCommand(const FDisableAllStatsCommand& command);
 };
 
 inline FEngineLoop GEngineLoop;

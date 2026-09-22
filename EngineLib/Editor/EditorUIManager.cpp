@@ -17,6 +17,7 @@
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
 #include "Engine/Components/StaticMeshComponent.h"
+#include "Engine/Stats/StatManager.h"
 
 /* Editor */
 #include "FEditorViewportClient.h"
@@ -24,6 +25,7 @@
 #include "EditorViewportManager.h"
 #include "Viewport.h"
 #include "Console.h"
+#include "Editor/StatOverlay.h"
 
 #include <algorithm>
 
@@ -108,7 +110,7 @@ namespace
 		return "Unknown";
 	}
 
-	void drawViewportSharedControls(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedSettings, FEditorCommands& outCommands)
+	bool drawViewportSharedControls(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedSettings, FEditorCommands& outCommands)
 	{
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
@@ -117,10 +119,12 @@ namespace
 
 		const uint8 viewportCount = viewportManager.getViewportCount();
 
+		bool layoutChanged = false;
+
 		ImGui::BeginDisabled(viewportCount >= maxViewportCount);
 		if (ImGui::Button(" + "))
 		{
-			viewportManager.addViewport();
+			layoutChanged =viewportManager.addViewport() != invalidViewportId;
 		}
 		ImGui::EndDisabled();
 
@@ -133,7 +137,7 @@ namespace
 
 			if (lastViewport != nullptr)
 			{
-				viewportManager.removeViewport(lastViewport->getId());
+				layoutChanged = viewportManager.removeViewport(lastViewport->getId());
 			}
 		}
 		ImGui::EndDisabled();
@@ -175,9 +179,11 @@ namespace
 
 		ImGui::Separator();
 		ImGui::PopStyleColor(9);
+
+		return layoutChanged;
 	}
 
-	void updateSplitterInteraction(
+	bool updateSplitterInteraction(
 		FEditorViewportManager& viewportManager,
 		const FRect& hostRect,
 		const FPoint& mousePoint)
@@ -195,8 +201,9 @@ namespace
 
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
-			viewportManager.endSplitterDrag();
+			return viewportManager.endSplitterDrag();
 		}
+		return false;
 	}
 
 	void updateViewportInteraction(
@@ -515,6 +522,7 @@ namespace
 		const FViewport& viewport,
 		uint8 viewportIndex,
 		bool bActive,
+		const FStatManager& statManager,
 		ImDrawList& drawList,
 		FEditorCommands& outCommands)
 	{
@@ -599,7 +607,149 @@ namespace
 		ImGui::PopID();
 		ImGui::SetCursorScreenPos(savedCursor);
 		ImGui::PopClipRect();
+
+		if (bActive)
+		{
+			StatOverlay::Draw(
+				imageRect,
+				statManager,
+				drawList);
+		}
 	}
+}
+
+bool drawPropertyValue(
+	const char* label,
+	const FPropertyValue& originalValue,
+	FPropertyValue& outValue)
+{
+	return std::visit(
+		[label, &outValue](auto& typedValue) -> bool
+		{
+			using T = std::decay_t<decltype(typedValue)>;
+
+			if constexpr (std::is_same_v<T, bool>)
+			{
+				bool value = typedValue;
+				if (ImGui::Checkbox(label, &value))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, int32>)
+			{
+				int32 value = typedValue;
+				if (ImGui::InputInt(label, &value))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, uint32>)
+			{
+				uint32 value = typedValue;
+				if (ImGui::InputScalar(label, ImGuiDataType_U32, &value))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, float>)
+			{
+				float value = typedValue;
+				if (ImGui::DragFloat(label, &value, 0.1f))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FString>)
+			{
+				char buffer[256];
+				std::strncpy(buffer, typedValue.CStr(), sizeof(buffer));
+				if (ImGui::InputText(label, buffer, sizeof(buffer)))
+				{
+					outValue = FString(buffer);
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FName>)
+			{
+				char buffer[256];
+				std::strncpy(buffer, typedValue.ToString().CStr(), sizeof(buffer));
+				if (ImGui::InputText(label, buffer, sizeof(buffer)))
+				{
+					outValue = FName(buffer);
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FVector2>)
+			{
+				FVector2 value = typedValue;
+				if (ImGui::DragFloat2(label, &value.x, 0.1f))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FVector3>)
+			{
+				FVector3 value = typedValue;
+				if (ImGui::DragFloat3(label, &value.x, 0.1f))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FVector4>)
+			{
+				FVector4 value = typedValue;
+				if (ImGui::DragFloat4(label, &value.x, 0.1f))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FRotator>)
+			{
+				// Rotator is stored as Pitch, Yaw, Roll,
+				// but we want to display it as Roll, Pitch, Yaw in the UI.
+				float value[3] = { typedValue.Roll, typedValue.Pitch, typedValue.Yaw };
+				if (ImGui::DragFloat3(label, value, 0.1f))
+				{
+					outValue = FRotator{ value[1], value[2], value[0] };
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FLinearColor>)
+			{
+				FLinearColor value = typedValue;
+				if (ImGui::ColorEdit4(label, &value.R))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else
+			{
+				ImGui::TextDisabled("%s: Unsupported property type", label);
+				return false;
+			}
+		},
+		originalValue
+	);
 }
 
 FEditorUIManager::FEditorUIManager(const ImGuiIO& io)
@@ -610,10 +760,10 @@ FEditorUIManager::FEditorUIManager(const ImGuiIO& io)
 	mPanelWidth = io.DisplaySize.x * MIN_WIDTH_RATIO;
 }
 
-void FEditorUIManager::LoadSettings(FEditorCommands& outCommands)
+void FEditorUIManager::LoadSettings(FEditorViewportManager& viewportManager, FEditorCommands& outCommands)
 {
 	mEditorSetting.Load();
-
+	viewportManager.applyLayoutSetting(mEditorSetting);
 	// Load settings into commands
 	outCommands.Emplace(FSetCameraSensitivityCommand{ mEditorSetting.CameraSensitivity });
 	outCommands.Emplace(FSetGridWidthCommand{ mEditorSetting.GridSpacing });
@@ -629,9 +779,9 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference,FViewportShar
 	updateControlPanelGUI(guiReference, outCommands);
 	updatePropertyWindowGUI(guiReference, outCommands);
 	updateObjectListPanelGUI(guiReference, outCommands);
-	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings,outCommands);
+	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings, guiReference.StatManager,outCommands);
 
-	updateBottomBarGUI();
+	updateBottomBarGUI(outCommands);
 }
 
 FString saveSceneFileDialog();
@@ -698,7 +848,7 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	ImGui::Begin("PODO", nullptr, flags);
 	mPanelWidth = ImGui::GetWindowWidth();
 
-	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
+	//ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
 	if (ImGui::Button("Import Obj"))
 	{
@@ -861,11 +1011,12 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 		outCommands.Emplace(FSetCameraRotationCommand{ FRotator{ cameraRotation[1], cameraRotation[2], cameraRotation[0] } });
 	}
 
-	/* Memory Info */
+	/*
 	ImGui::SeparatorText("Memory Info");
 
 	ImGui::Text("Total allocated memory count: %d", UEngineStatics::sTotalAllocationCount);
 	ImGui::Text("Total allocated memory size: %d bytes", UEngineStatics::sTotalAllocationBytes);
+	*/
 
 	/* Gizmo Control */
 	ImGui::SeparatorText("Gizmo Control");
@@ -1092,6 +1243,46 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 						component->GetName().DisplayIndex,
 						component->GetName().ComparisonIndex);
 
+					/* Property Reflection UI Drawing */
+					component->ForEachProperty(
+						[&](const FPropertyInfo& property)
+						{
+							// Only show serializable properties in the UI
+							if ((property.PropertyFlags & EPropertyFlags::Serializable)
+								== EPropertyFlags::None)
+								return;
+
+							// Skip properties that don't have a JsonKey, GetValue, or SetValue function
+							if (!property.JsonKey || !property.GetValue || !property.SetValue)
+								return;
+
+							// Disable editing for properties that are not marked as editable
+							const bool bEditable = (property.PropertyFlags & EPropertyFlags::Editable) != EPropertyFlags::None;
+
+							const FPropertyValue originalValue = property.GetValue(component);
+							FPropertyValue editedValue = originalValue;
+
+							ImGui::PushID(static_cast<const void*>(&property));
+							ImGui::BeginDisabled(!bEditable);
+
+							if (drawPropertyValue(
+								property.JsonKey,
+								originalValue,
+								editedValue
+							))
+							{
+								outCommands.Emplace(FSetPropertyCommand{
+									component->GetObjectID(),
+									property.JsonKey,
+									editedValue
+									});
+							}
+
+							ImGui::EndDisabled();
+							ImGui::PopID();
+						}
+					);
+
 					// StaticMesh DropList
 					if (const UStaticMeshComponent* staticMeshComponent = component->Cast<UStaticMeshComponent>())
 					{
@@ -1117,46 +1308,26 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 							}
 						}
 
-					}
+						// Sub uv
+						FSubUVMesh subUVMesh = staticMeshComponent->GetSubUVMesh();
+						bool bSubUVChanged = false;
+						if (ImGui::DragFloat2("SubUV Offset", &subUVMesh.UVOffset.x, 0.01f))
+						{
+							bSubUVChanged = true;
+						}
+						if (ImGui::DragFloat2("SubUV Scale", &subUVMesh.UVScale.x, 0.01f))
+						{
+							bSubUVChanged = true;
+						}
+						if (bSubUVChanged)
+						{
+							outCommands.Emplace(FSetStaticMeshComponentSubUVCommand{
+								staticMeshComponent->GetObjectID(),
+								subUVMesh.UVOffset,
+								subUVMesh.UVScale
+								});
+						}
 
-					if (const UPrimitiveComponent* primitiveComponent = component->Cast<UPrimitiveComponent>())
-					{
-						bool bUseTexture = primitiveComponent->GetUseTexture();
-						FLinearColor color = primitiveComponent->GetColor();
-
-						if (ImGui::Checkbox("Use Texture", &bUseTexture))
-							outCommands.Emplace(FSetComponentUseTextureCommand{ primitiveComponent->GetObjectID(), bUseTexture });
-
-						if (ImGui::ColorEdit4("Color", &color.R))
-							outCommands.Emplace(FSetComponentColorCommand{ primitiveComponent->GetObjectID(), color });
-					}
-
-					if (const USphereComponent* sphereComponent = component->Cast<USphereComponent>())
-					{
-						bool bSpin = sphereComponent->GetSpin();
-						float spinSpeed = sphereComponent->GetSpinSpeed();
-
-						if (ImGui::Checkbox("Spin", &bSpin))
-							outCommands.Emplace(FSetSphereComponentSpinCommand{ sphereComponent->GetObjectID(), bSpin });
-
-						if (ImGui::DragFloat("Spin Speed", &spinSpeed, 0.1f, 0.0f, 3600.0f))
-							outCommands.Emplace(FSetSphereComponentSpinSpeedCommand{ sphereComponent->GetObjectID(), spinSpeed });
-					}
-
-					if (const UParticleSubUVComponent* particleSubUVComponent = component->Cast<UParticleSubUVComponent>())
-					{
-						bool bLooping = particleSubUVComponent->IsLooping();
-						float playRate = particleSubUVComponent->GetPlayRate();
-						bool bUseAddtiveBlend = particleSubUVComponent->GetBlendStateType() == EBlendStateType::BST_Additive;
-
-						if (ImGui::Checkbox("Looping", &bLooping))
-							outCommands.Emplace(FSetParticleSubUVComponentLoopingCommand{ particleSubUVComponent->GetObjectID(), bLooping });
-
-						if (ImGui::DragFloat("Play Rate", &playRate, 0.1f, 0.0f, 10.0f))
-							outCommands.Emplace(FSetParticleSubUVComponentPlayRateCommand{ particleSubUVComponent->GetObjectID(), playRate });
-
-						if (ImGui::Checkbox("Additive Blend", &bUseAddtiveBlend))
-							outCommands.Emplace(FSetParticleSubUVComponentBlendStateTypeCommand{ particleSubUVComponent->GetObjectID(), bUseAddtiveBlend ? EBlendStateType::BST_Additive : EBlendStateType::BST_AlphaBlend });
 					}
 				}
 
@@ -1336,8 +1507,9 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 	ImGui::End();
 }
 
-void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands)
+void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, const FStatManager& statManager, FEditorCommands& outCommands)
 {
+
 	const float hostWidth =
 		(std::max)(mImGuiIO.DisplaySize.x - mPanelWidth, 0.0f);
 	const float hostHeight =
@@ -1369,7 +1541,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		return;
 	}
 
-	drawViewportSharedControls(viewportManager, sharedsettings, outCommands);
+	const bool viewportCountChanged = drawViewportSharedControls(viewportManager, sharedsettings, outCommands);
 
 	const ImVec2 hostMin = ImGui::GetCursorScreenPos();
 	const ImVec2 availableSize = ImGui::GetContentRegionAvail();
@@ -1394,7 +1566,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		mousePosition.y
 	};
 
-	updateSplitterInteraction(viewportManager, hostRect, mousePoint);
+	const bool splitterChanged = updateSplitterInteraction(viewportManager, hostRect, mousePoint);
 	updateViewportInteraction(viewportManager, mousePoint);
 
 	ImDrawList& drawList = *ImGui::GetWindowDrawList();
@@ -1416,18 +1588,26 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 			*viewport,
 			index,
 			activeViewport == viewport,
+			statManager,
 			drawList,
 			outCommands);
 	}
 
 	drawList.PopClipRect();
 
+	if (viewportCountChanged || splitterChanged)
+	{
+		viewportManager.captureLayoutSetting(mEditorSetting);
+		mEditorSetting.Save();
+	}
+
+
 	// ImGui에게 해당 영역이 실제 콘텐츠로 사용됐음을 알려준다.
 	ImGui::Dummy(availableSize);
 	ImGui::End();
 }
 
-void FEditorUIManager::updateBottomBarGUI()
+void FEditorUIManager::updateBottomBarGUI(FEditorCommands& outCommands)
 {
 	const float displayWidth = mImGuiIO.DisplaySize.x;
 	const float displayHeight = mImGuiIO.DisplaySize.y;
@@ -1507,11 +1687,17 @@ void FEditorUIManager::updateBottomBarGUI()
 		{
 			// Console should be updated before drawing its contents
 			ConsoleWindow::GetInstance().Update();
-			ConsoleWindow::GetInstance().DrawContents();
+			ConsoleWindow::GetInstance().DrawContents(outCommands);
 			ImGui::EndPopup();
 		}
 	}
 
 	ImGui::End();
 	ImGui::PopStyleVar();
+}
+
+void FEditorUIManager::saveSettings(const FEditorViewportManager& viewportManager)
+{
+	viewportManager.captureLayoutSetting(mEditorSetting);
+	mEditorSetting.Save();
 }

@@ -5,21 +5,20 @@
 #include "Core/Container/TArray.h"
 #include <filesystem>
 #include "Rendering/Mesh/StaticMesh.h"
+#include "Material.h"
 
 struct FNormalVertex;
 struct FStaticMesh;
 
-// 슬롯 이름은 OBJ의 usemtl과 연결하기 위해 매시가 소유한다.
-struct FMaterialSlot
-{
-	FString Name;
-	FMaterial DefaultMaterial;
-};
-
 struct FObjImportResult
 {
 	std::unique_ptr<FStaticMesh> meshData;
+
 	TArray<FMaterialSlot> materialSlots;
+
+	// OBJ의 mtllib에 실제로 기록된 경로
+	// 얘는 메시 직렬화 대상 아님
+	TArray<FString> materialLibraryPaths;
 };
 
 // f v1/vt1/vn1
@@ -60,6 +59,8 @@ struct FObjInfo
 	TArray<FMaterialSlot> MaterialSlots;
 	TArray<FString> GroupNames;
 	TArray<FObjFaceGroup> FaceGroups;
+
+	TArray<FString> MaterialLibraryPaths;
 };
 
 
@@ -71,9 +72,6 @@ public:
 	static bool ParseAndConvert(const FString& fileName, FObjImportResult& outResult);
 
 private:
-
-	// Obj File을 읽어서 FStaticMesh로 변환하는 함수
-	static FStaticMesh* loadStaticMeshFromBinary(const FString& fileName);
 
 	// Obj File을 파싱해서 FObjInfo
 	static bool parseObjFile(const FString& fileName, FObjInfo& outObjInfo);

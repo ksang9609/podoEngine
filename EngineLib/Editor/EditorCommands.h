@@ -1,9 +1,20 @@
 ﻿#pragma once
 
+
+#include <variant>
+
 #include "Core/Core.h"
+#include "Core/Container/TArray.h"
 #include "Core/enum.h"
+#include "Core/Name.h"
+#include "Core/Object/Object.h"
+#include "Core/PropertyEnum.h"
+#include "Core/Math/Vector.h"
+#include "Core/Math/Rotator.h"
 #include "Core/Math/Color.h"
-#include "ViewportTypes.h"
+
+#include "Editor/ViewportTypes.h"
+#include "Engine/Stats/StatTypes.h"
 
 #include <variant>
 
@@ -32,9 +43,11 @@ struct FSetSphereComponentSpinCommand { FObjectID ObjectID; bool bSpin; };
 struct FSetSphereComponentSpinSpeedCommand { FObjectID ObjectID; float SpinSpeed; };
 struct FSetStaticMeshComponentStaticMeshCommand { FObjectID ObjectID;	FName StaticMeshAssetKey; };
 struct FSetStaticMeshComponentMaterialCommand { FObjectID ObjectID; int32 MaterialSlotIndex; FName MaterialAssetKey; };
+struct FSetStaticMeshComponentSubUVCommand { FObjectID ObjectID; FVector2 UVOffset; FVector2 UVScale; };
 struct FSetParticleSubUVComponentLoopingCommand { FObjectID ObjectID; bool bLooping; };
 struct FSetParticleSubUVComponentPlayRateCommand { FObjectID ObjectID; float PlayRate; };
 struct FSetParticleSubUVComponentBlendStateTypeCommand { FObjectID ObjectID; EBlendStateType BlendStateType; };
+struct FSetPropertyCommand { FObjectID ObjectID; FString PropertyName; FPropertyValue NewValue; };
 
 /* EditorViewportClient Commands */
 struct FSetViewModeCommand { EViewModeIndex ViewMode; };
@@ -56,6 +69,10 @@ struct FSetViewportFovCommand { uint8 ViewportId; float Fov; };
 /* GraphicsManager Commands */
 struct FSetGridWidthCommand { float GridWidth; };
 struct FStartProjectionTransitionCommand { bool bOrthographic; };
+
+/* Consol Commands */
+struct FToggleStatCommand { EStatGroup Group; };
+struct FDisableAllStatsCommand { };
 
 using FEditorCommand = std::variant <
 	FNewSceneCommand,
@@ -79,11 +96,13 @@ using FEditorCommand = std::variant <
 	FSetComponentColorCommand,
 	FSetStaticMeshComponentStaticMeshCommand,
 	FSetStaticMeshComponentMaterialCommand,
+	FSetStaticMeshComponentSubUVCommand,
 	FSetSphereComponentSpinCommand,
 	FSetSphereComponentSpinSpeedCommand,
 	FSetParticleSubUVComponentLoopingCommand,
 	FSetParticleSubUVComponentPlayRateCommand,
 	FSetParticleSubUVComponentBlendStateTypeCommand,
+	FSetPropertyCommand,
 
 	FSetViewModeCommand,
 	FSetShowFlagCommand,
@@ -102,6 +121,10 @@ using FEditorCommand = std::variant <
 	FSetViewportFovCommand,
 
 	FSetGridWidthCommand,
-	FStartProjectionTransitionCommand
+	FStartProjectionTransitionCommand,
+
+	FToggleStatCommand,
+	FDisableAllStatsCommand
+
 > ;
 using FEditorCommands = TArray<FEditorCommand>;

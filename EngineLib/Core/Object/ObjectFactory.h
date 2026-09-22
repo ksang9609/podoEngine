@@ -64,10 +64,10 @@ struct FObjectFactory
 
 	static AActor* SpawnStaticMeshActor(
 		FVector3 location, FRotator rotation, FVector3 scale,
-		const UStaticMesh& staticMeshAsset, FName textureAssetName = BuiltinAssets::DefaultWhiteTexture);
+		const UStaticMesh& staticMeshAsset);
 	static AActor* SpawnStaticMeshActor(
 		FVector3 location, FRotator rotation, FVector3 scale,
-		FName staticMeshAssetName, FName textureAssetName = BuiltinAssets::DefaultWhiteTexture
+		FName staticMeshAssetName
 	);
 
 
