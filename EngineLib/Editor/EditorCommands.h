@@ -1,9 +1,20 @@
 ﻿#pragma once
 
+
+#include <variant>
+
 #include "Core/Core.h"
+#include "Core/Container/TArray.h"
 #include "Core/enum.h"
+#include "Core/Name.h"
+#include "Core/Object/Object.h"
+#include "Core/PropertyEnum.h"
+#include "Core/Math/Vector.h"
+#include "Core/Math/Rotator.h"
 #include "Core/Math/Color.h"
-#include "ViewportTypes.h"
+
+#include "Editor/ViewportTypes.h"
+#include "Engine/Stats/StatTypes.h"
 
 /* Editor Commands */
 /* SceneManager Commands */
@@ -57,6 +68,10 @@ struct FSetViewportFovCommand { uint8 ViewportId; float Fov; };
 struct FSetGridWidthCommand { float GridWidth; };
 struct FStartProjectionTransitionCommand { bool bOrthographic; };
 
+/* Consol Commands */
+struct FToggleStatCommand { EStatGroup Group; };
+struct FDisableAllStatsCommand { };
+
 using FEditorCommand = std::variant <
 	FNewSceneCommand,
 	FSaveSceneCommand,
@@ -104,6 +119,10 @@ using FEditorCommand = std::variant <
 	FSetViewportFovCommand,
 
 	FSetGridWidthCommand,
-	FStartProjectionTransitionCommand
+	FStartProjectionTransitionCommand,
+
+	FToggleStatCommand,
+	FDisableAllStatsCommand
+
 > ;
 using FEditorCommands = TArray<FEditorCommand>;

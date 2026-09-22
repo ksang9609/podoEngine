@@ -641,37 +641,37 @@ void FEditorViewportClient::configureCamera(EViewportType viewporttype)
 		mProjectionRatio = 1.0f;
 		break;
 	case EViewportType::Top:
-		mCamera.Location = FVector(0.0f, 0.0f, 10.0f);
+		mCamera.Location = FVector(0.0f, 0.0f, 200.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Bottom:
-		mCamera.Location = FVector(0.0f, 0.0f, -10.0f);
+		mCamera.Location = FVector(0.0f, 0.0f, -200.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Right:
-		mCamera.Location = FVector(0.0f, 10.0f, 0.0f);
+		mCamera.Location = FVector(0.0f, 200.0f, 0.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Left:
-		mCamera.Location = FVector(0.0f, -10.0f, 0.0f);
+		mCamera.Location = FVector(0.0f, -200.0f, 0.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Front:
-		mCamera.Location = FVector(-10.0f, 0.0f, 0.0f);
+		mCamera.Location = FVector(-200.0f, 0.0f, 0.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Back:
-		mCamera.Location = FVector(10.0f, 0.0f, 0.0f);
+		mCamera.Location = FVector(200.0f, 0.0f, 0.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;

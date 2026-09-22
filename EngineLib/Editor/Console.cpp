@@ -7,6 +7,9 @@
 #include <chrono>
 #include <ctime>
 #include <sstream>
+#include <algorithm>
+#include <cctype>
+
 
 namespace
 {
@@ -114,7 +117,7 @@ void ConsoleWindow::Update()
 	FlushPending();
 }
 
-void ConsoleWindow::DrawContents()
+void ConsoleWindow::DrawContents(FEditorCommands& outCommands)
 {
 	if (mFont)
 	{
@@ -158,7 +161,7 @@ void ConsoleWindow::DrawContents()
 	{
 		if (mInputBuffer[0] != '\0')
 		{
-			ExecuteCommand(mInputBuffer);
+			ExecuteCommand(mInputBuffer, outCommands);
 			mInputBuffer[0] = '\0';
 			ImGui::SetKeyboardFocusHere(-1);
 		}
@@ -245,12 +248,43 @@ void ConsoleWindow::Clear()
 	mCount = 0;
 }
 
-void ConsoleWindow::ExecuteCommand( const char* Input)
+void ConsoleWindow::ExecuteCommand( const char* Input, FEditorCommands& outCommands)
 {
 	std::istringstream Stream(Input);
 
 	std::string Command;
 	Stream >> Command;
+
+	if (Command == "stat")
+	{
+		std::string argument;
+		Stream >> argument;
+
+		std::transform(argument.begin(),argument.end(),argument.begin(),
+			[](unsigned char character){return static_cast<char>(std::tolower(character));});
+
+		if (argument == "fps")
+		{
+			outCommands.Emplace(FToggleStatCommand{EStatGroup::FPS});
+		}
+		else if (argument == "memory")
+		{
+			outCommands.Emplace(FToggleStatCommand{EStatGroup::Memory});
+		}
+		else if (argument == "none")
+		{
+			outCommands.Emplace(FDisableAllStatsCommand{});
+		}
+		else
+		{
+			AddLog(
+				ELogLevel::Warning,
+				ELogCategory::Core,
+				"Usage: stat <fps|memory|none>");
+		}
+
+		return;
+	}
 
 	if (Command == "clear")
 	{
@@ -261,7 +295,7 @@ void ConsoleWindow::ExecuteCommand( const char* Input)
 		AddLog(
 			ELogLevel::Log,
 			ELogCategory::Etc,
-			"Commands: clear, echo");
+			"Commands: clear, echo, stat fps, stat memory, stat none");
 	}
 	else if (Command == "echo")
 	{
@@ -280,10 +314,12 @@ void ConsoleWindow::ExecuteCommand( const char* Input)
 			ELogCategory::Etc,
 			"***** PODO ENGINE *****\n"
 			"\n"
-			"******* WEEK  1 *******\n"
-			"*** LKH LSE KDH KSH ***\n"
 			"******* WEEK  2 *******\n"
+			"*** LKH LSU KDH KSH ***\n"
+			"******* WEEK  3 *******\n"
 			"*** KSH KHW CHS LJY ***\n"
+			"******* WEEK  4 *******\n"
+			"*** HDY KHJ LGH KSH ***\n"
 			"***********************\n");
 
 	}

@@ -21,10 +21,13 @@ public:
 
 	const TArray<FRenderInfo>& GetRenderInfos();
 	TArray<AActor*>& GetActors() { return mActors; }
+	const TArray<AActor*>& GetActors() const { return mActors; }
 
 	void Update(float deltaTime);
 	//void Render();
 	void ClearRenderInfos();
+
+	uint32 GetActorCount() const { return static_cast<uint32>(mActors.Num()); }
 
 private:
 	int32 getActorIndex(uint32 actorUUID) const;

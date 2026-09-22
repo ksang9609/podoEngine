@@ -3,12 +3,12 @@
     "PerspectiveCamera" : {
       "FOV" : 60.000000,
       "FarZ" : 1000.000000,
-      "Location" : [-25.350653, 14.741779, 11.795405],
+      "Location" : [-5.000000, 5.000000, 5.000000],
       "NearZ" : 0.100000,
-      "Rotation" : [-20.494841, -33.665051, 0.000000]
+      "Rotation" : [-19.964388, 107.000000, 0.000000]
     }
   },
-  "NextUUID" : 12,
+  "NextUUID" : 10,
   "Version" : 0,
   "World" : {
     "ClassName" : "UWorld",
@@ -27,7 +27,6 @@
                   "Name" : "UStaticMeshComponent",
                   "UUID" : 1,
                   "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mMaterialAssetKeys" : [""],
                   "mRelativeLocation" : [2.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
@@ -66,11 +65,10 @@
                   "Name" : "UStaticMeshComponent",
                   "UUID" : 4,
                   "mColor" : [1.000000, 1.000000, 1.000000, 0.000000],
-                  "mMaterialAssetKeys" : ["", "", "", "Engine/Materials/SphereMaterial", "", "", ""],
-                  "mRelativeLocation" : [-11.000000, 0.000000, 0.000000],
+                  "mRelativeLocation" : [-2.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mStaticMeshAssetKey" : "C:/Projects/week4/podoEngine/EngineLib/Assets/Rayquaza.obj",
+                  "mStaticMeshAssetKey" : "Engine/Primitives/SphereMesh",
                   "mbShowBoundingBox" : true,
                   "mbUseTexture" : false,
                   "mePrimitive" : "StaticMesh"
@@ -105,8 +103,7 @@
                   "Name" : "USphereComponent",
                   "UUID" : 7,
                   "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-                  "mMaterialAssetKeys" : ["Engine/Materials/CubeMaterial"],
-                  "mRelativeLocation" : [0.000000, -6.000000, 1.000000],
+                  "mRelativeLocation" : [0.000000, 0.000000, 1.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
                   "mSpinSpeed" : 90.000000,
@@ -133,34 +130,6 @@
                 }
               }],
             "mRootComponentUUID" : 7
-          }
-        }, {
-          "ClassName" : "AActor",
-          "Properties" : {
-            "Name" : "Particle",
-            "UUID" : 10,
-            "mComponents" : [{
-                "ClassName" : "UParticleSubUVComponent",
-                "ParentUUID" : -1,
-                "Properties" : {
-                  "Name" : "UParticleSubUVComponent",
-                  "UUID" : 11,
-                  "mBlendStateType" : 1,
-                  "mColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-                  "mFrameDuration" : 0.100000,
-                  "mNumCols" : 6,
-                  "mNumRows" : 6,
-                  "mPlayRate" : 1.000000,
-                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
-                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mbLooping" : true,
-                  "mbShowBoundingBox" : true,
-                  "mbUseTexture" : false,
-                  "mePrimitive" : "BillboardQuad"
-                }
-              }],
-            "mRootComponentUUID" : 11
           }
         }]
     }

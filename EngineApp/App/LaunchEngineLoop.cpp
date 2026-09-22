@@ -273,7 +273,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
 	FEditorCommands startupCommands;
-	mEditorUIManager->LoadSettings(startupCommands);
+	mEditorUIManager->LoadSettings(*mEditorViewportManager, startupCommands);
 	processEditorCommands(startupCommands);
 }
 
@@ -284,6 +284,10 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 	FrameTimer->StartFrame();
 	float deltaTime = FrameTimer->GetDeltaTime();
+
+	mStatManager.UpdateFrame(*FrameTimer);
+	mStatManager.UpdateMemory(deltaTime,{*mSceneManager,*mAssetManager,*mGpuResourceManager});
+
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
 	//Input Threads
@@ -312,6 +316,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 				*mFileManager,
 				*mAssetManager,
 				*mEditorViewportManager,
+				mStatManager,
 				},viewportClient->getSharedSettings(), editorCommands);
 			processEditorCommands(editorCommands);
 
@@ -463,6 +468,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 void FEngineLoop::End()
 {
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 	mSceneManager->DeleteScene();
 
 	ImGui_ImplDX11_Shutdown();
@@ -515,35 +521,51 @@ void FEngineLoop::processEditorCommand(const FNewSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
 {
+	FCamera* perspectiveCamera = mEditorViewportManager->getPerspectiveCamera();
 	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
 	FEditorFileUtils::SaveScene(
-		mSceneManager->GetCurrentWorld()
+		mSceneManager->GetCurrentWorld(), perspectiveCamera
 	);
 }
 
 void FEngineLoop::processEditorCommand(const FSaveSceneAsCommand& command)
 {
+	FCamera* perspectiveCamera = mEditorViewportManager->getPerspectiveCamera();
 	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
 	FEditorFileUtils::SaveSceneAs(
-		mSceneManager->GetCurrentWorld()
+		mSceneManager->GetCurrentWorld(), perspectiveCamera
 	);
 }
 
 void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 {
 	//mSceneManager->LoadScene(command.SceneName, *mFileManager);
-	UWorld* newWorld = FEditorFileUtils::LoadScene();
+	FLoadedScene loaded = FEditorFileUtils::LoadScene();
 
-	if (newWorld != nullptr)
+	if (loaded.World == nullptr)
 	{
-		mSceneManager->ReplaceWorld(newWorld);
+		return;
+	}
+
+	mSceneManager->ReplaceWorld(loaded.World);
+
+	if (loaded.PerspectiveCamera.has_value())
+	{
+		mEditorViewportManager->applyPerspectiveCamera(
+			*loaded.PerspectiveCamera);
+	}
+	else
+	{
+		mEditorViewportManager->resetPerspectiveCamera();
 	}
 
 	for (TObjectIterator<UStaticMeshComponent> it; it; ++it)
 	{
 		UStaticMeshComponent* staticMeshComponent = *it;
 		const FName& assetKey = staticMeshComponent->GetStaticMeshAssetKey();
+		const TArray<FName> materialKeys = staticMeshComponent->GetMaterialAssetKeys();
 
+		/* Load Static Mesh */
 		if (assetKey == FName())
 		{
 			continue;
@@ -560,6 +582,29 @@ void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 			UE_LOG(Error, Editor,
 				"Failed to restore static mesh: %s (%s)",
 				assetKey.ToString().CStr(), exception.what());
+		}
+
+		/* Load Materials */
+		{
+			for (uint32 i = 0; i < materialKeys.Num(); ++i)
+			{
+				if (materialKeys[i] == FName())
+				{
+					continue;
+				}
+				const UMaterial* material =
+					mAssetManager->FindMaterialAssetOrNull(materialKeys[i]);
+
+				if (!material)
+				{
+					UE_LOG_F(Error, Editor,
+						"Failed to restore material: {}",
+						materialKeys[i].ToString().CStr());
+					continue;
+				}
+
+				staticMeshComponent->SetMaterial(i, *material);
+			}
 		}
 	}
 }
@@ -863,6 +908,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportTypeCommand& command)
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->setType(command.Type);
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& command)
@@ -870,6 +916,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& comman
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->getRenderSettings().ViewMode = command.ViewMode;
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& command)
@@ -877,6 +924,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& comman
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->getRenderSettings().SetShowFlag(command.Flag, command.bEnabled);
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetSharedCameraSpeedCommand& command)
@@ -900,4 +948,41 @@ void FEngineLoop::processEditorCommand(const FSetViewportFovCommand& command)
 	{
 		viewport->getClient().GetCamera().mFovDegree = FMath::Clamp(command.Fov, 5.0f, 175.0f);
 	}
+}
+
+void FEngineLoop::processEditorCommand(const FToggleStatCommand& command)
+{
+	const bool enabled = mStatManager.Toggle(command.Group);
+	const char* groupName = "Unknown";
+
+	switch (command.Group)
+	{
+	case EStatGroup::FPS:
+		groupName = "FPS";
+		break;
+
+	case EStatGroup::Memory:
+		groupName = "Memory";
+		break;
+
+	default:
+		break;
+	}
+
+	UE_LOG_F(
+		Log,
+		Editor,
+		"Stat {} {}",
+		groupName,
+		enabled ? "enabled" : "disabled");
+}
+
+void FEngineLoop::processEditorCommand(const FDisableAllStatsCommand&)
+{
+	mStatManager.DisableAll();
+
+	UE_LOG(
+		Log,
+		Editor,
+		"All stats disabled");
 }

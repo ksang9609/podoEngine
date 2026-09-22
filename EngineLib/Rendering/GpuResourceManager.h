@@ -87,6 +87,9 @@ public:
 	bool EnsureLineBuffer(uint32 vertexCount, uint32 indexCount);
 	bool EnsureInstanceCapacity(uint32 count);
 
+	uint32 GetImmutableBufferCount() const { return mImmutableBufferMap.Num(); }
+	uint32 GetTextureCount() const { return mTextureMap.Num(); }
+
 private:
 	/* References */
 	ID3D11Device* mDeviceRef = nullptr;

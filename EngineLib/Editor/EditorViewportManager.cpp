@@ -1,5 +1,6 @@
 ﻿#include "EditorViewportManager.h"
 #include "FEditorViewportClient.h"
+#include "../Core/Math/MathUtility.h"
 
 //Todo : 종료하기전 패널 모드를 유지해서 불러와야함
 bool FEditorViewportManager::Initialize(FAssetManager& assetManager)
@@ -15,6 +16,85 @@ bool FEditorViewportManager::Initialize(FAssetManager& assetManager)
 		return true;
 	}
 	return addViewport() != invalidViewportId;
+}
+void FEditorViewportManager::applyLayoutSetting(const FEditorSetting& setting)
+{
+	mEditorSetting.viewportCount = FMath::Clamp<uint8>(setting.viewportCount,1,maxViewportCount);
+	mEditorSetting.twoPaneVertical = FMath::Clamp(setting.twoPaneVertical, 0.0f, 1.0f);
+	mEditorSetting.threePaneVertical = FMath::Clamp(setting.threePaneVertical, 0.0f, 1.0f);
+	mEditorSetting.threePaneRightHorizontal = FMath::Clamp(setting.threePaneRightHorizontal,0.0f,1.0f);
+	mEditorSetting.fourPaneHorizontal = FMath::Clamp(setting.fourPaneHorizontal, 0.0f, 1.0f);
+	mEditorSetting.fourPaneVertical = FMath::Clamp(setting.fourPaneVertical, 0.0f, 1.0f);
+
+	const uint8 targetCount = mEditorSetting.viewportCount;
+
+	while (getViewportCount() < targetCount)
+	{
+		if (addViewport() == invalidViewportId)
+		{
+			break;
+		}
+	}
+
+	while (getViewportCount() > targetCount)
+	{
+		if (!removeViewport(getViewportCount()))
+		{
+			break;
+		}
+	}
+
+	for (uint8 index = 0;index < getViewportCount();++index)
+	{
+		FViewport* viewport = getViewportAt(index);
+
+		if (viewport == nullptr)
+		{
+			continue;
+		}
+
+		const FViewportSetting& saved = setting.Viewports[index];
+		viewport->setType(saved.Type);
+
+		FViewportRenderSettings& renderSettings = viewport->getRenderSettings();
+
+		renderSettings.ViewMode = saved.ViewMode;
+		renderSettings.ShowFlags = saved.ShowFlags;
+	}
+
+	rebuildLayout();
+}
+
+void FEditorViewportManager::captureLayoutSetting(FEditorSetting& outSetting) const
+{
+	outSetting.viewportCount = getViewportCount();
+
+	outSetting.twoPaneVertical = mEditorSetting.twoPaneVertical;
+	outSetting.threePaneVertical = mEditorSetting.threePaneVertical;
+	outSetting.threePaneRightHorizontal = mEditorSetting.threePaneRightHorizontal;
+	outSetting.fourPaneHorizontal = mEditorSetting.fourPaneHorizontal;
+	outSetting.fourPaneVertical = mEditorSetting.fourPaneVertical;
+
+	if (outSetting.Viewports.Num() < maxViewportCount)
+	{
+		outSetting.Viewports.SetNum(maxViewportCount);
+	}
+
+	for (uint8 index = 0; index < getViewportCount(); ++index)
+	{
+		const FViewport* viewport = getViewportAt(index);
+
+		if (viewport == nullptr)
+		{
+			continue;
+		}
+
+		FViewportSetting& saved = outSetting.Viewports[index];
+
+		saved.Type = viewport->getType();
+		saved.ViewMode = viewport->getRenderSettings().ViewMode;
+		saved.ShowFlags = viewport->getRenderSettings().ShowFlags;
+	}
 }
 
 FViewport* FEditorViewportManager::getActiveViewport()
@@ -72,22 +152,31 @@ std::unique_ptr<SWindow> FEditorViewportManager::makeSingleLayout()
 }
 std::unique_ptr<SWindow> FEditorViewportManager::makeTwoPaneLayout()
 {
-	return std::make_unique<SSplitterV>(makeViewportPanel(0), makeViewportPanel(1), 0.5);
+	auto root = std::make_unique<SSplitterV>(makeViewportPanel(0), makeViewportPanel(1), mEditorSetting.twoPaneVertical);
+	mPrimarySplitter = root.get();
+	return root;
 }
 std::unique_ptr<SWindow> FEditorViewportManager::makeThreePaneLayout()
 {
-	auto rightSide = std::make_unique<SSplitterH>(makeViewportPanel(1), makeViewportPanel(2), 0.5f);
-	return std::make_unique<SSplitterV>(makeViewportPanel(0), std::move(rightSide), 0.5f);
+	auto rightSide = std::make_unique<SSplitterH>(makeViewportPanel(1), makeViewportPanel(2), mEditorSetting.threePaneRightHorizontal);
+	mSecondarySplitter = rightSide.get();
+	auto root = std::make_unique<SSplitterV>(makeViewportPanel(0), std::move(rightSide), mEditorSetting.threePaneVertical);
+	mPrimarySplitter = root.get();
+	return root;
 }
 std::unique_ptr<SWindow> FEditorViewportManager::makeFourPaneLayout()
 {
-	auto top = std::make_unique<SSplitterV>(makeViewportPanel(0), makeViewportPanel(1), 0.5f);
-	auto bottom = std::make_unique<SSplitterV>(makeViewportPanel(2), makeViewportPanel(3), 0.5f);
+	auto top = std::make_unique<SSplitterV>(makeViewportPanel(0), makeViewportPanel(1), mEditorSetting.fourPaneVertical);
+	auto bottom = std::make_unique<SSplitterV>(makeViewportPanel(2), makeViewportPanel(3), mEditorSetting.fourPaneVertical);
 
 	top->linkSplitRatio(*bottom);
-	bottom->linkSplitRatio(*top);
 
-	return std::make_unique<SSplitterH>(std::move(top), std::move(bottom), 0.5f);
+	mSecondarySplitter = top.get();
+
+	auto root = std::make_unique<SSplitterH>(std::move(top), std::move(bottom), mEditorSetting.fourPaneHorizontal);
+	mPrimarySplitter = root.get();
+
+	return root;
 	/*
 	auto bottom1 = std::make_unique<SSplitterH>(makeViewportPanel(2), makeViewportPanel(3), 0.5f);
 	auto bottom = std::make_unique<SSplitterH>(makeViewportPanel(1), std::move(bottom1), 0.33f);
@@ -281,10 +370,93 @@ void FEditorViewportManager::updateSplitterDrag(const FPoint& point)
 	}
 	draggingSplitter->updateSplitFromPoint(point);
 }
-void FEditorViewportManager::endSplitterDrag()
+bool FEditorViewportManager::endSplitterDrag()
 {
+	if (draggingSplitter == nullptr)
+	{
+		return false;
+	}
+
+	switch (layoutMode)
+	{
+	case EViewportLayoutMode::TwoPane:
+		mEditorSetting.twoPaneVertical = mPrimarySplitter->getSplitRatio();
+		break;
+	case EViewportLayoutMode::ThreePane:
+		mEditorSetting.threePaneRightHorizontal = mSecondarySplitter->getSplitRatio();
+		mEditorSetting.threePaneVertical = mPrimarySplitter->getSplitRatio();
+		break;
+	case EViewportLayoutMode::FourPane:
+		mEditorSetting.fourPaneVertical = mSecondarySplitter->getSplitRatio();
+		mEditorSetting.fourPaneHorizontal = mPrimarySplitter->getSplitRatio();
+		break;
+	default:
+		break;
+	}
+	mEditorSetting.viewportCount = getViewportCount();
 	draggingSplitter = nullptr;
+	return true;
 }
+
+FCamera* FEditorViewportManager::getPerspectiveCamera()
+{
+	for (uint8 index = 0;index < getViewportCount();++index)
+	{
+		FViewport* viewport = getViewportAt(index);
+
+		if (viewport != nullptr &&viewport->getType() == EViewportType::Perspective)
+		{
+			return &viewport->getClient().GetCamera();
+		}
+	}
+	return nullptr;
+}
+const FCamera* FEditorViewportManager::getPerspectiveCamera() const
+{
+	for (uint8 index = 0;index < getViewportCount();++index)
+	{
+		const FViewport* viewport = getViewportAt(index);
+
+		if (viewport != nullptr && viewport->getType() == EViewportType::Perspective)
+		{
+			return &viewport->getClient().GetCamera();
+		}
+	}
+	return nullptr;
+}
+
+bool FEditorViewportManager::applyPerspectiveCamera(const FCamera& camera)
+{
+	bool applied = false;
+	for (uint8 index = 0; index < getViewportCount(); index++)
+	{
+		FViewport* viewport = getViewportAt(index);
+		if (viewport == nullptr || viewport->getType() != EViewportType::Perspective)
+		{
+			continue;
+		}
+		FEditorViewportClient& client = viewport->getClient();
+		client.setViewportSettings(EViewportType::Perspective);
+		FCamera& Camera = client.GetCamera();
+
+		Camera.Location = camera.Location;
+		Camera.Rotation = camera.Rotation;
+		Camera.mFovDegree = camera.mFovDegree;
+		Camera.Velocity = camera.Velocity;
+		Camera.mFarZ = camera.mFarZ;
+		Camera.mNearZ = camera.mNearZ;
+		applied = true;
+	}
+	return applied;
+}
+
+void FEditorViewportManager::resetPerspectiveCamera()
+{
+	const FCamera defaultCamera;
+	applyPerspectiveCamera(defaultCamera);
+}
+
+
 /*
 void FEditorViewportManager::updateViewports(float deltaTime, FSceneManager& sceneManager)
 {

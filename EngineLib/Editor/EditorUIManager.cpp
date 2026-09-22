@@ -17,6 +17,7 @@
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
 #include "Engine/Components/StaticMeshComponent.h"
+#include "Engine/Stats/StatManager.h"
 
 /* Editor */
 #include "FEditorViewportClient.h"
@@ -24,6 +25,7 @@
 #include "EditorViewportManager.h"
 #include "Viewport.h"
 #include "Console.h"
+#include "Editor/StatOverlay.h"
 
 #include <algorithm>
 
@@ -108,7 +110,7 @@ namespace
 		return "Unknown";
 	}
 
-	void drawViewportSharedControls(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedSettings, FEditorCommands& outCommands)
+	bool drawViewportSharedControls(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedSettings, FEditorCommands& outCommands)
 	{
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
@@ -117,10 +119,12 @@ namespace
 
 		const uint8 viewportCount = viewportManager.getViewportCount();
 
+		bool layoutChanged = false;
+
 		ImGui::BeginDisabled(viewportCount >= maxViewportCount);
 		if (ImGui::Button(" + "))
 		{
-			viewportManager.addViewport();
+			layoutChanged =viewportManager.addViewport() != invalidViewportId;
 		}
 		ImGui::EndDisabled();
 
@@ -133,7 +137,7 @@ namespace
 
 			if (lastViewport != nullptr)
 			{
-				viewportManager.removeViewport(lastViewport->getId());
+				layoutChanged = viewportManager.removeViewport(lastViewport->getId());
 			}
 		}
 		ImGui::EndDisabled();
@@ -175,9 +179,11 @@ namespace
 
 		ImGui::Separator();
 		ImGui::PopStyleColor(9);
+
+		return layoutChanged;
 	}
 
-	void updateSplitterInteraction(
+	bool updateSplitterInteraction(
 		FEditorViewportManager& viewportManager,
 		const FRect& hostRect,
 		const FPoint& mousePoint)
@@ -195,8 +201,9 @@ namespace
 
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
-			viewportManager.endSplitterDrag();
+			return viewportManager.endSplitterDrag();
 		}
+		return false;
 	}
 
 	void updateViewportInteraction(
@@ -515,6 +522,7 @@ namespace
 		const FViewport& viewport,
 		uint8 viewportIndex,
 		bool bActive,
+		const FStatManager& statManager,
 		ImDrawList& drawList,
 		FEditorCommands& outCommands)
 	{
@@ -599,6 +607,14 @@ namespace
 		ImGui::PopID();
 		ImGui::SetCursorScreenPos(savedCursor);
 		ImGui::PopClipRect();
+
+		if (bActive)
+		{
+			StatOverlay::Draw(
+				imageRect,
+				statManager,
+				drawList);
+		}
 	}
 }
 
@@ -744,10 +760,10 @@ FEditorUIManager::FEditorUIManager(const ImGuiIO& io)
 	mPanelWidth = io.DisplaySize.x * MIN_WIDTH_RATIO;
 }
 
-void FEditorUIManager::LoadSettings(FEditorCommands& outCommands)
+void FEditorUIManager::LoadSettings(FEditorViewportManager& viewportManager, FEditorCommands& outCommands)
 {
 	mEditorSetting.Load();
-
+	viewportManager.applyLayoutSetting(mEditorSetting);
 	// Load settings into commands
 	outCommands.Emplace(FSetCameraSensitivityCommand{ mEditorSetting.CameraSensitivity });
 	outCommands.Emplace(FSetGridWidthCommand{ mEditorSetting.GridSpacing });
@@ -763,9 +779,9 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference,FViewportShar
 	updateControlPanelGUI(guiReference, outCommands);
 	updatePropertyWindowGUI(guiReference, outCommands);
 	updateObjectListPanelGUI(guiReference, outCommands);
-	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings,outCommands);
+	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings, guiReference.StatManager,outCommands);
 
-	updateBottomBarGUI();
+	updateBottomBarGUI(outCommands);
 }
 
 FString saveSceneFileDialog();
@@ -832,7 +848,7 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	ImGui::Begin("PODO", nullptr, flags);
 	mPanelWidth = ImGui::GetWindowWidth();
 
-	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
+	//ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
 	if (ImGui::Button("Import Obj"))
 	{
@@ -995,11 +1011,12 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 		outCommands.Emplace(FSetCameraRotationCommand{ FRotator{ cameraRotation[1], cameraRotation[2], cameraRotation[0] } });
 	}
 
-	/* Memory Info */
+	/*
 	ImGui::SeparatorText("Memory Info");
 
 	ImGui::Text("Total allocated memory count: %d", UEngineStatics::sTotalAllocationCount);
 	ImGui::Text("Total allocated memory size: %d bytes", UEngineStatics::sTotalAllocationBytes);
+	*/
 
 	/* Gizmo Control */
 	ImGui::SeparatorText("Gizmo Control");
@@ -1490,8 +1507,9 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 	ImGui::End();
 }
 
-void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands)
+void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, const FStatManager& statManager, FEditorCommands& outCommands)
 {
+
 	const float hostWidth =
 		(std::max)(mImGuiIO.DisplaySize.x - mPanelWidth, 0.0f);
 	const float hostHeight =
@@ -1523,7 +1541,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		return;
 	}
 
-	drawViewportSharedControls(viewportManager, sharedsettings, outCommands);
+	const bool viewportCountChanged = drawViewportSharedControls(viewportManager, sharedsettings, outCommands);
 
 	const ImVec2 hostMin = ImGui::GetCursorScreenPos();
 	const ImVec2 availableSize = ImGui::GetContentRegionAvail();
@@ -1548,7 +1566,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		mousePosition.y
 	};
 
-	updateSplitterInteraction(viewportManager, hostRect, mousePoint);
+	const bool splitterChanged = updateSplitterInteraction(viewportManager, hostRect, mousePoint);
 	updateViewportInteraction(viewportManager, mousePoint);
 
 	ImDrawList& drawList = *ImGui::GetWindowDrawList();
@@ -1570,18 +1588,26 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 			*viewport,
 			index,
 			activeViewport == viewport,
+			statManager,
 			drawList,
 			outCommands);
 	}
 
 	drawList.PopClipRect();
 
+	if (viewportCountChanged || splitterChanged)
+	{
+		viewportManager.captureLayoutSetting(mEditorSetting);
+		mEditorSetting.Save();
+	}
+
+
 	// ImGui에게 해당 영역이 실제 콘텐츠로 사용됐음을 알려준다.
 	ImGui::Dummy(availableSize);
 	ImGui::End();
 }
 
-void FEditorUIManager::updateBottomBarGUI()
+void FEditorUIManager::updateBottomBarGUI(FEditorCommands& outCommands)
 {
 	const float displayWidth = mImGuiIO.DisplaySize.x;
 	const float displayHeight = mImGuiIO.DisplaySize.y;
@@ -1661,11 +1687,17 @@ void FEditorUIManager::updateBottomBarGUI()
 		{
 			// Console should be updated before drawing its contents
 			ConsoleWindow::GetInstance().Update();
-			ConsoleWindow::GetInstance().DrawContents();
+			ConsoleWindow::GetInstance().DrawContents(outCommands);
 			ImGui::EndPopup();
 		}
 	}
 
 	ImGui::End();
 	ImGui::PopStyleVar();
+}
+
+void FEditorUIManager::saveSettings(const FEditorViewportManager& viewportManager)
+{
+	viewportManager.captureLayoutSetting(mEditorSetting);
+	mEditorSetting.Save();
 }
