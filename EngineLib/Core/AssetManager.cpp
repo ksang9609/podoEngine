@@ -70,11 +70,30 @@ const UStaticMesh& FAssetManager::FindStaticMeshAssetOrAdd(const FName& assetNam
 
 	// 상대 경로, "..", 경로 구분자 등을 정리한다.
 	std::error_code error;
-	const std::filesystem::path canonicalPath =std::filesystem::weakly_canonical( std::filesystem::path(fileName.CStr()), error);
+	const std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(
+		std::filesystem::path(fileName.CStr()), error);
 
 	if (!error && fileName.Len() > 0)
 	{
-		const std::string pathString = canonicalPath.generic_string();
+		// 에셋 키는 실행 기준 디렉터리에 대한 상대 경로로 보관한다.
+		// 따라서 씬을 다른 PC에서 열어도 개발자 개인의 절대 경로에 의존하지 않는다.
+		std::filesystem::path assetPath = canonicalPath;
+		std::error_code relativePathError;
+		const std::filesystem::path workingDirectory =
+			std::filesystem::current_path(relativePathError);
+
+		if (!relativePathError)
+		{
+			const std::filesystem::path relativePath = std::filesystem::relative(
+				canonicalPath, workingDirectory, relativePathError);
+
+			if (!relativePathError && !relativePath.empty())
+			{
+				assetPath = relativePath.lexically_normal();
+			}
+		}
+
+		const std::string pathString = assetPath.generic_string();
 		const FName meshKey(pathString.c_str());
 
 		// 같은 파일이 다른 경로 표기로 이미 등록됐는지 확인한다.

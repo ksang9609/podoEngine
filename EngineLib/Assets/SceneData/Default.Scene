@@ -70,7 +70,7 @@
                   "mRelativeLocation" : [-11.000000, 0.000000, 0.000000],
                   "mRelativeRotation" : [0.000000, 0.000000, 0.000000],
                   "mRelativeScale3D" : [1.000000, 1.000000, 1.000000],
-                  "mStaticMeshAssetKey" : "C:/Projects/week4/podoEngine/EngineLib/Assets/Rayquaza.obj",
+                  "mStaticMeshAssetKey" : "",
                   "mbShowBoundingBox" : true,
                   "mbUseTexture" : false,
                   "mePrimitive" : "StaticMesh"

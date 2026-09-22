@@ -283,13 +283,6 @@ bool FObjViewerApplication::InitializeRenderer()
 
 	// obj 파일 찾기
 	ScanObjFiles();
-	if (!mObjFilePaths.empty())
-	{
-		if (LoadObjFile(mObjFilePaths.front()))
-		{
-			mSelectedObjIndex = 0;
-		}
-	}
 
 	UpdateOrbitCamera();
 
@@ -588,7 +581,7 @@ void FObjViewerApplication::RenderObjList(FEditorCommands& outCommands)
 	}
 	else
 	{
-		std::string previewLabel = "Select an OBJ";
+		std::string previewLabel = "None";
 		if (mSelectedObjIndex >= 0 && static_cast<size_t>(mSelectedObjIndex) < mObjFilePaths.size())
 		{
 			previewLabel = mObjFilePaths[static_cast<size_t>(mSelectedObjIndex)].filename().string();
@@ -597,6 +590,22 @@ void FObjViewerApplication::RenderObjList(FEditorCommands& outCommands)
 		ImGui::SetNextItemWidth(280.0f);
 		if (ImGui::BeginCombo("##ObjModel", previewLabel.c_str()))
 		{
+			const bool isNoneSelected = mSelectedObjIndex < 0;
+			if (ImGui::Selectable("None", isNoneSelected))
+			{
+				if (mDisplayedActor != nullptr)
+				{
+					mSceneManager->RemoveActor(mDisplayedActor);
+					mDisplayedActor = nullptr;
+				}
+				mSelectedObjIndex = -1;
+			}
+
+			if (isNoneSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
 			for (size_t index = 0; index < mObjFilePaths.size(); ++index)
 			{
 				const bool isSelected = static_cast<int32>(index) == mSelectedObjIndex;
