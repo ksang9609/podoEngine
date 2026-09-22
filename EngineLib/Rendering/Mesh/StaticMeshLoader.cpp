@@ -250,7 +250,7 @@ namespace
 		archive << section.GroupIndex;
 	}
 
-	void SerializeMaterial(FArchive& archive, FMaterial& material)
+	void SerializeMaterial(FArchive& archive, FMaterial& material,const std::filesystem::path& binaryDirectory)
 	{
 		SerializeVector(archive, material.AmbientColor);
 
@@ -261,18 +261,18 @@ namespace
 		archive << material.SpecularExponent;
 		archive << material.Opacity;
 
-		SerializeName(archive, material.DiffuseTexture);
+		SerializeTexturePath(archive, material.DiffuseTexture,binaryDirectory);
 
-		SerializeName(archive,material.NormalTexture);
+		SerializeTexturePath(archive,material.NormalTexture,binaryDirectory);
 
-		SerializeName(archive, material.SpecularTexture);
+		SerializeTexturePath(archive, material.SpecularTexture,binaryDirectory);
 	}
 
-	void SerializeMaterialSlot(FArchive& archive, FMaterialSlot& slot)
+	void SerializeMaterialSlot(FArchive& archive, FMaterialSlot& slot,const std::filesystem::path& binaryDirectory)
 	{
 		archive << slot.Name;
 
-		SerializeMaterial(archive, slot.DefaultMaterial);
+		SerializeMaterial(archive, slot.DefaultMaterial,binaryDirectory);
 	}
 
 	template<typename T, typename Serializer>
@@ -292,6 +292,16 @@ namespace
 
 		if (archive.IsLoading())
 		{
+
+			// 반드시 메모리 할당 전에 검사.
+			// 곱셈 대신 나눗셈을 사용해 오버플로를 방지.
+			// minElementByte는 파일에 기록되는 원소 하나의 최소크기
+
+			if (minElementBytes == 0 || count > archive.RemainingBytes() / minElementBytes)
+			{
+				archive.SetError();
+				return false;
+			}
 			values.Reset(static_cast<int32>(count));
 
 			for (uint32 i = 0; i < count; ++i)
@@ -313,19 +323,29 @@ namespace
 		return true;
 	}
 
-	bool SerializeBakedData(FArchive& archive, FStaticMesh& mesh, TArray<FMaterialSlot>& materialSlots)
+	bool SerializeBakedData(FArchive& archive, FStaticMesh& mesh, TArray<FMaterialSlot>& materialSlots,const std::filesystem::path& binaryDirectory)
 	{
 
-		// pos 3 + normal 3 + color 4 + tex 2 = float 12개.
-		// sizeof(FNormalVertex)는 패딩이 포함될 수 있으므로 사용하지 않음.
-		constexpr uint64 SerializedVertexBytes = sizeof(float) * 12;
+		constexpr uint64 VertexBytes = sizeof(float) * 12;
+		constexpr uint64 IndexBytes = sizeof(uint32);
 
-		if (!SerializeArray( archive, mesh.Vertices, MaxVertices, SerializedVertexBytes, SerializeVertex))
+		constexpr uint64 StringMinBytes = sizeof(uint32);
+
+		constexpr uint64 SectionMinBytes =
+			StringMinBytes + sizeof(int32) * 4;
+
+		// Ambient/Diffuse/Specular: float 9개
+		// SpecularExponent/Opacity: float 2개
+		// 텍스처 3개: 각각 hasValue(uint8)
+
+		constexpr uint64 MaterialSlotMinBytes = StringMinBytes + sizeof(float) * 11 + sizeof(uint8) * 3;
+
+		if (!SerializeArray( archive, mesh.Vertices, MaxVertices, VertexBytes, SerializeVertex))
 		{
 			return false;
 		}
 
-		if (!SerializeArray(archive,mesh.Indices,MaxIndices, sizeof(uint32),
+		if (!SerializeArray(archive,mesh.Indices,MaxIndices, IndexBytes,
 			[](FArchive& ar, uint32& index)
 			{
 				ar << index;
@@ -334,12 +354,12 @@ namespace
 			return false;
 		}
 
-		if (!SerializeArray(archive, mesh.Sections, MaxSections, sizeof(FStaticMeshSection), SerializeSection))
+		if (!SerializeArray(archive, mesh.Sections, MaxSections, SectionMinBytes, SerializeSection))
 		{
 			return false;
 		}
 
-		if (!SerializeArray(archive, mesh.GroupNames, MaxGroupNames, sizeof(FString),
+		if (!SerializeArray(archive, mesh.GroupNames, MaxGroupNames, StringMinBytes,
 			[](FArchive& ar, FString& name)
 			{
 				ar << name;
@@ -348,7 +368,7 @@ namespace
 			return false;
 		}
 
-		if (!SerializeArray(archive,materialSlots,MaxMaterialSlots, sizeof(FMaterialSlot), SerializeMaterialSlot))
+		if (!SerializeArray(archive,materialSlots,MaxMaterialSlots, MaterialSlotMinBytes, SerializeMaterialSlot))
 		{
 			return false;
 		}
@@ -482,7 +502,7 @@ namespace
 
 		TArray<FMaterialSlot> materialSlots;
 
-		if (!SerializeBakedData(reader, *mesh, materialSlots))
+		if (!SerializeBakedData(reader, *mesh, materialSlots, binaryPath.parent_path()))
 		{
 			return false;
 		}
@@ -516,7 +536,7 @@ namespace
 		writer << magic;
 		writer << version;
 
-		if (!SerializeBakedData(writer,mesh, materialSlots))
+		if (!SerializeBakedData(writer,mesh, materialSlots, binaryPath.parent_path()))
 		{
 			return false;
 		}
