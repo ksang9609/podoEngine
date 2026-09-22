@@ -284,6 +284,10 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 	FrameTimer->StartFrame();
 	float deltaTime = FrameTimer->GetDeltaTime();
+
+	mStatManager.UpdateFrame(*FrameTimer);
+	mStatManager.UpdateMemory(deltaTime,{*mSceneManager,*mAssetManager,*mGpuResourceManager});
+
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
 	//Input Threads
@@ -312,6 +316,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 				*mFileManager,
 				*mAssetManager,
 				*mEditorViewportManager,
+				mStatManager,
 				},viewportClient->getSharedSettings(), editorCommands);
 			processEditorCommands(editorCommands);
 
@@ -918,4 +923,41 @@ void FEngineLoop::processEditorCommand(const FSetViewportFovCommand& command)
 	{
 		viewport->getClient().GetCamera().mFovDegree = FMath::Clamp(command.Fov, 5.0f, 175.0f);
 	}
+}
+
+void FEngineLoop::processEditorCommand(const FToggleStatCommand& command)
+{
+	const bool enabled = mStatManager.Toggle(command.Group);
+	const char* groupName = "Unknown";
+
+	switch (command.Group)
+	{
+	case EStatGroup::FPS:
+		groupName = "FPS";
+		break;
+
+	case EStatGroup::Memory:
+		groupName = "Memory";
+		break;
+
+	default:
+		break;
+	}
+
+	UE_LOG_F(
+		Log,
+		Editor,
+		"Stat {} {}",
+		groupName,
+		enabled ? "enabled" : "disabled");
+}
+
+void FEngineLoop::processEditorCommand(const FDisableAllStatsCommand&)
+{
+	mStatManager.DisableAll();
+
+	UE_LOG(
+		Log,
+		Editor,
+		"All stats disabled");
 }

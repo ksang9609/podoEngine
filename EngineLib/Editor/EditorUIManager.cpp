@@ -17,6 +17,7 @@
 #include "Engine/Components/SphereComponent.h"
 #include "Engine/Components/ParticleSubUVComponent.h"
 #include "Engine/Components/StaticMeshComponent.h"
+#include "Engine/Stats/StatManager.h"
 
 /* Editor */
 #include "FEditorViewportClient.h"
@@ -24,6 +25,7 @@
 #include "EditorViewportManager.h"
 #include "Viewport.h"
 #include "Console.h"
+#include "Editor/StatOverlay.h"
 
 #include <algorithm>
 
@@ -520,6 +522,7 @@ namespace
 		const FViewport& viewport,
 		uint8 viewportIndex,
 		bool bActive,
+		const FStatManager& statManager,
 		ImDrawList& drawList,
 		FEditorCommands& outCommands)
 	{
@@ -604,6 +607,14 @@ namespace
 		ImGui::PopID();
 		ImGui::SetCursorScreenPos(savedCursor);
 		ImGui::PopClipRect();
+
+		if (bActive)
+		{
+			StatOverlay::Draw(
+				imageRect,
+				statManager,
+				drawList);
+		}
 	}
 }
 
@@ -768,9 +779,9 @@ void FEditorUIManager::UpdateGui(const FGuiReference& guiReference,FViewportShar
 	updateControlPanelGUI(guiReference, outCommands);
 	updatePropertyWindowGUI(guiReference, outCommands);
 	updateObjectListPanelGUI(guiReference, outCommands);
-	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings,outCommands);
+	updateViewportLayoutPanelGUI(guiReference.ViewportManager, sharedsettings, guiReference.StatManager,outCommands);
 
-	updateBottomBarGUI();
+	updateBottomBarGUI(outCommands);
 }
 
 FString saveSceneFileDialog();
@@ -837,7 +848,7 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 	ImGui::Begin("PODO", nullptr, flags);
 	mPanelWidth = ImGui::GetWindowWidth();
 
-	ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
+	//ImGui::Text("FPS: %.1f  dt: %.4f", guiReference.FrameTimer.GetFPS(), guiReference.FrameTimer.GetDeltaTime());
 
 	if (ImGui::Button("Import Obj"))
 	{
@@ -1000,11 +1011,12 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 		outCommands.Emplace(FSetCameraRotationCommand{ FRotator{ cameraRotation[1], cameraRotation[2], cameraRotation[0] } });
 	}
 
-	/* Memory Info */
+	/*
 	ImGui::SeparatorText("Memory Info");
 
 	ImGui::Text("Total allocated memory count: %d", UEngineStatics::sTotalAllocationCount);
 	ImGui::Text("Total allocated memory size: %d bytes", UEngineStatics::sTotalAllocationBytes);
+	*/
 
 	/* Gizmo Control */
 	ImGui::SeparatorText("Gizmo Control");
@@ -1495,7 +1507,7 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 	ImGui::End();
 }
 
-void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands)
+void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, const FStatManager& statManager, FEditorCommands& outCommands)
 {
 
 	const float hostWidth =
@@ -1576,6 +1588,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 			*viewport,
 			index,
 			activeViewport == viewport,
+			statManager,
 			drawList,
 			outCommands);
 	}
@@ -1594,7 +1607,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 	ImGui::End();
 }
 
-void FEditorUIManager::updateBottomBarGUI()
+void FEditorUIManager::updateBottomBarGUI(FEditorCommands& outCommands)
 {
 	const float displayWidth = mImGuiIO.DisplaySize.x;
 	const float displayHeight = mImGuiIO.DisplaySize.y;
@@ -1674,7 +1687,7 @@ void FEditorUIManager::updateBottomBarGUI()
 		{
 			// Console should be updated before drawing its contents
 			ConsoleWindow::GetInstance().Update();
-			ConsoleWindow::GetInstance().DrawContents();
+			ConsoleWindow::GetInstance().DrawContents(outCommands);
 			ImGui::EndPopup();
 		}
 	}
