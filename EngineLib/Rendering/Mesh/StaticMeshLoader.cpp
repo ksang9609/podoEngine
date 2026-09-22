@@ -323,6 +323,67 @@ namespace
 		return true;
 	}
 
+	template<typename T>
+	bool SerializeMeshBuffer(FArchive& archive, TArray<T>& values, uint32 maxCount)
+	{
+		static_assert(
+			std::is_same_v<T, FNormalVertex> ||
+			std::is_same_v<T, uint32>);
+
+		if (archive.HasError())
+		{
+			return false;
+		}
+
+		uint32 count = archive.IsSaving()? static_cast<uint32>(values.Num()): 0;
+
+		// 기존 형식 유지: 원소 개수 다음에 배열 데이터
+		archive << count;
+
+		if (archive.HasError())
+		{
+			return false;
+		}
+
+		if (count > maxCount ||
+			count > static_cast<uint32>((std::numeric_limits<int32>::max)()) ||
+			count > (std::numeric_limits<size_t>::max)() / sizeof(T))
+		{
+			archive.SetError();
+			return false;
+		}
+
+		const size_t byteCount = static_cast<size_t>(count) * sizeof(T);
+
+		if (archive.IsLoading())
+		{
+			// 메모리 할당 전에 파일에 충분한 데이터가 있는지 확인
+			if (byteCount > archive.RemainingBytes())
+			{
+				archive.SetError();
+				return false;
+			}
+
+			// 현재 TArray::Reset()은 공간만 확보하므로,
+			// Add()로 실제 원소도 생성해야 합니다.
+			values.Reset(static_cast<int32>(count));
+
+			for (uint32 i = 0; i < count; ++i)
+			{
+				values.Add(T{});
+			}
+		}
+
+		// 원소별로 읽거나 쓰지 않고 배열 전체를 한 번에 처리
+		if (byteCount > 0)
+		{
+			archive.Serialize(values.GetData(), byteCount);
+		}
+
+		return !archive.HasError();
+	}
+
+
 	bool SerializeBakedData(FArchive& archive, FStaticMesh& mesh, TArray<FMaterialSlot>& materialSlots,const std::filesystem::path& binaryDirectory)
 	{
 
@@ -340,16 +401,12 @@ namespace
 
 		constexpr uint64 MaterialSlotMinBytes = StringMinBytes + sizeof(float) * 11 + sizeof(uint8) * 3;
 
-		if (!SerializeArray( archive, mesh.Vertices, MaxVertices, VertexBytes, SerializeVertex))
+		if (!SerializeMeshBuffer( archive, mesh.Vertices, MaxVertices))
 		{
 			return false;
 		}
 
-		if (!SerializeArray(archive,mesh.Indices,MaxIndices, IndexBytes,
-			[](FArchive& ar, uint32& index)
-			{
-				ar << index;
-			}))
+		if (!SerializeMeshBuffer(archive, mesh.Indices, MaxIndices))
 		{
 			return false;
 		}
@@ -368,7 +425,11 @@ namespace
 			return false;
 		}
 
-		if (!SerializeArray(archive,materialSlots,MaxMaterialSlots, MaterialSlotMinBytes, SerializeMaterialSlot))
+		if (!SerializeArray(archive,materialSlots,MaxMaterialSlots, MaterialSlotMinBytes,
+			[&binaryDirectory](FArchive& ar, FMaterialSlot& slot)
+			{
+				SerializeMaterialSlot(ar, slot, binaryDirectory);
+			}))
 		{
 			return false;
 		}
