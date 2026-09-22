@@ -40,7 +40,7 @@ public:
 	void Initialize(FName materialName, std::unique_ptr<FMaterial> inMaterial);
 
 	const FMaterial* GetMaterial() const { return mMaterial.get(); }
-	const FName GetMaterialName() const { return mMaterialName; }
+	const FName& GetMaterialName() const { return mMaterialName; }
 
 private:
 	std::unique_ptr<FMaterial> mMaterial;
