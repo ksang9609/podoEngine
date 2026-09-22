@@ -15,6 +15,7 @@ namespace
 {
 	bool AreMaterialLibrariesUsable(
 		const std::filesystem::path& sourcePath,
+		const TArray<FString>& materialLibraryPaths,
 		const std::filesystem::file_time_type& binaryWriteTime);
 
 	constexpr uint32 StaticMeshMagic =
@@ -23,7 +24,7 @@ namespace
 		(static_cast<uint32>('S') << 16) |
 		(static_cast<uint32>('H') << 24);
 
-	constexpr uint32 StaticMeshBinaryVersion = 2;
+	constexpr uint32 StaticMeshBinaryVersion = 3;
 
 	constexpr uint32 MaxVertices = 10'000'000;
 	constexpr uint32 MaxIndices = 30'000'000;
@@ -110,7 +111,7 @@ namespace
 			return false;
 		}
 
-		return AreMaterialLibrariesUsable(sourcePath, binaryWriteTime);
+		return true;
 	}
 
 
@@ -383,6 +384,15 @@ namespace
 		return !archive.HasError();
 	}
 
+	bool SerializeMaterialLibraryPaths(FArchive& archive, TArray<FString>& materialLibraryPaths)
+	{
+		constexpr uint64 StringMinBytes = sizeof(uint32);
+		return SerializeArray(archive, materialLibraryPaths, MaxMaterialSlots, StringMinBytes,
+			[](FArchive& ar, FString& path)
+			{
+				ar << path;
+			});
+	}
 
 	bool SerializeBakedData(FArchive& archive, FStaticMesh& mesh, TArray<FMaterialSlot>& materialSlots,const std::filesystem::path& binaryDirectory)
 	{
@@ -489,37 +499,49 @@ namespace
 	}
 
 	// OBJ 파일에서 참조하는 mtl 파일이 바이너리보다 최신이면, 바이너리를 다시 생성해야 함.
-	bool AreMaterialLibrariesUsable(const std::filesystem::path& sourcePath, const std::filesystem::file_time_type& binaryWriteTime)
+	bool AreMaterialLibrariesUsable(const std::filesystem::path& sourcePath, const TArray<FString>& materialLibraryPaths, const std::filesystem::file_time_type& binaryWriteTime)
 	{
-		std::ifstream objFile(sourcePath);
+		std::error_code error;
 
-		if (!objFile.is_open())
+		const bool sourceExists = std::filesystem::is_regular_file(sourcePath, error);
+
+		if (error) return false;
+
+		if(!sourceExists)
 		{
 			return false;
 		}
 
-		std::string line;
-
-		while (std::getline(objFile, line))
+		for (const FString& storedPath :
+			materialLibraryPaths)
 		{
-			std::istringstream tokens(line);
-			std::string keyword;
+			std::filesystem::path materialPath(
+				storedPath.CStr());
 
-			if (!(tokens >> keyword) || keyword != "mtllib")
-			{
-				continue;
-			}
-
-			std::string materialFile;
-			if (!(tokens >> materialFile))
+			if (materialPath.empty())
 			{
 				return false;
 			}
 
-			const auto materialPath = sourcePath.parent_path() / materialFile;
+			if (materialPath.is_relative())
+			{
+				materialPath = sourcePath.parent_path() / materialPath;
+			}
 
-			std::error_code error;
-			const auto materialWriteTime = std::filesystem::last_write_time(materialPath, error);
+			materialPath = materialPath.lexically_normal();
+
+			error.clear();
+
+			const bool materialExists = std::filesystem::is_regular_file( materialPath, error);
+
+			if (error || !materialExists)
+			{
+				return false;
+			}
+
+			error.clear();
+
+			const auto materialWriteTime = std::filesystem::last_write_time( materialPath, error);
 
 			if (error || materialWriteTime > binaryWriteTime)
 			{
@@ -527,11 +549,12 @@ namespace
 			}
 		}
 
-		return !objFile.bad();
+		return true;	
 	}
 
 	bool TryLoadBinary( const std::filesystem::path& sourcePath, FStaticMeshCookedData& outResult)
 	{
+
 		const std::filesystem::path binaryPath = MakeBinaryPath(sourcePath);
 
 		if (!IsBinaryUsable( sourcePath, binaryPath))
@@ -559,6 +582,29 @@ namespace
 			return false;
 		}
 
+
+		TArray<FString> materialLibraryPaths;
+
+		if (!SerializeMaterialLibraryPaths(reader,
+			materialLibraryPaths))
+		{
+			return false;
+		}
+
+		std::error_code error;
+
+		const auto binaryWriteTime = std::filesystem::last_write_time( binaryPath, error);
+
+		if (error)
+		{
+			return false;
+		}
+
+		if (!AreMaterialLibrariesUsable( sourcePath, materialLibraryPaths, binaryWriteTime))
+		{
+			return false;
+		}
+
 		auto mesh = std::make_unique<FStaticMesh>();
 
 		TArray<FMaterialSlot> materialSlots;
@@ -580,7 +626,7 @@ namespace
 		return true;
 	}
 
-	bool SaveBinary(const std::filesystem::path& sourcePath, FStaticMesh& mesh, TArray<FMaterialSlot>& materialSlots)
+	bool SaveBinary(const std::filesystem::path& sourcePath, FStaticMesh& mesh, TArray<FMaterialSlot>& materialSlots, TArray<FString>& materialLibraryPaths)
 	{
 		const std::filesystem::path binaryPath = MakeBinaryPath(sourcePath);
 
@@ -596,6 +642,11 @@ namespace
 
 		writer << magic;
 		writer << version;
+
+		if (!SerializeMaterialLibraryPaths(writer, materialLibraryPaths))
+		{
+			return false;
+		}
 
 		if (!SerializeBakedData(writer,mesh, materialSlots, binaryPath.parent_path()))
 		{
@@ -629,7 +680,7 @@ bool StaticMeshLoader::Load( const FString& sourcePath, FStaticMeshCookedData& o
 	}
 
 	// Bake 저장 실패가 현재 메시 로딩 실패를 뜻하지는 않는다.
-	SaveBinary(resolvedPath, *objImportResult.meshData, objImportResult.materialSlots);
+	SaveBinary(resolvedPath, *objImportResult.meshData, objImportResult.materialSlots, objImportResult.materialLibraryPaths);
 
 	objImportResult.meshData->PathFileName =
 		FName(sourcePath);
