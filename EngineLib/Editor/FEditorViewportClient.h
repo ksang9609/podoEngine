@@ -92,12 +92,17 @@ private:
 	void configureCamera(EViewportType viewportType);
 
 	bool bMouseHit = false;
+
+	/* Projection Transitioning */
 	float mProjectionRatio = 1.0f;
 	float mProjectionStartRatio = 1.0f;
 	float mProjectionTargetRatio = 1.0f;
 	float mProjectionElapsed = 0.0f;
 	float mProjectionDuration = 1.0f;
 	bool bProjectionTransitioning = false;
+
+	FCameraTransform mStartCameraTransform;
+	FCameraTransform mTargetCameraTransform;
 	
 	// RayCast가 이번 프레임에 쏜 광선. 기즈모 드래그가 같은 광선을 다시 쓴다
 	FVector mRayNear;

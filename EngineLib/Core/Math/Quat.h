@@ -24,4 +24,8 @@ struct FQuat
 	{
 		return FQuat(0, 0, 0, 1);
 	}
+
+	FQuat GetNormalized() const;
+	static FQuat Slerp(const FQuat& start, const FQuat& end, float alpha);
+	
 };

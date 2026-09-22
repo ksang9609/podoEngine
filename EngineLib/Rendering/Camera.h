@@ -3,6 +3,12 @@
 #include <cmath>
 #include "Core/Math/Vector.h"
 
+struct FCameraTransform
+{
+	FVector Location;
+	FRotator Rotation;
+};
+
 class FCamera
 {
 public:
@@ -17,6 +23,7 @@ public:
 	FRotator Rotation;
 
 	const FRotator GetRotation() const { return Rotation; }
+	const FCameraTransform GetCameraTransform() const { return { Location, Rotation }; }
 
 	FMatrix GetViewMatrix() const
 	{
