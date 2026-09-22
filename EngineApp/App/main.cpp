@@ -2,11 +2,18 @@
 
 #include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Renderer.h"
-#include "Platform/WindowApplication.h"
+
+#if defined(IS_OBJ_VIEWER) && IS_OBJ_VIEWER
+#include "ObjViewerApplication.h"
+#else
 #include "LaunchEngineLoop.h"
+#include "Platform/WindowApplication.h"
+#endif
+
 #include "Core/Object/Object.h"
 #include "Engine/EngineStatics.h"
 
+#if !defined(IS_OBJ_VIEWER) || !IS_OBJ_VIEWER
 enum : UINT_PTR
 {
 	RESIZE_TIMER_ID = 1,
@@ -116,6 +123,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+
 void ProcessMessage(bool& bIsExit)
 {
 	MSG msg;
@@ -134,9 +142,18 @@ void ProcessMessage(bool& bIsExit)
 		}
 	}
 }
+#endif
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+#if defined(IS_OBJ_VIEWER) && IS_OBJ_VIEWER
+
+	FObjViewerApplication objViewerApplication;
+	return objViewerApplication.Run(hInstance, nShowCmd);
+
+#else
+
 	GEngineLoop.Init(hInstance, WndProc);
 
 	// Main Loop
@@ -149,4 +166,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	GEngineLoop.End();
 	return 0;
+
+#endif
 }

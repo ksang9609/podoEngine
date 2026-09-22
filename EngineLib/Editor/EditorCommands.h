@@ -5,6 +5,8 @@
 #include "Core/Math/Color.h"
 #include "ViewportTypes.h"
 
+#include <variant>
+
 /* Editor Commands */
 /* SceneManager Commands */
 struct FNewSceneCommand {};

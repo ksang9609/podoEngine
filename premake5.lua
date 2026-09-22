@@ -1,8 +1,8 @@
-﻿-- 저장소 루트: premake5.lua
+-- 저장소 루트: premake5.lua
 
 workspace "JungleEngine"
     location "."
-    configurations { "Debug", "Release" }
+    configurations { "Debug", "Release", "ObjViewerDebug"}
     platforms { "x64" }
     startproject "EngineApp"
 
@@ -31,6 +31,12 @@ workspace "JungleEngine"
         runtime "Release"
         symbols "On"
         optimize "Speed"
+        
+    filter "configurations:ObjViewerDebug"
+        defines { "_DEBUG", "IS_OBJ_VIEWER=1" }
+        runtime "Debug"
+        symbols "On"
+        optimize "Off"
 
     filter {}
 

@@ -19,8 +19,11 @@ bool FAssetPicker::DrawMaterialPicker(const FAssetManager& assetManager, FName& 
 {
 	const FString previewName = outSelectedAssetKey.ToString();
 	const FString materialSlotLabel = FString(std::format("Material Slot {}", materialSlotNumber));
+
 	if (!ImGui::BeginCombo(materialSlotLabel.CStr(), previewName.CStr())) return false;
+
 	const bool bChanged = drawMaterialList(assetManager, outSelectedAssetKey);
+
 	ImGui::EndCombo();
 	return bChanged;
 }
