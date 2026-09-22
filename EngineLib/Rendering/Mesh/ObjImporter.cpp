@@ -67,6 +67,143 @@ namespace
 
 		return true;
 	}
+
+
+	bool IsPointInTriangle(
+		const FVector& P,
+		const FVector& A,
+		const FVector& B,
+		const FVector& C,
+		const FVector& Normal)
+	{
+		constexpr float Epsilon = 1e-6f;
+
+		const float AB = FVector::dot(FVector::cross(B - A, P - A), Normal);
+		const float BC = FVector::dot(FVector::cross(C - B, P - B), Normal);
+		const float CA = FVector::dot(FVector::cross(A - C, P - C), Normal);
+
+		return AB >= -Epsilon &&
+			BC >= -Epsilon &&
+			CA >= -Epsilon;
+	}
+
+	bool TriangulateFace( const FObjFace& Face, const TArray<FVector>& Positions,
+	TArray<FObjVertexIndex>& OutTriangles)
+	{
+		OutTriangles.Reset(0);
+
+		if (Face.VertexIndices.Num() < 3)
+		{
+			return false;
+		}
+
+		// 정점 순서를 따르는 폴리곤 법선
+		FVector PolygonNormal(0.0f);
+
+		for (int32 i = 0; i < Face.VertexIndices.Num(); ++i)
+		{
+			const int32 Next = (i + 1) % Face.VertexIndices.Num();
+
+			const FVector& A =
+				Positions[Face.VertexIndices[i].PositionIndex];
+			const FVector& B =
+				Positions[Face.VertexIndices[Next].PositionIndex];
+
+			PolygonNormal += FVector::cross(A, B);
+		}
+
+		const float NormalLength = PolygonNormal.Length();
+
+		if (NormalLength <= SMALL_NUMBER)
+		{
+			return false;
+		}
+
+		PolygonNormal = PolygonNormal * (1.0f / NormalLength);
+
+		PolygonNormal.Normalize();
+
+		// Face.VertexIndices에서 아직 남아 있는 정점 번호
+		TArray<int32> Remaining;
+		Remaining.Reserve(Face.VertexIndices.Num());
+
+		for (int32 i = 0; i < Face.VertexIndices.Num(); ++i)
+		{
+			Remaining.Add(i);
+		}
+
+		constexpr float Epsilon = SMALL_NUMBER;
+
+		while (Remaining.Num() > 3)
+		{
+			bool FoundEar = false;
+
+			for (int32 i = 0; i < Remaining.Num(); ++i)
+			{
+				const int32 PrevIndex = Remaining[(i + Remaining.Num() - 1) % Remaining.Num()];
+				const int32 CurrIndex = Remaining[i];
+				const int32 NextIndex = Remaining[(i + 1) % Remaining.Num()];
+
+				const FVector& A = Positions[Face.VertexIndices[PrevIndex].PositionIndex];
+				const FVector& B = Positions[Face.VertexIndices[CurrIndex].PositionIndex];
+				const FVector& C = Positions[Face.VertexIndices[NextIndex].PositionIndex];
+
+				// 오목 정점 또는 퇴화 삼각형이면 ear가 아님
+				const float Orientation = FVector::dot( FVector::cross(B - A, C - A), PolygonNormal);
+
+				if (Orientation <= Epsilon)
+				{
+					continue;
+				}
+
+				bool ContainsVertex = false;
+
+				for (int32 TestIndex : Remaining)
+				{
+					if (TestIndex == PrevIndex ||
+						TestIndex == CurrIndex ||
+						TestIndex == NextIndex)
+					{
+						continue;
+					}
+
+					const FVector& P = Positions[Face.VertexIndices[TestIndex].PositionIndex];
+
+					if (IsPointInTriangle(P, A, B, C, PolygonNormal))
+					{
+						ContainsVertex = true;
+						break;
+					}
+				}
+
+				if (ContainsVertex)
+				{
+					continue;
+				}
+
+				OutTriangles.Add(Face.VertexIndices[PrevIndex]);
+				OutTriangles.Add(Face.VertexIndices[CurrIndex]);
+				OutTriangles.Add(Face.VertexIndices[NextIndex]);
+
+				Remaining.RemoveAt(i, 1);
+				FoundEar = true;
+				break;
+			}
+
+			// 자기 교차, 중복점 등 잘못된 폴리곤
+			if (!FoundEar)
+			{
+				OutTriangles.Reset(0);
+				return false;
+			}
+		}
+
+		OutTriangles.Add(Face.VertexIndices[Remaining[0]]);
+		OutTriangles.Add(Face.VertexIndices[Remaining[1]]);
+		OutTriangles.Add(Face.VertexIndices[Remaining[2]]);
+
+		return true;
+	}
 }
 
 bool FObjImporter::ParseAndConvert(const FString& fileName, FObjImportResult& outResult)
@@ -471,14 +608,22 @@ void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& 
 		{
 			const FObjFace& face = objInfo.Faces[group.FirstFaceIndex + FaceOffset];
 
-			// Triangle Fan으로 삼각분할
-			for (int32 i = 1; i + 1 < face.VertexIndices.Num(); ++i)
+			TArray<FObjVertexIndex> Triangles;
+
+			if (!TriangulateFace(face, objInfo.Positions, Triangles))
+			{
+				UE_LOG(Warning, Render, "Failed to triangulate OBJ face");
+				continue;
+			}
+
+			// Ear clipping 방식으로 삼각형을 생성하고, 각 삼각형의 정점 정보를 FStaticMesh에 추가
+			for (int32 i = 0; i + 2 < Triangles.Num(); i += 3)
 			{
 				const FObjVertexIndex vertices[3] =
 				{
-					face.VertexIndices[0],
-					face.VertexIndices[i],
-					face.VertexIndices[i + 1]
+					Triangles[i],
+					Triangles[i+1],
+					Triangles[i + 2]
 				};
 
 				// 원본 노말이 없을 경우 면의 노말을 계산하여 사용
