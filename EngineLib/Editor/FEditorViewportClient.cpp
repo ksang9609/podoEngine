@@ -122,7 +122,7 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 	//		ViewportInfo.Width, ViewportInfo.Height, 0.1f, 100.f, NearPoint, FarPoint);
 	//}
 	DeprojectScreenToWorldForUnified(WindowApplication.Input.CursorX - viewrect.X, WindowApplication.Input.CursorY - viewrect.Y,
-		viewrect.Width, viewrect.Height, 0.1f, 100.f, mCamera.mOrthoDistance, mProjectionRatio, NearPoint, FarPoint);
+		viewrect.Width, viewrect.Height, 0.1f, 250.f, mCamera.mOrthoDistance, mProjectionRatio, NearPoint, FarPoint);
 
 	mRayNear = NearPoint;
 	mRayFar = FarPoint;
