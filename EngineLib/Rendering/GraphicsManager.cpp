@@ -409,7 +409,8 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			}
 
 
-			if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+			if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture) &&
+				renderInfo->TextureName.DisplayIndex >= 0)
 			{
 				diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
 			}
