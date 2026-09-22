@@ -40,7 +40,6 @@ void UStaticMeshComponent::Initialize(
 	FVector location,
 	FRotator rotation,
 	FVector scale3D,
-	FName textureName,
 	const UStaticMesh* staticMeshOrNull,
 	bool bUseTexture
 )
@@ -50,7 +49,6 @@ void UStaticMeshComponent::Initialize(
 	mStaticMeshAssetKey = staticMeshOrNull
 		? staticMeshOrNull->GetAssetPathFileName()
 		: FName();
-	mTextureName = textureName;
 	resetMaterialOverrides();
 
 	mLocalBounds = FBoundingBox{};
@@ -156,7 +154,6 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 	FRenderInfo renderInfo = UMeshComponent::makeRenderInfo();
 
 	renderInfo.MeshName = mStaticMeshRef ? mStaticMeshRef->GetAssetPathFileName() : FName();
-	renderInfo.TextureName = mTextureName;
 	renderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
 
 	if (renderInfo.StaticMesh)
@@ -173,6 +170,8 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 			renderInfo.Materials.Add(material ? *material : FMaterial{});
 		}
 	}
+
+	renderInfo.SubUVMesh = &mSubUVMesh;
 
 	return renderInfo;
 }
@@ -220,11 +219,6 @@ std::span<const FPropertyInfo> UStaticMeshComponent::GetDeclaredProperties()
 			UStaticMeshComponent,
 			mStaticMeshAssetKey
 		),
-
-		REFLECT_PROPERTY(
-			UStaticMeshComponent,
-			mTextureName
-		)
 	};
 
 	return Properties;

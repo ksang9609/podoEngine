@@ -1122,6 +1122,26 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 							}
 						}
 
+						// Sub uv
+						FSubUVMesh subUVMesh = staticMeshComponent->GetSubUVMesh();
+						bool bSubUVChanged = false;
+						if (ImGui::DragFloat2("SubUV Offset", &subUVMesh.UVOffset.x, 0.01f))
+						{
+							bSubUVChanged = true;
+						}
+						if (ImGui::DragFloat2("SubUV Scale", &subUVMesh.UVScale.x, 0.01f))
+						{
+							bSubUVChanged = true;
+						}
+						if (bSubUVChanged)
+						{
+							outCommands.Emplace(FSetStaticMeshComponentSubUVCommand{
+								staticMeshComponent->GetObjectID(),
+								subUVMesh.UVOffset,
+								subUVMesh.UVScale
+								});
+						}
+
 					}
 
 					if (const UPrimitiveComponent* primitiveComponent = component->Cast<UPrimitiveComponent>())

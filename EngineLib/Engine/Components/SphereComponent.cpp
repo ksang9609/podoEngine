@@ -2,9 +2,9 @@
 
 #include "Rendering/RenderInfo.h"
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(USphereComponent, UPrimitiveComponent);
+IMPLEMENT_CLASS_WITH_PROPERTIES(USphereComponent, UStaticMeshComponent);
 
-IMPLEMENT_SERIALIZATION(USphereComponent, UPrimitiveComponent, {})
+IMPLEMENT_SERIALIZATION(USphereComponent, UStaticMeshComponent, {})
 
 USphereComponent::USphereComponent()
 {
@@ -40,26 +40,26 @@ void USphereComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInf
 		mSubUVMesh.UVOffset.x = -mElapsedDegrees / 360.f; // Assuming the texture is a horizontal strip of frames
 	}
 
-	UPrimitiveComponent::Update(deltaTime, outRenderInfos);
+	UStaticMeshComponent::Update(deltaTime, outRenderInfos);
 }
 
 void USphereComponent::Initialize()
 {
-	Initialize(FVector(0.f, 0.f, 0.f), FRotator(0.f, 0.f, 0.f), FVector(0.f, 0.f, 0.f));
+	Initialize(FVector(0.f, 0.f, 0.f), FRotator(0.f, 0.f, 0.f), FVector(0.f, 0.f, 0.f), nullptr, false, 90.f);
 }
 
 void USphereComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
+	const UStaticMesh* sphereMeshOrNull,
 	bool bSpin, float spinSpeed)
 {
-	UPrimitiveComponent::Initialize(EPrimitive::EP_Sphere, location, rotation, scale3D);
+	UStaticMeshComponent::Initialize(location, rotation, scale3D, sphereMeshOrNull, true);
 	mbSpin = bSpin;
 	mSpinSpeed = spinSpeed;
 }
 
 FRenderInfo USphereComponent::makeRenderInfo() const
 {
-	FRenderInfo renderInfo = UPrimitiveComponent::makeRenderInfo();
-	renderInfo.SubUVMesh = mbUseTexture ? &mSubUVMesh : nullptr;
+	FRenderInfo renderInfo = UStaticMeshComponent::makeRenderInfo();
 
 	return renderInfo;
 }
