@@ -397,6 +397,66 @@ bool FEditorViewportManager::endSplitterDrag()
 	draggingSplitter = nullptr;
 	return true;
 }
+
+FCamera* FEditorViewportManager::getPerspectiveCamera()
+{
+	for (uint8 index = 0;index < getViewportCount();++index)
+	{
+		FViewport* viewport = getViewportAt(index);
+
+		if (viewport != nullptr &&viewport->getType() == EViewportType::Perspective)
+		{
+			return &viewport->getClient().GetCamera();
+		}
+	}
+	return nullptr;
+}
+const FCamera* FEditorViewportManager::getPerspectiveCamera() const
+{
+	for (uint8 index = 0;index < getViewportCount();++index)
+	{
+		const FViewport* viewport = getViewportAt(index);
+
+		if (viewport != nullptr && viewport->getType() == EViewportType::Perspective)
+		{
+			return &viewport->getClient().GetCamera();
+		}
+	}
+	return nullptr;
+}
+
+bool FEditorViewportManager::applyPerspectiveCamera(const FCamera& camera)
+{
+	bool applied = false;
+	for (uint8 index = 0; index < getViewportCount(); index++)
+	{
+		FViewport* viewport = getViewportAt(index);
+		if (viewport == nullptr || viewport->getType() != EViewportType::Perspective)
+		{
+			continue;
+		}
+		FEditorViewportClient& client = viewport->getClient();
+		client.setViewportSettings(EViewportType::Perspective);
+		FCamera& Camera = client.GetCamera();
+
+		Camera.Location = camera.Location;
+		Camera.Rotation = camera.Rotation;
+		Camera.mFovDegree = camera.mFovDegree;
+		Camera.Velocity = camera.Velocity;
+		Camera.mFarZ = camera.mFarZ;
+		Camera.mNearZ = camera.mNearZ;
+		applied = true;
+	}
+	return applied;
+}
+
+void FEditorViewportManager::resetPerspectiveCamera()
+{
+	const FCamera defaultCamera;
+	applyPerspectiveCamera(defaultCamera);
+}
+
+
 /*
 void FEditorViewportManager::updateViewports(float deltaTime, FSceneManager& sceneManager)
 {

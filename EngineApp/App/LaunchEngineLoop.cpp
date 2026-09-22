@@ -516,28 +516,42 @@ void FEngineLoop::processEditorCommand(const FNewSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
 {
+	FCamera* perspectiveCamera = mEditorViewportManager->getPerspectiveCamera();
 	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
 	FEditorFileUtils::SaveScene(
-		mSceneManager->GetCurrentWorld()
+		mSceneManager->GetCurrentWorld(), perspectiveCamera
 	);
 }
 
 void FEngineLoop::processEditorCommand(const FSaveSceneAsCommand& command)
 {
+	FCamera* perspectiveCamera = mEditorViewportManager->getPerspectiveCamera();
 	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
 	FEditorFileUtils::SaveSceneAs(
-		mSceneManager->GetCurrentWorld()
+		mSceneManager->GetCurrentWorld(), perspectiveCamera
 	);
 }
 
 void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 {
 	//mSceneManager->LoadScene(command.SceneName, *mFileManager);
-	UWorld* newWorld = FEditorFileUtils::LoadScene();
+	FLoadedScene loaded = FEditorFileUtils::LoadScene();
 
-	if (newWorld != nullptr)
+	if (loaded.World == nullptr)
 	{
-		mSceneManager->ReplaceWorld(newWorld);
+		return;
+	}
+
+	mSceneManager->ReplaceWorld(loaded.World);
+
+	if (loaded.PerspectiveCamera.has_value())
+	{
+		mEditorViewportManager->applyPerspectiveCamera(
+			*loaded.PerspectiveCamera);
+	}
+	else
+	{
+		mEditorViewportManager->resetPerspectiveCamera();
 	}
 
 	for (TObjectIterator<UStaticMeshComponent> it; it; ++it)

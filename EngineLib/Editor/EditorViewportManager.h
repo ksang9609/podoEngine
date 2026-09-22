@@ -65,6 +65,13 @@ public :
 	void setCameraSpeed(float speed);
 	void setSnapPreset(uint8 presetIndex);
 
+	FCamera* getPerspectiveCamera();
+	const FCamera* getPerspectiveCamera() const;
+
+	bool applyPerspectiveCamera(const FCamera& camera);
+
+	void resetPerspectiveCamera();
+
 private:
 	uint8 allocateViewportId() const;
 	int8 findViewportIndex(uint8 viewportId) const;
