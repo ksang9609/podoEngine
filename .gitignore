@@ -412,3 +412,4 @@ imgui.ini
 
 # Ignore all binary files in Assets folder
 **/Assets/**/*.bin
+/EngineLib/Assets/roadBike.obj
