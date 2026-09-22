@@ -41,3 +41,16 @@ FSceneView FViewport::buildSceneView() const
 	view.showFlags = renderSettings.ShowFlags;
 	return view;
 }
+
+void FViewport::transitionToType(
+	EViewportType type,
+	const FVector& pivot)
+{
+	if (Type == type)
+	{
+		return;
+	}
+
+	Client->startViewportTransition(type, pivot);
+	Type = type;
+}

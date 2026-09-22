@@ -37,7 +37,8 @@ public:
 	void Reset();
 
 	void startProjectionTransition(bool orthographic);
-	void updateProjectionTransition(float deltatime);
+	void startViewportTransition(EViewportType viewportType, const FVector& pivot);
+	void updateProjectionTransition(float deltaTime);
 
 	float getProjectionRatio() const { return mProjectionRatio; }
 	bool isOrthographicTarget() const { return mProjectionTargetRatio == 0.0f;  }
@@ -49,7 +50,10 @@ public:
 
 	FGizmo& GetGizmo() { return mGizmo; }
 	const FGizmo& GetGizmo() const{ return mGizmo; }
-	void setViewportSettings(EViewportType type) { configureCamera(type); mProjectionElapsed = 0.0f; bProjectionTransitioning = false; }
+	void setViewportSettings(EViewportType type) {
+		configureCamera(type); mProjectionElapsed = 0.0f; bProjectionTransitioning = false;
+		bCameraTransitioning = false;
+	}
 
 	FCamera mCamera;
 	FGizmo mGizmo;
@@ -101,8 +105,20 @@ private:
 	float mProjectionDuration = 1.0f;
 	bool bProjectionTransitioning = false;
 
-	FCameraTransform mStartCameraTransform;
-	FCameraTransform mTargetCameraTransform;
+	FVector mTransitionPivot = FVector(0.0f);
+	float mTransitionDistance = 5.0f;
+
+	FQuat mStartOrbitRotation;
+	FQuat mStartViewRotation;
+	FQuat mTargetRotation;
+	FVector mTransitionStartLocation = FVector(0.0f);
+	float mCenteringFraction = 0.0f;
+	bool bOrbitThroughFront = false;
+
+	FQuat mSavedPerspectiveOrbitRotation;
+	bool bHasSavedPerspectiveOrbitRotation = false;
+
+	bool bCameraTransitioning = false;
 	
 	// RayCast가 이번 프레임에 쏜 광선. 기즈모 드래그가 같은 광선을 다시 쓴다
 	FVector mRayNear;

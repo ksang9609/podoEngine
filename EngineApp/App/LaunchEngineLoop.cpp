@@ -817,9 +817,29 @@ void FEngineLoop::processEditorCommand(const FStartProjectionTransitionCommand& 
 
 void FEngineLoop::processEditorCommand(const FSetViewportTypeCommand& command)
 {
-	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
-	if (viewport == nullptr) { return; }
-	viewport->setType(command.Type);
+	FViewport* viewport =
+		mEditorViewportManager->findViewport(command.viewportId);
+
+	if (viewport == nullptr)
+	{
+		return;
+	}
+
+	const FCamera& camera = viewport->getClient().GetCamera();
+
+	// 선택 액터가 없으면 현재 시선 앞쪽을 중심으로 사용한다.
+	FVector pivot =
+		camera.Location +
+		camera.GetForwardVector() *
+		FMath::Max(camera.mOrthoDistance, 0.1f);
+
+	if (AActor* selectedActor = mSceneManager->GetSelectedActor())
+	{
+		pivot = selectedActor->GetTransform().Location;
+	}
+
+	viewport->transitionToType(command.Type, pivot);
+
 	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 

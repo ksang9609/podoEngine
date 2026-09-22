@@ -16,6 +16,7 @@ public:
 	FSceneView buildSceneView() const;
 
 	void setType(EViewportType type) { Type = type; Client->setViewportSettings(type); }
+	void transitionToType(EViewportType type, const FVector& pivot);
 	FViewportRenderSettings& getRenderSettings() {return renderSettings;}
 	const FViewportRenderSettings& getRenderSettings() const{return renderSettings;}
 

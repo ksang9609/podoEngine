@@ -61,7 +61,7 @@ FQuat FQuat::GetNormalized() const
 	);
 }
 
-FQuat Slerp(const FQuat& start, const FQuat& end, float alpha)
+FQuat FQuat::Slerp(const FQuat& start, const FQuat& end, float alpha)
 {
 	alpha = FMath::Clamp(alpha, 0.0f, 1.0f);
 

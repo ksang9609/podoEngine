@@ -1,19 +1,20 @@
 ﻿#include "FEditorViewportClient.h"
 
-#include "Platform/WindowApplication.h"
-#include "ThirdParty/ImGui/imgui.h"
 #include "Console.h"
-#include "Engine/SceneManager.h"
 #include "Core/Math/MathUtility.h"
+#include "Core/Math/Quat.h"
+#include "Engine/SceneManager.h"
+#include "Platform/WindowApplication.h"
 #include "Rendering/GraphicsManager.h"
+#include "ThirdParty/ImGui/imgui.h"
 
 // Primitive vertices definitions
+#include "Rendering/Primitives/Circle.h"
 #include "Rendering/Primitives/Cube.h"
+#include "Rendering/Primitives/GizmoArrow.h"
+#include "Rendering/Primitives/Primitives.h"
 #include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/Triangle.h"
-#include "Rendering/Primitives/GizmoArrow.h"
-#include "Rendering/Primitives/Circle.h"
-#include "Rendering/Primitives/Primitives.h"
 
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
@@ -254,96 +255,102 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 	const bool bCanUseKeyboard =bViewportFocused && !io.WantTextInput;
 	const bool bOrthographic = isOrthographicTarget();
 
-	// Camera Rotate
-	// 회전을 이동보다 먼저, 이번 프레임에 돌린 방향으로 바로 움직이게
-	if (bCanUseMouse && !bOrthographic && Input.IsDown(VK_RBUTTON))
+	// Camera Transition 중에는 카메라를 직접 움직이지 못하게 한다.
+	if (!bCameraTransitioning)
 	{
-		mCamera.Rotate(Input.MouseDX, Input.MouseDY);
-	}
 
-	// Camera Velocity
-	FVector MoveDir(0.f, 0.f, 0.f);
-	if (bCanUseKeyboard)
-	{
-		const FMatrix R = FMatrix::Rotate(mCamera.Rotation);
-		const FVector Forward = R.GetUnitAxis(EAxis::X);
-		const FVector Upward = R.GetUnitAxis(EAxis::Z);
-		const FVector Right = R.GetUnitAxis(EAxis::Y);
-
-		if (bOrthographic)
+		// Camera Rotate
+		// 회전을 이동보다 먼저, 이번 프레임에 돌린 방향으로 바로 움직이게
+		if (bCanUseMouse && !bOrthographic && Input.IsDown(VK_RBUTTON))
 		{
-			if (Input.IsDown('W')) MoveDir += Upward;
-			if (Input.IsDown('S')) MoveDir -= Upward;
-			if (Input.IsDown('D')) MoveDir += Right;
-			if (Input.IsDown('A')) MoveDir -= Right;
-			if (Input.IsDown('E')) MoveDir += FVector(0.f, 0.f, 1.f);
-			if (Input.IsDown('Q')) MoveDir -= FVector(0.f, 0.f, 1.f);
+			mCamera.Rotate(Input.MouseDX, Input.MouseDY);
 		}
-		else
+
+		// Camera Velocity
+		FVector MoveDir(0.f, 0.f, 0.f);
+		if (bCanUseKeyboard)
 		{
-			if (Input.IsDown('W')) MoveDir += Forward;
-			if (Input.IsDown('S')) MoveDir -= Forward;
-			if (Input.IsDown('D')) MoveDir += Right;
-			if (Input.IsDown('A')) MoveDir -= Right;
-			if (Input.IsDown('E')) MoveDir += FVector(0.f, 0.f, 1.f);
-			if (Input.IsDown('Q')) MoveDir -= FVector(0.f, 0.f, 1.f);
-		}
-	}
+			const FMatrix R = FMatrix::Rotate(mCamera.Rotation);
+			const FVector Forward = R.GetUnitAxis(EAxis::X);
+			const FVector Upward = R.GetUnitAxis(EAxis::Z);
+			const FVector Right = R.GetUnitAxis(EAxis::Y);
 
-	const bool bMoveKeyDown = !MoveDir.IsNearlyZero();
-	if (bMoveKeyDown)
-	{
-		MoveDir.Normalize();
-	}
-
-
-	//Camera Translate
-	if (bCanUseMouse && Input.MouseWheelDelta != 0.0f)
-	{
-		//키 입력이 없으면 마우스 휠은 줌인/줌아웃
-		if (!bMoveKeyDown)
-		{
-			if (mProjectionRatio < 1.0f)
+			if (bOrthographic)
 			{
-				mCamera.mOrthoDistance *= FMath::Pow(1.2f, -Input.MouseWheelDelta);
-				mCamera.mOrthoDistance = FMath::Clamp(mCamera.mOrthoDistance, 0.1f, 100.0f);
+				if (Input.IsDown('W')) MoveDir += Upward;
+				if (Input.IsDown('S')) MoveDir -= Upward;
+				if (Input.IsDown('D')) MoveDir += Right;
+				if (Input.IsDown('A')) MoveDir -= Right;
+				if (Input.IsDown('E')) MoveDir += FVector(0.f, 0.f, 1.f);
+				if (Input.IsDown('Q')) MoveDir -= FVector(0.f, 0.f, 1.f);
 			}
 			else
 			{
-				mCamera.Location += mCamera.GetForwardVector() * 1.0f * Input.MouseWheelDelta;
+				if (Input.IsDown('W')) MoveDir += Forward;
+				if (Input.IsDown('S')) MoveDir -= Forward;
+				if (Input.IsDown('D')) MoveDir += Right;
+				if (Input.IsDown('A')) MoveDir -= Right;
+				if (Input.IsDown('E')) MoveDir += FVector(0.f, 0.f, 1.f);
+				if (Input.IsDown('Q')) MoveDir -= FVector(0.f, 0.f, 1.f);
 			}
 		}
-		//입력이 있으면 마우스 휠은 카메라 이동속도 조절
-		
-		else
+
+		const bool bMoveKeyDown = !MoveDir.IsNearlyZero();
+		if (bMoveKeyDown)
 		{
-			if (mProjectionRatio < 1.0f)
-			{
-				mCamera.mOrthoDistance *= FMath::Pow(1.2f, -Input.MouseWheelDelta);
-				mCamera.mOrthoDistance = FMath::Clamp(mCamera.mOrthoDistance, 0.1f, 100.0f);
-			}
-			//mCamera.Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
-			//mCamera.Speed = FMath::Clamp(mCamera.Speed, 0.1f, 100.0f);
+			MoveDir.Normalize();
 		}
-		
-	}
-	if (bOrthographic)
-	{
+
+
+		//Camera Translate
+		if (bCanUseMouse && Input.MouseWheelDelta != 0.0f)
+		{
+			//키 입력이 없으면 마우스 휠은 줌인/줌아웃
+			if (!bMoveKeyDown)
+			{
+				if (mProjectionRatio < 1.0f)
+				{
+					mCamera.mOrthoDistance *= FMath::Pow(1.2f, -Input.MouseWheelDelta);
+					mCamera.mOrthoDistance = FMath::Clamp(mCamera.mOrthoDistance, 0.1f, 100.0f);
+				}
+				else
+				{
+					mCamera.Location += mCamera.GetForwardVector() * 1.0f * Input.MouseWheelDelta;
+				}
+			}
+			//입력이 있으면 마우스 휠은 카메라 이동속도 조절
+
+			else
+			{
+				if (mProjectionRatio < 1.0f)
+				{
+					mCamera.mOrthoDistance *= FMath::Pow(1.2f, -Input.MouseWheelDelta);
+					mCamera.mOrthoDistance = FMath::Clamp(mCamera.mOrthoDistance, 0.1f, 100.0f);
+				}
+				//mCamera.Speed *= FMath::Pow(1.2f, Input.MouseWheelDelta);
+				//mCamera.Speed = FMath::Clamp(mCamera.Speed, 0.1f, 100.0f);
+			}
+
+		}
+		if (bOrthographic)
+		{
+
+		}
+
+		mCamera.Speed = mSharedSettings.cameraSpeed;
+		const FVector TargetVelocity = MoveDir * mCamera.Speed;
+
+		// 지수 감쇠만큼 카메라 속도가 서서히 줄어듬
+		const float Alpha = FMath::Exp(-mCamera.Damping * deltaTime);
+		mCamera.Velocity = TargetVelocity + (mCamera.Velocity - TargetVelocity) * Alpha;
+		if (mCamera.Velocity.IsNearlyZero())
+		{
+			mCamera.Velocity = FVector(0.f);
+		}
+
+		mCamera.Location += mCamera.Velocity * deltaTime;
 
 	}
-
-	mCamera.Speed = mSharedSettings.cameraSpeed;
-	const FVector TargetVelocity = MoveDir * mCamera.Speed;
-
-	// 지수 감쇠만큼 카메라 속도가 서서히 줄어듬
-	const float Alpha = FMath::Exp(-mCamera.Damping * deltaTime);
-	mCamera.Velocity = TargetVelocity + (mCamera.Velocity - TargetVelocity) * Alpha;
-	if (mCamera.Velocity.IsNearlyZero())
-	{
-		mCamera.Velocity = FVector(0.f);
-	}
-
-	mCamera.Location += mCamera.Velocity * deltaTime;
 
 	if (bCanUseKeyboard && Input.WasPressed(VK_SPACE))
 	{
@@ -641,37 +648,37 @@ void FEditorViewportClient::configureCamera(EViewportType viewporttype)
 		mProjectionRatio = 1.0f;
 		break;
 	case EViewportType::Top:
-		mCamera.Location = FVector(0.0f, 0.0f, 200.0f);
+		mCamera.Location = FVector(0.0f, 0.0f, 10.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Bottom:
-		mCamera.Location = FVector(0.0f, 0.0f, -200.0f);
+		mCamera.Location = FVector(0.0f, 0.0f, -10.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Right:
-		mCamera.Location = FVector(0.0f, 200.0f, 0.0f);
+		mCamera.Location = FVector(0.0f, 10.0f, 0.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Left:
-		mCamera.Location = FVector(0.0f, -200.0f, 0.0f);
+		mCamera.Location = FVector(0.0f, -10.0f, 0.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Front:
-		mCamera.Location = FVector(-200.0f, 0.0f, 0.0f);
+		mCamera.Location = FVector(-10.0f, 0.0f, 0.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
 		break;
 	case EViewportType::Back:
-		mCamera.Location = FVector(200.0f, 0.0f, 0.0f);
+		mCamera.Location = FVector(10.0f, 0.0f, 0.0f);
 		mCamera.LookAt(FVector(0.0f, 0.0f, 0.0f));
 		mCamera.mOrthoDistance = 5.0f;
 		mProjectionRatio = 0.0f;
@@ -688,26 +695,199 @@ void FEditorViewportClient::configureCamera(EViewportType viewporttype)
 
 void FEditorViewportClient::startProjectionTransition(bool orthographic)
 {
+	bCameraTransitioning = false;
 	mProjectionStartRatio = mProjectionRatio;
 	mProjectionTargetRatio = orthographic ? 0.0f : 1.0f;
 	mProjectionElapsed = 0.0f;
 	bProjectionTransitioning = mProjectionStartRatio != mProjectionTargetRatio;
 }
 
-void FEditorViewportClient::updateProjectionTransition(float deltatime)
+namespace
 {
-	if (!bProjectionTransitioning) { return; }
-	mProjectionElapsed += deltatime;
+	FRotator GetOrthographicRotation(EViewportType type)
+	{
+		switch (type)
+		{
+		case EViewportType::Top:
+			return FRotator(-90.0f, 0.0f, 0.0f);
 
-	const float u = FMath::Clamp(mProjectionElapsed / mProjectionDuration, 0.0f, 1.0f);
-	const float smoothStep = u * u * (3.0f - 2.0f * u);
+		case EViewportType::Bottom:
+			return FRotator(90.0f, 0.0f, 0.0f);
 
-	mProjectionRatio = mProjectionStartRatio + (mProjectionTargetRatio - mProjectionStartRatio) * smoothStep;
+		case EViewportType::Front:
+			return FRotator(0.0f, 0.0f, 0.0f);
+
+		case EViewportType::Back:
+			return FRotator(0.0f, 180.0f, 0.0f);
+
+		case EViewportType::Left:
+			return FRotator(0.0f, 90.0f, 0.0f);
+
+		case EViewportType::Right:
+			return FRotator(0.0f, -90.0f, 0.0f);
+
+		default:
+			return FRotator(0.0f, 0.0f, 0.0f);
+		}
+	}
+}
+
+void FEditorViewportClient::startViewportTransition(
+	EViewportType targetType,
+	const FVector& pivot)
+{
+	mTransitionPivot = pivot;
+	mTransitionDistance = (mCamera.Location - pivot).Length();
+
+	// 너무 가까우면 카메라가 Pivot을 뚫고 들어가서 회전이 이상해진다. 최소 거리를 강제한다
+	if (mTransitionDistance < 0.1f)
+	{
+		mTransitionDistance = 0.1f;
+		mTransitionPivot =
+			mCamera.Location +
+			mCamera.GetForwardVector() * mTransitionDistance;
+	}
+
+	mStartViewRotation = mCamera.Rotation.Quaternion();
+	mTransitionStartLocation = mCamera.Location;
+
+	const FVector toPivot =
+		(mTransitionPivot - mCamera.Location).GetNormalized();
+
+	const FVector cameraForward = mCamera.GetForwardVector();
+
+	const float alignment = FVector::dot(cameraForward, toPivot);
+
+	if (alignment >= 1.0f - 1.e-6f)
+	{
+		// 이미 중심을 보고 있다면 현재 회전의 Yaw/Roll까지 유지한다.
+		mStartOrbitRotation = mStartViewRotation;
+	}
+	else
+	{
+		// Rotate the current frame toward the pivot without rebuilding its yaw at a pole.
+		FQuat correction;
+		if (alignment < -1.0f + 1.e-6f)
+		{
+			const FVector axis = mCamera.GetUpVector().GetNormalized();
+			correction = FQuat(axis.x, axis.y, axis.z, 0.0f);
+		}
+		else
+		{
+			const FVector axis = FVector::cross(cameraForward, toPivot);
+			correction = FQuat(axis.x, axis.y, axis.z, 1.0f + alignment).GetNormalized();
+		}
+		mStartOrbitRotation = (correction * mStartViewRotation).GetNormalized();
+	}
+	mCenteringFraction = alignment >= 1.0f - 1.e-6f ? 0.0f : 0.25f;
+	bOrbitThroughFront =
+		(targetType == EViewportType::Bottom && cameraForward.z < -0.9999f) ||
+		(targetType == EViewportType::Top && cameraForward.z > 0.9999f);
+
+	const bool targetPerspective =
+		targetType == EViewportType::Perspective;
+
+	// Perspective에서 Orthographic으로 전환할 때, 현재 Orbit 회전을 저장해 두었다가 다시 Perspective로 돌아올 때 사용한다
+	if (!targetPerspective &&
+		!bProjectionTransitioning &&
+		mProjectionRatio >= 1.0f - KINDA_SMALL_NUMBER)
+	{
+		mSavedPerspectiveOrbitRotation = mStartOrbitRotation;
+		bHasSavedPerspectiveOrbitRotation = true;
+	}
+
+	if (targetPerspective)
+	{
+		mTargetRotation = bHasSavedPerspectiveOrbitRotation
+			? mSavedPerspectiveOrbitRotation
+			: FRotator::LookAt(
+				FVector(-5.0f, 5.0f, 5.0f),
+				FVector(0.0f)).Quaternion();
+	}
+	else
+	{
+		mTargetRotation =
+			GetOrthographicRotation(targetType).Quaternion();
+	}
+
+	// 전환 중에는 카메라가 Pivot을 향하도록 강제한다
+	if (mProjectionRatio >= 1.0f)
+	{
+		mCamera.mOrthoDistance = mTransitionDistance;
+	}
+
+	mCamera.Velocity = FVector(0.0f);
+
+	mProjectionStartRatio = mProjectionRatio;
+	mProjectionTargetRatio = targetPerspective ? 1.0f : 0.0f;
+	mProjectionElapsed = 0.0f;
+
+	// 전환 중에는 카메라가 Pivot을 향하도록 강제한다
+	bProjectionTransitioning = true;
+	bCameraTransitioning = !targetPerspective;
+}
+
+void FEditorViewportClient::updateProjectionTransition(float deltaTime)
+{
+	if (!bProjectionTransitioning)
+	{
+		return;
+	}
+
+	mProjectionElapsed += deltaTime;
+
+	const float u = mProjectionDuration > 0.0f
+		? FMath::Clamp(
+			mProjectionElapsed / mProjectionDuration,
+			0.0f,
+			1.0f)
+		: 1.0f;
+
+	const float orbitU = bCameraTransitioning
+		? FMath::Clamp((u - mCenteringFraction) / (1.0f - mCenteringFraction), 0.0f, 1.0f)
+		: u;
+	const float alpha = orbitU * orbitU * (3.0f - 2.0f * orbitU);
+
+	mProjectionRatio =
+		mProjectionStartRatio +
+		(mProjectionTargetRatio - mProjectionStartRatio) * alpha;
+
+	if (bCameraTransitioning)
+	{
+		if (u < mCenteringFraction)
+		{
+			const float centerU = u / mCenteringFraction;
+			const float centerAlpha = centerU * centerU * (3.0f - 2.0f * centerU);
+			mCamera.Location = mTransitionStartLocation;
+			mCamera.Rotation = FQuat::Slerp(
+				mStartViewRotation, mStartOrbitRotation, centerAlpha).Rotator();
+		}
+		else
+		{
+			FQuat rotation;
+			if (bOrbitThroughFront)
+			{
+				const FQuat front = GetOrthographicRotation(EViewportType::Front).Quaternion();
+				// Apply easing to the whole orbit, not separately at the waypoint.
+				rotation = alpha < 0.5f
+					? FQuat::Slerp(mStartOrbitRotation, front, alpha * 2.0f)
+					: FQuat::Slerp(front, mTargetRotation, alpha * 2.0f - 1.0f);
+			}
+			else
+			{
+				rotation = FQuat::Slerp(mStartOrbitRotation, mTargetRotation, alpha);
+			}
+			mCamera.Rotation = rotation.Rotator();
+			mCamera.Location = mTransitionPivot -
+				mCamera.GetForwardVector() * mTransitionDistance;
+		}
+	}
 
 	if (u >= 1.0f)
 	{
 		mProjectionRatio = mProjectionTargetRatio;
 		bProjectionTransitioning = false;
+		bCameraTransitioning = false;
 	}
 }
 
