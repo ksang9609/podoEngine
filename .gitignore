@@ -409,3 +409,6 @@ imgui.ini
 *.vcxproj.*
 
 !**/Assets/**/*.obj
+
+# Ignore all binary files in Assets folder
+**/Assets/**/*.bin
