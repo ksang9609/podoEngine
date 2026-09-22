@@ -8,6 +8,7 @@
 #include "Core/IO/FileManager.h"
 #include "Core/AssetManager.h"
 #include "Core/Name.h"
+#include "Core/Object/ObjectIterator.h"
 
 #include "Rendering/GraphicsManager.h"
 #include "Engine/EngineStatics.h"
@@ -1244,106 +1245,120 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 			{
 				ImGui::PushID(component->UUID);
 
-				if (ImGui::BeginChild("ComponentFrame", ImVec2(0, 0), ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+				const FString componentName = component->GetName().ToString();
+
+				const FString headerLabel = FString(std::format(
+					"{} ({})###ComponentHeader",
+					componentName.CStr(),
+					component->GetRuntimeClass()->Name.CStr()));
+
+				const bool bExpanded = ImGui::CollapsingHeader(
+					headerLabel.CStr(),
+					ImGuiTreeNodeFlags_DefaultOpen
+				);
+
+				if (bExpanded)
 				{
-					ImGui::Text("Class: %s", component->GetRuntimeClass()->Name.CStr());
-					ImGui::Text("UUID: %d", component->UUID);
-
-					FString componentName = component->GetName().ToString();
-					ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
-						componentName.CStr(),
-						component->GetName().DisplayIndex,
-						component->GetName().ComparisonIndex);
-
-					/* Property Reflection UI Drawing */
-					component->ForEachProperty(
-						[&](const FPropertyInfo& property)
-						{
-							// Only show serializable properties in the UI
-							if ((property.PropertyFlags & EPropertyFlags::Serializable)
-								== EPropertyFlags::None)
-								return;
-
-							// Skip properties that don't have a JsonKey, GetValue, or SetValue function
-							if (!property.JsonKey || !property.GetValue || !property.SetValue)
-								return;
-
-							// Disable editing for properties that are not marked as editable
-							const bool bEditable = (property.PropertyFlags & EPropertyFlags::Editable) != EPropertyFlags::None;
-
-							const FPropertyValue originalValue = property.GetValue(component);
-							FPropertyValue editedValue = originalValue;
-
-							ImGui::PushID(static_cast<const void*>(&property));
-							ImGui::BeginDisabled(!bEditable);
-
-							if (drawPropertyValue(
-								property.JsonKey,
-								originalValue,
-								editedValue
-							))
-							{
-								outCommands.Emplace(FSetPropertyCommand{
-									component->GetObjectID(),
-									property.JsonKey,
-									editedValue
-									});
-							}
-
-							ImGui::EndDisabled();
-							ImGui::PopID();
-						}
-					);
-
-					// StaticMesh DropList
-					if (const UStaticMeshComponent* staticMeshComponent = component->Cast<UStaticMeshComponent>())
+					if (ImGui::BeginChild("ComponentFrame", ImVec2(0, 0), ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
 					{
-						FName currentStaticMeshKey = staticMeshComponent->GetStaticMeshAssetKey();
-						if (FAssetPicker::DrawStaticMeshPicker(guiReference.AssetManager, currentStaticMeshKey))
-						{
-							outCommands.Emplace(FSetStaticMeshComponentStaticMeshCommand{
-								staticMeshComponent->GetObjectID(),
-								currentStaticMeshKey
-								});
-						}
+						ImGui::Text("Class: %s", component->GetRuntimeClass()->Name.CStr());
+						ImGui::Text("UUID: %d", component->UUID);
 
-						for (int i = 0; i < staticMeshComponent->GetMaterialSlotCount(); ++i)
-						{
-							FName selectedMaterialKey = staticMeshComponent->GetMaterialAssetKey(i);
-							if (FAssetPicker::DrawMaterialPicker(guiReference.AssetManager, selectedMaterialKey, i))
+						FString componentName = component->GetName().ToString();
+						ImGui::Text("Name: %s | DisplayIndex: %d | ComparisonIndex: %d",
+							componentName.CStr(),
+							component->GetName().DisplayIndex,
+							component->GetName().ComparisonIndex);
+
+						/* Property Reflection UI Drawing */
+						component->ForEachProperty(
+							[&](const FPropertyInfo& property)
 							{
-								outCommands.Emplace(FSetStaticMeshComponentMaterialCommand{
+								// Only show serializable properties in the UI
+								if ((property.PropertyFlags & EPropertyFlags::Serializable)
+									== EPropertyFlags::None)
+									return;
+
+								// Skip properties that don't have a JsonKey, GetValue, or SetValue function
+								if (!property.JsonKey || !property.GetValue || !property.SetValue)
+									return;
+
+								// Disable editing for properties that are not marked as editable
+								const bool bEditable = (property.PropertyFlags & EPropertyFlags::Editable) != EPropertyFlags::None;
+
+								const FPropertyValue originalValue = property.GetValue(component);
+								FPropertyValue editedValue = originalValue;
+
+								ImGui::PushID(static_cast<const void*>(&property));
+								ImGui::BeginDisabled(!bEditable);
+
+								if (drawPropertyValue(
+									property.JsonKey,
+									originalValue,
+									editedValue
+								))
+								{
+									outCommands.Emplace(FSetPropertyCommand{
+										component->GetObjectID(),
+										property.JsonKey,
+										editedValue
+										});
+								}
+
+								ImGui::EndDisabled();
+								ImGui::PopID();
+							}
+						);
+
+						// StaticMesh DropList
+						if (const UStaticMeshComponent* staticMeshComponent = component->Cast<UStaticMeshComponent>())
+						{
+							FName currentStaticMeshKey = staticMeshComponent->GetStaticMeshAssetKey();
+							if (FAssetPicker::DrawStaticMeshPicker(guiReference.AssetManager, currentStaticMeshKey))
+							{
+								outCommands.Emplace(FSetStaticMeshComponentStaticMeshCommand{
 									staticMeshComponent->GetObjectID(),
-									i,
-									selectedMaterialKey
+									currentStaticMeshKey
 									});
 							}
-						}
 
-						// Sub uv
-						FSubUVMesh subUVMesh = staticMeshComponent->GetSubUVMesh();
-						bool bSubUVChanged = false;
-						if (ImGui::DragFloat2("SubUV Offset", &subUVMesh.UVOffset.x, 0.01f))
-						{
-							bSubUVChanged = true;
-						}
-						if (ImGui::DragFloat2("SubUV Scale", &subUVMesh.UVScale.x, 0.01f))
-						{
-							bSubUVChanged = true;
-						}
-						if (bSubUVChanged)
-						{
-							outCommands.Emplace(FSetStaticMeshComponentSubUVCommand{
-								staticMeshComponent->GetObjectID(),
-								subUVMesh.UVOffset,
-								subUVMesh.UVScale
-								});
-						}
+							for (int i = 0; i < staticMeshComponent->GetMaterialSlotCount(); ++i)
+							{
+								FName selectedMaterialKey = staticMeshComponent->GetMaterialAssetKey(i);
+								if (FAssetPicker::DrawMaterialPicker(guiReference.AssetManager, selectedMaterialKey, i))
+								{
+									outCommands.Emplace(FSetStaticMeshComponentMaterialCommand{
+										staticMeshComponent->GetObjectID(),
+										i,
+										selectedMaterialKey
+										});
+								}
+							}
 
+							// Sub uv
+							FSubUVMesh subUVMesh = staticMeshComponent->GetSubUVMesh();
+							bool bSubUVChanged = false;
+							if (ImGui::DragFloat2("SubUV Offset", &subUVMesh.UVOffset.x, 0.01f))
+							{
+								bSubUVChanged = true;
+							}
+							if (ImGui::DragFloat2("SubUV Scale", &subUVMesh.UVScale.x, 0.01f))
+							{
+								bSubUVChanged = true;
+							}
+							if (bSubUVChanged)
+							{
+								outCommands.Emplace(FSetStaticMeshComponentSubUVCommand{
+									staticMeshComponent->GetObjectID(),
+									subUVMesh.UVOffset,
+									subUVMesh.UVScale
+									});
+							}
+
+						}
 					}
+					ImGui::EndChild();
 				}
-
-				ImGui::EndChild();
 				ImGui::PopID();
 			}
 		}
@@ -1760,31 +1775,56 @@ void FEditorUIManager::drawAssetBrowserContents(
 
 			ImGui::PushID("StaticMeshes");
 
-			for (const FName& assetKey : assetKeys)
-			{
-				const FString assetName = assetKey.ToString();
+			//for (const FName& assetKey : assetKeys)
+			//{
+			//	const FString assetName = assetKey.ToString();
 
-				ImGui::PushID(assetKey.ComparisonIndex);
+			//	ImGui::PushID(assetKey.ComparisonIndex);
+
+			//	{ /* Dragable */
+			//		ImGui::Selectable(
+			//			assetName.CStr(),
+			//			false,
+			//			ImGuiSelectableFlags_NoAutoClosePopups);
+
+			//		if (ImGui::BeginDragDropSource())
+			//		{
+			//			ImGui::SetDragDropPayload(
+			//				"ASSET_STATIC_MESH",
+			//				&assetKey,
+			//				sizeof(assetKey));
+
+			//			// 마우스를 따라다니는 미리보기
+			//			ImGui::Text("Static Mesh: %s", assetName.CStr());
+
+			//			ImGui::EndDragDropSource();
+			//		}
+			//	}
+			for (TObjectIterator<UStaticMesh> It; It; ++It)
+			{
+				UStaticMesh* staticMesh = *It;
+
+				const FString assetName = staticMesh->GetName().ToString();
+
+				ImGui::PushID(staticMesh->UUID);
 
 				{ /* Dragable */
 					ImGui::Selectable(
 						assetName.CStr(),
 						false,
 						ImGuiSelectableFlags_NoAutoClosePopups);
-
 					if (ImGui::BeginDragDropSource())
 					{
+						FName assetKey = staticMesh->GetAssetPathFileName();
 						ImGui::SetDragDropPayload(
 							"ASSET_STATIC_MESH",
 							&assetKey,
 							sizeof(assetKey));
-
-						// 마우스를 따라다니는 미리보기
 						ImGui::Text("Static Mesh: %s", assetName.CStr());
-
 						ImGui::EndDragDropSource();
 					}
 				}
+
 				ImGui::PopID();
 			}
 
@@ -1799,30 +1839,54 @@ void FEditorUIManager::drawAssetBrowserContents(
 
 			ImGui::PushID("Materials");
 
-			for (const FName& assetKey : assetKeys)
-			{
-				const FString assetName = assetKey.ToString();
+			//for (const FName& assetKey : assetKeys)
+			//{
+			//	const FString assetName = assetKey.ToString();
 
-				ImGui::PushID(assetKey.ComparisonIndex);
+			//	ImGui::PushID(assetKey.ComparisonIndex);
+
+			//	{ /* Dragable */
+			//		ImGui::Selectable(
+			//			assetName.CStr(),
+			//			false,
+			//			ImGuiSelectableFlags_NoAutoClosePopups);
+
+			//		if (ImGui::BeginDragDropSource())
+			//		{
+			//			ImGui::SetDragDropPayload(
+			//				"ASSET_MATERIAL",
+			//				&assetKey,
+			//				sizeof(assetKey));
+
+			//			ImGui::Text("Material: %s", assetName.CStr());
+
+			//			ImGui::EndDragDropSource();
+			//		}
+			//	}
+
+			for (TObjectIterator<UMaterial> It; It; ++It)
+			{
+				UMaterial* material = *It;
+				const FString assetName = material->GetName().ToString();
+				ImGui::PushID(material->UUID);
 
 				{ /* Dragable */
 					ImGui::Selectable(
 						assetName.CStr(),
 						false,
 						ImGuiSelectableFlags_NoAutoClosePopups);
-
 					if (ImGui::BeginDragDropSource())
 					{
+						FName assetKey = material->GetMaterialName();
 						ImGui::SetDragDropPayload(
 							"ASSET_MATERIAL",
 							&assetKey,
 							sizeof(assetKey));
-
 						ImGui::Text("Material: %s", assetName.CStr());
-
 						ImGui::EndDragDropSource();
 					}
 				}
+
 				ImGui::PopID();
 			}
 
