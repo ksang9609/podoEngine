@@ -37,5 +37,6 @@ private:
 	TMap<FName, std::unique_ptr<UMaterial>> mMaterialAssets;
 
 	void createBuiltinStaticMeshAssets();
+	void createBuiltinMaterialAssets();
 	bool createStaticMeshAsset(const FName& assetName);
 };

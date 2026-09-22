@@ -14,6 +14,21 @@
 #include "Rendering/Mesh/Material.h"
 #include "Rendering/Mesh/StaticMesh.h"
 
+// Default white material
+inline FMaterial defaultMaterial =
+{
+	.AmbientColor = FVector(0.0f, 0.0f, 0.0f),
+	.DiffuseColor = FVector(1.0f, 1.0f, 1.0f),
+	.SpecularColor = FVector(0.0f, 0.0f, 0.0f),
+
+	.SpecularExponent = 0.0f,
+	.Opacity = 1.0f,
+
+	.DiffuseTexture = BuiltinAssets::DefaultWhiteTexture,
+	.NormalTexture = FName(),
+	.SpecularTexture = FName(),
+};
+
 namespace
 {
 	// 서로 다른 메시에서 동일한 이름의 Material을 사용하더라도 AssetManager에서 충돌하지 않도록 고유한 material 식별자를 만드는 함수
@@ -30,6 +45,7 @@ namespace
 FAssetManager::FAssetManager()
 {
 	createBuiltinStaticMeshAssets();
+	createBuiltinMaterialAssets();
 }
 
 const UStaticMesh* FAssetManager::FindStaticMeshAssetOrNull(const FName& assetName) const
@@ -124,6 +140,16 @@ void FAssetManager::createBuiltinStaticMeshAssets()
 
 	mMaterialAssets.Add(BuiltinAssets::SphereMaterial, std::move(sphereMaterialAsset));
 	mStaticMeshAssets.Add(BuiltinAssets::SphereMesh, std::move(sphereMeshAsset));
+}
+
+void FAssetManager::createBuiltinMaterialAssets()
+{
+	/* Default Material */
+	std::unique_ptr<FMaterial> defaultMaterialData = std::make_unique<FMaterial>(defaultMaterial);
+	std::unique_ptr<UMaterial> defaultMaterialAsset(
+		FObjectFactory::ConstructObject<UMaterial>(BuiltinAssets::DefaultMaterial, std::move(defaultMaterialData))
+	);
+	mMaterialAssets.Add(BuiltinAssets::DefaultMaterial, std::move(defaultMaterialAsset));
 }
 
 bool FAssetManager::createStaticMeshAsset(const FName& assetName)

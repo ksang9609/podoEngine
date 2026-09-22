@@ -41,7 +41,9 @@ public:
 	FGraphicsManager();
 	~FGraphicsManager();
 
-	void Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManager);
+	void Initialize(HWND hWindow,
+		FGpuResourceManager& gpuResourceManager,
+		FAssetManager& assetManager);
 
 	//void Prepare(const Camera* mCamera);
 	void BeginFrame();
@@ -106,6 +108,7 @@ public:
 private:
 	/* Manager References */
 	FGpuResourceManager* mGpuResourceManagerRef;
+	FAssetManager* mAssetManagerRef;
 
 	std::unique_ptr<URenderer> mRenderer;
 	FMatrix mViewUnifiedProjectionMatrix;
