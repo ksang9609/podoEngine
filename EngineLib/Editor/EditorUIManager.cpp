@@ -8,6 +8,7 @@
 #include "Core/IO/FileManager.h"
 #include "Core/AssetManager.h"
 #include "Core/Name.h"
+#include "Core/Object/ObjectIterator.h"
 
 #include "Rendering/GraphicsManager.h"
 #include "Engine/EngineStatics.h"
@@ -1760,31 +1761,56 @@ void FEditorUIManager::drawAssetBrowserContents(
 
 			ImGui::PushID("StaticMeshes");
 
-			for (const FName& assetKey : assetKeys)
-			{
-				const FString assetName = assetKey.ToString();
+			//for (const FName& assetKey : assetKeys)
+			//{
+			//	const FString assetName = assetKey.ToString();
 
-				ImGui::PushID(assetKey.ComparisonIndex);
+			//	ImGui::PushID(assetKey.ComparisonIndex);
+
+			//	{ /* Dragable */
+			//		ImGui::Selectable(
+			//			assetName.CStr(),
+			//			false,
+			//			ImGuiSelectableFlags_NoAutoClosePopups);
+
+			//		if (ImGui::BeginDragDropSource())
+			//		{
+			//			ImGui::SetDragDropPayload(
+			//				"ASSET_STATIC_MESH",
+			//				&assetKey,
+			//				sizeof(assetKey));
+
+			//			// 마우스를 따라다니는 미리보기
+			//			ImGui::Text("Static Mesh: %s", assetName.CStr());
+
+			//			ImGui::EndDragDropSource();
+			//		}
+			//	}
+			for (TObjectIterator<UStaticMesh> It; It; ++It)
+			{
+				UStaticMesh* staticMesh = *It;
+
+				const FString assetName = staticMesh->GetName().ToString();
+
+				ImGui::PushID(staticMesh->UUID);
 
 				{ /* Dragable */
 					ImGui::Selectable(
 						assetName.CStr(),
 						false,
 						ImGuiSelectableFlags_NoAutoClosePopups);
-
 					if (ImGui::BeginDragDropSource())
 					{
+						FName assetKey = staticMesh->GetAssetPathFileName();
 						ImGui::SetDragDropPayload(
 							"ASSET_STATIC_MESH",
 							&assetKey,
 							sizeof(assetKey));
-
-						// 마우스를 따라다니는 미리보기
 						ImGui::Text("Static Mesh: %s", assetName.CStr());
-
 						ImGui::EndDragDropSource();
 					}
 				}
+
 				ImGui::PopID();
 			}
 
@@ -1799,30 +1825,54 @@ void FEditorUIManager::drawAssetBrowserContents(
 
 			ImGui::PushID("Materials");
 
-			for (const FName& assetKey : assetKeys)
-			{
-				const FString assetName = assetKey.ToString();
+			//for (const FName& assetKey : assetKeys)
+			//{
+			//	const FString assetName = assetKey.ToString();
 
-				ImGui::PushID(assetKey.ComparisonIndex);
+			//	ImGui::PushID(assetKey.ComparisonIndex);
+
+			//	{ /* Dragable */
+			//		ImGui::Selectable(
+			//			assetName.CStr(),
+			//			false,
+			//			ImGuiSelectableFlags_NoAutoClosePopups);
+
+			//		if (ImGui::BeginDragDropSource())
+			//		{
+			//			ImGui::SetDragDropPayload(
+			//				"ASSET_MATERIAL",
+			//				&assetKey,
+			//				sizeof(assetKey));
+
+			//			ImGui::Text("Material: %s", assetName.CStr());
+
+			//			ImGui::EndDragDropSource();
+			//		}
+			//	}
+
+			for (TObjectIterator<UMaterial> It; It; ++It)
+			{
+				UMaterial* material = *It;
+				const FString assetName = material->GetName().ToString();
+				ImGui::PushID(material->UUID);
 
 				{ /* Dragable */
 					ImGui::Selectable(
 						assetName.CStr(),
 						false,
 						ImGuiSelectableFlags_NoAutoClosePopups);
-
 					if (ImGui::BeginDragDropSource())
 					{
+						FName assetKey = material->GetMaterialName();
 						ImGui::SetDragDropPayload(
 							"ASSET_MATERIAL",
 							&assetKey,
 							sizeof(assetKey));
-
 						ImGui::Text("Material: %s", assetName.CStr());
-
 						ImGui::EndDragDropSource();
 					}
-				}
+				} 
+
 				ImGui::PopID();
 			}
 
