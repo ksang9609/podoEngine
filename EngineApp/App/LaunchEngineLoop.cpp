@@ -463,6 +463,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 void FEngineLoop::End()
 {
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 	mSceneManager->DeleteScene();
 
 	ImGui_ImplDX11_Shutdown();
@@ -850,6 +851,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportTypeCommand& command)
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->setType(command.Type);
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& command)
@@ -857,6 +859,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& comman
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->getRenderSettings().ViewMode = command.ViewMode;
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& command)
@@ -864,6 +867,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& comman
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->getRenderSettings().SetShowFlag(command.Flag, command.bEnabled);
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetSharedCameraSpeedCommand& command)

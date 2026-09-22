@@ -26,7 +26,7 @@ void FEditorViewportManager::applyLayoutSetting(const FEditorSetting& setting)
 	mEditorSetting.fourPaneHorizontal = FMath::Clamp(setting.fourPaneHorizontal, 0.0f, 1.0f);
 	mEditorSetting.fourPaneVertical = FMath::Clamp(setting.fourPaneVertical, 0.0f, 1.0f);
 
-	const uint8 targetCount =mEditorSetting.viewportCount;
+	const uint8 targetCount = mEditorSetting.viewportCount;
 
 	while (getViewportCount() < targetCount)
 	{
@@ -44,6 +44,24 @@ void FEditorViewportManager::applyLayoutSetting(const FEditorSetting& setting)
 		}
 	}
 
+	for (uint8 index = 0;index < getViewportCount();++index)
+	{
+		FViewport* viewport = getViewportAt(index);
+
+		if (viewport == nullptr)
+		{
+			continue;
+		}
+
+		const FViewportSetting& saved = setting.Viewports[index];
+		viewport->setType(saved.Type);
+
+		FViewportRenderSettings& renderSettings = viewport->getRenderSettings();
+
+		renderSettings.ViewMode = saved.ViewMode;
+		renderSettings.ShowFlags = saved.ShowFlags;
+	}
+
 	rebuildLayout();
 }
 
@@ -51,20 +69,32 @@ void FEditorViewportManager::captureLayoutSetting(FEditorSetting& outSetting) co
 {
 	outSetting.viewportCount = getViewportCount();
 
-	outSetting.twoPaneVertical =
-		mEditorSetting.twoPaneVertical;
+	outSetting.twoPaneVertical = mEditorSetting.twoPaneVertical;
+	outSetting.threePaneVertical = mEditorSetting.threePaneVertical;
+	outSetting.threePaneRightHorizontal = mEditorSetting.threePaneRightHorizontal;
+	outSetting.fourPaneHorizontal = mEditorSetting.fourPaneHorizontal;
+	outSetting.fourPaneVertical = mEditorSetting.fourPaneVertical;
 
-	outSetting.threePaneVertical =
-		mEditorSetting.threePaneVertical;
+	if (outSetting.Viewports.Num() < maxViewportCount)
+	{
+		outSetting.Viewports.SetNum(maxViewportCount);
+	}
 
-	outSetting.threePaneRightHorizontal =
-		mEditorSetting.threePaneRightHorizontal;
+	for (uint8 index = 0; index < getViewportCount(); ++index)
+	{
+		const FViewport* viewport = getViewportAt(index);
 
-	outSetting.fourPaneHorizontal =
-		mEditorSetting.fourPaneHorizontal;
+		if (viewport == nullptr)
+		{
+			continue;
+		}
 
-	outSetting.fourPaneVertical =
-		mEditorSetting.fourPaneVertical;
+		FViewportSetting& saved = outSetting.Viewports[index];
+
+		saved.Type = viewport->getType();
+		saved.ViewMode = viewport->getRenderSettings().ViewMode;
+		saved.ShowFlags = viewport->getRenderSettings().ShowFlags;
+	}
 }
 
 FViewport* FEditorViewportManager::getActiveViewport()

@@ -151,6 +151,23 @@ inline void TArray<T>::Init(const T& data, uint32 count)
 }
 
 template<typename T>
+inline void TArray<T>::SetNum(int32 NewNum,bool bAllowShrinking)
+{
+	assert(NewNum >= 0);
+
+	const std::size_t newSize =static_cast<std::size_t>(NewNum);
+	const bool isShrinking =newSize < mDatas.size();
+
+	mDatas.resize(newSize);
+
+	if (bAllowShrinking && isShrinking)
+	{
+		mDatas.shrink_to_fit();
+	}
+}
+
+
+template<typename T>
 inline uint32 TArray<T>::Add(const T& data)
 {
 	mDatas.push_back(data);

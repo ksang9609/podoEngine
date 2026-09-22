@@ -1548,3 +1548,9 @@ void FEditorUIManager::updateBottomBarGUI()
 	ImGui::End();
 	ImGui::PopStyleVar();
 }
+
+void FEditorUIManager::saveSettings(const FEditorViewportManager& viewportManager)
+{
+	viewportManager.captureLayoutSetting(mEditorSetting);
+	mEditorSetting.Save();
+}
