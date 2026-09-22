@@ -143,6 +143,8 @@ public:
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
+
+	/* Property Reflection */
 	template<typename T>
 	T* GetPropertyValueOrNull(std::string_view propertyKey) const
 	{
@@ -159,6 +161,17 @@ public:
 		return nullptr;
 	}
 
+	FPropertyValue* GetPropertyValueOrNull(std::string_view propertyKey) const
+	{
+		const FPropertyInfo* propertyInfo = GetRuntimeClass()->FindProperty(propertyKey);
+		if (!propertyInfo)
+		{
+			return nullptr;
+		}
+		FPropertyValue value = propertyInfo->GetValue(this);
+		return new FPropertyValue(value);
+	}
+
 	void SetPropertyValue(std::string_view propertyKey, const FPropertyValue& value)
 	{
 		const FPropertyInfo* propertyInfo = GetRuntimeClass()->FindProperty(propertyKey);
@@ -167,6 +180,12 @@ public:
 			throw std::runtime_error("Property not found: " + std::string(propertyKey));
 		}
 		propertyInfo->SetValue(*propertyInfo, this, value);
+	}
+
+	template<typename TVisitor>
+	void ForEachProperty(TVisitor&& Visitor) const
+	{
+		GetRuntimeClass()->ForEachProperty(std::forward<TVisitor>(Visitor));
 	}
 
 public:

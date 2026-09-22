@@ -232,13 +232,16 @@ std::span<const FPropertyInfo> USceneComponent::GetDeclaredProperties()
 	{
 		REFLECT_PROPERTY(
 			USceneComponent,
-			mRelativeLocation),
+			mRelativeLocation,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable),
 		REFLECT_PROPERTY(
 			USceneComponent,
-			mRelativeRotation),
+			mRelativeRotation,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable),
 		REFLECT_PROPERTY(
 			USceneComponent,
-			mRelativeScale3D)
+			mRelativeScale3D,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable)
 	};
 
 	return Properties;

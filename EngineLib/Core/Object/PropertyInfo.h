@@ -26,7 +26,7 @@ struct FPropertyInfo
 
 	const char* JsonKey = nullptr;
 
-	EPropertyType PropertyType = EPropertyType::None;
+	//EPropertyType PropertyType = EPropertyType::None;
 	EPropertyFlags PropertyFlags = EPropertyFlags::Serializable;
 
 	GetValueFunc GetValue = nullptr;
@@ -91,7 +91,7 @@ FPropertyInfo MakeProperty(const char* JsonKey, EPropertyFlags PropertyFlags = E
 			};
 	}
 
-	Property.PropertyType = GetPropertyType<TValue>();
+	//Property.PropertyType = GetPropertyType<TValue>();
 
 	Property.Serialize =
 		[](const FPropertyInfo& Property,

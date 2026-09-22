@@ -602,6 +602,140 @@ namespace
 	}
 }
 
+bool drawPropertyValue(
+	const char* label,
+	const FPropertyValue& originalValue,
+	FPropertyValue& outValue)
+{
+	return std::visit(
+		[label, &outValue](auto& typedValue) -> bool
+		{
+			using T = std::decay_t<decltype(typedValue)>;
+
+			if constexpr (std::is_same_v<T, bool>)
+			{
+				bool value = typedValue;
+				if (ImGui::Checkbox(label, &value))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, int32>)
+			{
+				int32 value = typedValue;
+				if (ImGui::InputInt(label, &value))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, uint32>)
+			{
+				uint32 value = typedValue;
+				if (ImGui::InputScalar(label, ImGuiDataType_U32, &value))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, float>)
+			{
+				float value = typedValue;
+				if (ImGui::InputFloat(label, &value))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FString>)
+			{
+				char buffer[256];
+				std::strncpy(buffer, typedValue.CStr(), sizeof(buffer));
+				if (ImGui::InputText(label, buffer, sizeof(buffer)))
+				{
+					outValue = FString(buffer);
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FName>)
+			{
+				char buffer[256];
+				std::strncpy(buffer, typedValue.ToString().CStr(), sizeof(buffer));
+				if (ImGui::InputText(label, buffer, sizeof(buffer)))
+				{
+					outValue = FName(buffer);
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FVector2>)
+			{
+				FVector2 value = typedValue;
+				if (ImGui::DragFloat2(label, &value.x, 0.1f))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FVector3>)
+			{
+				FVector3 value = typedValue;
+				if (ImGui::DragFloat3(label, &value.x, 0.1f))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FVector4>)
+			{
+				FVector4 value = typedValue;
+				if (ImGui::DragFloat4(label, &value.x, 0.1f))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FRotator>)
+			{
+				// Rotator is stored as Pitch, Yaw, Roll,
+				// but we want to display it as Roll, Pitch, Yaw in the UI.
+				float value[3] = { typedValue.Roll, typedValue.Pitch, typedValue.Yaw };
+				if (ImGui::DragFloat3(label, value, 0.1f))
+				{
+					outValue = FRotator{ value[1], value[2], value[0] };
+					return true;
+				}
+				return false;
+			}
+			else if constexpr (std::is_same_v<T, FLinearColor>)
+			{
+				FLinearColor value = typedValue;
+				if (ImGui::ColorEdit4(label, &value.R))
+				{
+					outValue = value;
+					return true;
+				}
+				return false;
+			}
+			else
+			{
+				ImGui::TextDisabled("%s: Unsupported property type", label);
+				return false;
+			}
+		},
+		originalValue
+	);
+}
+
 FEditorUIManager::FEditorUIManager(const ImGuiIO& io)
 	: mGuiInputField()
 	, mEditorSetting()
@@ -1092,6 +1226,46 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 						component->GetName().DisplayIndex,
 						component->GetName().ComparisonIndex);
 
+					/* Property Reflection UI Drawing */
+					component->ForEachProperty(
+						[&](const FPropertyInfo& property)
+						{
+							// Only show serializable properties in the UI
+							if ((property.PropertyFlags & EPropertyFlags::Serializable)
+								== EPropertyFlags::None)
+								return;
+
+							// Skip properties that don't have a JsonKey, GetValue, or SetValue function
+							if (!property.JsonKey || !property.GetValue || !property.SetValue)
+								return;
+
+							// Disable editing for properties that are not marked as editable
+							const bool bEditable = (property.PropertyFlags & EPropertyFlags::Editable) != EPropertyFlags::None;
+
+							const FPropertyValue originalValue = property.GetValue(component);
+							FPropertyValue editedValue = originalValue;
+
+							ImGui::PushID(static_cast<const void*>(&property));
+							ImGui::BeginDisabled(!bEditable);
+
+							if (drawPropertyValue(
+								property.JsonKey,
+								originalValue,
+								editedValue
+							))
+							{
+								outCommands.Emplace(FSetPropertyCommand{
+									component->GetObjectID(),
+									property.JsonKey,
+									editedValue
+									});
+							}
+
+							ImGui::EndDisabled();
+							ImGui::PopID();
+						}
+					);
+
 					// StaticMesh DropList
 					if (const UStaticMeshComponent* staticMeshComponent = component->Cast<UStaticMeshComponent>())
 					{
@@ -1156,8 +1330,11 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 						bool bSpin = sphereComponent->GetSpin();
 						float spinSpeed = sphereComponent->GetSpinSpeed();
 
-						if (ImGui::Checkbox("Spin", &bSpin))
-							outCommands.Emplace(FSetPropertyCommand{ sphereComponent->GetObjectID(), "mbSpin", bSpin });
+						//if (ImGui::Checkbox("Spin", &bSpin))
+						//	outCommands.Emplace(FSetPropertyCommand{ sphereComponent->GetObjectID(), "mbSpin", bSpin });
+						FPropertyValue outValue;
+						if (drawPropertyValue("Spin", *sphereComponent->GetPropertyValueOrNull("mbSpin"), outValue))
+							outCommands.Emplace(FSetPropertyCommand{ sphereComponent->GetObjectID(), "mbSpin", outValue });
 
 						if (ImGui::DragFloat("Spin Speed", &spinSpeed, 0.1f, 0.0f, 3600.0f))
 							outCommands.Emplace(FSetSphereComponentSpinSpeedCommand{ sphereComponent->GetObjectID(), spinSpeed });

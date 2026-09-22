@@ -10,51 +10,51 @@
 #include "Core/Math/Color.h"
 #include "Core/Name.h"
 
-enum class EPropertyType
-{
-	None,
-	Bool,
-	Int32,
-	UInt32,
-	Float,
-	String,
-	Name,
-	Vector2,
-	Vector3,
-	Vector4,
-	Rotator,
-	LinearColor,
-	Array,
-};
-
-template<typename T>
-constexpr EPropertyType GetPropertyType()
-{
-	if constexpr (std::is_same_v<T, bool>)
-		return EPropertyType::Bool;
-	else if constexpr (std::is_same_v<T, int32>)
-		return EPropertyType::Int32;
-	else if constexpr (std::is_same_v<T, uint32>)
-		return EPropertyType::UInt32;
-	else if constexpr (std::is_same_v<T, float>)
-		return EPropertyType::Float;
-	else if constexpr (std::is_same_v<T, FString>)
-		return EPropertyType::String;
-	else if constexpr (std::is_same_v<T, FName>)
-		return EPropertyType::Name;
-	else if constexpr (std::is_same_v<T, FVector2>)
-		return EPropertyType::Vector2;
-	else if constexpr (std::is_same_v<T, FVector3>)
-		return EPropertyType::Vector3;
-	else if constexpr (std::is_same_v<T, FVector4>)
-		return EPropertyType::Vector4;
-	else if constexpr (std::is_same_v<T, FRotator>)
-		return EPropertyType::Rotator;
-	else if constexpr (std::is_same_v<T, FLinearColor>)
-		return EPropertyType::LinearColor;
-	else
-		return EPropertyType::None;
-}
+//enum class EPropertyType
+//{
+//	None,
+//	Bool,
+//	Int32,
+//	UInt32,
+//	Float,
+//	String,
+//	Name,
+//	Vector2,
+//	Vector3,
+//	Vector4,
+//	Rotator,
+//	LinearColor,
+//	Array,
+//};
+//
+//template<typename T>
+//constexpr EPropertyType GetPropertyType()
+//{
+//	if constexpr (std::is_same_v<T, bool>)
+//		return EPropertyType::Bool;
+//	else if constexpr (std::is_same_v<T, int32>)
+//		return EPropertyType::Int32;
+//	else if constexpr (std::is_same_v<T, uint32>)
+//		return EPropertyType::UInt32;
+//	else if constexpr (std::is_same_v<T, float>)
+//		return EPropertyType::Float;
+//	else if constexpr (std::is_same_v<T, FString>)
+//		return EPropertyType::String;
+//	else if constexpr (std::is_same_v<T, FName>)
+//		return EPropertyType::Name;
+//	else if constexpr (std::is_same_v<T, FVector2>)
+//		return EPropertyType::Vector2;
+//	else if constexpr (std::is_same_v<T, FVector3>)
+//		return EPropertyType::Vector3;
+//	else if constexpr (std::is_same_v<T, FVector4>)
+//		return EPropertyType::Vector4;
+//	else if constexpr (std::is_same_v<T, FRotator>)
+//		return EPropertyType::Rotator;
+//	else if constexpr (std::is_same_v<T, FLinearColor>)
+//		return EPropertyType::LinearColor;
+//	else
+//		return EPropertyType::None;
+//}
 
 using FPropertyValue = std::variant<
 	bool,
