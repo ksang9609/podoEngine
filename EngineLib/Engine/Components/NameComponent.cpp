@@ -32,7 +32,8 @@ void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
 
 	if (mParent)
 	{
-		worldPosition.z = mParent->GetWorldBounds().max.z+0.2f;
+		// Set the world position to be above the parent's bounding box
+		worldPosition.z += mParent->GetWorldBounds().max.z - mParent->GetRelativeLocation().z;
 	}
 	mComponentToWorld = FTransform(worldPosition, FQuat::Identity(), mRelativeScale3D).MakeMatrix();
 }
@@ -81,7 +82,7 @@ void UNameComponent::SetUnicodeNameText(const FString& nameText)
 	mNameText = text;
 
 	// 내부에서 FontRenderMode를 MSDF로 설정
-	mTextMesh.SetUnicodeText(mNameText,	*mFontResourceRef, 0.2f);
+	mTextMesh.SetUnicodeText(mNameText, *mFontResourceRef, 0.2f);
 }
 
 bool UNameComponent::AttachTo(USceneComponent& parent)

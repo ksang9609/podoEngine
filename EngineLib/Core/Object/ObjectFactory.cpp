@@ -177,7 +177,7 @@ AActor* FObjectFactory::createActorWithRootComponent(const FName& Name, USceneCo
 	// Add name component
 	assert(mDefaultFontResource && "FObjectFactory::Initialize must be called before SpawnStaticMeshActor.");
 	UNameComponent& billboardComponent = actor->CreateAndAddComponent<UNameComponent>(
-		actor->GetName().ToString(), FVector3{ 0, 0, 1 }, *mDefaultFontResource);
+		actor->GetName().ToString(), FVector3{ 0, 0, 0.2 }, *mDefaultFontResource);
 	billboardComponent.AttachTo(*rootComponent);
 
 	return actor;

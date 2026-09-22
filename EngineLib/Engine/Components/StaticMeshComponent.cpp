@@ -70,6 +70,8 @@ void UStaticMeshComponent::SetStaticMesh(const UStaticMesh& staticMeshRef)
 	mStaticMeshAssetKey = staticMeshRef.GetAssetPathFileName();
 
 	mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);
+
+	updateComponentToWorld();
 }
 
 const FName& UStaticMeshComponent::GetMaterialAssetKey(int32 slotIndex) const
