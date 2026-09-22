@@ -1,4 +1,6 @@
 ﻿#include "JsonArchive.h"
+
+#include <memory>
 #include <stdexcept>
 
 #include "Core/Object/ObjectFactory.h"
@@ -15,11 +17,14 @@ namespace
 
 json::JSON FJsonArchive::SerializeWorld(const UWorld& world, const FCamera* perspectiveCamera)
 {
+	json::JSON worldJson = json::JSON::Make(json::JSON::Class::Object);
+	world.SerializeClass(worldJson);
+
 	json::JSON archiveJson = json::JSON::Make(json::JSON::Class::Object);
 
 	archiveJson["Version"] = SceneFormatVersion;
-	archiveJson["NextUUID"] = nextUUID;
-	archiveJson["World"] = worldJson;
+	archiveJson["NextUUID"] = UEngineStatics::GetNextUUID();
+	archiveJson["World"] = std::move(worldJson);
 
 	if (perspectiveCamera != nullptr)
 	{
@@ -47,45 +52,61 @@ json::JSON FJsonArchive::SerializeWorld(const UWorld& world, const FCamera* pers
 	return archiveJson;
 }
 
-FJsonArchiveData FJsonArchive::Deserialize(const json::JSON& archiveJson)
+UWorld* FJsonArchive::DeserializeWorld(const json::JSON& inJson)
 {
-	if (archiveJson.JSONType() != json::JSON::Class::Object)
+	if (inJson.JSONType() != json::JSON::Class::Object)
 	{
-		throw std::runtime_error("Archive requires a JSON object");
+		throw std::runtime_error("Scene archive requires a JSON object");
 	}
 
-	if (!archiveJson.hasKey("Version") || archiveJson.at("Version").JSONType() != json::JSON::Class::Integral)
+	if (!inJson.hasKey("Version") ||
+		inJson.at("Version").JSONType() != json::JSON::Class::Integral)
 	{
-		throw std::runtime_error("Archive requires an integral Version");
+		throw std::runtime_error("Scene archive requires an integral Version");
 	}
 
-	if (archiveJson.at("Version").ToInt() != SceneFormatVersion)
+	const long version = inJson.at("Version").ToInt();
+	if (version != SceneFormatVersion)
 	{
-		throw std::runtime_error("Unsupported archive version");
+		throw std::runtime_error("Unsupported scene archive version");
 	}
 
-	if (!archiveJson.hasKey("NextUUID") || archiveJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
+	if (!inJson.hasKey("NextUUID") ||
+		inJson.at("NextUUID").JSONType() != json::JSON::Class::Integral)
 	{
-		throw std::runtime_error("Archive requires an integral NextUUID");
+		throw std::runtime_error("Scene archive requires an integral NextUUID");
 	}
 
-	const long nextUUID = archiveJson.at("NextUUID").ToInt();
-
+	const long nextUUID = inJson.at("NextUUID").ToInt();
 	if (nextUUID < 0)
 	{
-		throw std::runtime_error("Archive NextUUID cannot be negative");
+		throw std::runtime_error("Scene archive NextUUID cannot be negative");
 	}
 
-	if (!archiveJson.hasKey("World") ||
-		archiveJson.at("World").JSONType() != json::JSON::Class::Object)
+	if (!inJson.hasKey("World") ||
+		inJson.at("World").JSONType() != json::JSON::Class::Object)
 	{
-		throw std::runtime_error("Archive requires a World object");
+		throw std::runtime_error("Scene archive requires a World object");
 	}
 
-	return FJsonArchiveData{
-		.NextUUID = static_cast<uint32>(nextUUID),
-		.WorldJson = archiveJson.at("World")
-	};
+	const json::JSON& worldJson = inJson.at("World");
+	if (!worldJson.hasKey("ClassName")
+		|| worldJson.at("ClassName").JSONType() != json::JSON::Class::String
+		|| FString(worldJson.at("ClassName").ToString()) != UWorld::GetClass()->Name)
+	{
+		throw std::runtime_error("Scene archive World must have class UWorld");
+	}
+
+	std::unique_ptr<UWorld> newWorld(FObjectFactory::ConstructUnInitializedObject<UWorld>());
+	if (!newWorld)
+	{
+		throw std::runtime_error("Failed to create UWorld");
+	}
+
+	newWorld->DeserializeClass(worldJson);
+	UEngineStatics::SetNextUUID(static_cast<uint32>(nextUUID));
+
+	return newWorld.release();
 }
 
 bool FJsonArchive::DeserializePerspectiveCamera(const json::JSON& inJson, FCamera& outCamera)

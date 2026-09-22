@@ -4,6 +4,7 @@
 #include <cctype>
 #include <exception>
 #include <string>
+#include <cmath>
 
 #include "Core/AssetManager.h"
 #include "Core/Math/MathUtility.h"
@@ -35,6 +36,85 @@ namespace
 	constexpr wchar_t WindowClassName[] = L"JungleObjViewerWindow";
 	constexpr wchar_t WindowTitle[] = L"OBJ Viewer";
 	constexpr float ObjListHeight = 56.0f;
+
+	FQuat NormalizeQuaternion(const FQuat& quaternion)
+	{
+		const float sizeSquared =
+			quaternion.x * quaternion.x +
+			quaternion.y * quaternion.y +
+			quaternion.z * quaternion.z +
+			quaternion.w * quaternion.w;
+
+		if (sizeSquared <= 1.0e-8f)
+		{
+			return FQuat::Identity();
+		}
+
+		const float inverseSize = 1.0f / std::sqrt(sizeSquared);
+
+		return FQuat(
+			quaternion.x * inverseSize,
+			quaternion.y * inverseSize,
+			quaternion.z * inverseSize,
+			quaternion.w * inverseSize);
+	}
+
+	FVector MapCursorToArcball(
+		int cursorX,
+		int cursorY,
+		float viewportWidth,
+		float viewportHeight)
+	{
+		const float diameter = FMath::Max(FMath::Min(viewportWidth, viewportHeight), 1.0f);
+		float screenX = (2.0f * static_cast<float>(cursorX) - viewportWidth) / diameter;
+		float screenY = (viewportHeight - 2.0f * static_cast<float>(cursorY)) / diameter;
+		const float screenLengthSquared = screenX * screenX + screenY * screenY;
+
+		float sphereDepth = 0.0f;
+		if (screenLengthSquared <= 1.0f)
+		{
+			sphereDepth = std::sqrt(1.0f - screenLengthSquared);
+		}
+		else
+		{
+			const float inverseLength = 1.0f / std::sqrt(screenLengthSquared);
+			screenX *= inverseLength;
+			screenY *= inverseLength;
+		}
+
+		return FVector(-sphereDepth, screenX, screenY);
+	}
+
+	FQuat MakeArcballDelta(const FVector& start, const FVector& current)
+	{
+		FVector axis = FVector::cross(current, start);
+		const float axisLength = axis.Length();
+		const float dot = FMath::Clamp(FVector::dot(start, current), -1.0f, 1.0f);
+
+		if (axisLength <= 1.0e-6f)
+		{
+			if (dot > 0.0f)
+			{
+				return FQuat::Identity();
+			}
+
+			axis = FVector::cross(start, FVector::Up());
+			if (axis.Length() <= 1.0e-6f)
+			{
+				axis = FVector::cross(start, FVector::Right());
+			}
+		}
+
+		axis.Normalize();
+		const float halfAngle = 0.5f * std::atan2(axisLength, dot);
+		const float sine = std::sin(halfAngle);
+
+		return NormalizeQuaternion(FQuat(
+			axis.x * sine,
+			axis.y * sine,
+			axis.z * sine,
+			std::cos(halfAngle)));
+	}
 }
 
 FObjViewerApplication::FObjViewerApplication() = default;
@@ -248,8 +328,7 @@ void FObjViewerApplication::ResetCameraPosition()
 {
 	mOrbitPivot = mInitialOrbitPivot;
 	mOrbitDistance = mInitialOrbitDistance;
-	mOrbitYaw = -45.0f;
-	mOrbitPitch = -25.0f;
+	mOrbitRotation = FRotator(-25.0f, -45.0f, 0.0f).Quaternion();
 	ApplyOrbitCameraTransform();
 }
 
@@ -260,10 +339,10 @@ void FObjViewerApplication::ApplyOrbitCameraTransform()
 		return;
 	}
 
-	const FRotator orbitRotation(mOrbitPitch, mOrbitYaw, 0.0f);
-	const FVector forward = orbitRotation.Vector();
+	const FMatrix orbitMatrix = FMatrix::Rotate(mOrbitRotation);
+	const FVector forward = orbitMatrix.GetUnitAxis(EAxis::X);
+
 	mCamera->Location = mOrbitPivot - forward * mOrbitDistance;
-	mCamera->LookAt(mOrbitPivot);
 }
 
 void FObjViewerApplication::UpdateOrbitCamera()
@@ -273,18 +352,59 @@ void FObjViewerApplication::UpdateOrbitCamera()
 		return;
 	}
 
-	constexpr float OrbitSensitivity = 0.2f;
 	constexpr float ZoomBase = 0.85f;
 	const FInputState& input = mWindowApplication.Input;
+	const ImGuiIO& io = ImGui::GetIO();
+	const bool isCursorInViewport =
+		input.CursorX >= 0 &&
+		input.CursorX < static_cast<int>(mClientWidth) &&
+		input.CursorY >= static_cast<int>(ObjListHeight) &&
+		input.CursorY < static_cast<int>(mClientHeight);
+	const bool canStartCameraDrag = isCursorInViewport && !io.WantCaptureMouse;
 
-	if (input.IsDown(VK_LBUTTON))
+	if (input.WasPressed(VK_LBUTTON))
 	{
-		mOrbitYaw += static_cast<float>(input.MouseDX) * OrbitSensitivity;
-		mOrbitPitch -= static_cast<float>(input.MouseDY) * OrbitSensitivity;
+		mbOrbitDragging = canStartCameraDrag;
+		if (mbOrbitDragging)
+		{
+			mArcballStartVector = MapCursorToArcball(
+				input.CursorX,
+				input.CursorY - static_cast<int>(ObjListHeight),
+				static_cast<float>(mClientWidth),
+				FMath::Max(static_cast<float>(mClientHeight) - ObjListHeight, 1.0f));
+			mArcballStartRotation = mOrbitRotation;
+		}
 	}
-	mOrbitPitch = FMath::Clamp(mOrbitPitch, -89.0f, 89.0f);
+	if (input.WasPressed(VK_RBUTTON))
+	{
+		mbPanDragging = canStartCameraDrag;
+	}
 
-	if (input.MouseWheelDelta != 0.0f)
+	if (input.WasReleased(VK_LBUTTON) || !input.IsDown(VK_LBUTTON))
+	{
+		mbOrbitDragging = false;
+	}
+	if (input.WasReleased(VK_RBUTTON) || !input.IsDown(VK_RBUTTON))
+	{
+		mbPanDragging = false;
+	}
+
+	if (mbOrbitDragging)
+	{
+		const FVector currentArcballVector = MapCursorToArcball(
+			input.CursorX,
+			input.CursorY - static_cast<int>(ObjListHeight),
+			static_cast<float>(mClientWidth),
+			FMath::Max(static_cast<float>(mClientHeight) - ObjListHeight, 1.0f));
+		const FQuat arcballDelta = MakeArcballDelta(
+			mArcballStartVector,
+			currentArcballVector);
+
+		mOrbitRotation = NormalizeQuaternion(
+			mArcballStartRotation * arcballDelta);
+	}
+
+	if (isCursorInViewport && !io.WantCaptureMouse && input.MouseWheelDelta != 0.0f)
 	{
 		mOrbitDistance *= FMath::Pow(ZoomBase, input.MouseWheelDelta);
 		mOrbitDistance = FMath::Clamp(mOrbitDistance, 0.25f, 500.0f);
@@ -292,11 +412,16 @@ void FObjViewerApplication::UpdateOrbitCamera()
 
 	ApplyOrbitCameraTransform();
 
-	if (input.IsDown(VK_RBUTTON))
+	if (mbPanDragging)
 	{
 		const float panScale = mOrbitDistance * 0.0015f;
-		mOrbitPivot += mCamera->GetRightVector() * (-static_cast<float>(input.MouseDX) * panScale);
-		mOrbitPivot += mCamera->GetUpVector() * (static_cast<float>(input.MouseDY) * panScale);
+
+		const FMatrix orbitMatrix = FMatrix::Rotate(mOrbitRotation);
+		const FVector right = orbitMatrix.GetUnitAxis(EAxis::Y);
+		const FVector up = orbitMatrix.GetUnitAxis(EAxis::Z);
+
+		mOrbitPivot += right * (-input.MouseDX * panScale);
+		mOrbitPivot += up * (input.MouseDY * panScale);
 	}
 
 	ApplyOrbitCameraTransform();
@@ -589,10 +714,7 @@ void FObjViewerApplication::Tick()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	if (!ImGui::GetIO().WantCaptureMouse)
-	{
-		UpdateOrbitCamera();
-	}
+	UpdateOrbitCamera();
 
 	FEditorCommands viewerCommands;
 	RenderObjList(viewerCommands);
@@ -606,17 +728,36 @@ void FObjViewerApplication::Tick()
 		FMath::Max( static_cast<float>(mClientHeight) - ObjListHeight, 0.0f)
 	};
 
-	FSceneView sceneView =
-		makeSceneView(*mCamera, viewRect, 1.0f, 0.1f, 1000.0f);
+	{
+		FSceneView sceneView = makeSceneView(*mCamera, viewRect, 1.0f);
 
-	sceneView.viewMode = EViewModeIndex::VMI_Lit;
-	sceneView.showFlags = static_cast<uint32>(EEngineShowFlags::SF_Primitives);
+		const FMatrix cameraRotation =
+			FMatrix::Rotate(mOrbitRotation);
 
-	mGraphicsManager->RenderSceneView(
-		mSceneManager->GetRenderInfos(),
-		mSceneManager->GetAxisRenderInfos(),
-		sceneView,
-		nullptr);
+		sceneView.cameraLocation = mCamera->Location;
+		sceneView.cameraForward = cameraRotation.GetUnitAxis(EAxis::X);
+		sceneView.cameraRight = cameraRotation.GetUnitAxis(EAxis::Y);
+		sceneView.cameraUp = cameraRotation.GetUnitAxis(EAxis::Z);
+
+
+		sceneView.viewMatrix = FMatrix::Translation(FVector(
+			-mCamera->Location.x, -mCamera->Location.y, -mCamera->Location.z))
+			* cameraRotation.Transpose()
+			* FMatrix::UEToDX;
+
+		sceneView.viewProjectionMatrix = sceneView.viewMatrix * sceneView.projectionMatrix;
+
+		sceneView.inverseViewprojectionMatrix = sceneView.viewProjectionMatrix.Inverse();
+
+		sceneView.viewMode = EViewModeIndex::VMI_Lit;
+		sceneView.showFlags = static_cast<uint32>(EEngineShowFlags::SF_Primitives);
+
+		mGraphicsManager->RenderSceneView(
+			mSceneManager->GetRenderInfos(),
+			mSceneManager->GetAxisRenderInfos(),
+			sceneView,
+			nullptr);
+	}
 
 	ImGui::Render();
 	mGraphicsManager->PrepareForUI();

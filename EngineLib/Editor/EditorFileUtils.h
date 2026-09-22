@@ -6,7 +6,6 @@
 #include "../Rendering/Camera.h"
 
 class UWorld;
-class FFileManager;
 
 //inline constexpr std::string_view kSceneDataDir = "SceneData\\";
 //inline constexpr std::string_view kSceneDataSuffix = ".Scene";
@@ -34,4 +33,3 @@ private:
 
 	static FString mCurrentScenePath;
 };
-

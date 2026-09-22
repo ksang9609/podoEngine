@@ -8,6 +8,9 @@
 #include "Core/FrameTimer.h"
 #include "Core/Math/Vector.h"
 #include "Core/Object/Object.h"
+#include "Core/Math/Quat.h"
+
+
 #include "Editor/EditorCommands.h"
 #include "Platform/WindowApplication.h"
 
@@ -59,9 +62,16 @@ private:
 	bool mbPendingResize = false;
 
 	FVector mOrbitPivot = FVector(0.0f, 0.0f, 0.0f);
+
+	// Object와의 거리
 	float mOrbitDistance = 120.0f;
-	float mOrbitYaw = -45.0f;
-	float mOrbitPitch = -25.0f;
+
+	FQuat mOrbitRotation = FQuat::Identity();
+	FVector mArcballStartVector = FVector(0.0f, 0.0f, 0.0f);
+	FQuat mArcballStartRotation = FQuat::Identity();
+
+	bool mbOrbitDragging = false;
+	bool mbPanDragging = false;
 	FVector mInitialOrbitPivot = FVector(0.0f, 0.0f, 0.0f);
 	float mInitialOrbitDistance = 6.0f;
 

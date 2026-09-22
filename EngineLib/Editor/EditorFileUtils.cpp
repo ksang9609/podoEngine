@@ -22,6 +22,7 @@ bool FEditorFileUtils::SaveScene(const UWorld* world, FCamera* perspectiveCamera
 		return false;
 	}
 
+	// 저장 경로 결정
 	if (mCurrentScenePath.IsEmpty())
 	{
 		UE_LOG_F(Log, Core, "SaveScene: No current scene path. Redirecting to Save As");
@@ -77,7 +78,11 @@ bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& fileP
 		//FString sceneJsonText(sceneJson.dump()); // 한줄로 저장
 		FString sceneJsonText(sceneJson.dump(1, "  "));
 
-		fileManager.WriteStringToFile(filePath, sceneJsonText);
+		std::filesystem::path scenePath(filePath.CStr());
+
+		FFileManager fileManager(scenePath.parent_path().string());
+
+		fileManager.WriteStringToFile(scenePath.filename().string(), sceneJsonText);
 	}
 	catch (const std::exception& e)
 	{
@@ -105,7 +110,9 @@ FLoadedScene FEditorFileUtils::LoadScene()
 
 	try
 	{
-		FString sceneJsonText = fileManager.ReadFileToString(normalizedPath.string());
+		FFileManager fileManager(normalizedPath.parent_path().string());
+
+		FString sceneJsonText = fileManager.ReadFileToString(normalizedPath.filename().string());
 
 		json::JSON sceneJson = json::JSON::Load(sceneJsonText);
 		
@@ -124,9 +131,6 @@ FLoadedScene FEditorFileUtils::LoadScene()
 			return {};
 		}
 
-		newWorld->DeserializeClass(worldJson);
-
-		UEngineStatics::SetNextUUID(archive.NextUUID);
 		mCurrentScenePath = normalizedScenePath;
 
 		UE_LOG_F(Log, Core, "Scene loaded: {}", mCurrentScenePath);
