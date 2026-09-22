@@ -230,15 +230,21 @@ std::span<const FPropertyInfo> USceneComponent::GetDeclaredProperties()
 {
 	static const FPropertyInfo Properties[] =
 	{
-		REFLECT_PROPERTY(
+		REFLECT_PROPERTY_SETTER(
 			USceneComponent,
-			mRelativeLocation),
-		REFLECT_PROPERTY(
+			mRelativeLocation,
+			&USceneComponent::SetRelativeLocation,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable),
+		REFLECT_PROPERTY_SETTER(
 			USceneComponent,
-			mRelativeRotation),
-		REFLECT_PROPERTY(
+			mRelativeRotation,
+			static_cast<void (USceneComponent::*)(FRotator)>(&USceneComponent::SetRelativeRotation),
+			EPropertyFlags::Serializable | EPropertyFlags::Editable),
+		REFLECT_PROPERTY_SETTER(
 			USceneComponent,
-			mRelativeScale3D)
+			mRelativeScale3D,
+			&USceneComponent::SetRelativeScale3D,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable)
 	};
 
 	return Properties;

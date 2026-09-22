@@ -71,10 +71,12 @@ USphereComponent::GetDeclaredProperties()
 	{
 		REFLECT_PROPERTY(
 			USphereComponent,
-			mbSpin),
+			mbSpin,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable),
 		REFLECT_PROPERTY(
 			USphereComponent,
-			mSpinSpeed)
+			mSpinSpeed,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable)
 	};
 
 	return Properties;

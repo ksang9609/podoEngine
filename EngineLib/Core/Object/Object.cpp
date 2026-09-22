@@ -152,7 +152,9 @@ std::span<const FPropertyInfo> UObject::GetDeclaredProperties()
 			UObject,
 			FName,
 			&UObject::mName>(
-				"Name")
+				"Name",
+				EPropertyFlags::Serializable | EPropertyFlags::Editable)
+
 	};
 
 	return Properties;

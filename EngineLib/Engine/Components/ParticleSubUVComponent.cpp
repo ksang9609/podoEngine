@@ -122,22 +122,33 @@ std::span<const FPropertyInfo> UParticleSubUVComponent::GetDeclaredProperties()
 	{
 		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			mNumRows),
+			mNumRows,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable
+		),
 		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			mNumCols),
+			mNumCols,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable
+		),
 		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			mbLooping),
+			mbLooping,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable
+		),
 		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			mPlayRate),
+			mPlayRate,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable
+		),
 		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			mFrameDuration),
+			mFrameDuration
+		),
 		REFLECT_PROPERTY(
 			UParticleSubUVComponent,
-			mBlendStateType)
+			mBlendStateType,
+			EPropertyFlags::Serializable | EPropertyFlags::Editable
+		)
 	};
 
 	return Properties;

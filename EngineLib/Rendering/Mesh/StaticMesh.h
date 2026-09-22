@@ -16,7 +16,7 @@ struct FStaticMeshSection
 {
 	FString Name;
 
-	// 이 섹션이 사용할 FStaticMesh::MaterialSlots의 인덱스
+	// UStaticMesh::GetDefaultMaterials()의 인덱스
    // -1이면 연결된 Material 슬롯이 없음
 	int32 MaterialSlotIndex = -1; 
 

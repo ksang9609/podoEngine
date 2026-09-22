@@ -72,6 +72,7 @@ namespace
 bool FObjImporter::ParseAndConvert(const FString& fileName, FObjImportResult& outResult)
 {
 	outResult.meshData.reset(0);
+	outResult.materialSlots.Reset(0);
 
     FObjInfo objInfo;
 

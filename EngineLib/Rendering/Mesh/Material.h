@@ -25,6 +25,13 @@ struct FMaterial
 	FName SpecularTexture;
 };
 
+// UStaticMesh의 기본 UMaterial을 만들기 위한 값 데이터
+struct FMaterialSlot
+{
+	FString Name;
+	FMaterial DefaultMaterial;
+};
+
 class UMaterial : public UObject
 {
 	DECLARE_OBJECT(UMaterial, UObject)
