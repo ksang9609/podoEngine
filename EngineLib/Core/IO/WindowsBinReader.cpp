@@ -34,7 +34,7 @@ void FWindowsBinReader::Serialize(void* data, uint64 size)
 
 	constexpr uint64 MaxReadSize = std::numeric_limits<std::streamsize>::max();
 
-	if (!data || size > MaxReadSize)
+	if (!data || size > MaxReadSize || size > mRemainingBytes)
 	{
 		SetError();
 		return;
