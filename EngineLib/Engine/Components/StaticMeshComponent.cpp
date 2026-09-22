@@ -134,6 +134,7 @@ bool UStaticMeshComponent::SetMaterial(int32 slotIndex, const UMaterial& materia
 
 	materialOverride.bIsSet = true;
 	materialOverride.OverridedMaterialRef = &materialAsset;
+	mMaterialAssetKeys[slotIndex] = materialAsset.GetMaterialName();
 
 	return true;
 }
@@ -146,6 +147,7 @@ bool UStaticMeshComponent::ClearMaterialOverride(int32 slotIndex)
 	}
 
 	mMaterialOverrides[slotIndex] = FMaterialOverride{};
+	mMaterialAssetKeys[slotIndex] = FName("");
 	return true;
 }
 
@@ -178,13 +180,13 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 
 void UStaticMeshComponent::resetMaterialOverrides()
 {
-	mMaterialOverrides.Reset(0);
-
-	mMaterialOverrides.Reserve(mStaticMeshRef->GetDefaultMaterials().Num());
+	mMaterialOverrides.Reset(mStaticMeshRef->GetDefaultMaterials().Num());
+	mMaterialAssetKeys.Reset(mStaticMeshRef->GetDefaultMaterials().Num());
 
 	for (int32 i = 0; i < mStaticMeshRef->GetDefaultMaterials().Num(); ++i)
 	{
 		mMaterialOverrides.Add(FMaterialOverride{});
+		mMaterialAssetKeys.Add(FName(""));
 	}
 }
 
@@ -218,6 +220,10 @@ std::span<const FPropertyInfo> UStaticMeshComponent::GetDeclaredProperties()
 		REFLECT_PROPERTY(
 			UStaticMeshComponent,
 			mStaticMeshAssetKey
+		),
+		REFLECT_PROPERTY(
+			UStaticMeshComponent,
+			mMaterialAssetKeys
 		),
 	};
 
