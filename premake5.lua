@@ -1,4 +1,4 @@
--- 저장소 루트: premake5.lua
+﻿-- 저장소 루트: premake5.lua
 
 workspace "JungleEngine"
     location "."
@@ -30,7 +30,7 @@ workspace "JungleEngine"
         defines { "NDEBUG" }
         runtime "Release"
         symbols "On"
-        optimize "Speed"
+        optimize "Off"
         
     filter "configurations:ObjViewerDebug"
         defines { "_DEBUG", "IS_OBJ_VIEWER=1" }
