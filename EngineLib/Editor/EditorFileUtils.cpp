@@ -14,7 +14,7 @@
 
 FString FEditorFileUtils::mCurrentScenePath = "";
 
-bool FEditorFileUtils::SaveScene(const UWorld* world)
+bool FEditorFileUtils::SaveScene(const UWorld* world, FCamera* perspectiveCamera)
 {
 	if (!world)
 	{
@@ -26,10 +26,10 @@ bool FEditorFileUtils::SaveScene(const UWorld* world)
 	if (mCurrentScenePath.IsEmpty())
 	{
 		UE_LOG_F(Log, Core, "SaveScene: No current scene path. Redirecting to Save As");
-		return SaveSceneAs(world);
+		return SaveSceneAs(world, perspectiveCamera);
 	}
 
-	if (!saveSceneToPath(world, mCurrentScenePath))
+	if (!saveSceneToPath(world, mCurrentScenePath, perspectiveCamera))
 	{
 		return false;
 	}
@@ -38,7 +38,7 @@ bool FEditorFileUtils::SaveScene(const UWorld* world)
 	return true;
 }
 
-bool FEditorFileUtils::SaveSceneAs(const UWorld* world)
+bool FEditorFileUtils::SaveSceneAs(const UWorld* world, FCamera* perspectiveCamera)
 {
 	if (!world)
 	{
@@ -57,7 +57,7 @@ bool FEditorFileUtils::SaveSceneAs(const UWorld* world)
 	std::filesystem::path normalizedPath = std::filesystem::absolute(filePath.CStr()).lexically_normal();
 	FString normalizedScenePath(normalizedPath.string());
 
-	if (!saveSceneToPath(world, normalizedScenePath))
+	if (!saveSceneToPath(world, normalizedScenePath, perspectiveCamera))
 	{
 		UE_LOG_F(Error, Core, "SaveSceneAs failed: {}", normalizedPath.string().c_str());
 		return false;
@@ -70,11 +70,11 @@ bool FEditorFileUtils::SaveSceneAs(const UWorld* world)
 	return true;
 }
 
-bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& filePath)
+bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& filePath, FCamera* perspectiveCamera)
 {
 	try
 	{
-		json::JSON sceneJson = FJsonArchive::SerializeWorld(*world);
+		json::JSON sceneJson = FJsonArchive::SerializeWorld(*world, perspectiveCamera);
 		//FString sceneJsonText(sceneJson.dump()); // 한줄로 저장
 		FString sceneJsonText(sceneJson.dump(1, "  "));
 
@@ -93,14 +93,16 @@ bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& fileP
 	return true;
 }
 
-UWorld* FEditorFileUtils::LoadScene()
+FLoadedScene FEditorFileUtils::LoadScene()
 {
+	FLoadedScene result;
+
 	FString filePath = openLoadSceneDialog();
 
 	if (filePath.IsEmpty())
 	{
 		UE_LOG_F(Log, Core, "LoadScene canceled");
-		return nullptr;
+		return result;
 	}
 
 	std::filesystem::path normalizedPath = std::filesystem::absolute(filePath.CStr()).lexically_normal();
@@ -113,26 +115,33 @@ UWorld* FEditorFileUtils::LoadScene()
 		FString sceneJsonText = fileManager.ReadFileToString(normalizedPath.filename().string());
 
 		json::JSON sceneJson = json::JSON::Load(sceneJsonText);
+		
+		FCamera camera;
 
-		UWorld* newWorld = FJsonArchive::DeserializeWorld(sceneJson);
+		if (FJsonArchive::DeserializePerspectiveCamera(sceneJson,camera))
+		{
+			result.PerspectiveCamera = camera;
+		}
 
-		if (!newWorld)
+		result.World = FJsonArchive::DeserializeWorld(sceneJson);
+
+		if (!result.World)
 		{
 			UE_LOG_F(Error, Core, "LoadScene failed: World creation failed");
-			return nullptr;
+			return {};
 		}
 
 		mCurrentScenePath = normalizedScenePath;
 
 		UE_LOG_F(Log, Core, "Scene loaded: {}", mCurrentScenePath);
 
-		return newWorld;
+		return result;
 	}
 	catch (const std::exception& e)
 	{
 		UE_LOG_F(Error, Core, "LoadScene failed: {} - {}", e.what(), mCurrentScenePath);
 
-		return nullptr;
+		return {};
 	}
 }
 

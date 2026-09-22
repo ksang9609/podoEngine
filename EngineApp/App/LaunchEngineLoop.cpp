@@ -273,7 +273,7 @@ void FEngineLoop::Init(HINSTANCE hInstance, WNDPROC WndProc)
 	mEditorUIManager = new FEditorUIManager(ImGui::GetIO());
 
 	FEditorCommands startupCommands;
-	mEditorUIManager->LoadSettings(startupCommands);
+	mEditorUIManager->LoadSettings(*mEditorViewportManager, startupCommands);
 	processEditorCommands(startupCommands);
 }
 
@@ -463,6 +463,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 void FEngineLoop::End()
 {
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 	mSceneManager->DeleteScene();
 
 	ImGui_ImplDX11_Shutdown();
@@ -515,28 +516,42 @@ void FEngineLoop::processEditorCommand(const FNewSceneCommand& command)
 
 void FEngineLoop::processEditorCommand(const FSaveSceneCommand& command)
 {
+	FCamera* perspectiveCamera = mEditorViewportManager->getPerspectiveCamera();
 	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
 	FEditorFileUtils::SaveScene(
-		mSceneManager->GetCurrentWorld()
+		mSceneManager->GetCurrentWorld(), perspectiveCamera
 	);
 }
 
 void FEngineLoop::processEditorCommand(const FSaveSceneAsCommand& command)
 {
+	FCamera* perspectiveCamera = mEditorViewportManager->getPerspectiveCamera();
 	//mSceneManager->SaveScene(command.SceneName, *mFileManager);
 	FEditorFileUtils::SaveSceneAs(
-		mSceneManager->GetCurrentWorld()
+		mSceneManager->GetCurrentWorld(), perspectiveCamera
 	);
 }
 
 void FEngineLoop::processEditorCommand(const FLoadSceneCommand& command)
 {
 	//mSceneManager->LoadScene(command.SceneName, *mFileManager);
-	UWorld* newWorld = FEditorFileUtils::LoadScene();
+	FLoadedScene loaded = FEditorFileUtils::LoadScene();
 
-	if (newWorld != nullptr)
+	if (loaded.World == nullptr)
 	{
-		mSceneManager->ReplaceWorld(newWorld);
+		return;
+	}
+
+	mSceneManager->ReplaceWorld(loaded.World);
+
+	if (loaded.PerspectiveCamera.has_value())
+	{
+		mEditorViewportManager->applyPerspectiveCamera(
+			*loaded.PerspectiveCamera);
+	}
+	else
+	{
+		mEditorViewportManager->resetPerspectiveCamera();
 	}
 
 	for (TObjectIterator<UStaticMeshComponent> it; it; ++it)
@@ -863,6 +878,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportTypeCommand& command)
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->setType(command.Type);
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& command)
@@ -870,6 +886,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportViewModeCommand& comman
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->getRenderSettings().ViewMode = command.ViewMode;
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& command)
@@ -877,6 +894,7 @@ void FEngineLoop::processEditorCommand(const FSetViewportShowFlagCommand& comman
 	FViewport* viewport = mEditorViewportManager->findViewport(command.viewportId);
 	if (viewport == nullptr) { return; }
 	viewport->getRenderSettings().SetShowFlag(command.Flag, command.bEnabled);
+	mEditorUIManager->saveSettings(*mEditorViewportManager);
 }
 
 void FEngineLoop::processEditorCommand(const FSetSharedCameraSpeedCommand& command)

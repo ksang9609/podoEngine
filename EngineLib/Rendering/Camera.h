@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Core/Math/Transform.h"
 #include <cmath>
 #include "Core/Math/Vector.h"
@@ -198,6 +198,9 @@ public:
 	// 직교 투영에서 카메라와 화면 사이의 거리
 	float mOrthoDistance = 5.0f;
 
+
+	float mNearZ = 0.1f;
+	float mFarZ = 1000.0f;
 	// 직교 투영에서 화면이 담는 월드 높이. 폭은 여기에 Aspect를 곱해서 얻는다.
 	// 렌더와 피킹이 같은 값을 봐야 하므로 카메라가 들고 있는다
 	// Todo: Check value

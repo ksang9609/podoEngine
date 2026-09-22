@@ -108,7 +108,7 @@ namespace
 		return "Unknown";
 	}
 
-	void drawViewportSharedControls(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedSettings, FEditorCommands& outCommands)
+	bool drawViewportSharedControls(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedSettings, FEditorCommands& outCommands)
 	{
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f)); // 기본
@@ -117,10 +117,12 @@ namespace
 
 		const uint8 viewportCount = viewportManager.getViewportCount();
 
+		bool layoutChanged = false;
+
 		ImGui::BeginDisabled(viewportCount >= maxViewportCount);
 		if (ImGui::Button(" + "))
 		{
-			viewportManager.addViewport();
+			layoutChanged =viewportManager.addViewport() != invalidViewportId;
 		}
 		ImGui::EndDisabled();
 
@@ -133,7 +135,7 @@ namespace
 
 			if (lastViewport != nullptr)
 			{
-				viewportManager.removeViewport(lastViewport->getId());
+				layoutChanged = viewportManager.removeViewport(lastViewport->getId());
 			}
 		}
 		ImGui::EndDisabled();
@@ -175,9 +177,11 @@ namespace
 
 		ImGui::Separator();
 		ImGui::PopStyleColor(9);
+
+		return layoutChanged;
 	}
 
-	void updateSplitterInteraction(
+	bool updateSplitterInteraction(
 		FEditorViewportManager& viewportManager,
 		const FRect& hostRect,
 		const FPoint& mousePoint)
@@ -195,8 +199,9 @@ namespace
 
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
-			viewportManager.endSplitterDrag();
+			return viewportManager.endSplitterDrag();
 		}
+		return false;
 	}
 
 	void updateViewportInteraction(
@@ -744,10 +749,10 @@ FEditorUIManager::FEditorUIManager(const ImGuiIO& io)
 	mPanelWidth = io.DisplaySize.x * MIN_WIDTH_RATIO;
 }
 
-void FEditorUIManager::LoadSettings(FEditorCommands& outCommands)
+void FEditorUIManager::LoadSettings(FEditorViewportManager& viewportManager, FEditorCommands& outCommands)
 {
 	mEditorSetting.Load();
-
+	viewportManager.applyLayoutSetting(mEditorSetting);
 	// Load settings into commands
 	outCommands.Emplace(FSetCameraSensitivityCommand{ mEditorSetting.CameraSensitivity });
 	outCommands.Emplace(FSetGridWidthCommand{ mEditorSetting.GridSpacing });
@@ -1492,6 +1497,7 @@ void FEditorUIManager::updateObjectListPanelGUI(const FGuiReference& guiReferenc
 
 void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& viewportManager, FViewportSharedSettings& sharedsettings, FEditorCommands& outCommands)
 {
+
 	const float hostWidth =
 		(std::max)(mImGuiIO.DisplaySize.x - mPanelWidth, 0.0f);
 	const float hostHeight =
@@ -1523,7 +1529,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		return;
 	}
 
-	drawViewportSharedControls(viewportManager, sharedsettings, outCommands);
+	const bool viewportCountChanged = drawViewportSharedControls(viewportManager, sharedsettings, outCommands);
 
 	const ImVec2 hostMin = ImGui::GetCursorScreenPos();
 	const ImVec2 availableSize = ImGui::GetContentRegionAvail();
@@ -1548,7 +1554,7 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 		mousePosition.y
 	};
 
-	updateSplitterInteraction(viewportManager, hostRect, mousePoint);
+	const bool splitterChanged = updateSplitterInteraction(viewportManager, hostRect, mousePoint);
 	updateViewportInteraction(viewportManager, mousePoint);
 
 	ImDrawList& drawList = *ImGui::GetWindowDrawList();
@@ -1575,6 +1581,13 @@ void FEditorUIManager::updateViewportLayoutPanelGUI(FEditorViewportManager& view
 	}
 
 	drawList.PopClipRect();
+
+	if (viewportCountChanged || splitterChanged)
+	{
+		viewportManager.captureLayoutSetting(mEditorSetting);
+		mEditorSetting.Save();
+	}
+
 
 	// ImGui에게 해당 영역이 실제 콘텐츠로 사용됐음을 알려준다.
 	ImGui::Dummy(availableSize);
@@ -1668,4 +1681,10 @@ void FEditorUIManager::updateBottomBarGUI()
 
 	ImGui::End();
 	ImGui::PopStyleVar();
+}
+
+void FEditorUIManager::saveSettings(const FEditorViewportManager& viewportManager)
+{
+	viewportManager.captureLayoutSetting(mEditorSetting);
+	mEditorSetting.Save();
 }
