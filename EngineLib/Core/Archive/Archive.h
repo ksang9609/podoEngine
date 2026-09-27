@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "../EngineLib/Core/Core.h"
+#include "Core/Core.h"
 
 enum class EArchiveMode : uint8
 {
