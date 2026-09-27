@@ -61,6 +61,56 @@ void UWorld::DeserializeClass(const json::JSON& inJson)
 	}
 }
 
+void UWorld::Serialize(FStructuredArchive& archive)
+{
+	UObject::Serialize(archive);
+
+	/* Construct Object */
+	if (archive.IsLoading())
+	{
+		archive.BeginObject("mActors");
+		int32 count = 0;
+		archive << TNamedValue{ "Count", count };
+
+		for (int32 i = 0; i < count && !archive.HasError(); ++i)
+		{
+			const FString key = FString(std::to_string(i));
+
+			if (!archive.BeginObject(key.CStr()))
+			{
+				archive.SetError();
+				archive.EndObject();
+				break;
+			}
+
+			FString className;
+			archive << TNamedValue<FString>{ "ClassName", className };
+
+			const FClassInfo* classInfo = FObjectFactory::GetClassInfoByName(className);
+			UObject* loadedObject = FObjectFactory::LoadObject(classInfo, archive);
+			if (!loadedObject)
+			{
+				archive.SetError();
+				archive.EndObject();
+				break;
+			}
+
+			AActor* actor = loadedObject->Cast<AActor>();
+			if (actor)
+			{
+				AddActor(std::unique_ptr<AActor>(actor));
+			}
+
+			archive.EndObject();
+		}
+		archive.EndObject();
+	}
+	else
+	{
+		archive << TNamedValue{ "mActors", mActors };
+	}
+}
+
 void UWorld::AddActor(std::unique_ptr<AActor> actor)
 {
 	assert(actor != nullptr);
