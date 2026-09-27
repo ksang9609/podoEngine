@@ -514,3 +514,37 @@ FString FName::ToString() const
 
 	return Result;
 }
+
+void FName::Serialize(FStructuredArchive& archive)
+{
+	FString baseName;
+	int32 number = 0;
+
+	if (archive.IsSaving())
+	{
+		if (!IsNone())
+		{
+			const FNameEntry& entry = FNamePool::Get().Resolve(DisplayId);
+
+			baseName = FString(entry.GetName());
+		}
+
+		number = Number;
+	}
+
+	archive << TNamedValue<FString>{ "BaseName", baseName };
+	archive << TNamedValue<int32>{ "Number", number };
+
+	if (archive.IsLoading() && !archive.HasError())
+	{
+		if (number < 0 ||
+			baseName.Len() >= NAME_SIZE ||
+			(baseName.IsEmpty() && number != 0))
+		{
+			archive.SetError();
+			return;
+		}
+
+		*this = FName(std::string_view(baseName), number - 1);
+	}
+}

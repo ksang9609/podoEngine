@@ -40,10 +40,13 @@ public:
 
 	uint32 Add(const T& data);
 	uint32 Add(T&& data);
-	T&& Pop();
+	T Pop();
 	uint32 Emplace(const T& data);
 	uint32 Insert(const T& data, uint32 index);
 	void Reserve(uint32 Number);
+
+	T& Last() { return mDatas.back(); }
+	const T& Last() const { return mDatas.back(); }
 
 	int32 Num() const;
 	int32 Max() const;
@@ -185,12 +188,12 @@ inline uint32 TArray<T>::Add(T&& data)
 }
 
 template<typename T>
-inline T&& TArray<T>::Pop()
+inline T TArray<T>::Pop()
 {
 	assert(mDatas.empty() == false);
-	T&& lastElement = std::move(mDatas.back());
+	T lastElement = std::move(mDatas.back());
 	mDatas.pop_back();
-	return std::move(lastElement);
+	return lastElement;
 }
 
 template<typename T>

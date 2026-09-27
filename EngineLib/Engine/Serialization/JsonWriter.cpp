@@ -11,13 +11,28 @@ FJsonWriter::FJsonWriter(std::string_view fileDirPath)
 	, mFileManager(fileDirPath)
 {
 	// Initialize the JSON stack with an empty object
-	mJsonStack.Add(json::object());
+	mRootJson = json::object();
+	mJsonStack.Add(&mRootJson);
 }
 
 bool FJsonWriter::BeginObject(const char* name)
 {
+	if (HasError())
+	{
+		return false;
+	}
+
+	if (mJsonStack.IsEmpty())
+	{
+		SetError();
+		return false;
+	}
+
+	json& currentObject = *mJsonStack.Last();
 	json newObject = json::object();
-	mJsonStack.Add(newObject);
+
+	currentObject[name] = newObject;
+	mJsonStack.Add(&currentObject[name]);
 
 	return true;
 }
@@ -30,7 +45,7 @@ bool FJsonWriter::Field(TNamedValue<bool> value)
 		return false;
 	}
 
-	json& currentObject = mJsonStack[mJsonStack.Num() - 1];
+	json& currentObject = *mJsonStack.Last();
 
 	currentObject[value.Name] = value.Value;
 	return true;
@@ -43,7 +58,7 @@ bool FJsonWriter::Field(TNamedValue<int32> value)
 		SetError();
 		return false;
 	}
-	json& currentObject = mJsonStack[mJsonStack.Num() - 1];
+	json& currentObject = *mJsonStack.Last();
 	currentObject[value.Name] = value.Value;
 	return true;
 }
@@ -55,7 +70,7 @@ bool FJsonWriter::Field(TNamedValue<uint32> value)
 		SetError();
 		return false;
 	}
-	json& currentObject = mJsonStack[mJsonStack.Num() - 1];
+	json& currentObject = *mJsonStack.Last();
 	currentObject[value.Name] = value.Value;
 	return true;
 }
@@ -67,7 +82,7 @@ bool FJsonWriter::Field(TNamedValue<float> value)
 		SetError();
 		return false;
 	}
-	json& currentObject = mJsonStack[mJsonStack.Num() - 1];
+	json& currentObject = *mJsonStack.Last();
 	currentObject[value.Name] = value.Value;
 	return true;
 }
@@ -79,7 +94,7 @@ bool FJsonWriter::Field(TNamedValue<double> value)
 		SetError();
 		return false;
 	}
-	json& currentObject = mJsonStack[mJsonStack.Num() - 1];
+	json& currentObject = *mJsonStack.Last();
 	currentObject[value.Name] = value.Value;
 	return true;
 }
@@ -91,41 +106,31 @@ bool FJsonWriter::Field(TNamedValue<FString> value)
 		SetError();
 		return false;
 	}
-	json& currentObject = mJsonStack[mJsonStack.Num() - 1];
+	json& currentObject = *mJsonStack.Last();
 	currentObject[value.Name] = value.Value.CStr();
 	return true;
 }
 
 bool FJsonWriter::EndObject()
 {
-	if (mJsonStack.Num() == 0)
+	if (mJsonStack.Num() <= 1)
 	{
 		SetError();
 		return false;
 	}
-	json completedObject = mJsonStack.Pop();
-	if (mJsonStack.Num() > 0)
-	{
-		json& parentObject = mJsonStack[mJsonStack.Num() - 1];
-		parentObject.update(completedObject);
-	}
-	else
-	{
-		SetError();
-		return false;
-	}
+	mJsonStack.Pop();
 	return true;
 }
 
 void FJsonWriter::SaveToFile(const FString& filePath)
 {
-	if (mJsonStack.Num() != 1)
+	if (HasError() || mJsonStack.Num() != 1)
 	{
 		SetError();
 		return;
 	}
-	json rootObject = mJsonStack.Pop();
-	FString jsonString = FString(rootObject.dump(4, ' ')); // Pretty print with 4 spaces
+
+	FString jsonString = FString(mRootJson.dump(4, ' ')); // Pretty print with 4 spaces
 
 	mFileManager.WriteStringToFile(filePath, jsonString);
 }

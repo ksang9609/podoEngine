@@ -17,6 +17,11 @@ public:
 
 	explicit FJsonWriter(std::string_view fileDirPath);
 
+	FJsonWriter(const FJsonWriter&) = delete;
+	FJsonWriter& operator=(const FJsonWriter&) = delete;
+	FJsonWriter(FJsonWriter&&) = delete;
+	FJsonWriter& operator=(FJsonWriter&&) = delete;
+
 	virtual bool BeginObject(const char* name) override;
 	virtual bool Field(TNamedValue<bool> value) override;
 	virtual bool Field(TNamedValue<int32> value) override;
@@ -30,5 +35,6 @@ public:
 
 private:
 	FFileManager mFileManager;
-	TArray<json> mJsonStack;
+	json mRootJson;
+	TArray<json*> mJsonStack;
 };

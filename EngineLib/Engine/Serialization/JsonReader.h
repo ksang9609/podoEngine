@@ -14,7 +14,7 @@ class FJsonReader final : public FStructuredArchive
 public:
 	using json = nlohmann::json;
 
-	explicit FJsonReader(std::string_view fileDirPath, std::string_view fileName);
+	explicit FJsonReader(std::string_view filePath);
 
 	virtual bool BeginObject(const char* name) override;
 	virtual bool Field(TNamedValue<bool> value) override;

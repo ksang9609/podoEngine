@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "Core/Core.h"
+#include "Core/Archive/StructuredArchive.h"
 #include <string_view>
 
 // Max size of name, including the null terminator
@@ -76,6 +77,8 @@ public:
 	bool operator<(const FName& Rhs) const;
 
 	FString ToString() const;
+
+	void Serialize(FStructuredArchive& archive);
 
 	FNameEntryId GetDisplayId() const { return DisplayId; }
 	FNameEntryId GetComparisonId() const { return ComparisonId; }

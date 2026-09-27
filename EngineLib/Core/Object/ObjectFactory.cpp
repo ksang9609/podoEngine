@@ -63,6 +63,22 @@ UObject* FObjectFactory::LoadObject(const FClassInfo* classInfo, const json::JSO
 	return instance;
 }
 
+UObject* FObjectFactory::LoadObject(const FClassInfo* classInfo, FStructuredArchive& archive)
+{
+	if (archive.IsSaving())
+	{
+		assert(false && "FObjectFactory::LoadObject should only be called in loading mode.");
+		return nullptr;
+	}
+
+	UObject* instance = ConstructUnInitializedObject(classInfo);
+	if (instance)
+	{
+		instance->Serialize(archive);
+	}
+	return instance;
+}
+
 const FClassInfo* FObjectFactory::GetClassInfoByName(const FString& className)
 {
 	const FName classKey(className);

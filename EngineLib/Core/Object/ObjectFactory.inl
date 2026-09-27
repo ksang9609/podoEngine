@@ -89,3 +89,21 @@ TObject* FObjectFactory::LoadObject(const json::JSON& inJson)
 
 	return instance;
 }
+
+template<typename TObject>
+	requires std::derived_from<TObject, UObject>
+TObject* FObjectFactory::LoadObject(FStructuredArchive& archive)
+{
+	if (archive.IsSaving())
+	{
+		assert(false && "FObjectFactory::LoadObject should only be called in loading mode.");
+		return nullptr;
+	}
+
+	TObject* instance = ConstructUnInitializedObject<TObject>();
+	if (instance)
+	{
+		instance->Serialize(archive);
+	}
+	return instance;
+}

@@ -7,6 +7,8 @@
 #include "Core/Core.h"
 #include "Core/Container/TArray.h"
 #include "Core/Container/TSparseArray.h"
+#include "Core/Archive/StructuredArchive.h"
+#include "Core/Archive/Archive.h"
 #include "ObjectFactory.h"
 #include "Core/Name.h"
 
@@ -111,6 +113,9 @@ public:
 	virtual void SerializeClass(json::JSON& outJson) const;
 	virtual void DeserializeClass(const json::JSON& inJson);
 
+	virtual void Serialize(FStructuredArchive& archive);
+	virtual void Serialize(FArchive& archive);
+
 	virtual void PostDeserialize() {}
 
 	template<typename TObject>
@@ -126,7 +131,7 @@ public:
 	template<typename TObject>
 		requires std::derived_from<TObject, UObject>
 	const TObject* Cast() const;
-	
+
 	static UObject* GetObjectByUUID(int32 uuid);
 	static UObject* GetObjectByInternalIndex(uint32 internalIndex);
 
