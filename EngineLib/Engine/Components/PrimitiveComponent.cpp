@@ -21,7 +21,7 @@ static const FBoundingBox& GetPrimitiveLocalBounds(EPrimitive primitive);
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UPrimitiveComponent, USceneComponent);
 IMPLEMENT_SERIALIZATION(UPrimitiveComponent, USceneComponent,
-	{ mLocalBounds = GetPrimitiveLocalBounds(mePrimitive); })
+	{ mLocalBounds = GetPrimitiveLocalBounds(mePrimitive); });
 
 UPrimitiveComponent::UPrimitiveComponent()
 {

@@ -21,6 +21,7 @@ struct FPropertyInfo
 {
 	using SerializeFunc = void (*)(const FPropertyInfo& Property, const UObject* Object, json::JSON& OutProperties);
 	using DeserializeFunc = void (*)(const FPropertyInfo& Property, UObject* Object, const json::JSON& InProperties);
+	using ArchiveSerializeFunc = void (*)(const FPropertyInfo& property, UObject* object, FStructuredArchive& archive);
 	using GetValueFunc = FPropertyValue(*)(const UObject* Object);
 	using SetValueFunc = void (*)(const FPropertyInfo& Property, UObject* Object, const FPropertyValue& Value);
 
@@ -35,6 +36,7 @@ struct FPropertyInfo
 	/* (De)Serialize function */
 	SerializeFunc Serialize = nullptr;
 	DeserializeFunc Deserialize = nullptr;
+	ArchiveSerializeFunc ArchiveSerialize = nullptr;
 };
 
 #define REFLECT_PROPERTY(OwnerType, MemberName, ...)					\
@@ -145,6 +147,17 @@ FPropertyInfo MakeProperty(const char* JsonKey, EPropertyFlags PropertyFlags = E
 				InJson,
 				Property.JsonKey,
 				Value);
+		};
+
+	Property.ArchiveSerialize =
+		[](const FPropertyInfo& property,
+			UObject* object,
+			FStructuredArchive& archive)
+		{
+			TOwner* Owner = static_cast<TOwner*>(object);
+			TValue& Value = Owner->*Member;
+
+			archive << TNamedValue<TValue>{ property.JsonKey, Value };
 		};
 
 	return Property;

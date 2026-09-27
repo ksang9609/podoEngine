@@ -3,38 +3,39 @@
 static FBoundingBox calculateBounds(const TArray<FNormalVertex> vertices);
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UStaticMeshComponent, UMeshComponent);
+IMPLEMENT_SERIALIZATION(UStaticMeshComponent, UMeshComponent, {});
 
-void UStaticMeshComponent::SerializeClass(json::JSON& outJson) const
-{
-	UMeshComponent::SerializeClass(outJson);
-	for (const FPropertyInfo& property : ClassInfo.DeclaredProperties)
-	{
-		property.Serialize(property, this, outJson["Properties"]);
-	}
-}
+//void UStaticMeshComponent::SerializeClass(json::JSON& outJson) const
+//{
+//	UMeshComponent::SerializeClass(outJson);
+//	for (const FPropertyInfo& property : ClassInfo.DeclaredProperties)
+//	{
+//		property.Serialize(property, this, outJson["Properties"]);
+//	}
+//}
+//
+//void UStaticMeshComponent::DeserializeClass(const json::JSON& inJson)
+//{
+//	UMeshComponent::DeserializeClass(inJson);
+//	const json::JSON& properties = inJson.at("Properties");
+//
+//	for (const FPropertyInfo& property : ClassInfo.DeclaredProperties)
+//	{
+//		// Older scene files do not contain the static mesh asset key.
+//		if (!properties.hasKey(property.JsonKey))
+//		{
+//			continue;
+//		}
+//
+//		property.Deserialize(property, this, properties);
+//	}
+//}
 
-void UStaticMeshComponent::DeserializeClass(const json::JSON& inJson)
-{
-	UMeshComponent::DeserializeClass(inJson);
-	const json::JSON& properties = inJson.at("Properties");
-
-	for (const FPropertyInfo& property : ClassInfo.DeclaredProperties)
-	{
-		// Older scene files do not contain the static mesh asset key.
-		if (!properties.hasKey(property.JsonKey))
-		{
-			continue;
-		}
-
-		property.Deserialize(property, this, properties);
-	}
-}
-
-void UStaticMeshComponent::PostDeserialize()
-{
-	UMeshComponent::PostDeserialize();
-	mStaticMeshRef = nullptr;
-}
+//void UStaticMeshComponent::PostDeserialize()
+//{
+//	UMeshComponent::PostDeserialize();
+//	mStaticMeshRef = nullptr;
+//}
 
 void UStaticMeshComponent::Initialize(
 	FVector location,

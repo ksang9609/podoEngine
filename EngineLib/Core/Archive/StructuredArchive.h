@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include "Core/Archive/Archive.h"
 #include "Core/Container/TArray.h"
 
@@ -105,6 +107,37 @@ FStructuredArchive& operator<<(FStructuredArchive& archive, TNamedValue<T> named
 
 	namedValue.Value.Serialize(archive);
 	archive.EndObject();
+
+	return archive;
+}
+
+// For enum types
+template<typename T>
+	requires std::is_enum_v<T>&&
+	requires(
+FStructuredArchive& ar,
+TNamedValue<std::underlying_type_t<T>> item) { ar << item; }
+FStructuredArchive& operator<<(
+	FStructuredArchive& archive,
+	TNamedValue<T> item)
+{
+	if (archive.HasError())
+	{
+		return archive;
+	}
+
+	using Underlying = std::underlying_type_t<T>;
+
+	Underlying value = archive.IsSaving()
+		? static_cast<Underlying>(item.Value)
+		: Underlying{};
+
+	archive << TNamedValue<Underlying>{ item.Name, value };
+
+	if (archive.IsLoading() && !archive.HasError())
+	{
+		item.Value = static_cast<T>(value);
+	}
 
 	return archive;
 }
