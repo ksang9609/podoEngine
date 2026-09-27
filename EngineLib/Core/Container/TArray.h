@@ -40,6 +40,7 @@ public:
 
 	uint32 Add(const T& data);
 	uint32 Add(T&& data);
+	T&& Pop();
 	uint32 Emplace(const T& data);
 	uint32 Insert(const T& data, uint32 index);
 	void Reserve(uint32 Number);
@@ -181,6 +182,15 @@ inline uint32 TArray<T>::Add(T&& data)
 	mDatas.push_back(std::move(data));
 
 	return static_cast<uint32>(mDatas.size() - 1);
+}
+
+template<typename T>
+inline T&& TArray<T>::Pop()
+{
+	assert(mDatas.empty() == false);
+	T&& lastElement = std::move(mDatas.back());
+	mDatas.pop_back();
+	return std::move(lastElement);
 }
 
 template<typename T>
