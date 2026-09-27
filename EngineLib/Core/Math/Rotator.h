@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include <cmath>
+
+#include "Core/Archive/StructuredArchive.h"
+
 #include "Vector.h"
 #include "MathUtility.h"
 
@@ -63,5 +66,12 @@ struct FRotator
 		FQuat qz = { 0, 0, std::sin(halfYaw), std::cos(halfYaw) };
 
 		return qz * qy * qx;
+	}
+
+	void Serialize(FStructuredArchive& archive)
+	{
+		archive << TNamedValue{ "Pitch", Pitch };
+		archive << TNamedValue{ "Yaw", Yaw };
+		archive << TNamedValue{ "Roll", Roll };
 	}
 };

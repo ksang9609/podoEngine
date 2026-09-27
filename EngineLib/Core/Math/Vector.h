@@ -1,4 +1,7 @@
 ﻿#pragma once
+
+#include "Core/Archive/StructuredArchive.h"
+
 #include "MathUtility.h"
 
 typedef struct FVector
@@ -38,6 +41,8 @@ typedef struct FVector
 	static FVector Up();		// z-axis
 	static FVector Right();		// y-axis
 	static FVector Forward();	// x-axis
+
+	void Serialize(FStructuredArchive& archive);
 } FVector3;
 
 const FVector operator*(const FVector& v, float f);
@@ -61,6 +66,8 @@ typedef struct FVector4
 	//4차원에는 외적이 없다.
 
 	float Length() const;
+
+	void Serialize(FStructuredArchive& archive);
 
 } FVector4;
 
@@ -86,6 +93,8 @@ struct FVector2
 
 	float Length() const;
 	float LengthSquared() const;
+
+	void Serialize(FStructuredArchive& archive);
 };
 
 

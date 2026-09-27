@@ -53,6 +53,24 @@ FStructuredArchive& operator<<(FStructuredArchive& archive, TNamedValue<T> named
 	return archive;
 }
 
+// For Pointer types
+template<typename T>
+	requires requires(FStructuredArchive& archive, TNamedValue<T*> item) { archive << TNamedValue<T>{ item.Name, * item.Value }; }
+FStructuredArchive& operator<<(FStructuredArchive& archive, TNamedValue<T*> namedValue)
+{
+	if (archive.HasError())
+	{
+		return archive;
+	}
+	if (namedValue.Value == nullptr)
+	{
+		archive.SetError();
+		return archive;
+	}
+	archive << TNamedValue<T>{ namedValue.Name, * namedValue.Value };
+	return archive;
+}
+
 // For custom types that implement a Serialize method
 template<typename T>
 	requires requires(T& value, FStructuredArchive& archive) { value.Serialize(archive); }

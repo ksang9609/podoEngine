@@ -18,6 +18,7 @@ public:
 
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
+	//virtual void Serialize(FStructuredArchive& archive) override;
 
 	void AddActor(std::unique_ptr<AActor> actor);
 	bool RemoveActor(uint32 componentUUID);

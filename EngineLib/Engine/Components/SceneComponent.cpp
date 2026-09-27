@@ -63,6 +63,29 @@ void USceneComponent::DeserializeClass(const json::JSON& inJson)
 	updateComponentToWorld();
 }
 
+void USceneComponent::Serialize(FStructuredArchive& archive)
+{
+	UActorComponent::Serialize(archive);
+
+	int32 parentUUID = -1;
+
+	archive << TNamedValue{ "RelativeLocation", mRelativeLocation };
+	archive << TNamedValue{ "RelativeRotation", mRelativeRotation };
+	archive << TNamedValue{ "RelativeScale3D", mRelativeScale3D };
+
+	if (archive.IsSaving())
+	{
+		parentUUID = mParent != nullptr ? mParent->UUID : -1;
+	}
+
+	archive << TNamedValue<int32>{ "ParentUUID", parentUUID };
+
+	if (archive.IsLoading())
+	{
+		mSerializedParentUUID = parentUUID;
+	}
+}
+
 // Attach this component to a parent scene component
 bool USceneComponent::AttachTo(USceneComponent& parent)
 {

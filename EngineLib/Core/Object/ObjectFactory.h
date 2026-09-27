@@ -58,6 +58,10 @@ struct FObjectFactory
 		requires std::derived_from<TObject, UObject>
 	static TObject* LoadObject(FStructuredArchive& archive);
 
+	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
+	static TArray<TObject*> LoadObjects(FStructuredArchive& archive);
+
 	static const FClassInfo* GetClassInfoByName(const FString& className);
 
 	static bool RegisterClassInfo(FString className, const FClassInfo* classInfo);

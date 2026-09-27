@@ -11,6 +11,8 @@ public:
 	UActorComponent();
 	virtual ~UActorComponent();
 
+	//virtual void Serialize(FStructuredArchive& archive) override;
+
 	void SetOwner(AActor* owner);
 	void ClearOwner();
 	AActor* GetOwner() const;
