@@ -122,7 +122,7 @@ bool FJsonWriter::EndObject()
 	return true;
 }
 
-void FJsonWriter::SaveToFile(const FString& filePath)
+void FJsonWriter::SaveToFile(std::string_view filePath)
 {
 	if (HasError() || mJsonStack.Num() != 1)
 	{

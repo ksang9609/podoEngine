@@ -217,4 +217,16 @@ public:
 
 	//감속 계수(1/초). 클수록 빨리 멈춘다
 	float Damping = 6.f;
+
+	void Serialize(FStructuredArchive& archive)
+	{
+		archive << TNamedValue{ "Location", Location };
+		archive << TNamedValue{ "Rotation", Rotation };
+		archive << TNamedValue{ "Sensitivity", Sensitivity };
+		archive << TNamedValue{ "FovDegree", mFovDegree };
+		archive << TNamedValue{ "OrthoDistance", mOrthoDistance };
+		archive << TNamedValue{ "NearZ", mNearZ };
+		archive << TNamedValue{ "FarZ", mFarZ };
+		archive << TNamedValue{ "OrthoHeight", mOrthoHeight };
+	}
 };

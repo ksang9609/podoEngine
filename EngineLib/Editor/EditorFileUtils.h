@@ -23,11 +23,11 @@ public:
 	//static UWorld* LoadScene();
 	static FLoadedScene LoadScene(); // 카메라까지 호출하기 위함
 
-	static bool SaveScene(const UWorld* world, FCamera* perspectiveCamera);
-	static bool SaveSceneAs(const UWorld* world, FCamera* perspectiveCamera);
+	static bool SaveScene(UWorld* world, FCamera* perspectiveCamera);
+	static bool SaveSceneAs(UWorld* world, FCamera* perspectiveCamera);
 	
 private:
-	static bool saveSceneToPath(const UWorld* world, const FString& filePath, FCamera* perspectiveCamera);
+	static bool saveSceneToPath(UWorld* world, const FString& filePath, FCamera* perspectiveCamera);
 	static FString openSaveSceneDialog();
 	static FString openLoadSceneDialog();
 

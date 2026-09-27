@@ -7,6 +7,8 @@
 #include "Engine/EngineStatics.h"
 #include "Engine/World.h"
 #include "Engine/Serialization/JsonArchive.h"
+#include "Engine/Serialization/JsonWriter.h"
+#include "Engine/Serialization/JsonReader.h"
 
 #include <filesystem>
 #include <Windows.h>
@@ -14,7 +16,7 @@
 
 FString FEditorFileUtils::mCurrentScenePath = "";
 
-bool FEditorFileUtils::SaveScene(const UWorld* world, FCamera* perspectiveCamera)
+bool FEditorFileUtils::SaveScene(UWorld* world, FCamera* perspectiveCamera)
 {
 	if (!world)
 	{
@@ -38,7 +40,7 @@ bool FEditorFileUtils::SaveScene(const UWorld* world, FCamera* perspectiveCamera
 	return true;
 }
 
-bool FEditorFileUtils::SaveSceneAs(const UWorld* world, FCamera* perspectiveCamera)
+bool FEditorFileUtils::SaveSceneAs(UWorld* world, FCamera* perspectiveCamera)
 {
 	if (!world)
 	{
@@ -70,25 +72,24 @@ bool FEditorFileUtils::SaveSceneAs(const UWorld* world, FCamera* perspectiveCame
 	return true;
 }
 
-bool FEditorFileUtils::saveSceneToPath(const UWorld* world, const FString& filePath, FCamera* perspectiveCamera)
+bool FEditorFileUtils::saveSceneToPath(UWorld* world, const FString& filePath, FCamera* perspectiveCamera)
 {
-	try
+	FJsonWriter jsonWriter(filePath.CStr());
+
+	// Serialize the world and camera to JSON
+	uint32 nextUUID = UEngineStatics::GetNextUUID();
+	jsonWriter << TNamedValue{ "NextUUID", nextUUID };
+	jsonWriter << TNamedValue{ "World", world };
+	jsonWriter << TNamedValue{ "PerspectiveCamera", perspectiveCamera };
+
+	if (jsonWriter.HasError())
 	{
-		json::JSON sceneJson = FJsonArchive::SerializeWorld(*world, perspectiveCamera);
-		//FString sceneJsonText(sceneJson.dump()); // 한줄로 저장
-		FString sceneJsonText(sceneJson.dump(1, "  "));
-
-		std::filesystem::path scenePath(filePath.CStr());
-
-		FFileManager fileManager(scenePath.parent_path().string());
-
-		fileManager.WriteStringToFile(scenePath.filename().string(), sceneJsonText);
-	}
-	catch (const std::exception& e)
-	{
-		UE_LOG_F(Error, Core, "Scene write failed: {}", e.what());
+		UE_LOG_F(Error, Core, "Scene write failed: Error during serialization");
+		assert(false);
 		return false;
 	}
+
+	jsonWriter.SaveToFile(filePath.CStr());
 
 	return true;
 }
@@ -108,41 +109,52 @@ FLoadedScene FEditorFileUtils::LoadScene()
 	std::filesystem::path normalizedPath = std::filesystem::absolute(filePath.CStr()).lexically_normal();
 	FString normalizedScenePath(normalizedPath.string());
 
-	try
+	FJsonReader jsonReader(normalizedPath.string());
+
+	uint32 nextUUID = 0;
+	jsonReader << TNamedValue{ "NextUUID", nextUUID };
+	if (jsonReader.HasError())
 	{
-		FFileManager fileManager(normalizedPath.parent_path().string());
-
-		FString sceneJsonText = fileManager.ReadFileToString(normalizedPath.filename().string());
-
-		json::JSON sceneJson = json::JSON::Load(sceneJsonText);
-		
-		FCamera camera;
-
-		if (FJsonArchive::DeserializePerspectiveCamera(sceneJson,camera))
-		{
-			result.PerspectiveCamera = camera;
-		}
-
-		result.World = FJsonArchive::DeserializeWorld(sceneJson);
-
-		if (!result.World)
-		{
-			UE_LOG_F(Error, Core, "LoadScene failed: World creation failed");
-			return {};
-		}
-
-		mCurrentScenePath = normalizedScenePath;
-
-		UE_LOG_F(Log, Core, "Scene loaded: {}", mCurrentScenePath);
-
-		return result;
-	}
-	catch (const std::exception& e)
-	{
-		UE_LOG_F(Error, Core, "LoadScene failed: {} - {}", e.what(), mCurrentScenePath);
-
+		UE_LOG_F(Error, Core, "LoadScene failed: NextUUID not found in the scene file");
+		assert(false);
 		return {};
 	}
+
+	if (!jsonReader.BeginObject("World"))
+	{
+		UE_LOG_F(Error, Core, "LoadScene failed: World object not found in the scene file");
+		assert(false);
+		return {};
+	}
+	UWorld* loadedWorld = FObjectFactory::LoadObject<UWorld>(jsonReader);
+
+	jsonReader.EndObject();
+	if (jsonReader.HasError() || !loadedWorld)
+	{
+		UE_LOG_F(Error, Core, "LoadScene failed: World creation failed");
+		assert(false);
+		delete loadedWorld;
+		return {};
+	}
+
+	result.World = loadedWorld;
+
+	FCamera camera;
+	jsonReader << TNamedValue{ "PerspectiveCamera", camera };
+
+	if (jsonReader.HasError())
+	{
+		UE_LOG_F(Log, Core, "LoadScene: No PerspectiveCamera found in the scene file");
+		assert(false);
+		delete loadedWorld;
+		return {};
+	}
+
+	UEngineStatics::SetNextUUID(nextUUID);
+	result.PerspectiveCamera = std::move(camera);
+
+	return result;
+
 }
 
 FString FEditorFileUtils::openSaveSceneDialog()

@@ -31,7 +31,7 @@ public:
 	virtual bool Field(TNamedValue<FString> value) override;
 	virtual bool EndObject() override;
 
-	void SaveToFile(const FString& filePath);
+	void SaveToFile(std::string_view filePath);
 
 private:
 	FFileManager mFileManager;
