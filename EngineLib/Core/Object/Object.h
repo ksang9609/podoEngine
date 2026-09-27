@@ -110,7 +110,10 @@ public:
 	inline const FClassInfo* GetRuntimeClass() const { return mClassInfo; }
 
 	// TODO?: Replace json type with a more generic type, such as a variant or a map
+	[[deprecated("Use Serialize(FStructuredArchive&) instead. Legacy clipboard only.")]]
 	virtual void SerializeClass(json::JSON& outJson) const;
+
+	[[deprecated("Use Serialize(FStructuredArchive&) instead. Legacy clipboard only.")]]
 	virtual void DeserializeClass(const json::JSON& inJson);
 
 	virtual void Serialize(FStructuredArchive& archive);
