@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Core/Archive/Archive.h"
+#include "Core/Container/TArray.h"
 
 template<typename T>
 struct TNamedValue
@@ -70,5 +71,45 @@ FStructuredArchive& operator<<(FStructuredArchive& archive, TNamedValue<T> named
 	namedValue.Value.Serialize(archive);
 	archive.EndObject();
 
+	return archive;
+}
+
+// For TArray types
+template<typename T>
+	requires requires(FStructuredArchive& archive, TNamedValue<T> element) { archive << element; }
+FStructuredArchive& operator<<(FStructuredArchive& archive, TNamedValue<TArray<T>> item)
+{
+	if (archive.HasError() || !archive.BeginObject(item.Name))
+	{
+		return archive;
+	}
+
+	int32 count = archive.IsSaving() ? item.Value.Num() : 0;
+	archive << TNamedValue<int32>{ "Count", count };
+
+	if (archive.HasError())
+	{
+		archive.EndObject();
+		return archive;
+	}
+	if (count < 0)
+	{
+		archive.SetError();
+		archive.EndObject();
+		return archive;
+	}
+
+	if (archive.IsLoading())
+	{
+		item.Value.SetNum(count);
+	}
+
+	for (int32 i = 0; i < count && !archive.HasError(); ++i)
+	{
+		const FString key = FString(std::to_string(i));
+		archive << TNamedValue<T>{ key.CStr(), item.Value[i] };
+	}
+
+	archive.EndObject();
 	return archive;
 }
