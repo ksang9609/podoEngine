@@ -3,6 +3,7 @@
 #include "Core/Object/ObjectFactory.h"
 #include "Core/IO/FileManager.h"
 #include "Editor/Console.h"
+#include "Editor/SceneConverter.h"
 
 #include "Engine/EngineStatics.h"
 #include "Engine/World.h"
@@ -156,6 +157,28 @@ FLoadedScene FEditorFileUtils::LoadScene()
 
 }
 
+bool FEditorFileUtils::ConvertLegacySceneToNewFormat()
+{
+	FString filePath = openLegacySceneDialog();
+	if (filePath.IsEmpty())
+	{
+		UE_LOG_F(Log, Core, "ConvertLegacySceneToNewFormat canceled");
+		return false;
+	}
+	std::filesystem::path normalizedPath = std::filesystem::absolute(filePath.CStr()).lexically_normal();
+	FString normalizedScenePath(normalizedPath.string());
+	FString newFilePath = normalizedScenePath.Replace(std::string_view(".scene"), std::string_view("_converted.Scene"));
+
+	std::string errorMessage;
+
+	if (!FSceneConverter::ConvertFile(normalizedScenePath.CStr(), newFilePath.CStr(), errorMessage))
+	{
+		UE_LOG_F(Error, Core, "ConvertLegacySceneToNewFormat failed: Conversion failed: {}", errorMessage.c_str());
+		return false;
+	}
+	return true;
+}
+
 FString FEditorFileUtils::openSaveSceneDialog()
 {
 	char filePath[MAX_PATH] = {};
@@ -204,6 +227,31 @@ FString FEditorFileUtils::openLoadSceneDialog()
 
 
 	// FileName 반환
+	if (!GetOpenFileNameA(&openFileName))
+	{
+		return FString("");
+	}
+
+	return FString(filePath);
+}
+
+FString FEditorFileUtils::openLegacySceneDialog()
+{
+	char filePath[MAX_PATH] = {};
+	// OPENFILENAME 설정
+	OPENFILENAMEA openFileName = {};
+	openFileName.lStructSize = sizeof(OPENFILENAMEA);
+	openFileName.hwndOwner = nullptr;
+	openFileName.lpstrFile = filePath;
+	openFileName.nMaxFile = MAX_PATH;
+
+	openFileName.lpstrFilter = "Legacy Scene Files (*.scene)\0*.scene\0" "All Files (*.*)\0*.*\0";
+	openFileName.lpstrDefExt = "scene";
+	openFileName.lpstrInitialDir = "SceneData/";
+	openFileName.nFilterIndex = 1;
+
+	openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
 	if (!GetOpenFileNameA(&openFileName))
 	{
 		return FString("");

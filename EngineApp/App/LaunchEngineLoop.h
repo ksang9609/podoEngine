@@ -58,6 +58,7 @@ private:
 	void processEditorCommand(const FSaveSceneAsCommand& command);
 	void processEditorCommand(const FLoadSceneCommand& command);
 	void processEditorCommand(const FLoadObjCommand& command);
+	void processEditorCommand(const FConvertLegacySceneToNewFormatCommand& command);
 
 	void processEditorCommand(const FSpawnActorCommand& command);
 	void processEditorCommand(const FSpawnStaticMeshActorCommand& command);

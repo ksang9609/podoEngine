@@ -222,11 +222,8 @@ public:
 	{
 		archive << TNamedValue{ "Location", Location };
 		archive << TNamedValue{ "Rotation", Rotation };
-		archive << TNamedValue{ "Sensitivity", Sensitivity };
 		archive << TNamedValue{ "FovDegree", mFovDegree };
-		archive << TNamedValue{ "OrthoDistance", mOrthoDistance };
 		archive << TNamedValue{ "NearZ", mNearZ };
 		archive << TNamedValue{ "FarZ", mFarZ };
-		archive << TNamedValue{ "OrthoHeight", mOrthoHeight };
 	}
 };
