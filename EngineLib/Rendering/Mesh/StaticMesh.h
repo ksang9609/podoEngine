@@ -11,6 +11,7 @@
 #include "Material.h"
 
 class UMaterial;
+struct FBuffer;
 
 struct FStaticMeshSection
 {
@@ -30,6 +31,9 @@ struct FStaticMeshLOD
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
 	TArray<FStaticMeshSection> Sections;
+
+	FName BufferKey;
+	mutable const FBuffer* CachedBuffer = nullptr;
 
 	float ScreenSize = 0.5f;
 };

@@ -828,7 +828,7 @@ void URenderer::RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
 
 	if (indexBuffer)
 	{
-		mDeviceContext->DrawIndexed(indexCount, startIndex, 0);
+		mDeviceContext->DrawIndexed(indexCount, startIndex, 0);		
 	}
 	else
 	{

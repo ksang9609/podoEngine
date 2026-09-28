@@ -331,11 +331,14 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 
 		int32 targetLodIndex = calculateMeshLODIndex(renderInfo, view, renderInfo->StaticMesh);
 
-		FName lodBufferKey = (targetLodIndex == 0)
-			? renderInfo->MeshName
-			: FName(FName(std::format("{}_LOD{}", renderInfo->MeshName.ToString(), targetLodIndex)));
+		FName lodBufferKey;		 
+		const FBuffer* buffer = renderInfo->StaticMesh->LODs[targetLodIndex].CachedBuffer;
+		if (!buffer)
+		{
+			buffer = resources.FindImmutableBufferOrAdd(renderInfo->StaticMesh->LODs[targetLodIndex].BufferKey);
+			renderInfo->StaticMesh->LODs[targetLodIndex].CachedBuffer = buffer;
+		}
 
-		const FBuffer* buffer = resources.FindImmutableBufferOrAdd(lodBufferKey);
 		if (buffer == nullptr)
 		{
 			UE_LOG(Error, Render, "Static mesh buffer not found.");

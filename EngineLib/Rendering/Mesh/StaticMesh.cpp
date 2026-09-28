@@ -33,11 +33,20 @@ const FName& UStaticMesh::GetAssetPathFileName() const
 void UStaticMesh::SetStaticMeshAsset(FStaticMesh* inStaticMesh)
 {
 	mStaticMeshAsset.reset(inStaticMesh);
+	if (mStaticMeshAsset && mStaticMeshAsset->LODs.Num() > 0 && mStaticMeshAsset->LODs[0].BufferKey.IsNone())
+	{
+		mStaticMeshAsset->LODs[0].BufferKey = mStaticMeshAsset->PathFileName;
+	}
+
 }
 
 void UStaticMesh::SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh)
 {
 	mStaticMeshAsset = std::move(inStaticMesh);
+	if (mStaticMeshAsset && mStaticMeshAsset->LODs.Num() > 0 && mStaticMeshAsset->LODs[0].BufferKey.IsNone())
+	{
+		mStaticMeshAsset->LODs[0].BufferKey = mStaticMeshAsset->PathFileName;
+	}
 }
 
 const FStaticMesh* UStaticMesh::GetStaticMeshAsset() const
@@ -120,6 +129,8 @@ bool UStaticMesh::GenerateLOD(float reductionRatio, float screenSize)
 		currentIndexOffset += static_cast<uint32>(newIndexCount);
 	}
 
+	FName lodKey = FName(std::format("{}_LOD{}", mStaticMeshAsset->PathFileName.ToString(), mStaticMeshAsset->LODs.Num()));
+	newLOD.BufferKey = lodKey;
 	mStaticMeshAsset->LODs.Add(std::move(newLOD));
 
 	return true;
