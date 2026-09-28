@@ -4,7 +4,7 @@
 #include "Rotator.h"
 #include "Core/enum.h"
 
-struct  FMatrix { 
+struct alignas(16) FMatrix {
 	float M[4][4];
 
 	static const FMatrix Identity;
