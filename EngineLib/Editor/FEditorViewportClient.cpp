@@ -187,11 +187,11 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 
 		if (RI.StaticMesh)
 		{
-			for (const auto& vertex : RI.StaticMesh->Vertices)
+			for (const auto& vertex : RI.StaticMesh->LODs[0].Vertices)
 			{
 				vertexArray.Add(vertex.pos);
 			}
-			for (const auto& index : RI.StaticMesh->Indices)
+			for (const auto& index : RI.StaticMesh->LODs[0].Indices)
 			{
 				indexArray.Add(index);
 			}

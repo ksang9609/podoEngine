@@ -411,17 +411,18 @@ namespace
 
 		constexpr uint64 MaterialSlotMinBytes = StringMinBytes + sizeof(float) * 11 + sizeof(uint8) * 3;
 
-		if (!SerializeMeshBuffer( archive, mesh.Vertices, MaxVertices))
+		// TODO : Serialize all LODs
+		if (!SerializeMeshBuffer(archive, mesh.LODs[0].Vertices, MaxVertices))
 		{
 			return false;
 		}
 
-		if (!SerializeMeshBuffer(archive, mesh.Indices, MaxIndices))
+		if (!SerializeMeshBuffer(archive, mesh.LODs[0].Indices, MaxIndices))
 		{
 			return false;
 		}
 
-		if (!SerializeArray(archive, mesh.Sections, MaxSections, SectionMinBytes, SerializeSection))
+		if (!SerializeArray(archive, mesh.LODs[0].Sections, MaxSections, SectionMinBytes, SerializeSection))
 		{
 			return false;
 		}
@@ -449,23 +450,23 @@ namespace
 
 	bool ValidateBakedData(const FStaticMesh& mesh, const TArray<FMaterialSlot>& materialSlots)
 	{
-		if (mesh.Vertices.IsEmpty() ||
-			mesh.Indices.IsEmpty() ||
-			mesh.Indices.Num() % 3 != 0)
+		if (mesh.LODs[0].Vertices.IsEmpty() ||
+			mesh.LODs[0].Indices.IsEmpty() ||
+			mesh.LODs[0].Indices.Num() % 3 != 0)
 		{
 			return false;
 		}
 
-		for (uint32 index : mesh.Indices)
+		for (uint32 index : mesh.LODs[0].Indices)
 		{
-			if (index >= static_cast<uint32>(mesh.Vertices.Num()))
+			if (index >= static_cast<uint32>(mesh.LODs[0].Vertices.Num()))
 			{
 				return false;
 			}
 		}
 
 		for (const FStaticMeshSection& section :
-			mesh.Sections)
+			mesh.LODs[0].Sections)
 		{
 			if (section.StartIndex < 0 ||
 				section.IndexCount <= 0 ||
@@ -477,7 +478,7 @@ namespace
 			const uint64 sectionEnd =
 				static_cast<uint64>(section.StartIndex) + static_cast<uint64>(section.IndexCount);
 
-			if (sectionEnd > static_cast<uint64>(mesh.Indices.Num()))
+			if (sectionEnd > static_cast<uint64>(mesh.LODs[0].Indices.Num()))
 			{
 				return false;
 			}

@@ -1360,6 +1360,38 @@ void FEditorUIManager::updatePropertyWindowGUI(const FGuiReference& guiReference
 									});
 							}
 
+							// LOD StaticMesh
+							const UStaticMesh* meshAsset = staticMeshComponent->GetStaticMeshAsset();
+							if (meshAsset)
+							{
+								ImGui::Separator();
+								ImGui::TextDisabled("LOD Settings");
+								ImGui::Text("CurrentLOD");
+
+								for (int32 lodIdx = 0; lodIdx < meshAsset->GetLODCount(); ++lodIdx)
+								{
+									const auto& lod = meshAsset->GetLOD(lodIdx);
+									ImGui::BulletText("LOD %d: %d Tris (Screen: %.2f)",
+										lodIdx,
+										lod.Indices.Num() / 3,
+										lod.ScreenSize);
+								}
+
+								static float reductionRate = 0.5f;
+								static float screenSize = 0.15f;
+
+								ImGui::SliderFloat("Target Reduction", &reductionRate, 0.05f, 0.9f);
+								ImGui::SliderFloat("Scree Size", &screenSize, 0.01f, 0.5f);
+
+								if (ImGui::Button("+ Add Next LOD"))
+								{
+									outCommands.Emplace(FGenerateStaticMeshLODCommand{
+										staticMeshComponent->GetStaticMeshAssetKey(),
+										reductionRate,
+										screenSize
+										});
+								}
+							}
 						}
 					}
 					ImGui::EndChild();

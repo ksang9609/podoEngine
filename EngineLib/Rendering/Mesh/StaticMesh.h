@@ -25,18 +25,25 @@ struct FStaticMeshSection
 	int32 GroupIndex = -1; // 해당 머티리얼이 속한 그룹 인덱스 (Obj 파일에서의 그룹)
 };
 
+struct FStaticMeshLOD
+{
+	TArray<FNormalVertex> Vertices;
+	TArray<uint32> Indices;
+	TArray<FStaticMeshSection> Sections;
+
+	float ScreenSize = 0.5f;
+};
+
 // Coocked Data
 struct FStaticMesh
 {
 	FName PathFileName;
 
-	TArray<FNormalVertex> Vertices;
-	TArray<uint32> Indices;
+	TArray<FStaticMeshLOD> LODs;
 
 	// 매시가 제공하는 기본 Material 슬롯
 	//TArray<FMaterialSlot> MaterialSlots;
 
-	TArray<FStaticMeshSection> Sections;
 	TArray<FString> GroupNames;
 };
 
@@ -60,6 +67,14 @@ public:
 	const UMaterial* GetDefaultMaterialOrNull(int32 slotIndex) const;
 
 	const TArray<const UMaterial*>& GetDefaultMaterials() const;
+
+	// LODs functions
+	bool GenerateLOD(float reductionRatio, float screenSize);
+
+	bool RemoveLOD(int32 targetLODIndex);
+
+	int32 GetLODCount() const { return mStaticMeshAsset->LODs.Num(); }
+	FStaticMeshLOD GetLOD(int32 index) const { return mStaticMeshAsset->LODs[index]; }
 
 private:
 	std::unique_ptr<FStaticMesh> mStaticMeshAsset;

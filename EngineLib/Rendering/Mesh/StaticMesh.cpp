@@ -1,4 +1,5 @@
 ﻿#include "StaticMesh.h"
+#include "ThirdParty/Meshoptimizer/meshoptimizer.h"
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UStaticMesh, UObject);
 IMPLEMENT_SERIALIZATION(UStaticMesh, UObject,
@@ -61,4 +62,70 @@ const UMaterial* UStaticMesh::GetDefaultMaterialOrNull(int32 slotIndex) const
 const TArray<const UMaterial*>& UStaticMesh::GetDefaultMaterials() const
 {
 	return mDefaultMaterialRefs;
+}
+
+bool UStaticMesh::GenerateLOD(float reductionRatio, float screenSize)
+{
+	if (!mStaticMeshAsset || mStaticMeshAsset->LODs.IsEmpty())
+	{
+		return false;
+	}
+
+	const FStaticMeshLOD baseLOD = mStaticMeshAsset->LODs[0];
+	float targetError = 0.01f;
+	uint32 currentIndexOffset = 0;
+
+	// Set new LOD
+	FStaticMeshLOD newLOD;
+	newLOD.Vertices = baseLOD.Vertices;
+	newLOD.Indices.Reset(0);
+	newLOD.Sections.Reset(0);
+	newLOD.ScreenSize = screenSize;
+
+	for (const FStaticMeshSection& baseSection : baseLOD.Sections)
+	{
+		if (baseSection.IndexCount == 0)
+		{
+			continue;
+		}
+
+		const uint32* sectionIndices = &baseLOD.Indices[baseSection.StartIndex];
+		size_t targetIndexCount = static_cast<size_t>(baseSection.IndexCount * reductionRatio);
+
+		// Make simplified LOD
+		std::vector<uint32_t> simplifiedIndices(static_cast<uint32>(baseSection.IndexCount));			
+		size_t newIndexCount = meshopt_simplify(
+			simplifiedIndices.data(),
+			sectionIndices,
+			static_cast<size_t>(baseSection.IndexCount),
+			&baseLOD.Vertices[0].pos.x,
+			baseLOD.Vertices.Num(),
+			sizeof(FNormalVertex),
+			targetIndexCount,
+			targetError
+		);
+		simplifiedIndices.resize(newIndexCount);
+
+		// New section data
+		FStaticMeshSection newSection = baseSection;
+		newSection.StartIndex = static_cast<int32>(currentIndexOffset);
+		newSection.IndexCount = static_cast<int32>(newIndexCount);
+		newLOD.Sections.Add(newSection);
+
+		for (uint32_t idx : simplifiedIndices)
+		{
+			newLOD.Indices.Add(idx);
+		}
+
+		currentIndexOffset += static_cast<uint32>(newIndexCount);
+	}
+
+	mStaticMeshAsset->LODs.Add(std::move(newLOD));
+
+	return true;
+}
+
+bool UStaticMesh::RemoveLOD(int32 targetLODIndex)
+{
+	return false;
 }

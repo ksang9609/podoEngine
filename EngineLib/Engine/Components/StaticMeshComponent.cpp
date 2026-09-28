@@ -56,7 +56,7 @@ void UStaticMeshComponent::Initialize(
 
 	if (mStaticMeshRef)
 	{
-		mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);
+		mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->LODs[0].Vertices);
 	}
 	else
 	{
@@ -70,7 +70,7 @@ void UStaticMeshComponent::SetStaticMesh(const UStaticMesh& staticMeshRef)
 	resetMaterialOverrides();
 	mStaticMeshAssetKey = staticMeshRef.GetAssetPathFileName();
 
-	mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);
+	mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->LODs[0].Vertices);
 
 	updateComponentToWorld();
 }

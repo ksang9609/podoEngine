@@ -329,14 +329,20 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 
-		const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
+		int32 targetLodIndex = calculateMeshLODIndex(renderInfo, view, renderInfo->StaticMesh);
+
+		FName lodBufferKey = (targetLodIndex == 0)
+			? renderInfo->MeshName
+			: FName(FName(std::format("{}_LOD{}", renderInfo->MeshName.ToString(), targetLodIndex)));
+
+		const FBuffer* buffer = resources.FindImmutableBufferOrAdd(lodBufferKey);
 		if (buffer == nullptr)
 		{
 			UE_LOG(Error, Render, "Static mesh buffer not found.");
 			continue;
 		}
 		// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
-		if (renderInfo->StaticMesh->Sections.IsEmpty())
+		if (renderInfo->StaticMesh->LODs[targetLodIndex].Sections.IsEmpty())
 		{
 			ID3D11ShaderResourceView* texture = nullptr;
 			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
@@ -364,7 +370,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			continue;
 		}
 		// OBJ 메시: 섹션마다 재질과 텍스처를 선택해서 그린다.
-		for (const FStaticMeshSection& section : renderInfo->StaticMesh->Sections)
+		for (const FStaticMeshSection& section : renderInfo->StaticMesh->LODs[targetLodIndex].Sections)
 		{
 
 			const FMaterial* material = nullptr;
@@ -458,6 +464,45 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 
 	}
 
+}
+
+int32 FGraphicsManager::calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view, const FStaticMesh* staticMesh)
+{
+	if (!staticMesh || staticMesh->LODs.Num() <= 1)
+	{
+		return 0;
+	}
+
+	// ScreenSize = R / (D * tan(FOV / 2)
+
+	// Get distance between camera and object
+	const FVector3 objectPos = renderInfo->GetLocation();
+	const FVector3 cameraPos = view.cameraLocation;
+
+	float distance = (objectPos - cameraPos).Length();
+	if (distance <= 0.0001f)
+	{
+		return 0;
+	}
+
+	// Get Radius from object's bounding box
+	float radius = ((renderInfo->WorldBounds.max - renderInfo->WorldBounds.min) * 0.5f).Length();
+
+	// Get tan(FOV / 2) from Projection matrix[1][1]
+	float projScale = view.projectionMatrix.M[1][1]; // 1 / tan(FOV / 2)
+
+	// Calculate object's screen size
+	float screenSize = (radius * projScale) / distance;
+
+	for (int32 i = 0; i < staticMesh->LODs.Num(); ++i)
+	{
+		if (screenSize >= staticMesh->LODs[i].ScreenSize)
+		{
+			return i;
+		}
+	}
+
+	return staticMesh->LODs.Num() - 1;
 }
 
 void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
