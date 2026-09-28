@@ -1,4 +1,4 @@
-#include "SceneConverter.h"
+﻿#include "SceneConverter.h"
 
 #include "ThirdParty/nlohmann/json.hpp"
 #include <algorithm>
@@ -46,7 +46,7 @@ namespace
 		CheckArray(value, 3);
 		constexpr double Degrees = 180.0 / 3.14159265358979323846;
 		Json result = {{"Roll", value[0].get<double>() * Degrees},
-			{"Pitch", value[1].get<double>() * Degrees}, {"Yaw", value[2].get<double>() * Degrees}};
+			{"Pitch", value[1].get<double>() * -Degrees}, {"Yaw", value[2].get<double>() * Degrees}};
 		for (const auto& angle : result)
 			if (std::abs(angle.get<double>()) > std::numeric_limits<float>::max())
 				throw std::runtime_error("Rotation exceeds float range");
