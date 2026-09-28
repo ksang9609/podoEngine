@@ -822,6 +822,10 @@ void FEditorUIManager::drawMainMenuBar(FEditorCommands& outCommands)
 			{
 				outCommands.Emplace(FSaveSceneAsCommand{ FString(mGuiInputField.SceneName) });
 			}
+			if (ImGui::MenuItem("Import Legacy Scene..."))
+			{
+				outCommands.Emplace(FConvertLegacySceneToNewFormatCommand{});
+			}
 
 
 			ImGui::EndMenu();

@@ -25,6 +25,7 @@ struct FSaveSceneCommand { FString SceneName; };
 struct FSaveSceneAsCommand { FString SceneName; };
 struct FLoadSceneCommand { FString SceneName; };
 struct FLoadObjCommand { FString ObjFilePath; };
+struct FConvertLegacySceneToNewFormatCommand {};
 
 struct FSpawnActorCommand { EPrimitive PrimitiveType; int32 SpawnCount; };
 struct FSpawnStaticMeshActorCommand { FName StaticMeshKey; int32 SpawnCount; };
@@ -80,6 +81,7 @@ using FEditorCommand = std::variant <
 	FSaveSceneAsCommand,
 	FLoadSceneCommand,
 	FLoadObjCommand,
+	FConvertLegacySceneToNewFormatCommand,
 
 	FSpawnActorCommand,
 	FDeleteActorCommand,

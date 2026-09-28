@@ -528,6 +528,19 @@ void FEngineLoop::processEditorCommand(const FLoadObjCommand& command)
 	}
 }
 
+void FEngineLoop::processEditorCommand(const FConvertLegacySceneToNewFormatCommand& command)
+{
+	try
+	{
+		FEditorFileUtils::ConvertLegacySceneToNewFormat();
+		UE_LOG(Log, Editor, "Legacy scene converted");
+	}
+	catch (const std::exception& exception)
+	{
+		UE_LOG(Error, Editor, "Failed to convert legacy scene: %s", exception.what());
+	}
+}
+
 void FEngineLoop::processEditorCommand(const FSpawnActorCommand& command)
 {
 	//for (int32 i = 0; i < command.SpawnCount; ++i)
