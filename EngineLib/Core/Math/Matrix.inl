@@ -1,13 +1,13 @@
-﻿#include "Matrix.h"
+﻿#pragma once
 
-FMatrix FMatrix::makeIdentity()
+inline FMatrix FMatrix::makeIdentity()
 {
 	FMatrix R = {};
 	R.M[0][0] = R.M[1][1] = R.M[2][2] = R.M[3][3] = 1.0f;
 	return R;
 }
 
-FMatrix FMatrix::operator* (const FMatrix& Other) const
+inline FMatrix FMatrix::operator* (const FMatrix& Other) const
 {
 	FMatrix result = {};
 
@@ -21,8 +21,8 @@ FMatrix FMatrix::operator* (const FMatrix& Other) const
 	return result;
 }
 
-FMatrix FMatrix::operator*(float Scalar) const
-{ 
+inline FMatrix FMatrix::operator*(float Scalar) const
+{
 	FMatrix result;
 	for (int row = 0; row < 4; ++row) {
 		for (int col = 0; col < 4; ++col) {
@@ -33,8 +33,8 @@ FMatrix FMatrix::operator*(float Scalar) const
 	return result;
 }
 
-FMatrix FMatrix::operator+ (const FMatrix& Other) const
-{ 
+inline FMatrix FMatrix::operator+ (const FMatrix& Other) const
+{
 	FMatrix result = {};
 
 	for (int row = 0; row < 4;++row) {
@@ -45,8 +45,8 @@ FMatrix FMatrix::operator+ (const FMatrix& Other) const
 	return result;
 }
 
-FMatrix FMatrix::operator- (const FMatrix& Other) const
-{ 
+inline FMatrix FMatrix::operator- (const FMatrix& Other) const
+{
 	FMatrix result = {};
 
 	for (int row = 0; row < 4;++row) {
@@ -57,7 +57,7 @@ FMatrix FMatrix::operator- (const FMatrix& Other) const
 	return result;
 }
 
-FMatrix FMatrix::operator+(float f) const
+inline FMatrix FMatrix::operator+(float f) const
 {
 	FMatrix result = {};
 	for (int row = 0; row < 4; ++row) {
@@ -68,9 +68,9 @@ FMatrix FMatrix::operator+(float f) const
 	return result;
 }
 
-FMatrix FMatrix::operator-(float f) const
-{ 
-	FMatrix result={};
+inline FMatrix FMatrix::operator-(float f) const
+{
+	FMatrix result = {};
 	for (int row = 0; row < 4; ++row) {
 		for (int col = 0; col < 4; ++col) {
 			result.M[row][col] = M[row][col] - f;
@@ -79,7 +79,7 @@ FMatrix FMatrix::operator-(float f) const
 	return result;
 }
 
-bool FMatrix::operator==(const FMatrix& m) const
+inline bool FMatrix::operator==(const FMatrix& m) const
 {
 	for (int row = 0; row < 4; ++row) {
 		for (int col = 0; col < 4; ++col) {
@@ -91,12 +91,12 @@ bool FMatrix::operator==(const FMatrix& m) const
 	return true;
 }
 
-bool FMatrix::operator!=(const FMatrix& m) const
+inline bool FMatrix::operator!=(const FMatrix& m) const
 {
 	return !(*this == m);
 }
 
-bool FMatrix::Equals(const FMatrix& m, float Tolerance) const
+inline bool FMatrix::Equals(const FMatrix& m, float Tolerance) const
 {
 	for (int row = 0; row < 4; ++row) {
 		for (int col = 0; col < 4; ++col) {
@@ -108,8 +108,8 @@ bool FMatrix::Equals(const FMatrix& m, float Tolerance) const
 	return true;
 }
 
-FMatrix FMatrix::Transpose() const
-{ 
+inline inline FMatrix FMatrix::Transpose() const
+{
 	FMatrix result = {};
 	for (int row = 0; row < 4; ++row) {
 		for (int col = 0; col < 4; ++col) {
@@ -119,7 +119,7 @@ FMatrix FMatrix::Transpose() const
 	return result;
 }
 
-FMatrix FMatrix::Scale(float n)
+inline FMatrix FMatrix::Scale(float n)
 {
 	FMatrix result = Identity;
 	result.M[0][0] = n;
@@ -129,7 +129,7 @@ FMatrix FMatrix::Scale(float n)
 	return result;
 }
 
-FMatrix FMatrix::Scale(const FVector v)
+inline FMatrix FMatrix::Scale(const FVector v)
 {
 	FMatrix result = Identity;
 	result.M[0][0] = v.x;
@@ -139,7 +139,7 @@ FMatrix FMatrix::Scale(const FVector v)
 	return result;
 }
 
-FMatrix FMatrix::RotateX(float degree)
+inline FMatrix FMatrix::RotateX(float degree)
 {
 	FMatrix result = Identity;
 	float s, c;
@@ -153,7 +153,7 @@ FMatrix FMatrix::RotateX(float degree)
 	return result;
 }
 
-FMatrix FMatrix::RotateY(float degree)
+inline FMatrix FMatrix::RotateY(float degree)
 {
 	FMatrix result = Identity;
 	float s, c;
@@ -167,7 +167,7 @@ FMatrix FMatrix::RotateY(float degree)
 	return result;
 }
 
-FMatrix FMatrix::RotateZ(float degree)
+inline FMatrix FMatrix::RotateZ(float degree)
 {
 	FMatrix result = Identity;
 	float s, c;
@@ -185,7 +185,7 @@ FMatrix FMatrix::RotateZ(float degree)
 //	|	1 - 2 (y^2 + z^2)	2xy + 2wz			2xz - 2wy			|
 //	|	2xy - 2wz			1 - 2 (x^2 + z^2)	2yz + 2wx			|
 //	|	2xz + 2wy			2yz - 2wx			1 - 2 (x^2 + y^2)	|
-FMatrix FMatrix::Rotate(const FRotator r)
+inline FMatrix FMatrix::Rotate(const FRotator r)
 {
 	//Pitch, Yaw, Roll의 각각 cossin 구하기
 	FMatrix Matrix = FMatrix::Identity;
@@ -210,7 +210,7 @@ FMatrix FMatrix::Rotate(const FRotator r)
 	return Matrix;
 }
 
-FMatrix FMatrix::Rotate(const FQuat q)
+inline FMatrix FMatrix::Rotate(const FQuat q)
 {
 	FMatrix result = Identity;
 	const float x2 = q.x + q.x;
@@ -238,7 +238,7 @@ FMatrix FMatrix::Rotate(const FQuat q)
 	return result;
 }
 
-FMatrix FMatrix::Translation(const FVector v)
+inline FMatrix FMatrix::Translation(const FVector v)
 {
 	FMatrix result = Identity;
 	result.M[3][0] = v.x;
@@ -248,13 +248,13 @@ FMatrix FMatrix::Translation(const FVector v)
 	return result;
 }
 
-FVector FMatrix::GetUnitAxis(EAxis Axis) const
+inline FVector FMatrix::GetUnitAxis(EAxis Axis) const
 {
 	const int i = static_cast<int>(Axis);
 	return FVector(M[i][0], M[i][1], M[i][2]);
 }
 
-FVector FMatrix::TransformPosition(const FVector& V) const
+inline FVector FMatrix::TransformPosition(const FVector& V) const
 {
 	return FVector(
 		V.x * M[0][0] + V.y * M[1][0] + V.z * M[2][0] + M[3][0],
@@ -262,7 +262,7 @@ FVector FMatrix::TransformPosition(const FVector& V) const
 		V.x * M[0][2] + V.y * M[1][2] + V.z * M[2][2] + M[3][2]);
 }
 
-FVector FMatrix::TransformVector(const FVector& V) const
+inline FVector FMatrix::TransformVector(const FVector& V) const
 {
 	return FVector(
 		V.x * M[0][0] + V.y * M[1][0] + V.z * M[2][0],
@@ -274,11 +274,11 @@ FVector FMatrix::TransformVector(const FVector& V) const
 //   M = | A 0 |        M^-1 = | A^-1     0 |
 //       | t 1 |               | -t*A^-1  1 |
 // Transpose() 와 달리 비균등 스케일에도 동작한다.
-FMatrix FMatrix::Inverse() const
+inline FMatrix FMatrix::Inverse() const
 {
-	const float C00 =  (M[1][1] * M[2][2] - M[1][2] * M[2][1]);
+	const float C00 = (M[1][1] * M[2][2] - M[1][2] * M[2][1]);
 	const float C01 = -(M[1][0] * M[2][2] - M[1][2] * M[2][0]);
-	const float C02 =  (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+	const float C02 = (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
 
 	const float Det = M[0][0] * C00 + M[0][1] * C01 + M[0][2] * C02;
 	if (FMath::Abs(Det) < SMALL_NUMBER)
@@ -287,11 +287,11 @@ FMatrix FMatrix::Inverse() const
 	}
 
 	const float C10 = -(M[0][1] * M[2][2] - M[0][2] * M[2][1]);
-	const float C11 =  (M[0][0] * M[2][2] - M[0][2] * M[2][0]);
+	const float C11 = (M[0][0] * M[2][2] - M[0][2] * M[2][0]);
 	const float C12 = -(M[0][0] * M[2][1] - M[0][1] * M[2][0]);
-	const float C20 =  (M[0][1] * M[1][2] - M[0][2] * M[1][1]);
+	const float C20 = (M[0][1] * M[1][2] - M[0][2] * M[1][1]);
 	const float C21 = -(M[0][0] * M[1][2] - M[0][2] * M[1][0]);
-	const float C22 =  (M[0][0] * M[1][1] - M[0][1] * M[1][0]);
+	const float C22 = (M[0][0] * M[1][1] - M[0][1] * M[1][0]);
 
 	const float Inv = 1.0f / Det;
 
@@ -310,12 +310,12 @@ FMatrix FMatrix::Inverse() const
 	return R;
 }
 
-FVector FMatrix::GetTranslation() const
+inline FVector FMatrix::GetTranslation() const
 {
 	return FVector(M[3][0], M[3][1], M[3][2]);
 }
 
-FVector FMatrix::GetScale() const
+inline FVector FMatrix::GetScale() const
 {
 	float scaleX = std::sqrt(M[0][0] * M[0][0] + M[1][0] * M[1][0] + M[2][0] * M[2][0]);
 	float scaleY = std::sqrt(M[0][1] * M[0][1] + M[1][1] * M[1][1] + M[2][1] * M[2][1]);
@@ -323,21 +323,21 @@ FVector FMatrix::GetScale() const
 	return FVector(scaleX, scaleY, scaleZ);
 }
 
-const FMatrix FMatrix::Identity = { {
+inline const FMatrix FMatrix::Identity = { {
 	{ 1, 0, 0, 0 },
 	{ 0, 1, 0, 0 },
 	{ 0, 0, 1, 0 },
 	{ 0, 0, 0, 1 }
 } };
 
-const FMatrix FMatrix::Zero = { {
+inline const FMatrix FMatrix::Zero = { {
 	{ 0, 0, 0, 0 },
 	{ 0, 0, 0, 0 },
 	{ 0, 0, 0, 0 },
 	{ 0, 0, 0, 0 }
 } };
 
-const FMatrix FMatrix::UEToDX = { {
+inline const FMatrix FMatrix::UEToDX = { {
 	{ 0, 0, 1, 0 },
 	{ 1, 0, 0, 0 },
 	{ 0, 1, 0, 0 },
