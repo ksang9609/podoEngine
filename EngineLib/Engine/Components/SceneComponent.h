@@ -55,15 +55,21 @@ protected:
 	FRotator mRelativeRotation;
 	FVector mRelativeScale3D;
 
-	FMatrix mComponentToWorld;
+	mutable FMatrix mComponentToWorld;
 
 	// References of parent component and child components.
 	// The ownership of child components is managed by the actor, not by the parent component.
 	USceneComponent* mParent = nullptr;
 	TArray<USceneComponent*> mChildren;
 	
-	virtual void updateComponentToWorld(const FMatrix& parentTransform);
-	virtual void updateComponentToWorld();
+	virtual void updateComponentToWorld(const FMatrix& parentTransform) const;
+	virtual void updateComponentToWorld() const;
 	bool isChildOf(const USceneComponent& component) const;
+
+	// Must set when the render info is dirty.
+	// Flag will be reset in UPrimitiveComponent::GetRenderInfos(),
+	// after updateRenderInfo() is called.
+	mutable bool mbRenderInfoDirty = true;
+	mutable bool mbTransformDirty = true;
 };
 

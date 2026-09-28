@@ -66,7 +66,7 @@ UPrimitiveComponent::~UPrimitiveComponent()
 {
 }
 
-void UPrimitiveComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
+void UPrimitiveComponent::Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos)
 {
 	// Todo: Update coordinates here
 	{
@@ -76,11 +76,15 @@ void UPrimitiveComponent::Update(float deltaTime, TArray<FRenderInfo>* outRender
 	GetRenderInfos(outRenderInfos);
 }
 
-void UPrimitiveComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const
+void UPrimitiveComponent::GetRenderInfos(TArray<const FRenderInfo*>& outRenderInfos)
 {
-	assert(outRenderInfos);
-
-	outRenderInfos->Add(makeRenderInfo());
+	// Update the render info only if it is dirty
+	if (mbRenderInfoDirty)
+	{
+		updateRenderInfo();
+		mbRenderInfoDirty = false;
+	}
+	outRenderInfos.Add(&mRenderInfo);
 }
 
 FRenderInfo UPrimitiveComponent::makeRenderInfo() const
@@ -111,6 +115,32 @@ FRenderInfo UPrimitiveComponent::makeRenderInfo() const
 	renderInfo.WorldBounds = TransformBoundingBox(mLocalBounds, renderInfo.WorldTransformMatrix);
 
 	return renderInfo;
+}
+
+void UPrimitiveComponent::updateRenderInfo()
+{
+	ERenderFlags renderFlags =
+		ERenderFlags::RF_Raycastable |
+		ERenderFlags::RF_Primitive;
+
+	if (mbUseTexture)
+	{
+		renderFlags = renderFlags | ERenderFlags::RF_Texture;
+	}
+
+	if (mbShowBoundingBox)
+	{
+		renderFlags = renderFlags | ERenderFlags::RF_BoundingBox;
+	}
+
+	mRenderInfo.WorldTransformMatrix = GetTransformMatrix();
+	mRenderInfo.ObejctID = { mOwner->UUID, mOwner->InternalIndex };
+	mRenderInfo.Color = mColor;
+	mRenderInfo.eRenderFlags = renderFlags;
+	mRenderInfo.Textmesh = nullptr;
+
+	mRenderInfo.LocalBounds = mLocalBounds;
+	mRenderInfo.WorldBounds = TransformBoundingBox(mLocalBounds, mRenderInfo.WorldTransformMatrix);
 }
 
 /*
@@ -196,6 +226,10 @@ FBoundingBox UPrimitiveComponent::GetWorldBounds() const
 	return TransformBoundingBox(mLocalBounds, GetTransformMatrix());
 }
 
+FBoundingBox UPrimitiveComponent::CalculateWorldBounds(const FMatrix& worldTransform) const
+{
+	return TransformBoundingBox(mLocalBounds, worldTransform);
+}
 
 std::span<const FPropertyInfo>
 UPrimitiveComponent::GetDeclaredProperties()

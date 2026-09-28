@@ -20,4 +20,5 @@ protected:
 	// UTexture2D* mTexture;
 
 	virtual FRenderInfo makeRenderInfo() const override;
+	virtual void updateRenderInfo() override;
 };

@@ -19,3 +19,9 @@ FRenderInfo UBillboardComponent::makeRenderInfo() const
 	renderInfo.eRenderFlags = renderInfo.eRenderFlags | ERenderFlags::RF_Billboard;
 	return renderInfo;
 }
+
+void UBillboardComponent::updateRenderInfo()
+{
+	UPrimitiveComponent::updateRenderInfo();
+	mRenderInfo.eRenderFlags = mRenderInfo.eRenderFlags | ERenderFlags::RF_Billboard;
+}

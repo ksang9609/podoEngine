@@ -341,7 +341,7 @@ FQuat AActor::GetRotation() const
 }
 
 
-void AActor::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
+void AActor::Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos)
 {
 	for (UActorComponent* component : mComponents)
 	{
@@ -349,11 +349,9 @@ void AActor::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
 	}
 }
 
-void AActor::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const
+void AActor::GetRenderInfos(TArray<const FRenderInfo*>& outRenderInfos) const
 {
-	assert(outRenderInfos);
-
-	for (const UActorComponent* component : mComponents)
+	for (UActorComponent* component : mComponents)
 	{
 		component->GetRenderInfos(outRenderInfos);
 	}
@@ -361,15 +359,15 @@ void AActor::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const
 
 bool AActor::GetFirstRenderInfo(FRenderInfo& outRenderInfo) const
 {
-	TArray<FRenderInfo> renderInfos;
-	GetRenderInfos(&renderInfos);
+	TArray<const FRenderInfo*> renderInfos;
+	GetRenderInfos(renderInfos);
 
 	if (renderInfos.Num() == 0)
 	{
 		return false;
 	}
 
-	outRenderInfo = renderInfos[0];
+	outRenderInfo = *renderInfos[0];
 
 	return true;
 }

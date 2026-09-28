@@ -421,40 +421,84 @@ FMatrix FGizmo::GetScaleHandleMatrix(EGIZMO_AXIS axis) const
 		* FMatrix::Translation(mLocation);
 }
 
-TArray<FRenderInfo>	FGizmo::GetGizmoRenderInfo() const // Gizmo 모형 렌더정보
+TArray<const FRenderInfo*>	FGizmo::GetGizmoRenderInfo() const // Gizmo 모형 렌더정보
 {
-	TArray<FRenderInfo> renderInfos;
+	TArray<const FRenderInfo*> renderInfos;
 
 	if (!mbVisible) return renderInfos;
+
+	static TArray<FRenderInfo> scaleGizmoInfos;
+	static TArray<FRenderInfo> rotateGizmoInfos;
+	static TArray<FRenderInfo> translateGizmoInfos;
+
 	const EGIZMO_AXIS axis[3] = { X, Y, Z };
+	/* Create Gizmos*/
+	// Only create gizmo infos once, and reuse them for each call to GetGizmoRenderInfo
+	{
+		if (scaleGizmoInfos.IsEmpty())
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				scaleGizmoInfos.Add({
+					BuiltinAssets::CubeSimple,
+					BuiltinAssets::DefaultWhiteTexture,
+					GetScaleHandleMatrix(axis[i]),
+					FObjectID{},
+					GetAxisColor(axis[i]),
+					ERenderFlags::RF_Gizmo
+					});
+			}
+		}
+
+		if (rotateGizmoInfos.IsEmpty())
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				rotateGizmoInfos.Add({
+					BuiltinAssets::Circle,
+					BuiltinAssets::DefaultWhiteTexture,
+					GetAxisMatrix(axis[i]),
+					FObjectID{},
+					GetAxisColor(axis[i]),
+					ERenderFlags::RF_Gizmo
+					});
+			}
+		}
+
+		if (translateGizmoInfos.IsEmpty())
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				translateGizmoInfos.Add({
+					BuiltinAssets::GizmoArrow,
+					BuiltinAssets::DefaultWhiteTexture,
+					GetAxisMatrix(axis[i]),
+					FObjectID{},
+					GetAxisColor(axis[i]),
+					ERenderFlags::RF_Gizmo
+					});
+			}
+		}
+	}
 	//기즈모타입을 확인후 타입에 맞는 모양을 리턴
 
-	ERenderFlags renderFlags = ERenderFlags::RF_Gizmo;
 	for (int i = 0; i < 3; ++i)
 	{
 		if (eType == EGIZMO_TYPE::SCALE)
 		{
-			renderInfos.Add({
-				GetAxisPrimitive(),
-				BuiltinAssets::DefaultWhiteTexture,
-				GetScaleHandleMatrix(axis[i]),
-				FObjectID{},
-				GetAxisColor(axis[i]),
-				renderFlags
-				});
+			scaleGizmoInfos[i].WorldTransformMatrix = GetAxisMatrix(axis[i]);
+			renderInfos.Add(&scaleGizmoInfos[i]);
 		}
 		else if (eType == EGIZMO_TYPE::ROTATE)
 		{
-
+			rotateGizmoInfos[i].WorldTransformMatrix = GetAxisMatrix(axis[i]);
+			renderInfos.Add(&rotateGizmoInfos[i]);
 		}
-		renderInfos.Add({
-			GetAxisPrimitive(),
-			BuiltinAssets::DefaultWhiteTexture,
-			GetAxisMatrix(axis[i]),
-			FObjectID{},
-			GetAxisColor(axis[i]),
-			renderFlags
-			});
+		else // eType == EGIZMO_TYPE::TRANSLATE
+		{
+			translateGizmoInfos[i].WorldTransformMatrix = GetAxisMatrix(axis[i]);
+			renderInfos.Add(&translateGizmoInfos[i]);
+		}
 	}
 	return renderInfos;
 }
