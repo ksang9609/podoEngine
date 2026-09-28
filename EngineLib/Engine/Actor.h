@@ -45,10 +45,10 @@ public:
 
 	const TArray<UActorComponent*>& GetComponents() const { return mComponents; }
 
-	virtual void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos);
+	virtual void Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos);
 	//void Render();
 
-	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const;
+	void GetRenderInfos(TArray<const FRenderInfo*>& outRenderInfos) const;
 	bool GetFirstRenderInfo(FRenderInfo& outRenderInfo) const;
 
 	void SetLocation(FVector location);

@@ -346,7 +346,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			}
 			client.UpdateGizmoForView(selectedActor);
 
-			const TArray<FRenderInfo> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
+			const TArray<const FRenderInfo*> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
 
 			mGraphicsManager->RenderGizmoView(gizmoRenderInfos, sceneView);
 		}

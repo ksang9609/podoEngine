@@ -29,7 +29,7 @@ IMPLEMENT_SERIALIZATION(UParticleSubUVComponent, UBillboardComponent,
 	mBlendStateType = EBlendStateType::BST_AlphaBlend; // Set default blend state to alpha blend
 }
 
-void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
+void UParticleSubUVComponent::Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos)
 {
 	bool restarted = false;
 
@@ -114,6 +114,34 @@ FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
 	renderInfo.nextFrame = mNextFrameIndex;
 	renderInfo.frameRatio = mElapsedFrameRatio;
 	return renderInfo;
+}
+
+void UParticleSubUVComponent::updateRenderInfo()
+{
+	UBillboardComponent::updateRenderInfo();
+
+	mRenderInfo.SubUVMesh = &mSubUVMesh;
+
+	// TODO: Get texture name at initialization and return it
+	mRenderInfo.MeshName = BuiltinAssets::BillboardQuadTextured;
+	mRenderInfo.TextureName = FName("Assets/Textures/Explosion_Alpha.dds");
+
+	mRenderInfo.eRenderFlags =
+		ERenderFlags::RF_Raycastable |
+		ERenderFlags::RF_Billboard |
+		ERenderFlags::RF_Particle;
+
+	mRenderInfo.Color = mbIsFinished
+		? FLinearColor(1.f, 1.f, 1.f, 0.0f) // Fully transparent if finished
+		: mColor; // Use the component's color if not finished
+
+	mRenderInfo.BlendStateType = static_cast<EBlendStateType>(mBlendStateType);
+
+	mRenderInfo.numRows = mNumRows;
+	mRenderInfo.numCols = mNumCols;
+	mRenderInfo.currentFrame = mCurrentFrameIndex;
+	mRenderInfo.nextFrame = mNextFrameIndex;
+	mRenderInfo.frameRatio = mElapsedFrameRatio;
 }
 
 std::span<const FPropertyInfo> UParticleSubUVComponent::GetDeclaredProperties()

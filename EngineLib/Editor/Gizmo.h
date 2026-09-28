@@ -88,7 +88,7 @@ struct FGizmo {
 
 	FMatrix GetScaleHandleMatrix(EGIZMO_AXIS axis) const;
 
-	TArray<FRenderInfo> GetGizmoRenderInfo() const; // Gizmo 모형 렌더정보
+	TArray<const FRenderInfo*> GetGizmoRenderInfo() const; // Gizmo 모형 렌더정보
 
 	void SetGizmoType(EGIZMO_TYPE type) { eType = type; }
 	void CycleGizmoType() { eType = static_cast<EGIZMO_TYPE>((static_cast<int>(eType) + 1) % 3); }

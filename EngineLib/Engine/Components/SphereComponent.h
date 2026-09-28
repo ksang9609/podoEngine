@@ -15,7 +15,7 @@ public:
 	USphereComponent();
 	virtual ~USphereComponent();
 
-	virtual void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
+	virtual void Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos) override;
 
 	void Initialize();
 	void Initialize(FVector location, FRotator rotation, FVector scale3D,
@@ -32,6 +32,7 @@ public:
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const override;
+	virtual void updateRenderInfo() override;
 
 private:
 	bool mbSpin = false;

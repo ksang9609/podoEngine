@@ -87,21 +87,21 @@ void FGraphicsManager::PrepareForUI()
 
 
 void FGraphicsManager::updateRenderQueue(
-	const TArray<FRenderInfo>& renderInfos,
+	const TArray<const FRenderInfo*>& renderInfos,
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
 	const FFrustum* frustum, uint32 showFlags)
 {
-	for (const FRenderInfo& renderInfo : renderInfos)
+	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		if (frustum != nullptr)
 		{
-			if (!frustum->Intersects(renderInfo.WorldBounds))
+			if (!frustum->Intersects(renderInfo->WorldBounds))
 			{
 				continue;
 			}
 		}
 
-		ERenderFlags renderFlags = renderInfo.eRenderFlags;
+		ERenderFlags renderFlags = renderInfo->eRenderFlags;
 
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
 			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
@@ -110,7 +110,7 @@ void FGraphicsManager::updateRenderQueue(
 			// TODO: Unify all of these into just static mesh
 			//if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
 			//{
-			outRenderQueueMap[RQT_StaticMesh].Add(&renderInfo);
+			outRenderQueueMap[RQT_StaticMesh].Add(renderInfo);
 			//}
 			//else if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
 			//{
@@ -125,25 +125,25 @@ void FGraphicsManager::updateRenderQueue(
 			ERenderFlags::RF_Billboard | ERenderFlags::RF_Text) &&
 			HasViewShowFlag(showFlags, EEngineShowFlags::SF_BillboardText))
 		{
-			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
+			outRenderQueueMap[RQT_BillboardText].Add(renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_WorldAxis) &&
 			HasViewShowFlag(showFlags, EEngineShowFlags::SF_WorldAxis))
 		{
-			outRenderQueueMap[RQT_WorldAxis].Add(&renderInfo);
+			outRenderQueueMap[RQT_WorldAxis].Add(renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Gizmo))
 		{
-			outRenderQueueMap[RQT_Gizmo].Add(&renderInfo);
+			outRenderQueueMap[RQT_Gizmo].Add(renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox) &&
 			HasViewShowFlag(showFlags, EEngineShowFlags::SF_BoundingBox))
 		{
-			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
+			outRenderQueueMap[RQT_BoundingBox].Add(renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Particle))
 		{
-			outRenderQueueMap[RQT_Particle].Add(&renderInfo);
+			outRenderQueueMap[RQT_Particle].Add(renderInfo);
 		}
 	}
 }
@@ -163,8 +163,8 @@ void sortRenderQueueByDistance(TArray<const FRenderInfo*>& renderQueue, const FV
 }
 
 void FGraphicsManager::RenderSceneView(
-	const TArray<FRenderInfo>& scenerRenderInfos,
-	const TArray<FRenderInfo>& axisRenderInfos,
+	const TArray<const FRenderInfo*>& scenerRenderInfos,
+	const TArray<const FRenderInfo*>& axisRenderInfos,
 	const FSceneView& view,
 	const AActor* selectedActor)
 {
@@ -218,7 +218,7 @@ void FGraphicsManager::RenderSceneView(
 	}
 }
 
-void FGraphicsManager::RenderGizmoView(const TArray<FRenderInfo>& gizmoRenderInfos, const FSceneView& view)
+void FGraphicsManager::RenderGizmoView(const TArray<const FRenderInfo*>& gizmoRenderInfos, const FSceneView& view)
 {
 	if (!view.isValid() || gizmoRenderInfos.IsEmpty())
 	{

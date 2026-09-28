@@ -72,7 +72,7 @@ void UStaticMeshComponent::SetStaticMesh(const UStaticMesh& staticMeshRef)
 
 	mLocalBounds = calculateBounds(mStaticMeshRef->GetStaticMeshAsset()->Vertices);
 
-	updateComponentToWorld();
+	mbRenderInfoDirty = true;
 }
 
 const FName& UStaticMeshComponent::GetMaterialAssetKey(int32 slotIndex) const
@@ -139,6 +139,8 @@ bool UStaticMeshComponent::SetMaterial(int32 slotIndex, const UMaterial& materia
 	materialOverride.OverridedMaterialRef = &materialAsset;
 	mMaterialAssetKeys[slotIndex] = materialAsset.GetMaterialName();
 
+	mbRenderInfoDirty = true;
+
 	return true;
 }
 
@@ -179,6 +181,28 @@ FRenderInfo UStaticMeshComponent::makeRenderInfo() const
 	renderInfo.SubUVMesh = &mSubUVMesh;
 
 	return renderInfo;
+}
+
+void UStaticMeshComponent::updateRenderInfo()
+{
+	UMeshComponent::updateRenderInfo();
+
+	mRenderInfo.MeshName = mStaticMeshRef ? mStaticMeshRef->GetAssetPathFileName() : FName();
+	mRenderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
+
+	if (mRenderInfo.StaticMesh)
+	{
+		const int32 slotCount = mStaticMeshRef->GetDefaultMaterials().Num();
+		mRenderInfo.Materials.Reserve(slotCount);
+		for (int32 slotIndex = 0; slotIndex < slotCount; ++slotIndex)
+		{
+			const UMaterial* materialAsset = GetMaterialAsset(slotIndex);
+			const FMaterial* material = materialAsset ? materialAsset->GetMaterial() : nullptr;
+			mRenderInfo.Materials.Add(material ? *material : FMaterial{});
+		}
+	}
+
+	mRenderInfo.SubUVMesh = &mSubUVMesh;
 }
 
 void UStaticMeshComponent::resetMaterialOverrides()

@@ -17,18 +17,18 @@ public:
 		uint32 numRows, uint32 numCols,
 		bool bLooping = true, float playRate = 1.0f, float frameDuration = 1.0f);
 
-	virtual void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
+	virtual void Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos) override;
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 	bool IsLooping() const { return mbLooping; }
-	void SetLooping(bool bLooping) { mbLooping = bLooping; }
+	void SetLooping(bool bLooping) { mbLooping = bLooping; mbRenderInfoDirty = true; }
 
 	float GetPlayRate() const { return mPlayRate; }
-	void SetPlayRate(float playRate) { mPlayRate = playRate; }
+	void SetPlayRate(float playRate) { mPlayRate = playRate; mbRenderInfoDirty = true; }
 
 	EBlendStateType GetBlendStateType() const { return static_cast<EBlendStateType>(mBlendStateType); }
-	void SetBlendStateType(EBlendStateType blendStateType) { mBlendStateType = blendStateType; }
+	void SetBlendStateType(EBlendStateType blendStateType) { mBlendStateType = blendStateType; mbRenderInfoDirty = true; }
 
 private:
 	FSubUVMesh mSubUVMesh;
@@ -50,4 +50,5 @@ private:
 	bool mbIsFinished = false;
 
 	virtual FRenderInfo makeRenderInfo() const override;
+	virtual void updateRenderInfo() override;
 };

@@ -40,12 +40,13 @@ class UStaticMeshComponent : public UMeshComponent
 
 	/* SubUV */
 	const FSubUVMesh& GetSubUVMesh() const { return mSubUVMesh; }
-	void SetSubUVMesh(const FSubUVMesh& subUVMesh) { mSubUVMesh = subUVMesh; }
-	void SetSubUVMesh(FVector2 uvOffset, FVector2 uvScale) { mSubUVMesh.UVOffset = uvOffset; mSubUVMesh.UVScale = uvScale; }
+	void SetSubUVMesh(const FSubUVMesh& subUVMesh) { mSubUVMesh = subUVMesh; mbRenderInfoDirty = true; }
+	void SetSubUVMesh(FVector2 uvOffset, FVector2 uvScale) { mSubUVMesh.UVOffset = uvOffset; mSubUVMesh.UVScale = uvScale; mbRenderInfoDirty = true; }
 
 
 protected:
 	virtual FRenderInfo makeRenderInfo() const override;
+	virtual void updateRenderInfo() override;
 	FSubUVMesh mSubUVMesh = {};
 
 private:
