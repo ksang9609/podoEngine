@@ -156,33 +156,6 @@ bool UStaticMeshComponent::ClearMaterialOverride(int32 slotIndex)
 	return true;
 }
 
-FRenderInfo UStaticMeshComponent::makeRenderInfo() const
-{
-	FRenderInfo renderInfo = UMeshComponent::makeRenderInfo();
-
-	renderInfo.MeshName = mStaticMeshRef ? mStaticMeshRef->GetAssetPathFileName() : FName();
-	renderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
-
-	if (renderInfo.StaticMesh)
-	{
-		const int32 slotCount = mStaticMeshRef->GetDefaultMaterials().Num();
-
-		renderInfo.Materials.Reserve(slotCount);
-
-		for (int32 slotIndex = 0; slotIndex < slotCount; ++slotIndex)
-		{
-			const UMaterial* materialAsset = GetMaterialAsset(slotIndex);
-			const FMaterial* material = materialAsset ? materialAsset->GetMaterial() : nullptr;
-
-			renderInfo.Materials.Add(material ? *material : FMaterial{});
-		}
-	}
-
-	renderInfo.SubUVMesh = &mSubUVMesh;
-
-	return renderInfo;
-}
-
 void UStaticMeshComponent::updateRenderInfo()
 {
 	UMeshComponent::updateRenderInfo();

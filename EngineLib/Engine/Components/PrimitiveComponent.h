@@ -35,7 +35,6 @@ public:
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 protected:
-	virtual FRenderInfo makeRenderInfo() const;
 	virtual void updateRenderInfo();
 
 	EPrimitive mePrimitive;

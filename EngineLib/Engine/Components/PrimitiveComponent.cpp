@@ -87,36 +87,6 @@ void UPrimitiveComponent::GetRenderInfos(TArray<const FRenderInfo*>& outRenderIn
 	outRenderInfos.Add(&mRenderInfo);
 }
 
-FRenderInfo UPrimitiveComponent::makeRenderInfo() const
-{
-	ERenderFlags renderFlags =
-		ERenderFlags::RF_Raycastable |
-		ERenderFlags::RF_Primitive;
-
-	if (mbUseTexture)
-	{
-		renderFlags = renderFlags | ERenderFlags::RF_Texture;
-	}
-
-	if (mbShowBoundingBox)
-	{
-		renderFlags = renderFlags | ERenderFlags::RF_BoundingBox;
-	}
-
-	FRenderInfo renderInfo{};
-	//renderInfo.ePrimitive = mePrimitive;
-	renderInfo.WorldTransformMatrix = GetTransformMatrix();
-	renderInfo.ObejctID = { mOwner->UUID, mOwner->InternalIndex };
-	renderInfo.Color = mColor;
-	renderInfo.eRenderFlags = renderFlags;
-	renderInfo.Textmesh = nullptr;
-
-	renderInfo.LocalBounds = mLocalBounds;
-	renderInfo.WorldBounds = TransformBoundingBox(mLocalBounds, renderInfo.WorldTransformMatrix);
-
-	return renderInfo;
-}
-
 void UPrimitiveComponent::updateRenderInfo()
 {
 	ERenderFlags renderFlags =

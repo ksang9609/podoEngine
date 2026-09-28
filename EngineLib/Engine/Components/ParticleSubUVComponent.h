@@ -49,6 +49,5 @@ private:
 	uint32 mNextFrameIndex = 0;
 	bool mbIsFinished = false;
 
-	virtual FRenderInfo makeRenderInfo() const override;
 	virtual void updateRenderInfo() override;
 };
