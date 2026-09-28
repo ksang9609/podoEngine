@@ -26,6 +26,8 @@ public:
 	void UpdateFrame(const FFrameTimer& frameTimer);
 
 	void UpdateMemory(float deltaTime, const FStatCollectionSources& sources);
+	void UpdatePicking();
+	void ClearPickingStat();
 
 	const FStatSnapshot& GetSnapshot() const { return mSnapshot;  }
 
