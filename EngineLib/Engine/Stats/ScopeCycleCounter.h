@@ -60,6 +60,11 @@ public:
 		return *stat;
 	}
 
+	static void ClearCycleStat(TStatId StatId)
+	{
+		mgCycleStatMap[StatId.StatId] = FCycleStat{ 0, 0, 0 };
+	}
+
 private:
 	uint64 mStartCycles;
 	TStatId mUsedStatId;

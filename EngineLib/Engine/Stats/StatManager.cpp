@@ -152,3 +152,8 @@ void FStatManager::UpdatePicking()
 	picking.LastPickTimeMs = FPlatformTime::ToMilliseconds(pickingStat.LastCycles);
 	picking.TotalPickTimeMs = FPlatformTime::ToMilliseconds(pickingStat.TotalCycles);
 }
+
+void FStatManager::ClearPickingStat()
+{
+	FScopeCycleCounter::ClearCycleStat({ EStatId::Picking });
+}

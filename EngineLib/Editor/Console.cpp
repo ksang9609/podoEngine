@@ -275,6 +275,10 @@ void ConsoleWindow::ExecuteCommand(const char* Input, FEditorCommands& outComman
 		{
 			outCommands.Emplace(FToggleStatCommand{ EStatGroup::Picking });
 		}
+		else if (argument == "clear")
+		{
+			outCommands.Emplace(FClearPickingDataCommand{});
+		}
 		else if (argument == "none")
 		{
 			outCommands.Emplace(FDisableAllStatsCommand{});
@@ -284,7 +288,7 @@ void ConsoleWindow::ExecuteCommand(const char* Input, FEditorCommands& outComman
 			AddLog(
 				ELogLevel::Warning,
 				ELogCategory::Core,
-				"Usage: stat <fps|memory|none>");
+				"Usage: stat <fps|memory|picking|clear|none>");
 		}
 
 		return;
@@ -299,7 +303,7 @@ void ConsoleWindow::ExecuteCommand(const char* Input, FEditorCommands& outComman
 		AddLog(
 			ELogLevel::Log,
 			ELogCategory::Etc,
-			"Commands: clear, echo, stat fps, stat memory, stat none");
+			"Commands: clear, echo, stat fps, stat memory, stat picking, stat clear, stat none");
 	}
 	else if (Command == "echo")
 	{

@@ -73,6 +73,7 @@ struct FStartProjectionTransitionCommand { bool bOrthographic; };
 
 /* Consol Commands */
 struct FToggleStatCommand { EStatGroup Group; };
+struct FClearPickingDataCommand {};
 struct FDisableAllStatsCommand { };
 
 using FEditorCommand = std::variant <
@@ -126,7 +127,8 @@ using FEditorCommand = std::variant <
 	FStartProjectionTransitionCommand,
 
 	FToggleStatCommand,
-	FDisableAllStatsCommand
+	FDisableAllStatsCommand,
+	FClearPickingDataCommand
 
 > ;
 using FEditorCommands = TArray<FEditorCommand>;

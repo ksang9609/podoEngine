@@ -907,6 +907,10 @@ void FEngineLoop::processEditorCommand(const FToggleStatCommand& command)
 		groupName = "Memory";
 		break;
 
+	case EStatGroup::Picking:
+		groupName = "Picking";
+		break;
+
 	default:
 		break;
 	}
@@ -927,4 +931,9 @@ void FEngineLoop::processEditorCommand(const FDisableAllStatsCommand&)
 		Log,
 		Editor,
 		"All stats disabled");
+}
+
+void FEngineLoop::processEditorCommand(const FClearPickingDataCommand&)
+{
+	mStatManager.ClearPickingStat();
 }

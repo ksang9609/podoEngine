@@ -104,6 +104,7 @@ private:
 
 	void processEditorCommand(const FToggleStatCommand& command);
 	void processEditorCommand(const FDisableAllStatsCommand& command);
+	void processEditorCommand(const FClearPickingDataCommand& command);
 };
 
 inline FEngineLoop GEngineLoop;
