@@ -338,6 +338,8 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			continue;
 		}
 		// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
+		// TODO?:	Is there any static mesh that has no sections?
+		//			If not, we don't need to manage this case.
 		if (staticMesh.Sections.IsEmpty())
 		{
 			ID3D11ShaderResourceView* texture = nullptr;
@@ -355,13 +357,26 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 				texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
 			}
 
-			//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
-			mRenderer->RenderStaticMesh(buffer->Buffer.Get(), buffer->SourceNum,
+			mRenderer->SetMaterialResources(
 				texture,
 				nullptr,
 				nullptr,
-				&resources.GetSamplerState(SST_Default),
-				buffer->IndexBuffer.Get(), buffer->IndexCount);
+				&resources.GetSamplerState(SST_Wrap)
+			);
+
+			mRenderer->SetStaticMeshResources(
+				buffer->Buffer.GetAddressOf(),
+				buffer->IndexBuffer.Get()
+			);
+
+			if (buffer->IndexBuffer)
+			{
+				mRenderer->DrawIndexedBuffer(buffer->IndexCount, 0);
+			}
+			else
+			{
+				mRenderer->DrawVertexBuffer(buffer->SourceNum);
+			}
 
 			continue;
 		}
@@ -450,16 +465,26 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 				uvScale, uvOffset
 			);
 
-			mRenderer->RenderStaticMesh(
-				buffer->Buffer.Get(),
-				buffer->SourceNum,
+			mRenderer->SetMaterialResources(
 				diffuseTexture,
 				normalTexture,
 				specularTexture,
-				&resources.GetSamplerState(SST_Wrap),
-				buffer->IndexBuffer.Get(),
-				section.IndexCount,
-				section.StartIndex);
+				&resources.GetSamplerState(SST_Wrap)
+			);
+
+			mRenderer->SetStaticMeshResources(
+				buffer->Buffer.GetAddressOf(),
+				buffer->IndexBuffer.Get()
+			);
+
+			if (buffer->IndexBuffer)
+			{
+				mRenderer->DrawIndexedBuffer(section.IndexCount, section.StartIndex);
+			}
+			else
+			{
+				mRenderer->DrawVertexBuffer(buffer->SourceNum);
+			}
 		}
 
 	}

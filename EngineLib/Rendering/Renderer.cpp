@@ -304,6 +304,28 @@ void URenderer::PrepareForUI()
 	mDeviceContext->OMSetRenderTargets(1, mFrameBufferRTV.GetAddressOf(), nullptr);
 }
 
+void URenderer::SetMaterialResources(
+	ID3D11ShaderResourceView* diffuseTextureSRV,
+	ID3D11ShaderResourceView* normalTextureSRV,
+	ID3D11ShaderResourceView* specularTextureSRV,
+	ID3D11SamplerState* samplerState)
+{
+	mDeviceContext->PSSetShaderResources(0, 1, &diffuseTextureSRV);
+	mDeviceContext->PSSetShaderResources(1, 1, &normalTextureSRV);
+	mDeviceContext->PSSetShaderResources(2, 1, &specularTextureSRV);
+	mDeviceContext->PSSetSamplers(0, 1, &samplerState);
+}
+
+void URenderer::SetStaticMeshResources(
+	ID3D11Buffer* const* vertexBuffer,
+	ID3D11Buffer* indexBuffer)
+{
+	assert(vertexBuffer);
+	uint32 offset = 0;
+	mDeviceContext->IASetVertexBuffers(0, 1, vertexBuffer, &StrideNormalVertex, &offset);
+	mDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+}
+
 void URenderer::PrepareSimplePrimitive()
 {
 	assert(mGpuResourceManagerRef && mDeviceContext);
@@ -807,33 +829,19 @@ void URenderer::RenderParticle(ID3D11ShaderResourceView* texture)
 	mDeviceContext->DrawIndexed(6, 0, 0);
 }
 
-void URenderer::RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
-	ID3D11ShaderResourceView* diffuseTextureSRV, ID3D11ShaderResourceView* normalTextureSRV, ID3D11ShaderResourceView* specularTextureSRV,
-	ID3D11SamplerState* samplerState,
-	ID3D11Buffer* indexBuffer, uint32 indexCount, uint32 startIndex)
+void URenderer::DrawVertexBuffer(uint32 numVertices)
 {
-	assert(mGpuResourceManagerRef && mDeviceContext);
+	assert(mDeviceContext);
+	if (numVertices == 0) return;
 
-	if (!vertexBuffer || !indexBuffer || indexCount == 0 || !diffuseTextureSRV || !samplerState) return;
-	UINT offset = 0;
-	// Bind the vertex buffer
-	mDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &StrideNormalVertex, &offset);
-	// Bind the texture resource
-	mDeviceContext->PSSetShaderResources(0, 1, &diffuseTextureSRV);
-	mDeviceContext->PSSetShaderResources(1, 1, &normalTextureSRV);
-	mDeviceContext->PSSetShaderResources(2, 1, &specularTextureSRV);
-	mDeviceContext->PSSetSamplers(0, 1, &samplerState);
-	// Bind the index buffer
-	mDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	mDeviceContext->Draw(numVertices, 0);
+}
 
-	if (indexBuffer)
-	{
-		mDeviceContext->DrawIndexed(indexCount, startIndex, 0);
-	}
-	else
-	{
-		mDeviceContext->Draw(numVertices, 0);
-	}
+void URenderer::DrawIndexedBuffer(uint32 indexCount, uint32 startIndex)
+{
+	assert(mDeviceContext);
+	if (indexCount == 0) return;
+	mDeviceContext->DrawIndexed(indexCount, startIndex, 0);
 }
 
 // 쌓아둔 선분 전체를 한 번의 Draw로 그린다.
