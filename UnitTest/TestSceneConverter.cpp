@@ -1,7 +1,7 @@
-#ifndef SCENE_CONVERTER_STANDALONE
+﻿#ifndef SCENE_CONVERTER_STANDALONE
 #include "pch.h"
 #endif
-#include "Engine/Serialization/SceneConverter.h"
+#include "Editor/SceneConverter.h"
 #include "Engine/Serialization/JsonReader.h"
 #include "ThirdParty/nlohmann/json.hpp"
 #include <chrono>
