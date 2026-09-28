@@ -161,17 +161,16 @@ void UStaticMeshComponent::updateRenderInfo()
 	UMeshComponent::updateRenderInfo();
 
 	mRenderInfo.MeshName = mStaticMeshRef ? mStaticMeshRef->GetAssetPathFileName() : FName();
-	mRenderInfo.StaticMesh = mStaticMeshRef ? mStaticMeshRef->GetStaticMeshAsset() : nullptr;
+	mRenderInfo.StaticMeshAsset = mStaticMeshRef;
 
-	if (mRenderInfo.StaticMesh)
+	if (mRenderInfo.StaticMeshAsset)
 	{
 		const int32 slotCount = mStaticMeshRef->GetDefaultMaterials().Num();
 		mRenderInfo.Materials.Reserve(slotCount);
 		for (int32 slotIndex = 0; slotIndex < slotCount; ++slotIndex)
 		{
 			const UMaterial* materialAsset = GetMaterialAsset(slotIndex);
-			const FMaterial* material = materialAsset ? materialAsset->GetMaterial() : nullptr;
-			mRenderInfo.Materials.Add(material ? *material : FMaterial{});
+			mRenderInfo.Materials.Add(materialAsset);
 		}
 	}
 

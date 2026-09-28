@@ -321,10 +321,12 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 	mRenderer->PrepareStaticMesh();
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
-		if (renderInfo->StaticMesh == nullptr)
+		if (renderInfo->StaticMeshAsset == nullptr)
 		{
 			continue;
 		}
+
+		const FStaticMesh& staticMesh = *renderInfo->StaticMeshAsset->GetStaticMeshAsset();
 
 		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
 		mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
@@ -336,7 +338,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			continue;
 		}
 		// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
-		if (renderInfo->StaticMesh->Sections.IsEmpty())
+		if (staticMesh.Sections.IsEmpty())
 		{
 			ID3D11ShaderResourceView* texture = nullptr;
 			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
@@ -364,7 +366,7 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			continue;
 		}
 		// OBJ 메시: 섹션마다 재질과 텍스처를 선택해서 그린다.
-		for (const FStaticMeshSection& section : renderInfo->StaticMesh->Sections)
+		for (const FStaticMeshSection& section : staticMesh.Sections)
 		{
 
 			const FMaterial* material = nullptr;
@@ -378,7 +380,11 @@ void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& rende
 			{
 				if (section.MaterialSlotIndex >= 0 && section.MaterialSlotIndex < renderInfo->Materials.Num())
 				{
-					material = &renderInfo->Materials[section.MaterialSlotIndex];
+					const UMaterial* materialAsset = renderInfo->Materials[section.MaterialSlotIndex];
+					if (materialAsset)
+					{
+						material = materialAsset->GetMaterial();
+					}
 				}
 
 				if (!material)
