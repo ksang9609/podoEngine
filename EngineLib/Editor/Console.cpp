@@ -63,7 +63,7 @@ namespace
 		case ELogLevel::Fatal:
 			return ImVec4(1.0f, 0.0f, 1.0f, 1.0f);
 		default:
-			return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); 
+			return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 
@@ -186,7 +186,7 @@ void ConsoleWindow::AddLog(ELogLevel Level, ELogCategory Category, std::string_v
 	Message.Text = Text;
 
 	{
-		std::lock_guard<std::mutex> Lock( mPendingMutex );
+		std::lock_guard<std::mutex> Lock(mPendingMutex);
 		mPendingBuffers[mWriteBufferIndex].Add(Message);
 	}
 }
@@ -248,7 +248,7 @@ void ConsoleWindow::Clear()
 	mCount = 0;
 }
 
-void ConsoleWindow::ExecuteCommand( const char* Input, FEditorCommands& outCommands)
+void ConsoleWindow::ExecuteCommand(const char* Input, FEditorCommands& outCommands)
 {
 	std::istringstream Stream(Input);
 
@@ -260,16 +260,20 @@ void ConsoleWindow::ExecuteCommand( const char* Input, FEditorCommands& outComma
 		std::string argument;
 		Stream >> argument;
 
-		std::transform(argument.begin(),argument.end(),argument.begin(),
-			[](unsigned char character){return static_cast<char>(std::tolower(character));});
+		std::transform(argument.begin(), argument.end(), argument.begin(),
+			[](unsigned char character) {return static_cast<char>(std::tolower(character));});
 
 		if (argument == "fps")
 		{
-			outCommands.Emplace(FToggleStatCommand{EStatGroup::FPS});
+			outCommands.Emplace(FToggleStatCommand{ EStatGroup::FPS });
 		}
 		else if (argument == "memory")
 		{
-			outCommands.Emplace(FToggleStatCommand{EStatGroup::Memory});
+			outCommands.Emplace(FToggleStatCommand{ EStatGroup::Memory });
+		}
+		else if (argument == "picking")
+		{
+			outCommands.Emplace(FToggleStatCommand{ EStatGroup::Picking });
 		}
 		else if (argument == "none")
 		{

@@ -192,6 +192,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 	mStatManager.UpdateFrame(*FrameTimer);
 	mStatManager.UpdateMemory(deltaTime,{*mSceneManager,*mAssetManager,*mGpuResourceManager});
+	mStatManager.UpdatePicking();
 
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 

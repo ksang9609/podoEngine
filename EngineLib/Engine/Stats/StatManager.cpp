@@ -3,16 +3,17 @@
 #include <Windows.h>
 #include <Psapi.h>
 
-#include "../../Core/FrameTimer.h"
-#include "../../Core/AssetManager.h"
-#include "../../Core/Object/Object.h"
+#include "Core/FrameTimer.h"
+#include "Core/AssetManager.h"
+#include "Core/Object/Object.h"
 
-#include "../../Engine/EngineStatics.h"
-#include "../../Engine/SceneManager.h"
-#include "../../Engine/World.h"
-#include "../../Engine/Actor.h"
+#include "Engine/EngineStatics.h"
+#include "Engine/SceneManager.h"
+#include "Engine/World.h"
+#include "Engine/Actor.h"
+#include "Engine/Stats/ScopeCycleCounter.h"
 
-#include "../../Rendering/GpuResourceManager.h"
+#include "Rendering/GpuResourceManager.h"
 
 #pragma comment(lib, "Psapi.lib") // 현재 프로세스 RAM 사용량 표시를 하기 위함
 
@@ -137,4 +138,17 @@ void FStatManager::CollectMemory(const FStatCollectionSources& sources)
 	memory.MaterialCount = sources.AssetManager.GetMaterialAssetCount();
 	memory.GpuBufferCount =sources.GpuResourceManager.GetImmutableBufferCount();
 	memory.GpuTextureCount =sources.GpuResourceManager.GetTextureCount();
+}
+
+void FStatManager::UpdatePicking()
+{
+	if (!IsEnabled(EStatGroup::Picking))
+	{
+		return;
+	}
+	FPickingStatSnapshot& picking = mSnapshot.Picking;
+	const FCycleStat pickingStat = FScopeCycleCounter::GetCycleStat({ EStatId::Picking });
+	picking.PickingCount = pickingStat.CycleCount;
+	picking.LastPickTimeMs = FPlatformTime::ToMilliseconds(pickingStat.LastCycles);
+	picking.TotalPickTimeMs = FPlatformTime::ToMilliseconds(pickingStat.TotalCycles);
 }

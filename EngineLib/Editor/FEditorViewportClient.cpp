@@ -4,6 +4,7 @@
 #include "Core/Math/MathUtility.h"
 #include "Core/Math/Quat.h"
 #include "Engine/SceneManager.h"
+#include "Engine/Stats/ScopeCycleCounter.h"
 #include "Platform/WindowApplication.h"
 #include "Rendering/GraphicsManager.h"
 #include "ThirdParty/ImGui/imgui.h"
@@ -155,6 +156,9 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 		return;
 	}
 
+	// Record the time spent in RayCast for profiling until the end of this function
+	FScopeCycleCounter cycleCounter({ EStatId::Picking });
+
 	// Object 탐색
 	for (const FRenderInfo& RI : renderInfos)
 	{
@@ -247,12 +251,12 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 	ImGuiIO& io = ImGui::GetIO();
 
 	// 마우스 입력은 실제 3D 이미지 위에 있을 때 허용한다.
-    // RMB 드래그 중에는 화면 밖으로 조금 벗어나도 계속 회전하게 한다.
-	const bool bCanUseMouse = bViewportHovered ||(bViewportFocused && Input.IsDown(VK_RBUTTON));
+	// RMB 드래그 중에는 화면 밖으로 조금 벗어나도 계속 회전하게 한다.
+	const bool bCanUseMouse = bViewportHovered || (bViewportFocused && Input.IsDown(VK_RBUTTON));
 
 	// 키보드는 Focus된 Viewport만 사용한다.
 	// 텍스트 필드에 입력 중일 때는 카메라를 움직이지 않는다.
-	const bool bCanUseKeyboard =bViewportFocused && !io.WantTextInput;
+	const bool bCanUseKeyboard = bViewportFocused && !io.WantTextInput;
 	const bool bOrthographic = isOrthographicTarget();
 
 	// Camera Transition 중에는 카메라를 직접 움직이지 못하게 한다.
@@ -360,7 +364,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 	const bool bLeftClicked = bViewportHovered && Input.WasPressed(VK_LBUTTON);
 
 	RayCast(viewRect, sceneManager->GetRenderInfos(), bLeftClicked);
-	
+
 	////Editor Click 처리
 	//if (mClickedActor)
 	//{
@@ -401,7 +405,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 		{
 			return;
 		}
-		UObject* LoadActor = FObjectFactory::LoadObject(classinfo,copyObject); // classinfo 바탕으로 object 생성
+		UObject* LoadActor = FObjectFactory::LoadObject(classinfo, copyObject); // classinfo 바탕으로 object 생성
 		if (LoadActor == nullptr)
 		{
 			return;
@@ -412,7 +416,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 			LoadActor->Destroy();
 			return;
 		}
-		UWorld * CurrentWorld = sceneManager->GetCurrentWorld();
+		UWorld* CurrentWorld = sceneManager->GetCurrentWorld();
 		CurrentWorld->AddActor(std::unique_ptr<AActor>(NewActor));
 		NewActor->SetName(NewActor->GetName()); // UUID 바뀌었기 때문에 이름 다시 설정
 		NewActor->SetLocation(NewActor->GetTransform().Location + FVector(1.0f, 1.0f, 0.0f)); // 겹치지 않게 위치 변경
