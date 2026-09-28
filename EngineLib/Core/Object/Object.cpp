@@ -103,6 +103,37 @@ void UObject::DeserializeClass(const json::JSON& inJson)
 	}
 }
 
+void UObject::Serialize(FStructuredArchive& archive)
+{
+	FString className;
+	if (archive.IsSaving())
+	{
+		className = GetRuntimeClass()->Name;
+	}
+
+	archive << TNamedValue<FString>("ClassName", className);
+
+	if (archive.HasError())
+	{
+		return;
+	}
+
+	if (archive.IsLoading() &&
+		className != GetRuntimeClass()->Name)
+	{
+		archive.SetError();
+		return;
+	}
+
+	archive << TNamedValue<int32>("UUID", UUID);
+	archive << TNamedValue<FName>("Name", mName);
+}
+
+void UObject::Serialize(FArchive& archive)
+{
+	archive << UUID;
+}
+
 bool UObject::IsA(const FClassInfo* classInfo) const
 {
 	const FClassInfo* currentClass = GetRuntimeClass();

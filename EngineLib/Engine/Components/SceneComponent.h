@@ -1,12 +1,12 @@
 ﻿#pragma once
 
 #include "ActorComponent.h"
-#include "Rendering/GraphicsManager.h"
-
-#include "Core/Math/Vector.h"
-#include "Core/Container/TArray.h"
 
 #include <span>
+
+#include "Core/Math/Vector.h"
+#include "Core/Math/FBoundingBox.h"
+#include "Core/Container/TArray.h"
 #include "Core/Object/PropertyInfo.h"
 
 class FTransform;
@@ -22,6 +22,7 @@ public:
 
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
+	virtual void Serialize(FStructuredArchive& archive) override;
 
 	virtual bool AttachTo(USceneComponent& parent);
 	virtual bool RemoveChild(USceneComponent& child);

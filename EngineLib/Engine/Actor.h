@@ -21,6 +21,7 @@ public:
 
 	virtual void SerializeClass(json::JSON& outJson) const override;
 	virtual void DeserializeClass(const json::JSON& inJson) override;
+	virtual void Serialize(FStructuredArchive& archive) override;
 
 	template<typename TComponent>
 		requires std::derived_from<TComponent, UActorComponent>

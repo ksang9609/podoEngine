@@ -141,6 +141,101 @@ void AActor::DeserializeClass(const json::JSON& inJson)
 
 }
 
+void AActor::Serialize(FStructuredArchive& archive)
+{
+	UObject::Serialize(archive);
+
+	int32 rootComponentUUID = mRootComponent ? mRootComponent->UUID : -1;
+
+	/* Construct Object */
+	//archive << TNamedValue<USceneComponent>("mRootComponent", *mRootComponent);
+	if (archive.IsLoading())
+	{
+		archive.BeginObject("mComponents");
+		int32 count = 0;
+		archive << TNamedValue<int32>("Count", count);
+
+		for (int32 i = 0; i < count && !archive.HasError(); ++i)
+		{
+			const FString key = FString(std::to_string(i));
+
+			if (!archive.BeginObject(key.CStr()))
+			{
+				archive.SetError();
+				archive.EndObject();
+				break;
+			}
+
+			FString className;
+			archive << TNamedValue<FString>{ "ClassName", className };
+
+			const FClassInfo* classInfo = FObjectFactory::GetClassInfoByName(className);
+			UObject* component = FObjectFactory::LoadObject(classInfo, archive);
+			if (!component)
+			{
+				archive.SetError();
+				archive.EndObject();
+				break;
+			}
+
+			UActorComponent* actorComponent = component->Cast<UActorComponent>();
+			if (actorComponent)
+			{
+				AddComponent(actorComponent);
+			}
+
+			archive.EndObject();
+		}
+		archive.EndObject();
+	}
+	else
+	{
+		/* Serialize Object */
+		archive << TNamedValue{ "mComponents", mComponents };
+	}
+	archive << TNamedValue{ "mRootComponentUUID", rootComponentUUID };
+
+	/* Post Serialization */
+	if (archive.IsLoading() && !archive.HasError())
+	{
+		// Restore the root component
+		if (rootComponentUUID != -1)
+		{
+			int32 rootComponentIndex = getComponentIndex(rootComponentUUID);
+			if (rootComponentIndex == -1)
+			{
+				archive.SetError();
+			}
+			else
+			{
+				mRootComponent = static_cast<USceneComponent*>(mComponents[rootComponentIndex]);
+			}
+		}
+		for (UActorComponent* component : mComponents)
+		{
+			USceneComponent* sceneComponent = component->Cast<USceneComponent>();
+			if (sceneComponent == nullptr)
+			{
+				continue;
+			}
+			const int32 parentUUID = sceneComponent->GetSerializedParentUUID();
+			if (parentUUID == -1)
+			{
+				continue;
+			}
+			const int32 parentComponentIndex =
+				getComponentIndex(parentUUID);
+			if (parentComponentIndex == -1)
+			{
+				archive.SetError();
+				break;
+			}
+			USceneComponent* parent = mComponents[parentComponentIndex]->Cast<USceneComponent>();
+			sceneComponent->AttachTo(*parent);
+		}
+	}
+}
+
 void AActor::AddComponent(UActorComponent* actorComponent)
 {
 	assert(actorComponent);

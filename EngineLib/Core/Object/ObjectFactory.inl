@@ -90,22 +90,20 @@ TObject* FObjectFactory::LoadObject(const json::JSON& inJson)
 	return instance;
 }
 
-template<typename TComponent, typename... Args>
-	requires(std::derived_from<TComponent, USceneComponent>)
-AActor* FObjectFactory::SpawnActorWithRootComponent(const FName& Name, Args&&... args)
+template<typename TObject>
+	requires std::derived_from<TObject, UObject>
+TObject* FObjectFactory::LoadObject(FStructuredArchive& archive)
 {
-	TComponent* rootComponent = ConstructObject<TComponent>(std::forward<Args>(args)...);
-	if (!rootComponent)
+	if (archive.IsSaving())
 	{
+		assert(false && "FObjectFactory::LoadObject should only be called in loading mode.");
 		return nullptr;
 	}
 
-	AActor* actor = createActorWithRootComponent(Name, rootComponent);
-	if (!actor)
+	TObject* instance = ConstructUnInitializedObject<TObject>();
+	if (instance)
 	{
-		delete rootComponent;
-		return nullptr;
+		instance->Serialize(archive);
 	}
-
-	return actor;
+	return instance;
 }

@@ -4,7 +4,7 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(USphereComponent, UStaticMeshComponent);
 
-IMPLEMENT_SERIALIZATION(USphereComponent, UStaticMeshComponent, {})
+IMPLEMENT_SERIALIZATION(USphereComponent, UStaticMeshComponent, {});
 
 USphereComponent::USphereComponent()
 {

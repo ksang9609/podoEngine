@@ -8,6 +8,7 @@
 #include "Core/Math/Rotator.h"
 #include "Core/Container/TMap.h"
 #include "Core/Name.h"
+#include "Core/Archive/StructuredArchive.h"
 //#include "Engine/Components/SceneComponent.h"
 //#include "Engine/Actor.h"
 
@@ -31,6 +32,7 @@ struct FObjectFactory
 
 	static UObject* ConstructUnInitializedObject(const FClassInfo* classInfo);
 	static UObject* LoadObject(const FClassInfo* classInfo, const json::JSON& inJson);
+	static UObject* LoadObject(const FClassInfo* classInfo, FStructuredArchive& archive);
 
 	template<typename TObject, typename... Args>
 		requires std::derived_from<TObject, UObject>
@@ -52,26 +54,13 @@ struct FObjectFactory
 		requires std::derived_from<TObject, UObject>
 	static TObject* LoadObject(const json::JSON& inJson);
 
+	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
+	static TObject* LoadObject(FStructuredArchive& archive);
 
-	/* Spawn Actors */
-	template<typename TComponent, typename... Args>
-		requires(std::derived_from<TComponent, USceneComponent>)
-	static AActor* SpawnActorWithRootComponent(const FName& Name, Args&&... args);
-
-	//static AActor* SpawnPrimitiveActor(EPrimitive primitiveType,
-	//	FVector3 Location, FRotator Rotation, FVector3 Scale
-	//);
-
-	static AActor* SpawnStaticMeshActor(
-		FVector3 location, FRotator rotation, FVector3 scale,
-		const UStaticMesh& staticMeshAsset);
-	static AActor* SpawnStaticMeshActor(
-		FVector3 location, FRotator rotation, FVector3 scale,
-		FName staticMeshAssetName
-	);
-
-
-	static AActor* SpawnParticleActor(FVector3 Location, FRotator Rotation, FVector3 Scale);
+	template<typename TObject>
+		requires std::derived_from<TObject, UObject>
+	static TArray<TObject*> LoadObjects(FStructuredArchive& archive);
 
 	static const FClassInfo* GetClassInfoByName(const FString& className);
 

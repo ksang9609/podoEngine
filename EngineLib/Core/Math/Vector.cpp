@@ -144,6 +144,13 @@ const FVector operator*(float f, const FVector& v)
 	return FVector(v.x * f, v.y * f, v.z * f);
 }
 
+void FVector::Serialize(FStructuredArchive& archive)
+{
+	archive << TNamedValue{ "x", x };
+	archive << TNamedValue{ "y", y };
+	archive << TNamedValue{ "z", z };
+}
+
 const FVector4 FVector4::operator-(const FVector4& other) const
 {
 	return FVector4(x - other.x, y - other.y, z - other.z, w - other.w);
@@ -188,6 +195,14 @@ const FVector4 operator*(const FVector4& v, float f)
 const FVector4 operator*(float f, const FVector4& v)
 {
 	return FVector4(v.x * f, v.y * f, v.z * f, v.w * f);
+}
+
+void FVector4::Serialize(FStructuredArchive& archive)
+{
+	archive << TNamedValue{ "x", x };
+	archive << TNamedValue{ "y", y };
+	archive << TNamedValue{ "z", z };
+	archive << TNamedValue{ "w", w };
 }
 
 FVector2::FVector2(float _x, float _y) : x(_x), y(_y) {}
@@ -255,4 +270,10 @@ float FVector2::Length() const
 float FVector2::LengthSquared() const
 {
 	return x * x + y * y;
+}
+
+void FVector2::Serialize(FStructuredArchive& archive)
+{
+	archive << TNamedValue{ "x", x };
+	archive << TNamedValue{ "y", y };
 }

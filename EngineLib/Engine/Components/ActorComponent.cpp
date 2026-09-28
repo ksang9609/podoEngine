@@ -1,6 +1,8 @@
 ﻿
 #include "ActorComponent.h"
 
+#include "Engine/Actor.h"
+
 IMPLEMENT_CLASS(UActorComponent, UObject);
 
 UActorComponent::UActorComponent()
