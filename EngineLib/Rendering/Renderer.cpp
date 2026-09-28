@@ -246,7 +246,7 @@ void URenderer::Release()
 
 void URenderer::SwapBuffer()
 {
-	mSwapChain->Present(1, 0);
+	mSwapChain->Present(0, 0);
 }
 
 // Prepare global rendering state for a new frame
