@@ -5,6 +5,10 @@
 #include "Matrix.h"
 #include "Core/Math/FBoundingBox.h"
 
+enum class EContainment : uint8 { Outside, Intersect, Inside };
+enum class EFrustumPlane : uint8 { Left, Right, Bottom, Top, Near, Far, Count };
+
+
 struct FPlane
 {
 	float A = 0.0f;
@@ -36,12 +40,10 @@ struct FPlane
 
 struct FFrustum
 {
-	FPlane Left;
-	FPlane Right;
-	FPlane Bottom;
-	FPlane Top;
-	FPlane Near;
-	FPlane Far;
+	FPlane Planes[static_cast<int32> (EFrustumPlane::Count)];
+
+	FPlane& Plane(EFrustumPlane p) { return Planes[static_cast<int32>(p)]; }
+	const FPlane& Plane(EFrustumPlane p) const { return Planes[static_cast<int32>(p)]; }
 
 	static FFrustum FrustumFromViewProjection(const FMatrix& M)
 	{
@@ -52,7 +54,7 @@ struct FFrustum
 		// 그래서 Plane 추출 시 열을 사용한다.
 
 		// Left : x + w >= 0
-		result.Left =
+		result.Plane(EFrustumPlane::Left) =
 		{
 			M.M[0][0] + M.M[0][3],
 			M.M[1][0] + M.M[1][3],
@@ -61,7 +63,7 @@ struct FFrustum
 		};
 
 		// Right : w - x >= 0
-		result.Right =
+		result.Plane(EFrustumPlane::Right) =
 		{
 			M.M[0][3] - M.M[0][0],
 			M.M[1][3] - M.M[1][0],
@@ -70,7 +72,7 @@ struct FFrustum
 		};
 
 		// Bottom : y + w >= 0
-		result.Bottom =
+		result.Plane(EFrustumPlane::Bottom) =
 		{
 			M.M[0][1] + M.M[0][3],
 			M.M[1][1] + M.M[1][3],
@@ -79,7 +81,7 @@ struct FFrustum
 		};
 
 		// Top : w - y >= 0
-		result.Top =
+		result.Plane(EFrustumPlane::Top) =
 		{
 			M.M[0][3] - M.M[0][1],
 			M.M[1][3] - M.M[1][1],
@@ -88,7 +90,7 @@ struct FFrustum
 		};
 
 		// Near : z >= 0
-		result.Near =
+		result.Plane(EFrustumPlane::Near) =
 		{
 			M.M[0][2],
 			M.M[1][2],
@@ -97,7 +99,7 @@ struct FFrustum
 		};
 
 		// Far : w - z >= 0
-		result.Far =
+		result.Plane(EFrustumPlane::Far) =
 		{
 			M.M[0][3] - M.M[0][2],
 			M.M[1][3] - M.M[1][2],
@@ -105,29 +107,19 @@ struct FFrustum
 			M.M[3][3] - M.M[3][2]
 		};
 
-		result.Left.Normalize();
-		result.Right.Normalize();
-		result.Bottom.Normalize();
-		result.Top.Normalize();
-		result.Near.Normalize();
-		result.Far.Normalize();
+		result.Plane(EFrustumPlane::Left).Normalize();
+		result.Plane(EFrustumPlane::Right).Normalize();
+		result.Plane(EFrustumPlane::Bottom).Normalize();
+		result.Plane(EFrustumPlane::Top).Normalize();
+		result.Plane(EFrustumPlane::Near).Normalize();
+		result.Plane(EFrustumPlane::Far).Normalize();
 
 		return result;
 	}
 
 	bool Intersects(const FBoundingBox& bounds) const
 	{
-		const FPlane planes[6] =
-		{
-			Left,
-			Right,
-			Bottom,
-			Top,
-			Near,
-			Far
-		};
-
-		for (const FPlane& plane : planes)
+		for (const FPlane& plane : Planes)
 		{
 			// Plane normal 방향으로 가장 멀리 있는 AABB 정점
 			FVector3 positiveVertex;
@@ -152,3 +144,4 @@ struct FFrustum
 		return true;
 	}
 };
+
