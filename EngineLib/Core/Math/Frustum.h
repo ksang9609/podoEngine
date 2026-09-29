@@ -134,5 +134,27 @@ struct FFrustum
 		return true;
 	}
 
+	EContainment Contains(const FBoundingBox& bounds) const {
+		bool bIntersecting = false;
+
+		for (const FPlane& plane : Planes) {
+			FVector pv, nv;
+
+			pv.x = plane.Normal.x >= 0.0f ? bounds.max.x : bounds.min.x;
+			nv.x = plane.Normal.x >= 0.0f ? bounds.min.x : bounds.max.x;
+
+			pv.y = plane.Normal.y >= 0.0f ? bounds.max.y : bounds.min.y;
+			nv.y = plane.Normal.y >= 0.0f ? bounds.min.y : bounds.max.y;
+
+			pv.z = plane.Normal.z >= 0.0f ? bounds.max.z : bounds.min.z;
+			nv.z = plane.Normal.z >= 0.0f ? bounds.min.z : bounds.max.z;
+
+			if (plane.SignedDistance(pv) < 0.0f) return EContainment::Outside;
+			if (plane.SignedDistance(nv) < 0.0f) bIntersecting = true;	
+		}
+
+		return bIntersecting ? EContainment::Intersect : EContainment::Inside;
+	}
+
 };
 
