@@ -157,3 +157,67 @@ void FOctree::Build(const TArray<const FRenderInfo*>& renderInfos)
 	createRootNode(renderInfos);
 	insertAllObjects(renderInfos);
 }
+
+void FOctree::Raycast(const FVector& origin, const FVector& direction, TArray<uint32>& outCandidates) const
+{
+	FVector invDir;
+	invDir.x = 1.0f / direction.x;
+	invDir.y = 1.0f / direction.y;
+	invDir.z = 1.0f / direction.z;
+	outCandidates.Reset(0);
+	raycastNode(0, origin, invDir, outCandidates);	// mInsideObjects 알아서 재귀됨
+	for (auto object : mOutsideObjects) {
+		outCandidates.Add(object);
+	}
+}
+
+void FOctree::raycastNode(uint32 nodeIndex, const FVector& origin, const FVector& invDir, TArray<uint32>& outCandidates) const
+{
+	float outTEnter = 0.0f;
+	if (!intersectLooseBounds(nodeIndex, origin, invDir, 1.0f, outTEnter)) return;
+
+	const FOctreeNode& node = mNodes[nodeIndex];
+	for (int32 i = 0; i < node.ObjectCount; i++) {
+		outCandidates.Add(mInsideIndices[node.ObjectStart + i]);
+	}
+
+	if (node.ChildStart == 0) return;
+
+	for (int num = 0; num < 8; num++) {
+			raycastNode(node.ChildStart+num, origin, invDir, outCandidates);
+	}
+}
+
+bool FOctree::intersectLooseBounds(uint32 nodeIndex, const FVector& origin, const FVector& invDir, float tMax, float& outTEnter) const
+{
+	FVector nodeCenter = mNodes[nodeIndex].Center;
+	float nodeHalfSize = mNodes[nodeIndex].HalfSize;
+	FVector looseHalfSize = nodeHalfSize * 2.0f;
+
+	float tMin = 0.0f;
+
+	for (int axis = 0; axis < 3; ++axis)
+	{
+		const float minValue = nodeCenter[axis] - looseHalfSize[axis];
+		const float maxValue = nodeCenter[axis] + looseHalfSize[axis];
+
+		float t1 = (minValue - origin[axis]) * invDir[axis];
+		float t2 = (maxValue - origin[axis]) * invDir[axis];
+
+		if (t1 > t2)
+		{
+			std::swap(t1, t2);
+		}
+
+		tMin = std::max(tMin, t1);
+		tMax = std::min(tMax, t2);
+
+		if (tMin > tMax)
+		{
+			return false;
+		}
+	}
+
+	outTEnter = tMin;
+	return true;
+}

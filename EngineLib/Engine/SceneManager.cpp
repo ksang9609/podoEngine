@@ -37,22 +37,23 @@ void FSceneManager::Update(float deltaTime)
 	}
 
 	mCurrentWorld->Update(deltaTime);
-	mOctree.Build(GetRenderInfos());
-
+	
 	// ---------------------------
 	//		임시용(삭제 필요)
 	// ---------------------------
-	static bool bOctreeLogged = false;
-	if (!bOctreeLogged && GetRenderInfos().Num() > 0)
+	// 오브젝트 개수가 달라질 때마다 한 번씩 찍는다
+	mOctree.Build(GetRenderInfos());
+
+	static int32 sLastTotal = -1;
+	const int32 total = GetRenderInfos().Num();
+
+	if (total > 0 && total != sLastTotal)
 	{
-		bOctreeLogged = true;
+		sLastTotal = total;
 
 		UE_LOG_F(Warning, Core, "Octree: nodes={} inside={} outside={} rootObjects={} total={}",
-			mOctree.GetNodeCount(),
-			mOctree.GetInsideCount(),
-			mOctree.GetOutsideCount(),
-			mOctree.GetRootObjectCount(),
-			GetRenderInfos().Num());
+			mOctree.GetNodeCount(), mOctree.GetInsideCount(),
+			mOctree.GetOutsideCount(), mOctree.GetRootObjectCount(), total);
 	}
 }
 

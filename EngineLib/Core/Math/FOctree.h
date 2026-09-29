@@ -22,6 +22,7 @@ struct FOctreeBuildObject {
 class FOctree {
 public:
 	void Build(const TArray<const FRenderInfo*>& renderInfos);
+	void Raycast(const FVector& origin, const FVector& direction, TArray<uint32>& outCandidates) const;
 
 public:
 	int32  GetNodeCount()    const { return mNodes.Num(); }
@@ -37,6 +38,9 @@ private:
 	void insertObject(uint32 nodeIndex, uint32 objectIndex, uint32 nodeDepth);
 	void subDivide(uint32 nodeIndex);
 	void flattenObjects();
+
+	void raycastNode(uint32 nodeIndex, const FVector& origin, const FVector& invDir, TArray <uint32>& outCandidates) const;
+	bool intersectLooseBounds(uint32 nodeIndex, const FVector& origin, const FVector& invDir, float tMax, float& outTEnter) const;
 
 private:
 	TArray <FOctreeNode> mNodes;

@@ -105,7 +105,7 @@ bool FEditorViewportClient::RaycastBounds(
 	return true;
 }
 
-void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject)
+void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject, const FOctree& octree)
 {
 	assert(mAssetManagerRef != nullptr);
 
@@ -128,6 +128,18 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 
 	mRayNear = NearPoint;
 	mRayFar = FarPoint;
+
+	// ---------------------------------
+	//			임시용(삭제 필요)
+	// ---------------------------------
+	if (bCheckObject)   // 클릭했을 때만
+	{
+		TArray<uint32> candidates;
+		octree.Raycast(NearPoint, FarPoint - NearPoint, candidates);
+
+		UE_LOG_F(Warning, Core, "Octree pick: candidates={} / total={}",
+			candidates.Num(), renderInfos.Num());
+	}
 
 	float NearlistT = FLT_MAX;
 
@@ -366,7 +378,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	const bool bLeftClicked = bViewportHovered && Input.WasPressed(VK_LBUTTON);
 
-	RayCast(viewRect, sceneManager->GetRenderInfos(), bLeftClicked);
+	RayCast(viewRect, sceneManager->GetRenderInfos(), bLeftClicked, sceneManager->GetOctree());
 
 	////Editor Click 처리
 	//if (mClickedActor)

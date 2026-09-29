@@ -72,7 +72,7 @@ public:
 
 	float GetPanelWidth() const;
 
-	FOctree GetOctree() { return mOctree; }
+	const FOctree &GetOctree() { return mOctree; }
 	
 private:
 	//static constexpr float MIN_WIDTH_RATIO = 0.2f;
