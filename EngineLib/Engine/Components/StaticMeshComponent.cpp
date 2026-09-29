@@ -166,7 +166,7 @@ void UStaticMeshComponent::updateRenderInfo()
 	if (mRenderInfo.StaticMeshAsset)
 	{
 		const int32 slotCount = mStaticMeshRef->GetDefaultMaterials().Num();
-		mRenderInfo.Materials.Reserve(slotCount);
+		mRenderInfo.Materials.Reset(slotCount);
 		for (int32 slotIndex = 0; slotIndex < slotCount; ++slotIndex)
 		{
 			const UMaterial* materialAsset = GetMaterialAsset(slotIndex);
