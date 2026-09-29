@@ -30,6 +30,7 @@ private:
 
 	void insertObject(uint32 nodeIndex, uint32 objectIndex, uint32 nodeDepth);
 	void subDivide(uint32 nodeIndex);
+	void flattenObjects();
 
 private:
 	TArray <FOctreeNode> mNodes;

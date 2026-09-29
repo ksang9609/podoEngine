@@ -42,10 +42,10 @@ void FOctree::insertAllObjects(const TArray<FRenderInfo>& renderInfos)
 			mOutsideObjects.Add(i);
 			continue;
 		}
-		mInsideIndices.Add(i);
 
 		insertObject(0, i, 0);
 	}
+	flattenObjects();
 }
 
 bool FOctree::outsideRoot(const FBoundingBox& box) const
@@ -123,6 +123,23 @@ void FOctree::subDivide(uint32 nodeIndex)
 		mNodes.Add(child);
 		mBuildBuckets.Add(TArray<uint32>());
 	}
+}
+
+void FOctree::flattenObjects() {
+	// 뒤죽박죽인 mNodes를 mInsideIndices에 예쁘게 정렬하기(평탄화)
+	mInsideIndices.Reset(0);
+
+	for (int i = 0; i < mNodes.Num(); i++) {
+		mNodes[i].ObjectStart = mInsideIndices.Num();
+		mNodes[i].ObjectCount = mBuildBuckets[i].Num();
+
+		for (auto object : mBuildBuckets[i]) {
+			mInsideIndices.Add(static_cast<uint32> (object));
+		}
+	}
+
+	mBuildObject.Reset(0);
+	mBuildBuckets.Reset(0);
 }
 
 void FOctree::Build(const TArray<FRenderInfo>& renderInfos)
