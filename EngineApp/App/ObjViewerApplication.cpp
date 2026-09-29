@@ -755,7 +755,8 @@ void FObjViewerApplication::Tick()
 			mSceneManager->GetRenderInfos(),
 			mSceneManager->GetAxisRenderInfos(),
 			sceneView,
-			nullptr);
+			nullptr,
+			mSceneManager->GetOctree());
 	}
 
 	ImGui::Render();

@@ -320,7 +320,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 				mSceneManager->GetRenderInfos(),
 				mSceneManager->GetAxisRenderInfos(),
 				sceneView,
-				selectedActor);
+				selectedActor,
+				mSceneManager->GetOctree());
 		}
 
 		// Scene의 Depth만 한 번 초기화
