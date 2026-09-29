@@ -133,18 +133,18 @@ bool UWorld::RemoveActor(uint32 componentUUID)
 	return true;
 }
 
-const TArray<FRenderInfo>& UWorld::GetRenderInfos()
+const TArray<const FRenderInfo*>& UWorld::GetRenderInfos()
 {
-	return mRenderInfos;
+	return mRenderInfoRefs;
 }
 
 void UWorld::Update(float deltaTime)
 {
-	mRenderInfos.Reset(DEFAULT_RESERVE_MEM);
+	mRenderInfoRefs.Reset(DEFAULT_RESERVE_MEM);
 
 	for (auto& actor : mActors)
 	{
-		actor->Update(deltaTime, &mRenderInfos);
+		actor->Update(deltaTime, mRenderInfoRefs);
 	}
 }
 

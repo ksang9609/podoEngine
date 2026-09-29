@@ -192,6 +192,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 
 	mStatManager.UpdateFrame(*FrameTimer);
 	mStatManager.UpdateMemory(deltaTime,{*mSceneManager,*mAssetManager,*mGpuResourceManager});
+	mStatManager.UpdatePicking();
 
 	ConsoleWindow& console = ConsoleWindow::GetInstance();
 
@@ -345,7 +346,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			}
 			client.UpdateGizmoForView(selectedActor);
 
-			const TArray<FRenderInfo> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
+			const TArray<const FRenderInfo*> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
 
 			mGraphicsManager->RenderGizmoView(gizmoRenderInfos, sceneView);
 		}
@@ -525,6 +526,19 @@ void FEngineLoop::processEditorCommand(const FLoadObjCommand& command)
 	catch (const std::exception& exception)
 	{
 		UE_LOG(Error, Editor, "Failed to import OBJ: %s (%s)", command.ObjFilePath.CStr(), exception.what());
+	}
+}
+
+void FEngineLoop::processEditorCommand(const FConvertLegacySceneToNewFormatCommand& command)
+{
+	try
+	{
+		FEditorFileUtils::ConvertLegacySceneToNewFormat();
+		UE_LOG(Log, Editor, "Legacy scene converted");
+	}
+	catch (const std::exception& exception)
+	{
+		UE_LOG(Error, Editor, "Failed to convert legacy scene: %s", exception.what());
 	}
 }
 
@@ -893,6 +907,10 @@ void FEngineLoop::processEditorCommand(const FToggleStatCommand& command)
 		groupName = "Memory";
 		break;
 
+	case EStatGroup::Picking:
+		groupName = "Picking";
+		break;
+
 	default:
 		break;
 	}
@@ -913,4 +931,9 @@ void FEngineLoop::processEditorCommand(const FDisableAllStatsCommand&)
 		Log,
 		Editor,
 		"All stats disabled");
+}
+
+void FEngineLoop::processEditorCommand(const FClearPickingDataCommand&)
+{
+	mStatManager.ClearPickingStat();
 }

@@ -10,7 +10,7 @@
 
 struct FTextMesh;
 struct FSubUVMesh;
-struct FStaticMesh;
+struct UStaticMesh;
 struct FRenderInfo
 {
 	//EPrimitive ePrimitive;
@@ -24,8 +24,8 @@ struct FRenderInfo
 
 	const FTextMesh* Textmesh;
 	const FSubUVMesh* SubUVMesh;
-	const FStaticMesh* StaticMesh;
-	TArray<FMaterial> Materials; 
+	const UStaticMesh* StaticMeshAsset;
+	TArray<const UMaterial*> Materials; 
 
 	// For particle rendering
 	int32 numRows;

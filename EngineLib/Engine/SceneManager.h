@@ -48,8 +48,8 @@ public:
 
 	void Update(float deltaTime);
 
-	const TArray<FRenderInfo>& GetRenderInfos() const;
-	const TArray<FRenderInfo>& GetAxisRenderInfos() const;
+	const TArray<const FRenderInfo*>& GetRenderInfos() const;
+	const TArray<const FRenderInfo*>& GetAxisRenderInfos() const;
 
 	// Clear world
 	void NewScene();

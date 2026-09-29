@@ -7,6 +7,7 @@ enum class EStatGroup : uint8
 	None = 0,
 	FPS = 1 << 0,
 	Memory = 1 << 1,
+	Picking = 1 << 2,
 };
 
 constexpr uint8 toStatMask(EStatGroup group)
@@ -46,8 +47,16 @@ struct FMemoryStatSnapshot
 	uint32 GpuTextureCount = 0;
 };
 
+struct FPickingStatSnapshot
+{
+	uint32 PickingCount = 0;
+	double LastPickTimeMs = 0;
+	double TotalPickTimeMs = 0;
+};
+
 struct FStatSnapshot
 {
 	FFrameStatSnapshot Frame;
 	FMemoryStatSnapshot Memory;
+	FPickingStatSnapshot Picking;
 };

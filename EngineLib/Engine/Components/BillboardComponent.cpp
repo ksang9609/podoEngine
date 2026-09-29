@@ -13,9 +13,8 @@ void UBillboardComponent::Initialize(FVector location, FRotator rotation, FVecto
 	UPrimitiveComponent::Initialize(EPrimitive::EP_BillboardQuad, location, rotation, scale3D);
 }
 
-FRenderInfo UBillboardComponent::makeRenderInfo() const
+void UBillboardComponent::updateRenderInfo()
 {
-	FRenderInfo renderInfo = UPrimitiveComponent::makeRenderInfo();
-	renderInfo.eRenderFlags = renderInfo.eRenderFlags | ERenderFlags::RF_Billboard;
-	return renderInfo;
+	UPrimitiveComponent::updateRenderInfo();
+	mRenderInfo.eRenderFlags = mRenderInfo.eRenderFlags | ERenderFlags::RF_Billboard;
 }

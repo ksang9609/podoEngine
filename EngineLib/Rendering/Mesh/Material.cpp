@@ -11,6 +11,7 @@ IMPLEMENT_SERIALIZATION(UMaterial, UObject,
 
 void UMaterial::Initialize(FName materialName, std::unique_ptr<FMaterial> inMaterial)
 {
+	UObject::Initialize();
 	mMaterialName = materialName;
 	mMaterial = std::move(inMaterial);
 }

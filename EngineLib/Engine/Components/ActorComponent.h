@@ -18,8 +18,8 @@ public:
 	AActor* GetOwner() const;
 
 	// Todo: Make as pure class
-	virtual void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos);
-	virtual void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const;
+	virtual void Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos);
+	virtual void GetRenderInfos(TArray<const FRenderInfo*>& outRenderInfos);
 
 protected:
 	AActor* mOwner;

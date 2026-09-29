@@ -22,19 +22,22 @@ public:
 	virtual ~UPrimitiveComponent();
 
 	virtual FBoundingBox GetWorldBounds() const override;
+	virtual FBoundingBox CalculateWorldBounds(const FMatrix& worldTransform) const;
 
-	void Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos) override;
-	void GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const override final;
-	void SetUseTexture(bool value) { mbUseTexture = value; }
+	void Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos) override;
+	void GetRenderInfos(TArray<const FRenderInfo*>& outRenderInfos) override final;
+	void SetUseTexture(bool value) { mbUseTexture = value; mbRenderInfoDirty = true; }
 	bool GetUseTexture() const { return mbUseTexture; }
 
+	void SetShowBoundingBox(bool value) { mbShowBoundingBox = value; mbRenderInfoDirty = true; }
+
 	const FLinearColor& GetColor() const { return mColor; }
-	void SetColor(const FLinearColor& color) { mColor = color; }
+	void SetColor(const FLinearColor& color) { mColor = color; mbRenderInfoDirty = true; }
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 protected:
-	virtual FRenderInfo makeRenderInfo() const;
+	virtual void updateRenderInfo();
 
 	EPrimitive mePrimitive;
 	FLinearColor mColor{ 1.f, 1.f, 1.f, 1.f };
@@ -44,6 +47,8 @@ protected:
 
 	bool mbUseTexture = false;
 	bool mbShowBoundingBox = true;
+
+	FRenderInfo mRenderInfo = {};
 };
 
 

@@ -31,13 +31,13 @@ AActor* UActorComponent::GetOwner() const
 	return mOwner;
 }
 
-void UActorComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
+void UActorComponent::Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos)
 {
 	// Todo: Do nothing, must override, some components may not call Update()
 	// assert(false);
 }
 
-void UActorComponent::GetRenderInfos(TArray<FRenderInfo>* outRenderInfos) const
+void UActorComponent::GetRenderInfos(TArray<const FRenderInfo*>& outRenderInfos)
 {
 	// Todo: Do nothing, must override, some components may not call GetRenderInfos()
 	// assert(false);

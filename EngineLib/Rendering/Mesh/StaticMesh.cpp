@@ -10,16 +10,19 @@ IMPLEMENT_SERIALIZATION(UStaticMesh, UObject,
 
 void UStaticMesh::Initialize(FStaticMesh* inStaticMesh)
 {
+	UObject::Initialize();
 	SetStaticMeshAsset(inStaticMesh);
 }
 
 void UStaticMesh::Initialize(std::unique_ptr<FStaticMesh> inStaticMesh)
 {
+	UObject::Initialize();
 	SetStaticMeshAsset(std::move(inStaticMesh));
 }
 
 void UStaticMesh::Initialize(std::unique_ptr<FStaticMesh> inStaticMesh, TArray<const UMaterial*>&& inDefaultMaterialRefs)
 {
+	UObject::Initialize();
 	SetStaticMeshAsset(std::move(inStaticMesh));
 	mDefaultMaterialRefs = std::move(inDefaultMaterialRefs);
 }

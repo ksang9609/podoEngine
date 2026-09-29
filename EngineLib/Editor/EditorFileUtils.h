@@ -25,11 +25,14 @@ public:
 
 	static bool SaveScene(UWorld* world, FCamera* perspectiveCamera);
 	static bool SaveSceneAs(UWorld* world, FCamera* perspectiveCamera);
+
+	static bool ConvertLegacySceneToNewFormat();
 	
 private:
 	static bool saveSceneToPath(UWorld* world, const FString& filePath, FCamera* perspectiveCamera);
 	static FString openSaveSceneDialog();
 	static FString openLoadSceneDialog();
+	static FString openLegacySceneDialog();
 
 	static FString mCurrentScenePath;
 };

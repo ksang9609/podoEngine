@@ -25,6 +25,7 @@ struct FSaveSceneCommand { FString SceneName; };
 struct FSaveSceneAsCommand { FString SceneName; };
 struct FLoadSceneCommand { FString SceneName; };
 struct FLoadObjCommand { FString ObjFilePath; };
+struct FConvertLegacySceneToNewFormatCommand {};
 
 struct FSpawnActorCommand { EPrimitive PrimitiveType; int32 SpawnCount; };
 struct FSpawnStaticMeshActorCommand { FName StaticMeshKey; int32 SpawnCount; };
@@ -72,6 +73,7 @@ struct FStartProjectionTransitionCommand { bool bOrthographic; };
 
 /* Consol Commands */
 struct FToggleStatCommand { EStatGroup Group; };
+struct FClearPickingDataCommand {};
 struct FDisableAllStatsCommand { };
 
 using FEditorCommand = std::variant <
@@ -80,6 +82,7 @@ using FEditorCommand = std::variant <
 	FSaveSceneAsCommand,
 	FLoadSceneCommand,
 	FLoadObjCommand,
+	FConvertLegacySceneToNewFormatCommand,
 
 	FSpawnActorCommand,
 	FDeleteActorCommand,
@@ -124,7 +127,8 @@ using FEditorCommand = std::variant <
 	FStartProjectionTransitionCommand,
 
 	FToggleStatCommand,
-	FDisableAllStatsCommand
+	FDisableAllStatsCommand,
+	FClearPickingDataCommand
 
 > ;
 using FEditorCommands = TArray<FEditorCommand>;

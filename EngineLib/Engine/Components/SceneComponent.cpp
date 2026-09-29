@@ -170,7 +170,8 @@ FVector USceneComponent::GetRelativeLocation() const
 void USceneComponent::SetRelativeLocation(FVector location)
 {
 	mRelativeLocation = location;
-	updateComponentToWorld();
+	mbRenderInfoDirty = true;
+	mbTransformDirty = true;
 }
 
 FRotator USceneComponent::GetRelativeRotation() const
@@ -181,13 +182,15 @@ FRotator USceneComponent::GetRelativeRotation() const
 void USceneComponent::SetRelativeRotation(FRotator rotation)
 {
 	mRelativeRotation = rotation;
-	updateComponentToWorld();
+	mbTransformDirty = true;
+	mbRenderInfoDirty = true;
 }
 
 void USceneComponent::SetRelativeRotation(FQuat rotation)
 {
 	mRelativeRotation = rotation.Rotator();
-	updateComponentToWorld();
+	mbTransformDirty = true;
+	mbRenderInfoDirty = true;
 }
 
 FVector USceneComponent::GetRelativeScale3D() const
@@ -198,11 +201,16 @@ FVector USceneComponent::GetRelativeScale3D() const
 void USceneComponent::SetRelativeScale3D(FVector scale)
 {
 	mRelativeScale3D = scale;
-	updateComponentToWorld();
+	mbTransformDirty = true;
+	mbRenderInfoDirty = true;
 }
 
 FMatrix USceneComponent::GetTransformMatrix() const
 {
+	if (mbTransformDirty)
+	{
+		updateComponentToWorld();
+	}
 	return mComponentToWorld;
 }
 
@@ -216,20 +224,24 @@ void USceneComponent::SetRelativeTransform(const FTransform& transform)
 	mRelativeLocation = transform.GetLocation();
 	mRelativeRotation = transform.GetRotator();
 	mRelativeScale3D = transform.GetScale();
-	updateComponentToWorld();
+	mbTransformDirty = true;
+	mbRenderInfoDirty = true;
 }
 
-void USceneComponent::updateComponentToWorld(const FMatrix& parentTransform)
+void USceneComponent::updateComponentToWorld(const FMatrix& parentTransform) const
 {
 	mComponentToWorld = FTransform(mRelativeLocation, mRelativeRotation, mRelativeScale3D).MakeMatrix() * parentTransform;
 
 	for (USceneComponent* child : mChildren)
 	{
 		child->updateComponentToWorld(mComponentToWorld);
+		child->mbRenderInfoDirty = true;
 	}
+	mbTransformDirty = false;
+	mbRenderInfoDirty = true;
 }
 
-void USceneComponent::updateComponentToWorld()
+void USceneComponent::updateComponentToWorld() const
 {
 	updateComponentToWorld(mParent ? mParent->GetTransformMatrix() : FMatrix::Identity);
 }

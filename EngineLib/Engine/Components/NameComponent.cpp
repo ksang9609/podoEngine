@@ -24,7 +24,7 @@ void UNameComponent::Initialize(const FString& nameText, FVector worldPositionOf
 	mColor = FLinearColor(1.f, 1.f, 1.f, 1.f); // Set default color to white
 }
 
-void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
+void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform) const
 {
 	// NameComponent always located over the actor's world position,
 	// so we reuse mRelativeLocation as a world position offset from the actor's world position.
@@ -34,16 +34,24 @@ void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform)
 
 	if (mParent)
 	{
-		// Set the world position to be above the parent's bounding box
-		worldPosition.z += mParent->GetWorldBounds().max.z - mParent->GetRelativeLocation().z;
+		if (const UPrimitiveComponent* primitiveParent = mParent->Cast<UPrimitiveComponent>())
+		{
+			// Set the world position to be above the parent's bounding box
+			const FBoundingBox parentBounds = primitiveParent->CalculateWorldBounds(parentTransform);
+
+			worldPosition.z = parentBounds.max.z + mRelativeLocation.z;
+		}
 	}
 	mComponentToWorld = FTransform(worldPosition, FQuat::Identity(), mRelativeScale3D).MakeMatrix();
+
+	mbTransformDirty = false;
+	mbRenderInfoDirty = true;
 }
 
-FRenderInfo UNameComponent::makeRenderInfo() const
+void UNameComponent::updateRenderInfo()
 {
-	FRenderInfo renderInfo = UBillboardComponent::makeRenderInfo();
-	ERenderFlags renderFlags = renderInfo.eRenderFlags;
+	UBillboardComponent::updateRenderInfo();
+	ERenderFlags renderFlags = mRenderInfo.eRenderFlags;
 
 	// Remove primitive flags and add billboardtext flags
 	renderFlags = renderFlags
@@ -53,10 +61,8 @@ FRenderInfo UNameComponent::makeRenderInfo() const
 		| ERenderFlags::RF_Billboard
 		| ERenderFlags::RF_Text;
 
-	renderInfo.eRenderFlags = renderFlags;
-	renderInfo.Textmesh = &mTextMesh;
-
-	return renderInfo;
+	mRenderInfo.eRenderFlags = renderFlags;
+	mRenderInfo.Textmesh = &mTextMesh;
 }
 
 void UNameComponent::SetNameText(const FString& nameText)
@@ -68,6 +74,8 @@ void UNameComponent::SetNameText(const FString& nameText)
 
 	// TODO: Optimize this by updating in the GetRenderInfos function instead of recreating the FTextMesh every time.
 	mTextMesh.SetText(mNameText, *mFontResourceRef);
+
+	mbRenderInfoDirty = true;
 }
 //
 //void UNameComponent::SetNameText(FString&& nameText)
@@ -85,6 +93,8 @@ void UNameComponent::SetUnicodeNameText(const FString& nameText)
 
 	// 내부에서 FontRenderMode를 MSDF로 설정
 	mTextMesh.SetUnicodeText(mNameText, *mFontResourceRef, 0.2f);
+
+	mbRenderInfoDirty = true;
 }
 
 bool UNameComponent::AttachTo(USceneComponent& parent)

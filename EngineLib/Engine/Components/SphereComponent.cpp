@@ -26,7 +26,7 @@ USphereComponent::~USphereComponent()
 {
 }
 
-void USphereComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
+void USphereComponent::Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos)
 {
 	if (mbSpin)
 	{
@@ -57,11 +57,9 @@ void USphereComponent::Initialize(FVector location, FRotator rotation, FVector s
 	mSpinSpeed = spinSpeed;
 }
 
-FRenderInfo USphereComponent::makeRenderInfo() const
+void USphereComponent::updateRenderInfo()
 {
-	FRenderInfo renderInfo = UStaticMeshComponent::makeRenderInfo();
-
-	return renderInfo;
+	UStaticMeshComponent::updateRenderInfo();
 }
 
 std::span<const FPropertyInfo>

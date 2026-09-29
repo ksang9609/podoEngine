@@ -29,7 +29,7 @@ IMPLEMENT_SERIALIZATION(UParticleSubUVComponent, UBillboardComponent,
 	mBlendStateType = EBlendStateType::BST_AlphaBlend; // Set default blend state to alpha blend
 }
 
-void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRenderInfos)
+void UParticleSubUVComponent::Update(float deltaTime, TArray<const FRenderInfo*>& outRenderInfos)
 {
 	bool restarted = false;
 
@@ -88,32 +88,32 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<FRenderInfo>* outRe
 	UBillboardComponent::Update(deltaTime, outRenderInfos);
 }
 
-FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
+void UParticleSubUVComponent::updateRenderInfo()
 {
-	FRenderInfo renderInfo = UBillboardComponent::makeRenderInfo();
-	renderInfo.SubUVMesh = &mSubUVMesh;
+	UBillboardComponent::updateRenderInfo();
+
+	mRenderInfo.SubUVMesh = &mSubUVMesh;
 
 	// TODO: Get texture name at initialization and return it
-	renderInfo.MeshName = BuiltinAssets::BillboardQuadTextured;
-	renderInfo.TextureName = FName("Assets/Textures/Explosion_Alpha.dds");
+	mRenderInfo.MeshName = BuiltinAssets::BillboardQuadTextured;
+	mRenderInfo.TextureName = FName("Assets/Textures/Explosion_Alpha.dds");
 
-	renderInfo.eRenderFlags =
+	mRenderInfo.eRenderFlags =
 		ERenderFlags::RF_Raycastable |
 		ERenderFlags::RF_Billboard |
 		ERenderFlags::RF_Particle;
 
-	renderInfo.Color = mbIsFinished
+	mRenderInfo.Color = mbIsFinished
 		? FLinearColor(1.f, 1.f, 1.f, 0.0f) // Fully transparent if finished
 		: mColor; // Use the component's color if not finished
 
-	renderInfo.BlendStateType = static_cast<EBlendStateType>(mBlendStateType);
+	mRenderInfo.BlendStateType = static_cast<EBlendStateType>(mBlendStateType);
 
-	renderInfo.numRows = mNumRows;
-	renderInfo.numCols = mNumCols;
-	renderInfo.currentFrame = mCurrentFrameIndex;
-	renderInfo.nextFrame = mNextFrameIndex;
-	renderInfo.frameRatio = mElapsedFrameRatio;
-	return renderInfo;
+	mRenderInfo.numRows = mNumRows;
+	mRenderInfo.numCols = mNumCols;
+	mRenderInfo.currentFrame = mCurrentFrameIndex;
+	mRenderInfo.nextFrame = mNextFrameIndex;
+	mRenderInfo.frameRatio = mElapsedFrameRatio;
 }
 
 std::span<const FPropertyInfo> UParticleSubUVComponent::GetDeclaredProperties()

@@ -15,6 +15,179 @@
 #include "Camera.h"
 #include "Renderer.h"
 
+namespace
+{
+	constexpr uint32 MAX_PASS_VALUE = 0xFu; // 4 bits for pass
+	constexpr uint32 MAX_DEPTH_VALUE = 0xFFFu; // 12 bits for depth
+	constexpr uint32 MAX_PIPELINE_VALUE = 0x7FFFu; // 15 bits for pipeline
+	constexpr uint32 MAX_MATERIAL_VALUE = 0xFFFFu; // 16 bits for material
+	constexpr uint32 MAX_MESH_VALUE = 0xFFFFu; // 16 bits for mesh
+
+	struct FSortKey
+	{
+		uint64 Key;
+
+		FSortKey(
+			uint32 pass,
+			uint32 depth,
+			uint32 pipeline,
+			uint32 material,
+			uint32 mesh,
+			bool bOpaque = true)
+		{
+			if (bOpaque)
+			{
+				// Opaque: [Pass(4)] | [0 (1)] | [Pipeline(15)] | [Material(16)] | [Mesh(16)] | [Depth(12)]
+				Key = (static_cast<uint64>(pass & MAX_PASS_VALUE) << 60) |
+					(static_cast<uint64>(0) << 59) |
+					(static_cast<uint64>(pipeline & MAX_PIPELINE_VALUE) << 44) |
+					(static_cast<uint64>(material & MAX_MATERIAL_VALUE) << 28) |
+					(static_cast<uint64>(mesh & MAX_MESH_VALUE) << 12) |
+					(static_cast<uint64>(depth & MAX_DEPTH_VALUE));
+			}
+			else
+			{
+				// TODO: Increase depth precision for translucent objects if needed
+				// Translucent: [Pass(4)] | [1 (1)] | [Inverted Depth(12)] | [Pipeline(15)] | [Material(16)] | [Mesh(16)]
+				Key = (static_cast<uint64>(pass & MAX_PASS_VALUE) << 60) |
+					(static_cast<uint64>(1) << 59) |
+					(static_cast<uint64>((depth & MAX_DEPTH_VALUE) ^ MAX_DEPTH_VALUE) << 47) |
+					(static_cast<uint64>(pipeline & MAX_PIPELINE_VALUE) << 32) |
+					(static_cast<uint64>(material & MAX_MATERIAL_VALUE) << 16) |
+					static_cast<uint64>(mesh & MAX_MESH_VALUE);
+			}
+		}
+
+		uint32 GetPass() const { return static_cast<uint32>((Key >> 60) & MAX_PASS_VALUE); }
+		uint32 GetDepth(bool bOpaque = true) const
+		{
+			if (bOpaque)
+			{
+				return static_cast<uint32>(Key & MAX_DEPTH_VALUE);
+			}
+			else
+			{
+				return static_cast<uint32>((Key >> 47) & MAX_DEPTH_VALUE) ^ MAX_DEPTH_VALUE;
+			}
+		}
+
+		uint32 GetPipeline(bool bOpaque = true) const
+		{
+			if (bOpaque)
+			{
+				return static_cast<uint32>((Key >> 44) & MAX_PIPELINE_VALUE);
+			}
+			else
+			{
+				return static_cast<uint32>((Key >> 32) & MAX_PIPELINE_VALUE);
+			}
+		}
+
+		uint32 GetMaterialKey(bool bOpaque = true) const
+		{
+			if (bOpaque)
+			{
+				return static_cast<uint32>((Key >> 28) & MAX_MATERIAL_VALUE);
+			}
+			else
+			{
+				return static_cast<uint32>((Key >> 16) & MAX_MATERIAL_VALUE);
+			}
+		}
+
+		uint32 GetMeshKey(bool bOpaque = true) const
+		{
+			if (bOpaque)
+			{
+				return static_cast<uint32>((Key >> 12) & MAX_MESH_VALUE);
+			}
+			else
+			{
+				return static_cast<uint32>(Key & MAX_MESH_VALUE);
+			}
+		}
+	};
+
+	struct FStaticMeshRenderQueueEntry
+	{
+		FSortKey SortKey;
+		const FRenderInfo* RenderInfo;
+
+		/* Additional Information */
+		int32 StartIndex = 0;
+		int32 IndexCount = 0;
+		const FStaticMesh* StaticMesh;
+		const FMaterial* Material;
+	};
+
+	void sortStaticMeshRenderQueue(
+		const TArray<const FRenderInfo*>& renderQueue,
+		TArray<FStaticMeshRenderQueueEntry>& outSortedQueue,
+		const FVector& cameraLocation, const FVector3& cameraForward,
+		const UMaterial& defaultMaterialAsset)
+	{
+		outSortedQueue.Reset(renderQueue.Num());
+
+		for (const FRenderInfo* renderInfo : renderQueue)
+		{
+			assert(renderInfo->StaticMeshAsset != nullptr);
+
+			const TArray<const UMaterial*>& materials = renderInfo->Materials;
+			assert(materials.Num() > 0);
+
+			const FStaticMesh* staticMesh = renderInfo->StaticMeshAsset->GetStaticMeshAsset();
+			assert(staticMesh != nullptr);
+
+			const TArray<FStaticMeshSection>& sections = staticMesh->Sections;
+			// Ignore the case that the static mesh has no sections
+			assert(sections.Num() > 0 && sections.Num() == materials.Num());
+
+			constexpr uint32 passKey = 0; // Assuming a single pass for now, can be modified based on requirements
+			constexpr uint32 pipelineKey = 0; // Assuming a single pipeline for now, can be modified based on requirements
+			const uint32 meshKey = static_cast<uint32>(renderInfo->StaticMeshAsset->UUID);
+			//const float depth = FVector::dot(renderInfo->GetLocation() - cameraLocation, cameraForward);
+			//const uint32 depthKey = static_cast<uint32>(depth * 1000.0f); // Scale depth for better precision
+			constexpr uint32 depthKey = 0; // Disabled for now.
+
+			for (int32 sectionIndex = 0; sectionIndex < sections.Num(); ++sectionIndex)
+			{
+				// Use default material if the texture renderflag is not set
+				const UMaterial* materialAsset = nullptr;
+				if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+				{
+					materialAsset = materials[sectionIndex];
+				}
+				else
+				{
+					materialAsset = &defaultMaterialAsset;
+				}
+
+				const uint32 materialKey = static_cast<uint32>(materialAsset->UUID);
+
+				FSortKey sortKey = FSortKey(passKey, depthKey, pipelineKey, materialKey, meshKey, true);
+
+				FStaticMeshRenderQueueEntry entry =
+				{
+					.SortKey = sortKey,
+					.RenderInfo = renderInfo,
+					.StartIndex = sections[sectionIndex].StartIndex,
+					.IndexCount = sections[sectionIndex].IndexCount,
+					.StaticMesh = staticMesh,
+					.Material = materialAsset->GetMaterial()
+				};
+
+				outSortedQueue.Add(std::move(entry));
+			}
+		}
+
+		// Sort the queue based on the sort key
+		std::sort(outSortedQueue.begin(), outSortedQueue.end(),
+			[](const FStaticMeshRenderQueueEntry& a, const FStaticMeshRenderQueueEntry& b) -> bool {
+				return a.SortKey.Key < b.SortKey.Key;
+			});
+	}
+}
+
 FGraphicsManager::FGraphicsManager()
 	: mGpuResourceManagerRef(nullptr)
 	, mbWireFrame(false)
@@ -87,21 +260,21 @@ void FGraphicsManager::PrepareForUI()
 
 
 void FGraphicsManager::updateRenderQueue(
-	const TArray<FRenderInfo>& renderInfos,
+	const TArray<const FRenderInfo*>& renderInfos,
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
 	const FFrustum* frustum, uint32 showFlags)
 {
-	for (const FRenderInfo& renderInfo : renderInfos)
+	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		if (frustum != nullptr)
 		{
-			if (!frustum->Intersects(renderInfo.WorldBounds))
+			if (!frustum->Intersects(renderInfo->WorldBounds))
 			{
 				continue;
 			}
 		}
 
-		ERenderFlags renderFlags = renderInfo.eRenderFlags;
+		ERenderFlags renderFlags = renderInfo->eRenderFlags;
 
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Primitive) &&
 			!HasAnyRenderFlags(renderFlags, ERenderFlags::RF_Billboard) &&
@@ -110,7 +283,7 @@ void FGraphicsManager::updateRenderQueue(
 			// TODO: Unify all of these into just static mesh
 			//if (renderInfo.ePrimitive == EPrimitive::EP_StaticMesh)
 			//{
-			outRenderQueueMap[RQT_StaticMesh].Add(&renderInfo);
+			outRenderQueueMap[RQT_StaticMesh].Add(renderInfo);
 			//}
 			//else if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Texture))
 			//{
@@ -125,25 +298,25 @@ void FGraphicsManager::updateRenderQueue(
 			ERenderFlags::RF_Billboard | ERenderFlags::RF_Text) &&
 			HasViewShowFlag(showFlags, EEngineShowFlags::SF_BillboardText))
 		{
-			outRenderQueueMap[RQT_BillboardText].Add(&renderInfo);
+			outRenderQueueMap[RQT_BillboardText].Add(renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_WorldAxis) &&
 			HasViewShowFlag(showFlags, EEngineShowFlags::SF_WorldAxis))
 		{
-			outRenderQueueMap[RQT_WorldAxis].Add(&renderInfo);
+			outRenderQueueMap[RQT_WorldAxis].Add(renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Gizmo))
 		{
-			outRenderQueueMap[RQT_Gizmo].Add(&renderInfo);
+			outRenderQueueMap[RQT_Gizmo].Add(renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_BoundingBox) &&
 			HasViewShowFlag(showFlags, EEngineShowFlags::SF_BoundingBox))
 		{
-			outRenderQueueMap[RQT_BoundingBox].Add(&renderInfo);
+			outRenderQueueMap[RQT_BoundingBox].Add(renderInfo);
 		}
 		if (HasAllRenderFlags(renderFlags, ERenderFlags::RF_Particle))
 		{
-			outRenderQueueMap[RQT_Particle].Add(&renderInfo);
+			outRenderQueueMap[RQT_Particle].Add(renderInfo);
 		}
 	}
 }
@@ -163,8 +336,8 @@ void sortRenderQueueByDistance(TArray<const FRenderInfo*>& renderQueue, const FV
 }
 
 void FGraphicsManager::RenderSceneView(
-	const TArray<FRenderInfo>& scenerRenderInfos,
-	const TArray<FRenderInfo>& axisRenderInfos,
+	const TArray<const FRenderInfo*>& scenerRenderInfos,
+	const TArray<const FRenderInfo*>& axisRenderInfos,
 	const FSceneView& view,
 	const AActor* selectedActor)
 {
@@ -218,7 +391,7 @@ void FGraphicsManager::RenderSceneView(
 	}
 }
 
-void FGraphicsManager::RenderGizmoView(const TArray<FRenderInfo>& gizmoRenderInfos, const FSceneView& view)
+void FGraphicsManager::RenderGizmoView(const TArray<const FRenderInfo*>& gizmoRenderInfos, const FSceneView& view)
 {
 	if (!view.isValid() || gizmoRenderInfos.IsEmpty())
 	{
@@ -312,151 +485,278 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 	}
 }
 
-void FGraphicsManager::renderStaticMesh(const  TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
+void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
 	auto& assets = *mAssetManagerRef;
 
 	mRenderer->PrepareStaticMesh();
-	for (const FRenderInfo* renderInfo : renderInfos)
+
+	// Sort the renderInfos based on following criteria:
+	// 1. Material (to minimize shader and texture switches)
+	// 2. Mesh (to minimize vertex buffer switches)
+	// 3. Depth (to use occlusion culling? )
+
+	// TODO: Consider reusing this variable across frames to avoid reallocating memory every frame.
+	TArray<FStaticMeshRenderQueueEntry> sortedQueue;
+
+	const UMaterial* defaultMaterialAsset = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial);
+	assert(defaultMaterialAsset != nullptr);
+	sortStaticMeshRenderQueue(renderInfos,
+		sortedQueue,
+		view.cameraLocation, view.cameraForward,
+		*defaultMaterialAsset);
+
+	// Cache last used material and mesh to minimize state changes
+	const FStaticMesh* lastUsedMesh = nullptr;
+	const FMaterial* lastUsedMaterial = nullptr;
+	const FBuffer* lastUsedBuffer = nullptr;
+	for (const auto& entry : sortedQueue)
 	{
-		if (renderInfo->StaticMesh == nullptr)
+		// Set Material resources only if the material has changed
+		if (entry.Material != lastUsedMaterial)
 		{
-			continue;
-		}
-
-		FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-		mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
-
-		const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
-		if (buffer == nullptr)
-		{
-			UE_LOG(Error, Render, "Static mesh buffer not found.");
-			continue;
-		}
-		// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
-		if (renderInfo->StaticMesh->Sections.IsEmpty())
-		{
-			ID3D11ShaderResourceView* texture = nullptr;
-			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
-			{
-				// TODO: Use the texture from the renderInfo if available
-				texture = resources.FindTextureOrAdd(renderInfo->TextureName);
-				if (texture == nullptr)
-				{
-					UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
-					texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
-				}
-			}
-			else {
-				texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
-			}
-
-			//mRenderer->RenderStaticMesh(vertexBuffer->Buffer, vertexBuffer->SourceNum, texture->SRV, texture->Sampler);
-			mRenderer->RenderStaticMesh(buffer->Buffer.Get(), buffer->SourceNum,
-				texture,
-				nullptr,
-				nullptr,
-				&resources.GetSamplerState(SST_Default),
-				buffer->IndexBuffer.Get(), buffer->IndexCount);
-
-			continue;
-		}
-		// OBJ 메시: 섹션마다 재질과 텍스처를 선택해서 그린다.
-		for (const FStaticMeshSection& section : renderInfo->StaticMesh->Sections)
-		{
-
-			const FMaterial* material = nullptr;
-
 			ID3D11ShaderResourceView* diffuseTexture = nullptr;
 			ID3D11ShaderResourceView* normalTexture = nullptr;
 			ID3D11ShaderResourceView* specularTexture = nullptr;
-
-			// Find the material only if the render flags indicate that textures should be used
-			if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+			if (entry.Material->DiffuseTexture.IsValid())
 			{
-				if (section.MaterialSlotIndex >= 0 && section.MaterialSlotIndex < renderInfo->Materials.Num())
-				{
-					material = &renderInfo->Materials[section.MaterialSlotIndex];
-				}
-
-				if (!material)
-				{
-					UE_LOG_F(Warning, Render, "Material not found for section {} of static mesh {}. Using default white material.",
-						section.Name, renderInfo->MeshName.ToString());
-
-					material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
-				}
+				diffuseTexture = resources.FindTextureOrAdd(entry.Material->DiffuseTexture);
 			}
-			else
+			if (entry.Material->NormalTexture.IsValid())
 			{
-				material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
+				normalTexture = resources.FindTextureOrAdd(entry.Material->NormalTexture);
 			}
-
-			if (material->DiffuseTexture.IsValid())
+			if (entry.Material->SpecularTexture.IsValid())
 			{
-				diffuseTexture = resources.FindTextureOrAdd(material->DiffuseTexture);
+				specularTexture = resources.FindTextureOrAdd(entry.Material->SpecularTexture);
 			}
-			if (material->NormalTexture.IsValid())
-			{
-				normalTexture = resources.FindTextureOrAdd(material->NormalTexture);
-			}
-
-			if (material->SpecularTexture.IsValid())
-			{
-				specularTexture = resources.FindTextureOrAdd(material->SpecularTexture);
-			}
-
-
-			if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture) &&
-				renderInfo->TextureName.IsValid())
-			{
-				diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
-			}
-
-			// 아무 텍스처도 없으면 흰색 텍스처
-			if (diffuseTexture == nullptr)
-			{
-				diffuseTexture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
-			}
-
-			FLinearColor finalTint = renderInfo->Color;
-
-			if (material)
-			{
-				finalTint.R *= material->DiffuseColor.x;
-				finalTint.G *= material->DiffuseColor.y;
-				finalTint.B *= material->DiffuseColor.z;
-				finalTint.A = 1.0f;
-			}
-
-			// 우선 기존 컴포넌트 색상 유지
-			FVector2 uvOffset = renderInfo->SubUVMesh
-				? renderInfo->SubUVMesh->UVOffset
-				: FVector2(0.0f, 0.0f);
-			FVector2 uvScale = renderInfo->SubUVMesh
-				? renderInfo->SubUVMesh->UVScale
-				: FVector2(1.0f, 1.0f);
-
-			mRenderer->UpdateTextureConstant(
-				worldTransform, view.viewProjectionMatrix, finalTint,
-				uvScale, uvOffset
-			);
-
-			mRenderer->RenderStaticMesh(
-				buffer->Buffer.Get(),
-				buffer->SourceNum,
+			mRenderer->SetMaterialResources(
 				diffuseTexture,
 				normalTexture,
 				specularTexture,
-				&resources.GetSamplerState(SST_Wrap),
-				buffer->IndexBuffer.Get(),
-				section.IndexCount,
-				section.StartIndex);
+				&resources.GetSamplerState(SST_Wrap)
+			);
+			lastUsedMaterial = entry.Material;
 		}
 
+		// Set Mesh resources only if the mesh has changed
+		if (entry.StaticMesh != lastUsedMesh)
+		{
+			lastUsedBuffer = resources.FindImmutableBufferOrAdd(entry.RenderInfo->MeshName);
+			if (lastUsedBuffer == nullptr)
+			{
+				UE_LOG(Error, Render, "Static mesh buffer not found.");
+				assert(false);
+				continue;
+			}
+			mRenderer->SetStaticMeshResources(
+				lastUsedBuffer->Buffer.GetAddressOf(),
+				lastUsedBuffer->IndexBuffer.Get()
+			);
+			lastUsedMesh = entry.StaticMesh;
+		}
+
+		// Update world transform and color for the current render info
+		const FMatrix& worldTransform = entry.RenderInfo->WorldTransformMatrix;
+		FLinearColor finalTint = entry.RenderInfo->Color;
+
+		finalTint.R *= entry.Material->DiffuseColor.x;
+		finalTint.G *= entry.Material->DiffuseColor.y;
+		finalTint.B *= entry.Material->DiffuseColor.z;
+		finalTint.A = 1.0f;
+
+		const FVector2 uvScale = entry.RenderInfo->SubUVMesh ? entry.RenderInfo->SubUVMesh->UVScale : FVector2(1.0f, 1.0f);
+		const FVector2 uvOffset = entry.RenderInfo->SubUVMesh ? entry.RenderInfo->SubUVMesh->UVOffset : FVector2(0.0f, 0.0f);
+
+		mRenderer->UpdateTextureConstant(
+			worldTransform,
+			view.viewProjectionMatrix,
+			finalTint,
+			uvScale,
+			uvOffset
+		);
+
+		if (lastUsedBuffer->IndexBuffer)
+		{
+			mRenderer->DrawIndexedBuffer(entry.IndexCount, entry.StartIndex);
+		}
+		else
+		{
+			mRenderer->DrawVertexBuffer(lastUsedBuffer->SourceNum);
+		}
 	}
+
+	//for (const FRenderInfo* renderInfo : renderInfos)
+	//{
+	//	if (renderInfo->StaticMeshAsset == nullptr)
+	//	{
+	//		continue;
+	//	}
+
+	//	const FStaticMesh& staticMesh = *renderInfo->StaticMeshAsset->GetStaticMeshAsset();
+
+	//	FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+	//	mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
+
+	//	const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
+	//	if (buffer == nullptr)
+	//	{
+	//		UE_LOG(Error, Render, "Static mesh buffer not found.");
+	//		continue;
+	//	}
+	//	// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
+	//	// TODO?:	Is there any static mesh that has no sections?
+	//	//			If not, we don't need to manage this case.
+	//	if (staticMesh.Sections.IsEmpty())
+	//	{
+	//		ID3D11ShaderResourceView* texture = nullptr;
+	//		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+	//		{
+	//			// TODO: Use the texture from the renderInfo if available
+	//			texture = resources.FindTextureOrAdd(renderInfo->TextureName);
+	//			if (texture == nullptr)
+	//			{
+	//				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
+	//				texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+	//			}
+	//		}
+	//		else {
+	//			texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+	//		}
+
+	//		mRenderer->SetMaterialResources(
+	//			texture,
+	//			nullptr,
+	//			nullptr,
+	//			&resources.GetSamplerState(SST_Wrap)
+	//		);
+
+	//		mRenderer->SetStaticMeshResources(
+	//			buffer->Buffer.GetAddressOf(),
+	//			buffer->IndexBuffer.Get()
+	//		);
+
+	//		if (buffer->IndexBuffer)
+	//		{
+	//			mRenderer->DrawIndexedBuffer(buffer->IndexCount, 0);
+	//		}
+	//		else
+	//		{
+	//			mRenderer->DrawVertexBuffer(buffer->SourceNum);
+	//		}
+
+	//		continue;
+	//	}
+	//	// OBJ 메시: 섹션마다 재질과 텍스처를 선택해서 그린다.
+	//	for (const FStaticMeshSection& section : staticMesh.Sections)
+	//	{
+
+	//		const FMaterial* material = nullptr;
+
+	//		ID3D11ShaderResourceView* diffuseTexture = nullptr;
+	//		ID3D11ShaderResourceView* normalTexture = nullptr;
+	//		ID3D11ShaderResourceView* specularTexture = nullptr;
+
+	//		// Find the material only if the render flags indicate that textures should be used
+	//		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+	//		{
+	//			if (section.MaterialSlotIndex >= 0 && section.MaterialSlotIndex < renderInfo->Materials.Num())
+	//			{
+	//				const UMaterial* materialAsset = renderInfo->Materials[section.MaterialSlotIndex];
+	//				if (materialAsset)
+	//				{
+	//					material = materialAsset->GetMaterial();
+	//				}
+	//			}
+
+	//			if (!material)
+	//			{
+	//				UE_LOG_F(Warning, Render, "Material not found for section {} of static mesh {}. Using default white material.",
+	//					section.Name, renderInfo->MeshName.ToString());
+
+	//				material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
+	//			}
+	//		}
+	//		else
+	//		{
+	//			material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
+	//		}
+
+	//		if (material->DiffuseTexture.IsValid())
+	//		{
+	//			diffuseTexture = resources.FindTextureOrAdd(material->DiffuseTexture);
+	//		}
+	//		if (material->NormalTexture.IsValid())
+	//		{
+	//			normalTexture = resources.FindTextureOrAdd(material->NormalTexture);
+	//		}
+
+	//		if (material->SpecularTexture.IsValid())
+	//		{
+	//			specularTexture = resources.FindTextureOrAdd(material->SpecularTexture);
+	//		}
+
+
+	//		if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture) &&
+	//			renderInfo->TextureName.IsValid())
+	//		{
+	//			diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
+	//		}
+
+	//		// 아무 텍스처도 없으면 흰색 텍스처
+	//		if (diffuseTexture == nullptr)
+	//		{
+	//			diffuseTexture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+	//		}
+
+	//		FLinearColor finalTint = renderInfo->Color;
+
+	//		if (material)
+	//		{
+	//			finalTint.R *= material->DiffuseColor.x;
+	//			finalTint.G *= material->DiffuseColor.y;
+	//			finalTint.B *= material->DiffuseColor.z;
+	//			finalTint.A = 1.0f;
+	//		}
+
+	//		// 우선 기존 컴포넌트 색상 유지
+	//		FVector2 uvOffset = renderInfo->SubUVMesh
+	//			? renderInfo->SubUVMesh->UVOffset
+	//			: FVector2(0.0f, 0.0f);
+	//		FVector2 uvScale = renderInfo->SubUVMesh
+	//			? renderInfo->SubUVMesh->UVScale
+	//			: FVector2(1.0f, 1.0f);
+
+	//		mRenderer->UpdateTextureConstant(
+	//			worldTransform, view.viewProjectionMatrix, finalTint,
+	//			uvScale, uvOffset
+	//		);
+
+	//		mRenderer->SetMaterialResources(
+	//			diffuseTexture,
+	//			normalTexture,
+	//			specularTexture,
+	//			&resources.GetSamplerState(SST_Wrap)
+	//		);
+
+	//		mRenderer->SetStaticMeshResources(
+	//			buffer->Buffer.GetAddressOf(),
+	//			buffer->IndexBuffer.Get()
+	//		);
+
+	//		if (buffer->IndexBuffer)
+	//		{
+	//			mRenderer->DrawIndexedBuffer(section.IndexCount, section.StartIndex);
+	//		}
+	//		else
+	//		{
+	//			mRenderer->DrawVertexBuffer(buffer->SourceNum);
+	//		}
+	//	}
+
+	//}
 
 }
 
