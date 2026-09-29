@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 #include "Vector.h"
 #include "MathUtility.h"
 #include "Rotator.h"
 #include "Core/enum.h"
 
-struct FMatrix { 
+struct alignas(16) FMatrix {
 	float M[4][4];
 
 	static const FMatrix Identity;
@@ -67,3 +67,5 @@ struct FMatrix {
 
 	// end Struct Matrix
 };
+
+#include "Matrix.inl"
