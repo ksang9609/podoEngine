@@ -286,58 +286,74 @@ inline FMatrix FMatrix::Rotate(const FRotator r)
 inline FMatrix FMatrix::Rotate(const FQuat q)
 {
 	FMatrix result;
-	__m128 Quat = _mm_load_ps(&q.x);
-	__m128 Quat2 = _mm_add_ps(Quat, Quat);
-	// _MM_SHUFFLE  에는 인자가 역순으로 들어감 따라서 레지스터에는 yxxw순서로 들어간다
-	// yy2 xx2 xx2 0
-	__m128 V1a = _mm_shuffle_ps(Quat, Quat, _MM_SHUFFLE(3, 0, 0, 1));
-	__m128 V1b = _mm_shuffle_ps(Quat2, Quat2, _MM_SHUFFLE(3, 0, 0, 1));
-	__m128 V1 = _mm_mul_ps(V1a, V1b);
-	// zz2 zz2 yy2 0
-	__m128 V2a = _mm_shuffle_ps(Quat, Quat, _MM_SHUFFLE(3, 1, 2, 2));
-	__m128 V2b = _mm_shuffle_ps(Quat2, Quat2, _MM_SHUFFLE(3, 1, 2, 2));
-	__m128 V2 = _mm_mul_ps(V2a, V2b);
-	// xy2 yz2 xz2 0
-	__m128 V3a = _mm_shuffle_ps(Quat, Quat, _MM_SHUFFLE(3, 0, 1, 0));
-	__m128 V3b = _mm_shuffle_ps(Quat2, Quat2, _MM_SHUFFLE(3, 2, 2, 1));
-	__m128 V3 = _mm_mul_ps(V3a, V3b);
-	// wz2, wx2, wy2, 0
-	__m128 V4a = _mm_shuffle_ps(Quat, Quat, _MM_SHUFFLE(3, 3, 3, 3));
-	__m128 V4b = _mm_shuffle_ps(Quat2, Quat2, _MM_SHUFFLE(3, 1, 0, 2));
-	__m128 V4 = _mm_mul_ps(V4a, V4b);
 
-	const __m128 OneVec = _mm_set1_ps(1.0f);
-	__m128 diag = _mm_sub_ps(OneVec, _mm_add_ps(V2, V1));
+	const __m128 Constant1110 = _mm_setr_ps(1.0f, 1.0f, 1.0f, 0.0f);
+	// x y z w
+	__m128 Q0 = _mm_load_ps(&q.x);
+	// 2x 2y 2z 2w
+	__m128 Q1 = _mm_add_ps(Q0, Q0);
+	// 2x^2 2y^2 2z^2 2w^2
+	__m128 Q2 = _mm_mul_ps(Q0, Q1);
 
+	// 대각 성분 계산
+	// 2yy, 2xx, 2xx
+	__m128 V0 = _mm_shuffle_ps(Q2, Q2, _MM_SHUFFLE(3, 0, 0, 1));
+	// 2zz, 2zz, 2yy
+	__m128 V1 = _mm_shuffle_ps(Q2, Q2, _MM_SHUFFLE(3, 1, 2, 2));
+	__m128 R0 = _mm_sub_ps(Constant1110, V0);
+	// 1 - (yy2 + zz2), 1 - (xx2 + zz2), 1 - (xx2 + yy2), @
+	R0 = _mm_sub_ps(R0, V1);
+	// 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000 비트 마스크 생성
+	const __m128 Mask = _mm_castsi128_ps(_mm_setr_epi32(-1, -1, -1, 0));
+	// 1 - (yy2 + zz2), 1 - (xx2 + zz2), 1 - (xx2 + yy2), 0.0f
+	R0 = _mm_and_ps(R0, Mask);
 
+	// 비대각선 성분 계산
+	V0 = _mm_shuffle_ps(Q0, Q0, _MM_SHUFFLE(3, 0, 1, 0));
+	V1 = _mm_shuffle_ps(Q1, Q1, _MM_SHUFFLE(3, 2, 2, 1));
+	// 2xy 2yz 2xz
+	V0 = _mm_mul_ps(V0, V1);
 
+	V1 = _mm_shuffle_ps(Q0, Q0, _MM_SHUFFLE(3, 3, 3, 3));
+	__m128 V2 = _mm_shuffle_ps(Q1, Q1, _MM_SHUFFLE(3, 1, 0, 2));
+	// 2wz 2wx 2wy
+	V1 = _mm_mul_ps(V1, V2);
 
+	// 2xy + 2wz, 2yz + 2wx, 2xz + 2wy
+	__m128 R1 = _mm_add_ps(V0, V1);
+	// 2xy - 2wz, 2yz - 2wx, 2xz - 2wy
+	__m128 R2 = _mm_sub_ps(V0, V1);
+
+	//  2xy + 2wz, 2yz + 2wx, 2xz - 2wy, 2xy - 2wz
+	V0 = _mm_shuffle_ps(R1, R2, _MM_SHUFFLE(0, 2, 1, 0));
+	//  0행 1행 비대각 성분 2xy + 2wz, 2xz - 2wy, 2xy - 2wz, 2yz + 2wx
+	V0 = _mm_shuffle_ps(V0, V0, _MM_SHUFFLE(1, 3, 2, 0));
+
+	// 2xz + 2wy, 2xz + 2wy, 2yz - 2wx, 2yz - 2wx
+	V1 = _mm_shuffle_ps(R1, R2, _MM_SHUFFLE(1, 1, 2, 2));
+	// 2행 비대각 성분 2xz + 2wy, 2yz - 2wx
+	V1 = _mm_shuffle_ps(V1, V1, _MM_SHUFFLE(2, 0, 2, 0));
+
+	// 행 성분 조립
+	// 0행 순서 정렬 전 1 - (yy2 + zz2), 0.0f, 2xy + 2wz, 2xz - 2wy
+	__m128 Row = _mm_shuffle_ps(R0, V0, _MM_SHUFFLE(1, 0, 3, 0));
+	// 0행 정렬 1 - (yy2 + zz2), 2xy + 2wz, 2xz - 2wy, 0.0f
+	Row = _mm_shuffle_ps(Row, Row, _MM_SHUFFLE(1, 3, 2, 0));
+	_mm_store_ps(&result.M[0][0], Row);
+
+	// 1행 순서 정렬 전 1 - (xx2 + zz2), 0.0f, 2yz + 2wx, 2xy - 2wz
+	Row = _mm_shuffle_ps(R0, V0, _MM_SHUFFLE(2, 3, 3, 1));
+	// 1행 정렬 2xy - 2wz, 1 - (xx2 + zz2), 2yz + 2wx, 0.0f
+	Row = _mm_shuffle_ps(Row, Row, _MM_SHUFFLE(1, 2, 0, 3));
+	_mm_store_ps(&result.M[1][0], Row);
+
+	// 2행 정렬 2xz + 2wy, 2yz - 2wx	, 1 - (xx2 + yy2), 0.0f
+	Row = _mm_shuffle_ps(V1, R0, _MM_SHUFFLE(3, 2, 1, 0));
+	_mm_store_ps(&result.M[2][0], Row);
+
+	_mm_store_ps(&result.M[3][0], _mm_setr_ps(0.0f, 0.0f, 0.0f, 1.0f));
 
 	return result;
-	//FMatrix result = Identity;
-	//const float x2 = q.x + q.x;
-	//const float y2 = q.y + q.y;
-	//const float z2 = q.z + q.z;
-	//const float xx2 = q.x * x2;
-	//const float yy2 = q.y * y2;
-	//const float zz2 = q.z * z2;
-	//result.M[0][0] = 1.0f - (yy2 + zz2);
-	//result.M[1][1] = 1.0f - (xx2 + zz2);
-	//result.M[2][2] = 1.0f - (xx2 + yy2);
-	//const float yz2 = q.y * z2;
-	//const float wx2 = q.w * x2;
-	//result.M[1][2] = yz2 + wx2;
-	//result.M[2][1] = yz2 - wx2;
-	//const float xy2 = q.x * y2;
-	//const float wz2 = q.w * z2;
-	//result.M[0][1] = xy2 + wz2;
-	//result.M[1][0] = xy2 - wz2;
-	//const float xz2 = q.x * z2;
-	//const float wy2 = q.w * y2;
-	//result.M[0][2] = xz2 - wy2;
-	//result.M[2][0] = xz2 + wy2;
-
-	//return result;
 }
 
 inline FMatrix FMatrix::Translation(const FVector v)
