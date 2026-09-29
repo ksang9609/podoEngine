@@ -19,5 +19,5 @@ protected:
 	// TODO: Add a texture to render on the billboard quad.
 	// UTexture2D* mTexture;
 
-	virtual FRenderInfo makeRenderInfo() const override;
+	virtual void updateRenderInfo() override;
 };

@@ -36,8 +36,8 @@ protected:
 	FTextMesh mTextMesh;
 	const FFontResource* mFontResourceRef;
 
-	virtual void updateComponentToWorld(const FMatrix& parentTransform) override;
+	virtual void updateComponentToWorld(const FMatrix& parentTransform) const override;
 	//virtual void updateComponentToWorld() override;
 
-	virtual FRenderInfo makeRenderInfo() const override;
+	virtual void updateRenderInfo() override;
 };

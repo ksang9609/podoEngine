@@ -190,7 +190,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	FrameTimer->StartFrame();
 	float deltaTime = FrameTimer->GetDeltaTime();
 
-	mStatManager.UpdateFrame(*FrameTimer);
+	mStatManager.UpdateFrame(*FrameTimer, *mGraphicsManager->GetRenderer());
 	mStatManager.UpdateMemory(deltaTime,{*mSceneManager,*mAssetManager,*mGpuResourceManager});
 	mStatManager.UpdatePicking();
 
@@ -346,7 +346,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 			}
 			client.UpdateGizmoForView(selectedActor);
 
-			const TArray<FRenderInfo> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
+			const TArray<const FRenderInfo*> gizmoRenderInfos = client.GetGizmo().GetGizmoRenderInfo();
 
 			mGraphicsManager->RenderGizmoView(gizmoRenderInfos, sceneView);
 		}

@@ -51,12 +51,12 @@ public:
 
 	/* Rendering functions */
 	void RenderSceneView(
-		const TArray<FRenderInfo>& scenerRenderInfos,
-		const TArray<FRenderInfo>& axisRenderInfos,
+		const TArray<const FRenderInfo*>& scenerRenderInfos,
+		const TArray<const FRenderInfo*>& axisRenderInfos,
 		const FSceneView& view,
 		const AActor* selectedActor);
 	void RenderGizmoView(
-		const TArray<FRenderInfo>& gizmoRenderInfos,
+		const TArray<const FRenderInfo*>& gizmoRenderInfos,
 		const FSceneView& view
 	);
 
@@ -159,7 +159,7 @@ private:
 	//void RenderBillboardText();
 
 	void updateRenderQueue(
-		const TArray<FRenderInfo>& renderInfos,
+		const TArray<const FRenderInfo*>& renderInfos,
 		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
 		const FFrustum* frustum, uint32 showFlags);
 

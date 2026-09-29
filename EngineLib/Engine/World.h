@@ -24,7 +24,7 @@ public:
 	void AddActor(std::unique_ptr<AActor> actor);
 	bool RemoveActor(uint32 componentUUID);
 
-	const TArray<FRenderInfo>& GetRenderInfos();
+	const TArray<const FRenderInfo*>& GetRenderInfos();
 	TArray<std::unique_ptr<AActor>>& GetActors() { return mActors; }
 	const TArray<std::unique_ptr<AActor>>& GetActors() const { return mActors; }
 
@@ -52,7 +52,7 @@ private:
 	TArray<std::unique_ptr<AActor>> mActors;
 
 	// Todo: Maybe, move to FSceneManager
-	TArray<FRenderInfo> mRenderInfos;
+	TArray<const FRenderInfo*> mRenderInfoRefs;
 };
 
 #include "World.inl"

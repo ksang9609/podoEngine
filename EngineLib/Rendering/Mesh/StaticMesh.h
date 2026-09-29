@@ -56,7 +56,7 @@ class UStaticMesh : public UObject
 	DECLARE_OBJECT(UStaticMesh, UObject)
 	DECLARE_SERIALIZATION()
 public:
-	void Initialize() {};
+	void Initialize() { UObject::Initialize(); };
 	void Initialize(FStaticMesh* inStaticMesh);
 	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh);
 	void Initialize(std::unique_ptr<FStaticMesh> inStaticMesh, TArray<const UMaterial*>&& inDefaultMaterialRefs);

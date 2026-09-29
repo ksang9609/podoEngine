@@ -36,12 +36,16 @@ struct FTransform
 	{
 		FMatrix result = FMatrix::Rotate(Rotation);
 
-		for (int Col = 0; Col < 3; ++Col)
-		{
-			result.M[0][Col] *= Scale.x;
-			result.M[1][Col] *= Scale.y;
-			result.M[2][Col] *= Scale.z;
-		}
+		__m128 Sx = _mm_set1_ps(Scale.x);
+		__m128 Sy = _mm_set1_ps(Scale.y);
+		__m128 Sz = _mm_set1_ps(Scale.z);
+
+		__m128 R0 = _mm_load_ps(&result.M[0][0]);
+		_mm_store_ps(&result.M[0][0], _mm_mul_ps(Sx, R0));
+		__m128 R1 = _mm_load_ps(&result.M[1][0]);
+		_mm_store_ps(&result.M[1][0], _mm_mul_ps(Sy, R1));
+		__m128 R2 = _mm_load_ps(&result.M[2][0]);
+		_mm_store_ps(&result.M[2][0], _mm_mul_ps(Sz, R2));
 
 		// 이동 성분은 마지막 행에 저장한다.
 		result.M[3][0] = Location.x;
@@ -51,6 +55,7 @@ struct FTransform
 		return result;
 	}
 
+	// TODO:: 이것도 SSE로 최적화 가능
 	FMatrix InverseMatrix() const
 	{
 		assert(Scale.x == 0.f || Scale.y == 0.f || Scale.z == 0.f);

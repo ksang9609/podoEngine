@@ -105,7 +105,7 @@ bool FEditorViewportClient::RaycastBounds(
 	return true;
 }
 
-void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRenderInfo>& renderInfos, bool bCheckObject)
+void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject)
 {
 	assert(mAssetManagerRef != nullptr);
 
@@ -160,19 +160,21 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 	FScopeCycleCounter cycleCounter({ EStatId::Picking });
 
 	// Object 탐색
-	for (const FRenderInfo& RI : renderInfos)
+	for (const FRenderInfo* RI : renderInfos)
 	{
-		if (!HasAllRenderFlags(RI.eRenderFlags, ERenderFlags::RF_Raycastable))
+		assert(RI);
+
+		if (!HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Raycastable))
 		{
 			continue;
 		}
 
-		const FMatrix effectiveWorld = RI.GetTransformMatrix(mCamera.Rotation);
+		const FMatrix effectiveWorld = RI->GetTransformMatrix(mCamera.Rotation);
 
 		const FBoundingBox worldBounds =
-			RI.MeshName == BuiltinAssets::BillboardQuadTextured
-			? TransformBoundingBox(RI.LocalBounds, effectiveWorld)
-			: RI.WorldBounds;
+			RI->MeshName == BuiltinAssets::BillboardQuadTextured
+			? TransformBoundingBox(RI->LocalBounds, effectiveWorld)
+			: RI->WorldBounds;
 
 		// 월드 AABB 검사
 		if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
@@ -185,18 +187,19 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
 
-		if (RI.StaticMesh)
+		if (RI->StaticMeshAsset)
 		{
-			for (const auto& vertex : RI.StaticMesh->LODs[0].Vertices)
+			const FStaticMesh& staticMesh = *RI->StaticMeshAsset->GetStaticMeshAsset();
+			for (const auto& vertex : staticMesh.LODs[0].Vertices)
 			{
 				vertexArray.Add(vertex.pos);
 			}
-			for (const auto& index : RI.StaticMesh->LODs[0].Indices)
+			for (const auto& index : staticMesh.LODs[0].Indices)
 			{
 				indexArray.Add(index);
 			}
 		}
-		else if (HasAllRenderFlags(RI.eRenderFlags, ERenderFlags::RF_Billboard))
+		else if (HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Billboard))
 		{
 			for (const auto& vertex : Quad_textured_indexed_vertices)
 			{
@@ -220,7 +223,7 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 		const FVector LocalNear = WorldToLocal.TransformPosition(NearPoint);
 		const FVector LocalFar = WorldToLocal.TransformPosition(FarPoint);
 
-		if (!RaycastBounds(LocalNear, LocalFar, RI.LocalBounds))
+		if (!RaycastBounds(LocalNear, LocalFar, RI->LocalBounds))
 		{
 			continue;
 		}
@@ -239,7 +242,7 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<FRen
 				// 같은 메시 안에서도 더 가까운 삼각형이 뒤에 나올 수 있으므로 break 하지 않는다
 				NearlistT = OutT;
 				bMouseHit = true;
-				mHoveredRenderInfo = RI;
+				mHoveredRenderInfo = *RI;
 			}
 		}
 	}
