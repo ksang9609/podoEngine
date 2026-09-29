@@ -21,7 +21,7 @@ struct FOctreeBuildObject {
 
 class FOctree {
 public:
-	void Build(const TArray <FRenderInfo>& renderInfos);
+	void Build(const TArray<const FRenderInfo*>& renderInfos);
 
 public:
 	int32  GetNodeCount()    const { return mNodes.Num(); }
@@ -30,8 +30,8 @@ public:
 	uint32 GetRootObjectCount() const { return mNodes.IsEmpty() ? 0u : mNodes[0].ObjectCount; }
 
 private:
-	void createRootNode(const TArray<FRenderInfo>& renderInfos);
-	void insertAllObjects(const TArray<FRenderInfo>& renderInfos);
+	void createRootNode(const TArray<const FRenderInfo*>& renderInfos);
+	void insertAllObjects(const TArray<const FRenderInfo*>& renderInfos);
 	bool outsideRoot(const FBoundingBox& box) const;
 
 	void insertObject(uint32 nodeIndex, uint32 objectIndex, uint32 nodeDepth);

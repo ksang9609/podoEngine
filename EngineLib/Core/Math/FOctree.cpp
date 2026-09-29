@@ -1,17 +1,17 @@
 ﻿#include "FOctree.h"
 
-void FOctree::createRootNode(const TArray<FRenderInfo>& renderInfos)
+void FOctree::createRootNode(const TArray<const FRenderInfo*>& renderInfos)
 {
 	FVector sceneMin = FLT_MAX;
 	FVector sceneMax = -FLT_MAX;
 
-	for (const auto& renderInfo : renderInfos) {
-		sceneMin.x = std::min(sceneMin.x, renderInfo.WorldBounds.min.x);
-		sceneMin.y = std::min(sceneMin.y, renderInfo.WorldBounds.min.y);
-		sceneMin.z = std::min(sceneMin.z, renderInfo.WorldBounds.min.z);
-		sceneMax.x = std::max(sceneMax.x, renderInfo.WorldBounds.max.x);
-		sceneMax.y = std::max(sceneMax.y, renderInfo.WorldBounds.max.y);
-		sceneMax.z = std::max(sceneMax.z, renderInfo.WorldBounds.max.z);
+	for (const FRenderInfo* renderInfo : renderInfos) {
+		sceneMin.x = std::min(sceneMin.x, renderInfo->WorldBounds.min.x);
+		sceneMin.y = std::min(sceneMin.y, renderInfo->WorldBounds.min.y);
+		sceneMin.z = std::min(sceneMin.z, renderInfo->WorldBounds.min.z);
+		sceneMax.x = std::max(sceneMax.x, renderInfo->WorldBounds.max.x);
+		sceneMax.y = std::max(sceneMax.y, renderInfo->WorldBounds.max.y);
+		sceneMax.z = std::max(sceneMax.z, renderInfo->WorldBounds.max.z);
 	}
 
 	FOctreeNode rootNode;
@@ -28,10 +28,10 @@ void FOctree::createRootNode(const TArray<FRenderInfo>& renderInfos)
 	mBuildBuckets.Add(TArray<uint32>());
 }
 
-void FOctree::insertAllObjects(const TArray<FRenderInfo>& renderInfos)
+void FOctree::insertAllObjects(const TArray<const FRenderInfo*>& renderInfos)
 {
 	for (int32 i = 0; i < renderInfos.Num(); i++) {
-		const FBoundingBox& box = renderInfos[i].WorldBounds;
+		const FBoundingBox& box = renderInfos[i]->WorldBounds;
 
 		const FVector half = (box.max - box.min) * 0.5f;
 
@@ -142,7 +142,7 @@ void FOctree::flattenObjects() {
 	mBuildBuckets.Reset(0);
 }
 
-void FOctree::Build(const TArray<FRenderInfo>& renderInfos)
+void FOctree::Build(const TArray<const FRenderInfo*>& renderInfos)
 {
 	mNodes.Reset(0);
 	mInsideIndices.Reset(0);
