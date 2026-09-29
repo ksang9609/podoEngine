@@ -10,6 +10,8 @@
 #include "Rendering/VertexType.h"
 #include "Material.h"
 
+inline constexpr uint32 MAX_LOD_COUNT = 8;
+
 class UMaterial;
 struct FBuffer;
 

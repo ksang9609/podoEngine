@@ -36,6 +36,7 @@ const FName& UStaticMesh::GetAssetPathFileName() const
 void UStaticMesh::SetStaticMeshAsset(FStaticMesh* inStaticMesh)
 {
 	mStaticMeshAsset.reset(inStaticMesh);
+	mStaticMeshAsset->LODs.Reserve(MAX_LOD_COUNT);
 	if (mStaticMeshAsset && mStaticMeshAsset->LODs.Num() > 0 && mStaticMeshAsset->LODs[0].BufferKey.IsNone())
 	{
 		mStaticMeshAsset->LODs[0].BufferKey = mStaticMeshAsset->PathFileName;
@@ -46,6 +47,7 @@ void UStaticMesh::SetStaticMeshAsset(FStaticMesh* inStaticMesh)
 void UStaticMesh::SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh)
 {
 	mStaticMeshAsset = std::move(inStaticMesh);
+	mStaticMeshAsset->LODs.Reserve(MAX_LOD_COUNT);
 	if (mStaticMeshAsset && mStaticMeshAsset->LODs.Num() > 0 && mStaticMeshAsset->LODs[0].BufferKey.IsNone())
 	{
 		mStaticMeshAsset->LODs[0].BufferKey = mStaticMeshAsset->PathFileName;
@@ -78,7 +80,8 @@ const TArray<const UMaterial*>& UStaticMesh::GetDefaultMaterials() const
 
 bool UStaticMesh::GenerateLOD(float reductionRatio, float screenSize, float targetError)
 {
-	if (!mStaticMeshAsset || mStaticMeshAsset->LODs.IsEmpty())
+	if (!mStaticMeshAsset || mStaticMeshAsset->LODs.IsEmpty() ||
+		mStaticMeshAsset->LODs.Num() >= MAX_LOD_COUNT) // Limit to MAX_LOD_COUNT LODs for now
 	{
 		return false;
 	}

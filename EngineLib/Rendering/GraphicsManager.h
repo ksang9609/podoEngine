@@ -180,8 +180,9 @@ private:
 	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 	void renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 
-	//int32 calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view, const FStaticMesh* staticMesh);
-
+	//int32 calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view);
+	//void generateMeshLod(UStaticMesh& staticMesh, const FSceneView& view,
+	//	float screenSize, float radius);
 	// Instancing Test
 	//void RenderInstancingTest();
 	//ID3D11Buffer* mTestInstanceIndexBuffer = nullptr;

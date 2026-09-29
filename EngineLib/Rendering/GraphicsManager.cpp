@@ -122,42 +122,68 @@ namespace
 		const FMaterial* Material;
 	};
 
-	void generateMeshLod(UStaticMesh& staticMesh, const FSceneView& view,
-		float screenSize, float radius)
+	// TODO: rename
+	int32 generateMeshLod(UStaticMesh& staticMesh, const FSceneView& view,
+		float screenSize, float radius,
+		FGpuResourceManager& gpuResourceManager)
 	{
-		assert(radius != 0.0f && simplifyScale != 0.0f);
+		assert(radius != 0.0f);
+		if (screenSize >= 0.5f)
+		{
+			return 0; // No need to generate LODs for large screen sizes
+		}
+		if (screenSize <= 0.0625f)
+		{
+			return staticMesh.GetLODCount() - 1; // No need to generate LODs for very small screen sizes
+		}
 
-		constexpr float maxScreenSizes[] = { 0.5f, 0.25f, 0.125f };
-		constexpr float minScreenSizes[] = { 0.25f, 0.125f, 0.0625f };
+		constexpr float maxScreenSizes[] = { 0.5f, 0.25f, 0.125f, 0.0625f, 0.03f, 0.01f };
+		constexpr float minScreenSizes[] = { 0.25f, 0.125f, 0.0625f, 0.03f, 0.01f, 0.0f };
 
-		const FStaticMeshLOD& baseLOD = staticMesh.GetLOD(0);
+		const FStaticMeshLOD& baseLOD = staticMesh.GetStaticMeshAsset()->LODs[0];
 		float simplifyScale = meshopt_simplifyScale(
 			&baseLOD.Vertices[0].pos.x,
 			baseLOD.Vertices.Num(),
 			sizeof(FNormalVertex)
 		);
+		assert(simplifyScale > 0.0f);
 
 		const float pixelError = 1.0f; // This can be adjusted based on the desired quality
 
-		for (int32 i = 0; i < 3; ++i)
+		// NOTE: If the user created LODs manually, this function can be broken.
+		for (int32 i = staticMesh.GetLODCount() - 1; i < 3; ++i)
 		{
+			if (screenSize >= maxScreenSizes[i])
+			{
+				break;
+			}
+
 			float targetError =
 				(2.0f * radius * pixelError) /
 				(simplifyScale * view.Rect.Height * maxScreenSizes[i]);
 
-			staticMesh.GenerateLOD(0.0f, minScreenSizes[i], targetError);
+			if (!staticMesh.GenerateLOD(0.0f, minScreenSizes[i], targetError))
+				break;
+
+			const FStaticMeshLOD& newLOD = staticMesh.GetStaticMeshAsset()->LODs.Last();
+			gpuResourceManager.CreateBuffer(
+				newLOD.BufferKey,
+				newLOD.Vertices,
+				newLOD.Indices);
+
 
 			if (screenSize >= minScreenSizes[i])
 			{
-				break;
+				return i;
 			}
 		}
+		return staticMesh.GetLODCount() - 1;
 	}
 
-	int32 calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view)
+	int32 calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view, FGpuResourceManager& gpuResourceManager)
 	{
 		const FStaticMesh* staticMesh = renderInfo->StaticMeshAsset->GetStaticMeshAsset();
-		if (!staticMesh || staticMesh->LODs.Num() <= 1)
+		if (!staticMesh)
 		{
 			return 0;
 		}
@@ -190,14 +216,19 @@ namespace
 			}
 		}
 
-		return staticMesh->LODs.Num() - 1;
+		// If no LOD matches, generate new LODs if possible
+		UStaticMesh* mutableStaticMesh = const_cast<UStaticMesh*>(renderInfo->StaticMeshAsset);
+		return generateMeshLod(*mutableStaticMesh, view,
+			screenSize, radius,
+			gpuResourceManager);
 	}
 
 	void sortStaticMeshRenderQueue(
 		const TArray<const FRenderInfo*>& renderQueue,
 		TArray<FStaticMeshRenderQueueEntry>& outSortedQueue,
 		const FSceneView& view,
-		const UMaterial& defaultMaterialAsset)
+		const UMaterial& defaultMaterialAsset,
+		FGpuResourceManager& gpuResourceManager)
 	{
 		outSortedQueue.Reset(renderQueue.Num());
 
@@ -211,7 +242,7 @@ namespace
 			const FStaticMesh* staticMesh = renderInfo->StaticMeshAsset->GetStaticMeshAsset();
 			assert(staticMesh != nullptr);
 
-			const int32 meshLodIndex = calculateMeshLODIndex(renderInfo, view);
+			const int32 meshLodIndex = calculateMeshLODIndex(renderInfo, view, gpuResourceManager);
 
 			const FStaticMeshLOD* meshLod = &staticMesh->LODs[meshLodIndex];
 			assert(meshLod != nullptr);
@@ -587,7 +618,8 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 	sortStaticMeshRenderQueue(renderInfos,
 		sortedQueue,
 		view,
-		*defaultMaterialAsset);
+		*defaultMaterialAsset,
+		*mGpuResourceManagerRef);
 
 	// Cache last used material and mesh to minimize state changes
 	const FStaticMeshLOD* lastUsedMeshLOD = nullptr;

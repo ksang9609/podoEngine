@@ -608,6 +608,9 @@ namespace
 
 		auto mesh = std::make_unique<FStaticMesh>();
 
+		mesh->LODs.Reserve(MAX_LOD_COUNT);
+		mesh->LODs.Add(FStaticMeshLOD{});
+
 		TArray<FMaterialSlot> materialSlots;
 
 		if (!SerializeBakedData(reader, *mesh, materialSlots, binaryPath.parent_path()))
