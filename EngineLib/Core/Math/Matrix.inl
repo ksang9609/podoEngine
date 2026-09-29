@@ -372,6 +372,7 @@ inline FVector FMatrix::GetUnitAxis(EAxis Axis) const
 	return FVector(M[i][0], M[i][1], M[i][2]);
 }
 
+// 정점 이동 회전 스케일 적용
 inline FVector FMatrix::TransformPosition(const FVector& V) const
 {
 	return FVector(
@@ -380,6 +381,7 @@ inline FVector FMatrix::TransformPosition(const FVector& V) const
 		V.x * M[0][2] + V.y * M[1][2] + V.z * M[2][2] + M[3][2]);
 }
 
+// 벡터에 회전 스케일만 적용
 inline FVector FMatrix::TransformVector(const FVector& V) const
 {
 	return FVector(
@@ -392,6 +394,8 @@ inline FVector FMatrix::TransformVector(const FVector& V) const
 //   M = | A 0 |        M^-1 = | A^-1     0 |
 //       | t 1 |               | -t*A^-1  1 |
 // Transpose() 와 달리 비균등 스케일에도 동작한다.
+// TODO:: 현재 Inverse는 마우스 피킹 시 프레임 당 최대 1~2번만 호출됨 따라서 SIMD 적용 우선순위 낮음
+// 추후 오브젝트의 M행렬의 역행렬 매 프레임당 대량으로 구해야 할 경우 Ftransform 이용해서 구하는 방식이 더 효율적
 inline FMatrix FMatrix::Inverse() const
 {
 	const float C00 = (M[1][1] * M[2][2] - M[1][2] * M[2][1]);

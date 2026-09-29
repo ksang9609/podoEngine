@@ -219,7 +219,6 @@ inline float FVector4::Length() const
 
 inline const FVector4 operator*(const FVector4& v, float f)
 {
-	return FVector4(v.x * f, v.y * f, v.z * f, v.w * f);
 	__m128 A = _mm_load_ps(&v.x);
 	__m128 B = _mm_set1_ps(f);
 	__m128 Res = _mm_mul_ps(A, B);

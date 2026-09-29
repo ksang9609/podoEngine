@@ -55,7 +55,7 @@ struct FTransform
 		return result;
 	}
 
-	// 이것도 SSE로 최적화 가능
+	// TODO:: 이것도 SSE로 최적화 가능
 	FMatrix InverseMatrix() const
 	{
 		assert(Scale.x == 0.f || Scale.y == 0.f || Scale.z == 0.f);
