@@ -14,6 +14,7 @@
 #include "Engine/Stats/ScopeCycleCounter.h"
 
 #include "Rendering/GpuResourceManager.h"
+#include "Rendering/Renderer.h"
 
 #pragma comment(lib, "Psapi.lib") // 현재 프로세스 RAM 사용량 표시를 하기 위함
 
@@ -48,7 +49,7 @@ bool FStatManager::HasAnyEnabledStat() const
 	return mEnabledMask != 0;
 }
 
-void FStatManager::UpdateFrame(const FFrameTimer& frameTimer)
+void FStatManager::UpdateFrame(const FFrameTimer& frameTimer, const URenderer& renderer)
 {
 	const float frameTimeMs = frameTimer.GetFrameTimeMilliseconds();
 
@@ -70,6 +71,17 @@ void FStatManager::UpdateFrame(const FFrameTimer& frameTimer)
 
 	mSnapshot.Frame.SmoothedFrameTimeMs += (frameTimeMs - mSnapshot.Frame.SmoothedFrameTimeMs) * smoothingAlpha;
 	mSnapshot.Frame.SmoothedFPS = mSnapshot.Frame.SmoothedFrameTimeMs > 0.0f ? 1000.0f / mSnapshot.Frame.SmoothedFrameTimeMs : 0.0f;
+
+	if (renderer.HasGpuTime())
+	{
+		mSnapshot.Frame.HasGpuTime = true;
+		mSnapshot.Frame.GpuTimeMs = renderer.GetGpuTimeMilliseconds();
+	}
+	else
+	{
+		mSnapshot.Frame.HasGpuTime = false;
+		mSnapshot.Frame.GpuTimeMs = 0.0;
+	}
 }
 
 void FStatManager::UpdateMemory(float deltaTime, const FStatCollectionSources& sources)

@@ -11,6 +11,7 @@
 #include "ShaderConstants.h"
 #include "RenderInfo.h"
 #include "VertexType.h"
+#include "GpuTimer.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
@@ -141,6 +142,10 @@ public:
 
 	void RenderFullscreenTexture(ID3D11ShaderResourceView* texture);
 
+	/* Timer */
+	inline bool HasGpuTime() const { return mGpuTimer.HasResult(); }
+	inline double GetGpuTimeMilliseconds() const { return mGpuTimer.GetMilliseconds(); }
+
 private:
 	/* Refernece */
 	FGpuResourceManager* mGpuResourceManagerRef = nullptr;
@@ -166,6 +171,9 @@ private:
 
 	FLOAT mClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT mViewportInfo;
+
+	/* Timer */
+	FGpuTimer mGpuTimer;
 
 	/* Create methods for each resources*/
 	void createDeviceAndSwapChain(HWND hWindow);

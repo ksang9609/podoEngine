@@ -18,20 +18,24 @@ namespace
 	{
 		char fpsText[64];
 		char timeText[64];
+		char gpuText[64];
 
 		std::snprintf(fpsText, sizeof(fpsText), "%.1f FPS", frame.SmoothedFPS);
 		std::snprintf(timeText, sizeof(timeText), "%.2f ms", frame.SmoothedFrameTimeMs);
+		std::snprintf(gpuText, sizeof(gpuText), "GPU: %.2f ms", frame.HasGpuTime ? frame.GpuTimeMs : 0.0);
 
 		const ImVec2 fpsSize = ImGui::CalcTextSize(fpsText);
 		const ImVec2 timeSize = ImGui::CalcTextSize(timeText);
-		const float width = (std::max)(fpsSize.x, timeSize.x) + 16.0f;
-		const float height = fpsSize.y + timeSize.y + 12.0f;
+		const ImVec2 gpuSize = ImGui::CalcTextSize(gpuText);
+		const float width = std::max(std::max(fpsSize.x, timeSize.x), gpuSize.x) + 16.0f;
+		const float height = fpsSize.y + timeSize.y + gpuSize.y + 12.0f;
 		const ImVec2 min(rect.Right - width - 12.0f, rect.Top + 12.0f);
 		const ImVec2 max(min.x + width, min.y + height);
 
 		drawList.AddRectFilled(min, max, IM_COL32(0, 0, 0, 150), 4.0f);
 		drawList.AddText(ImVec2(max.x - fpsSize.x - 8.0f, min.y + 4.0f), IM_COL32(100, 255, 120, 255), fpsText);
 		drawList.AddText(ImVec2(max.x - timeSize.x - 8.0f, min.y + fpsSize.y + 4.0f), IM_COL32(220, 220, 220, 255), timeText);
+		drawList.AddText(ImVec2(max.x - gpuSize.x - 8.0f, min.y + fpsSize.y + timeSize.y + 4.0f), IM_COL32(220, 220, 220, 255), gpuText);
 	}
 }
 
