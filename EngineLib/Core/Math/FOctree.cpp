@@ -46,6 +46,19 @@ void FOctree::cullNode(uint32 nodeIndex, const FFrustum& frustum, TArray<uint32>
 	}
 }
 
+void FOctree::FrustumCull(const FFrustum& frustum, TArray<uint32>& outInside, TArray<uint32>& outIntersect) const
+{
+	outInside.Reset(0);
+	outIntersect.Reset(0);
+
+	if (mNodes.Num() == 0) return;
+
+	cullNode(0, frustum, outInside, outIntersect);
+	for (auto i : mOutsideObjects) {
+		outIntersect.Add(i);
+	}
+}
+
 void FOctree::createRootNode(const TArray<const FRenderInfo*>& renderInfos)
 {
 	FVector sceneMin = FLT_MAX;

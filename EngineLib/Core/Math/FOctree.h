@@ -32,8 +32,8 @@ public:
 	uint32 GetRootObjectCount() const { return mNodes.IsEmpty() ? 0u : mNodes[0].ObjectCount; }
 
 public:
-	void addSubtreeAll(uint32 nodeIndex, TArray <uint32> & outVisible) const;
-	void cullNode(uint32 nodeIndex, const FFrustum& frustum, TArray <uint32> & outInside, TArray <uint32> & outIntersect) const;
+	void FrustumCull(const FFrustum & frustum, TArray<uint32> & outInside, TArray<uint32>& outIntersect) const;
+
 
 private:
 	void createRootNode(const TArray<const FRenderInfo*>& renderInfos);
@@ -46,6 +46,11 @@ private:
 
 	void raycastNode(uint32 nodeIndex, const FVector& origin, const FVector& invDir, TArray <uint32>& outCandidates) const;
 	bool intersectLooseBounds(uint32 nodeIndex, const FVector& origin, const FVector& invDir, float tMax, float& outTEnter) const;
+
+private:
+	void addSubtreeAll(uint32 nodeIndex, TArray <uint32>& outVisible) const;
+	void cullNode(uint32 nodeIndex, const FFrustum& frustum, TArray <uint32>& outInside, TArray <uint32>& outIntersect) const;
+
 
 private:
 	TArray <FOctreeNode> mNodes;
