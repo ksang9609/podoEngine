@@ -76,7 +76,7 @@ const TArray<const UMaterial*>& UStaticMesh::GetDefaultMaterials() const
 	return mDefaultMaterialRefs;
 }
 
-bool UStaticMesh::GenerateLOD(float reductionRatio, float screenSize)
+bool UStaticMesh::GenerateLOD(float reductionRatio, float screenSize, float targetError)
 {
 	if (!mStaticMeshAsset || mStaticMeshAsset->LODs.IsEmpty())
 	{
@@ -84,7 +84,6 @@ bool UStaticMesh::GenerateLOD(float reductionRatio, float screenSize)
 	}
 
 	const FStaticMeshLOD baseLOD = mStaticMeshAsset->LODs[0];
-	float targetError = 0.01f;
 	uint32 currentIndexOffset = 0;
 
 	// Set new LOD

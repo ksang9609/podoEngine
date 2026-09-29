@@ -73,7 +73,7 @@ public:
 	const TArray<const UMaterial*>& GetDefaultMaterials() const;
 
 	// LODs functions
-	bool GenerateLOD(float reductionRatio, float screenSize);
+	bool GenerateLOD(float reductionRatio, float screenSize, float targetError = 0.01f);
 
 	bool RemoveLOD(int32 targetLODIndex);
 

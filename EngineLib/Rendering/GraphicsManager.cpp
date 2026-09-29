@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "ThirdParty/Meshoptimizer/meshoptimizer.h"
+
 #include "Core/Container/TQueue.h"
 #include "Core/Math/Frustum.h" 
 #include "Core/enum.h"
@@ -119,6 +121,38 @@ namespace
 		const FStaticMeshLOD* StaticMeshLOD;
 		const FMaterial* Material;
 	};
+
+	void generateMeshLod(UStaticMesh& staticMesh, const FSceneView& view,
+		float screenSize, float radius)
+	{
+		assert(radius != 0.0f && simplifyScale != 0.0f);
+
+		constexpr float maxScreenSizes[] = { 0.5f, 0.25f, 0.125f };
+		constexpr float minScreenSizes[] = { 0.25f, 0.125f, 0.0625f };
+
+		const FStaticMeshLOD& baseLOD = staticMesh.GetLOD(0);
+		float simplifyScale = meshopt_simplifyScale(
+			&baseLOD.Vertices[0].pos.x,
+			baseLOD.Vertices.Num(),
+			sizeof(FNormalVertex)
+		);
+
+		const float pixelError = 1.0f; // This can be adjusted based on the desired quality
+
+		for (int32 i = 0; i < 3; ++i)
+		{
+			float targetError =
+				(2.0f * radius * pixelError) /
+				(simplifyScale * view.Rect.Height * maxScreenSizes[i]);
+
+			staticMesh.GenerateLOD(0.0f, minScreenSizes[i], targetError);
+
+			if (screenSize >= minScreenSizes[i])
+			{
+				break;
+			}
+		}
+	}
 
 	int32 calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view)
 	{
@@ -548,6 +582,8 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 
 	const UMaterial* defaultMaterialAsset = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial);
 	assert(defaultMaterialAsset != nullptr);
+
+
 	sortStaticMeshRenderQueue(renderInfos,
 		sortedQueue,
 		view,
