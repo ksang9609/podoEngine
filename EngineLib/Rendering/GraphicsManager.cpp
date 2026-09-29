@@ -116,6 +116,7 @@ namespace
 		/* Additional Information */
 		int32 StartIndex = 0;
 		int32 IndexCount = 0;
+		const FStaticMesh* StaticMesh;
 		const FMaterial* Material;
 	};
 
@@ -144,8 +145,9 @@ namespace
 			constexpr uint32 passKey = 0; // Assuming a single pass for now, can be modified based on requirements
 			constexpr uint32 pipelineKey = 0; // Assuming a single pipeline for now, can be modified based on requirements
 			const uint32 meshKey = static_cast<uint32>(renderInfo->StaticMeshAsset->UUID);
-			const float depth = FVector::dot(renderInfo->GetLocation() - cameraLocation, cameraForward);
-			const uint32 depthKey = static_cast<uint32>(depth * 1000.0f); // Scale depth for better precision
+			//const float depth = FVector::dot(renderInfo->GetLocation() - cameraLocation, cameraForward);
+			//const uint32 depthKey = static_cast<uint32>(depth * 1000.0f); // Scale depth for better precision
+			constexpr uint32 depthKey = 0; // Disabled for now.
 
 			for (int32 sectionIndex = 0; sectionIndex < sections.Num(); ++sectionIndex)
 			{
@@ -170,6 +172,7 @@ namespace
 					.RenderInfo = renderInfo,
 					.StartIndex = sections[sectionIndex].StartIndex,
 					.IndexCount = sections[sectionIndex].IndexCount,
+					.StaticMesh = staticMesh,
 					.Material = materialAsset->GetMaterial()
 				};
 
@@ -539,7 +542,7 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 		}
 
 		// Set Mesh resources only if the mesh has changed
-		if (entry.RenderInfo->StaticMeshAsset->GetStaticMeshAsset() != lastUsedMesh)
+		if (entry.StaticMesh != lastUsedMesh)
 		{
 			lastUsedBuffer = resources.FindImmutableBufferOrAdd(entry.RenderInfo->MeshName);
 			if (lastUsedBuffer == nullptr)
@@ -552,7 +555,7 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 				lastUsedBuffer->Buffer.GetAddressOf(),
 				lastUsedBuffer->IndexBuffer.Get()
 			);
-			lastUsedMesh = entry.RenderInfo->StaticMeshAsset->GetStaticMeshAsset();
+			lastUsedMesh = entry.StaticMesh;
 		}
 
 		// Update world transform and color for the current render info
