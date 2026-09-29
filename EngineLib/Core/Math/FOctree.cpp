@@ -1,5 +1,51 @@
 ﻿#include "FOctree.h"
 
+void FOctree::addSubtreeAll(uint32 nodeIndex, TArray<uint32> & outVisible) const
+{
+	// Inside 확정된 가지만 모아서 재귀해주는 함수
+	FOctreeNode node = mNodes[nodeIndex];
+
+	for (int i = 0; i < node.ObjectCount; i++) {
+		outVisible.Add(mInsideIndices[node.ObjectStart + i]);
+	}
+
+	if (node.ChildStart == 0) return;
+
+	for (int i = 0; i < 8; i++) {
+		addSubtreeAll(node.ChildStart + i, outVisible);
+	}
+}
+
+void FOctree::cullNode(uint32 nodeIndex, const FFrustum& frustum, TArray<uint32>& outInside, TArray<uint32>& outIntersect) const
+{
+	// 해당 노드가 Outside/Inside/Intersect 상태인지 판별해서 outInside/outIntersect 에 담아줌
+	const FOctreeNode &node = mNodes[nodeIndex];
+
+	// FBoundingBox 로 일단 state 반환하기 
+	const float looseHalf = node.HalfSize * 2.0f;
+	FBoundingBox nodeBounds;
+	nodeBounds.min = node.Center - FVector(looseHalf);
+	nodeBounds.max = node.Center + FVector(looseHalf);
+	EContainment state = frustum.Contains(nodeBounds);
+
+	switch (state)
+	{
+	case EContainment::Outside:
+		return;
+	case EContainment::Inside:
+		addSubtreeAll(nodeIndex, outInside);
+		return;
+	case EContainment::Intersect:
+		for(int i = 0; i < node.ObjectCount; i++)
+			outIntersect.Add(mInsideIndices[node.ObjectStart + i]);
+		if (node.ChildStart == 0) return;
+		for (int i = 0; i < 8; i++) {
+			cullNode(node.ChildStart + i, frustum, outInside, outIntersect);
+		}
+		return;
+	}
+}
+
 void FOctree::createRootNode(const TArray<const FRenderInfo*>& renderInfos)
 {
 	FVector sceneMin = FLT_MAX;

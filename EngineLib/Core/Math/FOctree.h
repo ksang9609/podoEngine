@@ -4,6 +4,7 @@
 #include "Vector.h"
 #include "Rendering/RenderInfo.h"
 #include "FBoundingBox.h"
+#include "Frustum.h"
 
 struct FOctreeNode {
 	FVector Center;
@@ -29,6 +30,10 @@ public:
 	int32  GetInsideCount()  const { return mInsideIndices.Num(); }
 	int32  GetOutsideCount() const { return mOutsideObjects.Num(); }
 	uint32 GetRootObjectCount() const { return mNodes.IsEmpty() ? 0u : mNodes[0].ObjectCount; }
+
+public:
+	void addSubtreeAll(uint32 nodeIndex, TArray <uint32> & outVisible) const;
+	void cullNode(uint32 nodeIndex, const FFrustum& frustum, TArray <uint32> & outInside, TArray <uint32> & outIntersect) const;
 
 private:
 	void createRootNode(const TArray<const FRenderInfo*>& renderInfos);
