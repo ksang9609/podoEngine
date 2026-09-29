@@ -28,7 +28,7 @@ private:
 	void insertAllObjects(const TArray<FRenderInfo>& renderInfos);
 	bool outsideRoot(const FBoundingBox& box) const;
 
-	void insertObject(uint32 nodeIndex, uint32 objectIndex);
+	void insertObject(uint32 nodeIndex, uint32 objectIndex, uint32 nodeDepth);
 	void subDivide(uint32 nodeIndex);
 
 private:
@@ -41,4 +41,5 @@ private:
 
 	static constexpr float margin = 1.5f;
 	static constexpr int32 MaxObjectCount = 8;
+	static constexpr uint32 MaxDepth = 8;
 };

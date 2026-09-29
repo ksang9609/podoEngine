@@ -44,7 +44,7 @@ void FOctree::insertAllObjects(const TArray<FRenderInfo>& renderInfos)
 		}
 		mInsideIndices.Add(i);
 
-		insertObject(0, i);
+		insertObject(0, i, 0);
 	}
 }
 
@@ -64,7 +64,7 @@ bool FOctree::outsideRoot(const FBoundingBox& box) const
 	return false;
 }
 
-void FOctree::insertObject(uint32 nodeIndex, uint32 objectIndex)
+void FOctree::insertObject(uint32 nodeIndex, uint32 objectIndex, uint32 nodeDepth)
 {
 	const bool bIsLeaf = (mNodes[nodeIndex].ChildStart == 0);
 
@@ -75,7 +75,10 @@ void FOctree::insertObject(uint32 nodeIndex, uint32 objectIndex)
 	}
 
 	// 오브젝트 깊이가 더 앞에있다면 ㅈㅈ 
-	// 어쩌고...
+	if (nodeDepth >= MaxDepth) {
+		mBuildBuckets[nodeIndex].Add(objectIndex);
+		return;
+	}
 
 	//  리프며 더 담을 수 있다면 ㅈㅈ 
 	if (bIsLeaf && mBuildBuckets[nodeIndex].Num() < MaxObjectCount) {
@@ -94,7 +97,7 @@ void FOctree::insertObject(uint32 nodeIndex, uint32 objectIndex)
 		+ (mBuildObject[objectIndex].Center.y >= nodeCenter.y ? 2 : 0)
 		+ (mBuildObject[objectIndex].Center.z >= nodeCenter.z ? 4 : 0);
 
-	insertObject(mNodes[nodeIndex].ChildStart + octant, objectIndex);
+	insertObject(mNodes[nodeIndex].ChildStart + octant, objectIndex, nodeDepth+1);
 	return;
 } 
 
