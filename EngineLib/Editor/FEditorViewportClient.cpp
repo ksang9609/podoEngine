@@ -129,18 +129,6 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 	mRayNear = NearPoint;
 	mRayFar = FarPoint;
 
-	// ---------------------------------
-	//			임시용(삭제 필요)
-	// ---------------------------------
-	if (bCheckObject)   // 클릭했을 때만
-	{
-		TArray<uint32> candidates;
-		octree.Raycast(NearPoint, FarPoint - NearPoint, candidates);
-
-		UE_LOG_F(Warning, Core, "Octree pick: candidates={} / total={}",
-			candidates.Num(), renderInfos.Num());
-	}
-
 	float NearlistT = FLT_MAX;
 
 	// 드래그 중에는 히트 판정을 하지 않는다.
@@ -168,12 +156,17 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 		return;
 	}
 
+	TArray<uint32> candidates;
+	octree.Raycast(NearPoint, FarPoint - NearPoint, candidates);
+
 	// Record the time spent in RayCast for profiling until the end of this function
 	FScopeCycleCounter cycleCounter({ EStatId::Picking });
 
 	// Object 탐색
-	for (const FRenderInfo* RI : renderInfos)
+	for (uint32 objectIndex : candidates)
 	{
+		const FRenderInfo* RI = renderInfos[objectIndex];
+
 		assert(RI);
 
 		if (!HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Raycastable))
