@@ -23,6 +23,12 @@ class FOctree {
 public:
 	void Build(const TArray <FRenderInfo>& renderInfos);
 
+public:
+	int32  GetNodeCount()    const { return mNodes.Num(); }
+	int32  GetInsideCount()  const { return mInsideIndices.Num(); }
+	int32  GetOutsideCount() const { return mOutsideObjects.Num(); }
+	uint32 GetRootObjectCount() const { return mNodes.IsEmpty() ? 0u : mNodes[0].ObjectCount; }
+
 private:
 	void createRootNode(const TArray<FRenderInfo>& renderInfos);
 	void insertAllObjects(const TArray<FRenderInfo>& renderInfos);
