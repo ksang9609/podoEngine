@@ -22,6 +22,9 @@ struct FFrameStatSnapshot
 
 	float SmoothedFPS = 0.0f;
 	float SmoothedFrameTimeMs = 0.0f;
+
+	bool HasGpuTime = false;
+	double GpuTimeMs = 0.0f;
 };
 
 struct FMemoryStatSnapshot

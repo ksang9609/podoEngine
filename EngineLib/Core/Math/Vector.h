@@ -18,8 +18,8 @@ typedef struct FVector
 	const FVector operator-(const FVector& other) const;
 	const FVector operator+(const FVector& other) const;
 
-	void operator+=(const FVector& other);
-	void operator-=(const FVector& other);
+	FVector& operator+=(const FVector& other);
+	FVector& operator-=(const FVector& other);
 
 	// Return the negation of this vector.
 	FVector operator-() const;
@@ -49,16 +49,16 @@ const FVector operator*(const FVector& v, float f);
 const FVector operator*(float f, const FVector& v);
 
 //Vector 4
-typedef struct FVector4
+typedef struct alignas(16) FVector4
 {
 	float x, y, z, w;
 	FVector4(float _x = 0, float _y = 0, float _z = 0, float _w = 0) : x(_x), y(_y), z(_z), w(_w) {}
 
-	const FVector4 operator-(const FVector4& other) const;
-	const FVector4 operator+(const FVector4& other) const;
+	FVector4 operator-(const FVector4& other) const;
+	FVector4 operator+(const FVector4& other) const;
 
-	void operator+=(const FVector4& other);
-	void operator-=(const FVector4& other);
+	FVector4& operator+=(const FVector4& other);
+	FVector4& operator-=(const FVector4& other);
 
 	//내적
 	inline static float dot(const FVector4& A, const FVector4& B);
@@ -66,6 +66,7 @@ typedef struct FVector4
 	//4차원에는 외적이 없다.
 
 	float Length() const;
+	float LengthSqr() const;
 
 	void Serialize(FStructuredArchive& archive);
 
@@ -97,4 +98,5 @@ struct FVector2
 	void Serialize(FStructuredArchive& archive);
 };
 
+#include "Vector.inl"
 

@@ -11,6 +11,7 @@
 #include "ShaderConstants.h"
 #include "RenderInfo.h"
 #include "VertexType.h"
+#include "GpuTimer.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
@@ -50,6 +51,16 @@ public:
 	void SetViewMode(EViewModeIndex viewMode);
 	void BeginView(const FViewRect& rect);
 	void PrepareForUI();
+
+	/* Set render states */
+	void SetMaterialResources(
+		ID3D11ShaderResourceView* diffuseTextureSRV,
+		ID3D11ShaderResourceView* normalTextureSRV,
+		ID3D11ShaderResourceView* specularTextureSRV,
+		ID3D11SamplerState* samplerState);
+	void SetStaticMeshResources(
+		ID3D11Buffer* const* vertexBuffer,
+		ID3D11Buffer* indexBuffer);
 
 	/* Prepare methods for each rendering type */
 	void PrepareSimplePrimitive();
@@ -111,9 +122,11 @@ public:
 		UINT indexCount,
 		const FInstanceData* instances,
 		UINT instanceCount);
-	void RenderStaticMesh(ID3D11Buffer* vertexBuffer, UINT numVertices,
-		ID3D11ShaderResourceView* diffuseTextureSRV, ID3D11ShaderResourceView* normalTextureSRV, ID3D11ShaderResourceView* specularTextureSRV, ID3D11SamplerState* samplerState,
-		ID3D11Buffer* indexBuffer = nullptr, uint32 indexCount = 0, uint32 startIndex = 0);
+
+	// Directly draw the vertex buffer or index buffer without any additional setup.
+	// Other rendering states must be set up before calling these functions.
+	void DrawVertexBuffer(uint32 numVertices);
+	void DrawIndexedBuffer(uint32 numIndices, uint32 startIndex = 0);
 
 	void SwapBuffer();
 
@@ -129,6 +142,10 @@ public:
 	void OnResize(UINT width, UINT height, float viewportWidth, float viewportHeight);
 
 	void RenderFullscreenTexture(ID3D11ShaderResourceView* texture);
+
+	/* Timer */
+	inline bool HasGpuTime() const { return mGpuTimer.HasResult(); }
+	inline double GetGpuTimeMilliseconds() const { return mGpuTimer.GetMilliseconds(); }
 
 private:
 	/* Refernece */
@@ -156,6 +173,9 @@ private:
 
 	FLOAT mClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT mViewportInfo;
+
+	/* Timer */
+	FGpuTimer mGpuTimer;
 
 	/* Create methods for each resources*/
 	void createDeviceAndSwapChain(HWND hWindow);
