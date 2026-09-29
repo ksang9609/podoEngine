@@ -10,7 +10,7 @@
 // SMALL_NUMBER는 부동소수점 오차를 재는 값이라 물리적 크기의 하한으로는 너무 작다.
 constexpr float MIN_SCALE = 0.001f;
 
-struct FTransform
+struct alignas(16) FTransform
 {
 	FTransform(){ }
 	FTransform(FVector _Location, FRotator _Rotation, FVector _Scale) : Location(_Location), Rotation(_Rotation.Quaternion()), Scale(_Scale)
@@ -19,8 +19,8 @@ struct FTransform
 	FTransform(FVector _Location, FQuat _Rotation, FVector _Scale) : Location(_Location), Rotation(_Rotation), Scale(_Scale)
 	{
 	}
-	FVector Location = FVector(0);
 	FQuat Rotation = FQuat(0, 0, 0, 1);
+	FVector Location = FVector(0);
 	FVector Scale = FVector(1);
 
 	FVector GetLocation() const { return Location; }
