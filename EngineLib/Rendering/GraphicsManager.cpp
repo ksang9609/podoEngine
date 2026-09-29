@@ -116,14 +116,53 @@ namespace
 		/* Additional Information */
 		int32 StartIndex = 0;
 		int32 IndexCount = 0;
-		const FStaticMesh* StaticMesh;
+		const FStaticMeshLOD* StaticMeshLOD;
 		const FMaterial* Material;
 	};
+
+	int32 calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view)
+	{
+		const FStaticMesh* staticMesh = renderInfo->StaticMeshAsset->GetStaticMeshAsset();
+		if (!staticMesh || staticMesh->LODs.Num() <= 1)
+		{
+			return 0;
+		}
+
+		// ScreenSize = R / (D * tan(FOV / 2)
+
+		// Get distance between camera and object
+		const FVector3 objectPos = renderInfo->GetLocation();
+		const FVector3 cameraPos = view.cameraLocation;
+
+		float distance = (objectPos - cameraPos).Length();
+		if (distance <= 0.0001f)
+		{
+			return 0;
+		}
+		// Get Radius from object's bounding box
+		float radius = ((renderInfo->WorldBounds.max - renderInfo->WorldBounds.min) * 0.5f).Length();
+
+		// Get tan(FOV / 2) from Projection matrix[1][1]
+		float projScale = view.projectionMatrix.M[1][1] * view.orthoDistance; // 1 / tan(FOV / 2)
+
+		// Calculate object's screen size
+		float screenSize = (radius * projScale) / distance;
+
+		for (int32 i = 0; i < staticMesh->LODs.Num(); ++i)
+		{
+			if (screenSize >= staticMesh->LODs[i].ScreenSize)
+			{
+				return i;
+			}
+		}
+
+		return staticMesh->LODs.Num() - 1;
+	}
 
 	void sortStaticMeshRenderQueue(
 		const TArray<const FRenderInfo*>& renderQueue,
 		TArray<FStaticMeshRenderQueueEntry>& outSortedQueue,
-		const FVector& cameraLocation, const FVector3& cameraForward,
+		const FSceneView& view,
 		const UMaterial& defaultMaterialAsset)
 	{
 		outSortedQueue.Reset(renderQueue.Num());
@@ -138,13 +177,19 @@ namespace
 			const FStaticMesh* staticMesh = renderInfo->StaticMeshAsset->GetStaticMeshAsset();
 			assert(staticMesh != nullptr);
 
-			const TArray<FStaticMeshSection>& sections = staticMesh->Sections;
+			const int32 meshLodIndex = calculateMeshLODIndex(renderInfo, view);
+
+			const FStaticMeshLOD* meshLod = &staticMesh->LODs[meshLodIndex];
+			assert(meshLod != nullptr);
+
+			const TArray<FStaticMeshSection>& sections = meshLod->Sections;
 			// Ignore the case that the static mesh has no sections
 			assert(sections.Num() > 0 && sections.Num() == materials.Num());
 
+
 			constexpr uint32 passKey = 0; // Assuming a single pass for now, can be modified based on requirements
 			constexpr uint32 pipelineKey = 0; // Assuming a single pipeline for now, can be modified based on requirements
-			const uint32 meshKey = static_cast<uint32>(renderInfo->StaticMeshAsset->UUID);
+			const uint32 meshKey = meshLod->BufferKey.GetDisplayId().ToUnstableInt();
 			//const float depth = FVector::dot(renderInfo->GetLocation() - cameraLocation, cameraForward);
 			//const uint32 depthKey = static_cast<uint32>(depth * 1000.0f); // Scale depth for better precision
 			constexpr uint32 depthKey = 0; // Disabled for now.
@@ -172,7 +217,7 @@ namespace
 					.RenderInfo = renderInfo,
 					.StartIndex = sections[sectionIndex].StartIndex,
 					.IndexCount = sections[sectionIndex].IndexCount,
-					.StaticMesh = staticMesh,
+					.StaticMeshLOD = meshLod,
 					.Material = materialAsset->GetMaterial()
 				};
 
@@ -498,23 +543,24 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 	// 2. Mesh (to minimize vertex buffer switches)
 	// 3. Depth (to use occlusion culling? )
 
-		int32 targetLodIndex = calculateMeshLODIndex(renderInfo, view, renderInfo->StaticMesh);
+	// TODO: Consider reusing this variable across frames to avoid reallocating memory every frame.
+	TArray<FStaticMeshRenderQueueEntry> sortedQueue;
 
-		FName lodBufferKey;		 
-		const FBuffer* buffer = renderInfo->StaticMesh->LODs[targetLodIndex].CachedBuffer;
-		if (!buffer)
-		{
-			buffer = resources.FindImmutableBufferOrAdd(renderInfo->StaticMesh->LODs[targetLodIndex].BufferKey);
-			renderInfo->StaticMesh->LODs[targetLodIndex].CachedBuffer = buffer;
-		}
+	const UMaterial* defaultMaterialAsset = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial);
+	assert(defaultMaterialAsset != nullptr);
+	sortStaticMeshRenderQueue(renderInfos,
+		sortedQueue,
+		view,
+		*defaultMaterialAsset);
 
-		if (buffer == nullptr)
-		{
-			UE_LOG(Error, Render, "Static mesh buffer not found.");
-			continue;
-		}
-		// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
-		if (renderInfo->StaticMesh->LODs[targetLodIndex].Sections.IsEmpty())
+	// Cache last used material and mesh to minimize state changes
+	const FStaticMeshLOD* lastUsedMeshLOD = nullptr;
+	const FMaterial* lastUsedMaterial = nullptr;
+	const FBuffer* lastUsedBuffer = nullptr;
+	for (const auto& entry : sortedQueue)
+	{
+		// Set Material resources only if the material has changed
+		if (entry.Material != lastUsedMaterial)
 		{
 			ID3D11ShaderResourceView* diffuseTexture = nullptr;
 			ID3D11ShaderResourceView* normalTexture = nullptr;
@@ -541,9 +587,9 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 		}
 
 		// Set Mesh resources only if the mesh has changed
-		if (entry.StaticMesh != lastUsedMesh)
+		if (entry.StaticMeshLOD != lastUsedMeshLOD)
 		{
-			lastUsedBuffer = resources.FindImmutableBufferOrAdd(entry.RenderInfo->MeshName);
+			lastUsedBuffer = resources.FindImmutableBufferOrAdd(entry.StaticMeshLOD->BufferKey);
 			if (lastUsedBuffer == nullptr)
 			{
 				UE_LOG(Error, Render, "Static mesh buffer not found.");
@@ -554,7 +600,7 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 				lastUsedBuffer->Buffer.GetAddressOf(),
 				lastUsedBuffer->IndexBuffer.Get()
 			);
-			lastUsedMesh = entry.StaticMesh;
+			lastUsedMeshLOD = entry.StaticMeshLOD;
 		}
 
 		// Update world transform and color for the current render info
@@ -586,216 +632,181 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 			mRenderer->DrawVertexBuffer(lastUsedBuffer->SourceNum);
 		}
 	}
-
-	//for (const FRenderInfo* renderInfo : renderInfos)
-	//{
-	//	if (renderInfo->StaticMeshAsset == nullptr)
-	//	{
-	//		continue;
-	//	}
-
-	//	const FStaticMesh& staticMesh = *renderInfo->StaticMeshAsset->GetStaticMeshAsset();
-
-	//	FMatrix worldTransform = renderInfo->WorldTransformMatrix;
-	//	mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
-
-	//	const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
-	//	if (buffer == nullptr)
-	//	{
-	//		UE_LOG(Error, Render, "Static mesh buffer not found.");
-	//		continue;
-	//	}
-	//	// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
-	//	// TODO?:	Is there any static mesh that has no sections?
-	//	//			If not, we don't need to manage this case.
-	//	if (staticMesh.Sections.IsEmpty())
-	//	{
-	//		ID3D11ShaderResourceView* texture = nullptr;
-	//		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
-	//		{
-	//			// TODO: Use the texture from the renderInfo if available
-	//			texture = resources.FindTextureOrAdd(renderInfo->TextureName);
-	//			if (texture == nullptr)
-	//			{
-	//				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
-	//				texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
-	//			}
-	//		}
-	//		else {
-	//			texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
-	//		}
-
-	//		mRenderer->SetMaterialResources(
-	//			texture,
-	//			nullptr,
-	//			nullptr,
-	//			&resources.GetSamplerState(SST_Wrap)
-	//		);
-
-	//		mRenderer->SetStaticMeshResources(
-	//			buffer->Buffer.GetAddressOf(),
-	//			buffer->IndexBuffer.Get()
-	//		);
-
-	//		if (buffer->IndexBuffer)
-	//		{
-	//			mRenderer->DrawIndexedBuffer(buffer->IndexCount, 0);
-	//		}
-	//		else
-	//		{
-	//			mRenderer->DrawVertexBuffer(buffer->SourceNum);
-	//		}
-
-	//		continue;
-	//	}
-	//	// OBJ 메시: 섹션마다 재질과 텍스처를 선택해서 그린다.
-	//	for (const FStaticMeshSection& section : staticMesh.Sections)
-	//	{
-
-	//		const FMaterial* material = nullptr;
-
-	//		ID3D11ShaderResourceView* diffuseTexture = nullptr;
-	//		ID3D11ShaderResourceView* normalTexture = nullptr;
-	//		ID3D11ShaderResourceView* specularTexture = nullptr;
-
-	//		// Find the material only if the render flags indicate that textures should be used
-	//		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
-	//		{
-	//			if (section.MaterialSlotIndex >= 0 && section.MaterialSlotIndex < renderInfo->Materials.Num())
-	//			{
-	//				const UMaterial* materialAsset = renderInfo->Materials[section.MaterialSlotIndex];
-	//				if (materialAsset)
-	//				{
-	//					material = materialAsset->GetMaterial();
-	//				}
-	//			}
-
-	//			if (!material)
-	//			{
-	//				UE_LOG_F(Warning, Render, "Material not found for section {} of static mesh {}. Using default white material.",
-	//					section.Name, renderInfo->MeshName.ToString());
-
-	//				material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
-	//			}
-	//		}
-	//		else
-	//		{
-	//			material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
-	//		}
-
-	//		if (material->DiffuseTexture.IsValid())
-	//		{
-	//			diffuseTexture = resources.FindTextureOrAdd(material->DiffuseTexture);
-	//		}
-	//		if (material->NormalTexture.IsValid())
-	//		{
-	//			normalTexture = resources.FindTextureOrAdd(material->NormalTexture);
-	//		}
-
-	//		if (material->SpecularTexture.IsValid())
-	//		{
-	//			specularTexture = resources.FindTextureOrAdd(material->SpecularTexture);
-	//		}
-
-
-	//		if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture) &&
-	//			renderInfo->TextureName.IsValid())
-	//		{
-	//			diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
-	//		}
-
-	//		// 아무 텍스처도 없으면 흰색 텍스처
-	//		if (diffuseTexture == nullptr)
-	//		{
-	//			diffuseTexture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
-	//		}
-
-	//		FLinearColor finalTint = renderInfo->Color;
-
-	//		if (material)
-	//		{
-	//			finalTint.R *= material->DiffuseColor.x;
-	//			finalTint.G *= material->DiffuseColor.y;
-	//			finalTint.B *= material->DiffuseColor.z;
-	//			finalTint.A = 1.0f;
-	//		}
-
-	//		// 우선 기존 컴포넌트 색상 유지
-	//		FVector2 uvOffset = renderInfo->SubUVMesh
-	//			? renderInfo->SubUVMesh->UVOffset
-	//			: FVector2(0.0f, 0.0f);
-	//		FVector2 uvScale = renderInfo->SubUVMesh
-	//			? renderInfo->SubUVMesh->UVScale
-	//			: FVector2(1.0f, 1.0f);
-
-	//		mRenderer->UpdateTextureConstant(
-	//			worldTransform, view.viewProjectionMatrix, finalTint,
-	//			uvScale, uvOffset
-	//		);
-
-	//		mRenderer->SetMaterialResources(
-	//			diffuseTexture,
-	//			normalTexture,
-	//			specularTexture,
-	//			&resources.GetSamplerState(SST_Wrap)
-	//		);
-
-	//		mRenderer->SetStaticMeshResources(
-	//			buffer->Buffer.GetAddressOf(),
-	//			buffer->IndexBuffer.Get()
-	//		);
-
-	//		if (buffer->IndexBuffer)
-	//		{
-	//			mRenderer->DrawIndexedBuffer(section.IndexCount, section.StartIndex);
-	//		}
-	//		else
-	//		{
-	//			mRenderer->DrawVertexBuffer(buffer->SourceNum);
-	//		}
-	//	}
-
-	//}
-
 }
 
-int32 FGraphicsManager::calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view, const FStaticMesh* staticMesh)
-{
-	if (!staticMesh || staticMesh->LODs.Num() <= 1)
-	{
-		return 0;
-	}
+//for (const FRenderInfo* renderInfo : renderInfos)
+//{
+//	if (renderInfo->StaticMeshAsset == nullptr)
+//	{
+//		continue;
+//	}
 
-	// ScreenSize = R / (D * tan(FOV / 2)
+//	const FStaticMesh& staticMesh = *renderInfo->StaticMeshAsset->GetStaticMeshAsset();
 
-	// Get distance between camera and object
-	const FVector3 objectPos = renderInfo->GetLocation();
-	const FVector3 cameraPos = view.cameraLocation;
+//	FMatrix worldTransform = renderInfo->WorldTransformMatrix;
+//	mRenderer->UpdateTextureConstant(worldTransform, view.viewProjectionMatrix, renderInfo->Color);
 
-	float distance = (objectPos - cameraPos).Length();
-	if (distance <= 0.0001f)
-	{
-		return 0;
-	}
-	// Get Radius from object's bounding box
-	float radius = ((renderInfo->WorldBounds.max - renderInfo->WorldBounds.min) * 0.5f).Length();
+//	const FBuffer* buffer = resources.FindImmutableBufferOrAdd(renderInfo->MeshName);
+//	if (buffer == nullptr)
+//	{
+//		UE_LOG(Error, Render, "Static mesh buffer not found.");
+//		continue;
+//	}
+//	// section이 없는 경우, 기존 컴포넌트 텍스처를 사용하여 그린다.
+//	// TODO?:	Is there any static mesh that has no sections?
+//	//			If not, we don't need to manage this case.
+//	if (staticMesh.Sections.IsEmpty())
+//	{
+//		ID3D11ShaderResourceView* texture = nullptr;
+//		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+//		{
+//			// TODO: Use the texture from the renderInfo if available
+//			texture = resources.FindTextureOrAdd(renderInfo->TextureName);
+//			if (texture == nullptr)
+//			{
+//				UE_LOG(Warning, Render, "Primitive texture not found for primitive type. Default white texture is used.");
+//				texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+//			}
+//		}
+//		else {
+//			texture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+//		}
 
-	// Get tan(FOV / 2) from Projection matrix[1][1]
-	float projScale = view.projectionMatrix.M[1][1]; // 1 / tan(FOV / 2)
+//		mRenderer->SetMaterialResources(
+//			texture,
+//			nullptr,
+//			nullptr,
+//			&resources.GetSamplerState(SST_Wrap)
+//		);
 
-	// Calculate object's screen size
-	float screenSize = (radius * projScale) / distance;
+//		mRenderer->SetStaticMeshResources(
+//			buffer->Buffer.GetAddressOf(),
+//			buffer->IndexBuffer.Get()
+//		);
 
-	for (int32 i = 0; i < staticMesh->LODs.Num(); ++i)
-	{
-		if (screenSize >= staticMesh->LODs[i].ScreenSize)
-		{
-			return i;
-		}
-	}
+//		if (buffer->IndexBuffer)
+//		{
+//			mRenderer->DrawIndexedBuffer(buffer->IndexCount, 0);
+//		}
+//		else
+//		{
+//			mRenderer->DrawVertexBuffer(buffer->SourceNum);
+//		}
 
-	return staticMesh->LODs.Num() - 1;
-}
+//		continue;
+//	}
+//	// OBJ 메시: 섹션마다 재질과 텍스처를 선택해서 그린다.
+//	for (const FStaticMeshSection& section : staticMesh.Sections)
+//	{
+
+//		const FMaterial* material = nullptr;
+
+//		ID3D11ShaderResourceView* diffuseTexture = nullptr;
+//		ID3D11ShaderResourceView* normalTexture = nullptr;
+//		ID3D11ShaderResourceView* specularTexture = nullptr;
+
+//		// Find the material only if the render flags indicate that textures should be used
+//		if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
+//		{
+//			if (section.MaterialSlotIndex >= 0 && section.MaterialSlotIndex < renderInfo->Materials.Num())
+//			{
+//				const UMaterial* materialAsset = renderInfo->Materials[section.MaterialSlotIndex];
+//				if (materialAsset)
+//				{
+//					material = materialAsset->GetMaterial();
+//				}
+//			}
+
+//			if (!material)
+//			{
+//				UE_LOG_F(Warning, Render, "Material not found for section {} of static mesh {}. Using default white material.",
+//					section.Name, renderInfo->MeshName.ToString());
+
+//				material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
+//			}
+//		}
+//		else
+//		{
+//			material = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial)->GetMaterial();
+//		}
+
+//		if (material->DiffuseTexture.IsValid())
+//		{
+//			diffuseTexture = resources.FindTextureOrAdd(material->DiffuseTexture);
+//		}
+//		if (material->NormalTexture.IsValid())
+//		{
+//			normalTexture = resources.FindTextureOrAdd(material->NormalTexture);
+//		}
+
+//		if (material->SpecularTexture.IsValid())
+//		{
+//			specularTexture = resources.FindTextureOrAdd(material->SpecularTexture);
+//		}
+
+
+//		if (!diffuseTexture && HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture) &&
+//			renderInfo->TextureName.IsValid())
+//		{
+//			diffuseTexture = resources.FindTextureOrAdd(renderInfo->TextureName);
+//		}
+
+//		// 아무 텍스처도 없으면 흰색 텍스처
+//		if (diffuseTexture == nullptr)
+//		{
+//			diffuseTexture = resources.FindTextureOrAdd(BuiltinAssets::DefaultWhiteTexture);
+//		}
+
+//		FLinearColor finalTint = renderInfo->Color;
+
+//		if (material)
+//		{
+//			finalTint.R *= material->DiffuseColor.x;
+//			finalTint.G *= material->DiffuseColor.y;
+//			finalTint.B *= material->DiffuseColor.z;
+//			finalTint.A = 1.0f;
+//		}
+
+//		// 우선 기존 컴포넌트 색상 유지
+//		FVector2 uvOffset = renderInfo->SubUVMesh
+//			? renderInfo->SubUVMesh->UVOffset
+//			: FVector2(0.0f, 0.0f);
+//		FVector2 uvScale = renderInfo->SubUVMesh
+//			? renderInfo->SubUVMesh->UVScale
+//			: FVector2(1.0f, 1.0f);
+
+//		mRenderer->UpdateTextureConstant(
+//			worldTransform, view.viewProjectionMatrix, finalTint,
+//			uvScale, uvOffset
+//		);
+
+//		mRenderer->SetMaterialResources(
+//			diffuseTexture,
+//			normalTexture,
+//			specularTexture,
+//			&resources.GetSamplerState(SST_Wrap)
+//		);
+
+//		mRenderer->SetStaticMeshResources(
+//			buffer->Buffer.GetAddressOf(),
+//			buffer->IndexBuffer.Get()
+//		);
+
+//		if (buffer->IndexBuffer)
+//		{
+//			mRenderer->DrawIndexedBuffer(section.IndexCount, section.StartIndex);
+//		}
+//		else
+//		{
+//			mRenderer->DrawVertexBuffer(buffer->SourceNum);
+//		}
+//	}
+
+//}
+
+//}
+
+
 
 void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
