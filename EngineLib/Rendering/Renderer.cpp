@@ -119,11 +119,11 @@ void URenderer::createDepthStencilBuffer(UINT width, UINT height)
 
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;  // 깊이 24비트 + 스텐실 8비트
+	desc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 	desc.SampleDesc.Count = 1;                    // 스왑체인의 SampleDesc와 반드시 동일
 	desc.SampleDesc.Quality = 0;
 	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;    // 이 플래그가 없으면 DSV 생성 실패
+	desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;    // 이 플래그가 없으면 DSV 생성 실패
 
 	mDevice->CreateTexture2D(&desc, nullptr, &mDepthStencilBuffer);
 
@@ -132,6 +132,14 @@ void URenderer::createDepthStencilBuffer(UINT width, UINT height)
 	dsvdesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
 	mDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), &dsvdesc, &mDepthStencilView);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+
+	mDevice->CreateShaderResourceView(mDepthStencilBuffer.Get(), &srvDesc, &mDepthBufferSRV);
 }
 
 void URenderer::createSelectionMaskResources(UINT width, UINT height)
@@ -169,6 +177,7 @@ void URenderer::createSelectionMaskResources(UINT width, UINT height)
 
 void URenderer::releaseFrameBuffer()
 {
+	mDepthBufferSRV.Reset();
 	mFrameBuffer.Reset();
 	mFrameBufferRTV.Reset();
 }
