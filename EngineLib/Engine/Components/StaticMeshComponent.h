@@ -45,7 +45,6 @@ class UStaticMeshComponent : public UMeshComponent
 
 
 protected:
-	virtual FRenderInfo makeRenderInfo() const override;
 	virtual void updateRenderInfo() override;
 	FSubUVMesh mSubUVMesh = {};
 

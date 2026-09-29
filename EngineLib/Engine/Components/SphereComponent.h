@@ -31,7 +31,6 @@ public:
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 protected:
-	virtual FRenderInfo makeRenderInfo() const override;
 	virtual void updateRenderInfo() override;
 
 private:

@@ -88,34 +88,6 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<const FRenderInfo*>
 	UBillboardComponent::Update(deltaTime, outRenderInfos);
 }
 
-FRenderInfo UParticleSubUVComponent::makeRenderInfo() const
-{
-	FRenderInfo renderInfo = UBillboardComponent::makeRenderInfo();
-	renderInfo.SubUVMesh = &mSubUVMesh;
-
-	// TODO: Get texture name at initialization and return it
-	renderInfo.MeshName = BuiltinAssets::BillboardQuadTextured;
-	renderInfo.TextureName = FName("Assets/Textures/Explosion_Alpha.dds");
-
-	renderInfo.eRenderFlags =
-		ERenderFlags::RF_Raycastable |
-		ERenderFlags::RF_Billboard |
-		ERenderFlags::RF_Particle;
-
-	renderInfo.Color = mbIsFinished
-		? FLinearColor(1.f, 1.f, 1.f, 0.0f) // Fully transparent if finished
-		: mColor; // Use the component's color if not finished
-
-	renderInfo.BlendStateType = static_cast<EBlendStateType>(mBlendStateType);
-
-	renderInfo.numRows = mNumRows;
-	renderInfo.numCols = mNumCols;
-	renderInfo.currentFrame = mCurrentFrameIndex;
-	renderInfo.nextFrame = mNextFrameIndex;
-	renderInfo.frameRatio = mElapsedFrameRatio;
-	return renderInfo;
-}
-
 void UParticleSubUVComponent::updateRenderInfo()
 {
 	UBillboardComponent::updateRenderInfo();

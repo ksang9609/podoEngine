@@ -57,13 +57,6 @@ void USphereComponent::Initialize(FVector location, FRotator rotation, FVector s
 	mSpinSpeed = spinSpeed;
 }
 
-FRenderInfo USphereComponent::makeRenderInfo() const
-{
-	FRenderInfo renderInfo = UStaticMeshComponent::makeRenderInfo();
-
-	return renderInfo;
-}
-
 void USphereComponent::updateRenderInfo()
 {
 	UStaticMeshComponent::updateRenderInfo();

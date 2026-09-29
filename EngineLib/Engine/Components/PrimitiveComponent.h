@@ -29,13 +29,14 @@ public:
 	void SetUseTexture(bool value) { mbUseTexture = value; mbRenderInfoDirty = true; }
 	bool GetUseTexture() const { return mbUseTexture; }
 
+	void SetShowBoundingBox(bool value) { mbShowBoundingBox = value; mbRenderInfoDirty = true; }
+
 	const FLinearColor& GetColor() const { return mColor; }
 	void SetColor(const FLinearColor& color) { mColor = color; mbRenderInfoDirty = true; }
 
 	static std::span<const FPropertyInfo> GetDeclaredProperties();
 
 protected:
-	virtual FRenderInfo makeRenderInfo() const;
 	virtual void updateRenderInfo();
 
 	EPrimitive mePrimitive;

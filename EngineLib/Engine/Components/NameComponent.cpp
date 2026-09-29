@@ -48,25 +48,6 @@ void UNameComponent::updateComponentToWorld(const FMatrix& parentTransform) cons
 	mbRenderInfoDirty = true;
 }
 
-FRenderInfo UNameComponent::makeRenderInfo() const
-{
-	FRenderInfo renderInfo = UBillboardComponent::makeRenderInfo();
-	ERenderFlags renderFlags = renderInfo.eRenderFlags;
-
-	// Remove primitive flags and add billboardtext flags
-	renderFlags = renderFlags
-		& ~ERenderFlags::RF_Raycastable
-		& ~ERenderFlags::RF_Primitive
-		& ~ERenderFlags::RF_BoundingBox
-		| ERenderFlags::RF_Billboard
-		| ERenderFlags::RF_Text;
-
-	renderInfo.eRenderFlags = renderFlags;
-	renderInfo.Textmesh = &mTextMesh;
-
-	return renderInfo;
-}
-
 void UNameComponent::updateRenderInfo()
 {
 	UBillboardComponent::updateRenderInfo();
