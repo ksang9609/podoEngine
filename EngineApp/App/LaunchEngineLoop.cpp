@@ -933,6 +933,23 @@ void FEngineLoop::processEditorCommand(const FDisableAllStatsCommand&)
 		"All stats disabled");
 }
 
+void FEngineLoop::processEditorCommand(const FGenerateStaticMeshLODCommand& command)
+{
+	UStaticMesh* meshAsset = const_cast<UStaticMesh*>(
+		mAssetManager->FindStaticMeshAssetOrNull(command.StaticMeshKey)
+	);
+
+	if (meshAsset && meshAsset->GenerateLOD(command.ReductionRate, command.ScreenSize))
+	{
+		int32 newLodIndex = meshAsset->GetLODCount() - 1;
+		const FStaticMeshLOD& newLod = meshAsset->GetLOD(newLodIndex);
+
+		FName lodBufferKey = FName(std::format("{}_LOD{}", command.StaticMeshKey.ToString(), newLodIndex));
+		mGpuResourceManager->CreateBuffer(lodBufferKey, newLod.Vertices, newLod.Indices);
+		UE_LOG_F(Log, Render, "LOD {} generated for mesh {}", newLodIndex, command.StaticMeshKey.ToString());
+	}
+}
+
 void FEngineLoop::processEditorCommand(const FClearPickingDataCommand&)
 {
 	mStatManager.ClearPickingStat();

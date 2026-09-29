@@ -222,8 +222,9 @@ bool FObjImporter::ParseAndConvert(const FString& fileName, FObjImportResult& ou
 	auto staticMesh = std::make_unique<FStaticMesh>();
 
 	convertObjToStaticMesh(objInfo, *staticMesh);
-	if (staticMesh->Vertices.IsEmpty() ||
-		staticMesh->Indices.IsEmpty())
+	if (staticMesh->LODs.IsEmpty() ||
+		staticMesh->LODs[0].Vertices.IsEmpty() ||
+		staticMesh->LODs[0].Indices.IsEmpty())
 	{
 		return false;
 	}
@@ -588,9 +589,12 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FM
 
 void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& outStaticMesh)
 {
-	outStaticMesh.Vertices.Reset(0);
-	outStaticMesh.Indices.Reset(0);
-	outStaticMesh.Sections.Reset(0);
+	outStaticMesh.LODs.Reset(0);
+
+	FStaticMeshLOD outLOD0;
+	outLOD0.Vertices.Reset(0);
+	outLOD0.Indices.Reset(0);
+	outLOD0.Sections.Reset(0);
 
 	// 일단은 std map 으로 박아놓기
 	std::unordered_map<FObjVertexIndex, uint32, FObjVertexIndexHash> vertexMap;
@@ -601,7 +605,7 @@ void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& 
 		FStaticMeshSection section;
 		section.MaterialSlotIndex = group.MaterialSlotIndex;
 		section.GroupIndex = group.GroupIndex;
-		section.StartIndex = static_cast<uint32>(outStaticMesh.Indices.Num());
+		section.StartIndex = static_cast<uint32>(outLOD0.Indices.Num());
 		section.IndexCount = 0;
 
 		for (uint32 FaceOffset = 0; FaceOffset < group.FaceCount; ++FaceOffset)
@@ -645,14 +649,14 @@ void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& 
 
 						if (It != vertexMap.end())
 						{
-							outStaticMesh.Indices.Add(It->second);
+							outLOD0.Indices.Add(It->second);
 							continue;
 						}
 					}
 
-					const uint32 NewIndex = static_cast<uint32>( outStaticMesh.Vertices.Num());
+					const uint32 NewIndex = static_cast<uint32>(outLOD0.Vertices.Num());
 
-					outStaticMesh.Vertices.Add(FNormalVertex{
+					outLOD0.Vertices.Add(FNormalVertex{
 						objInfo.Positions[vertex.PositionIndex],
 
 						HasNormal ? objInfo.Normals[vertex.NormalIndex]
@@ -665,7 +669,7 @@ void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& 
 							: FVector2(0.f, 0.f)
 						});
 
-					outStaticMesh.Indices.Add(NewIndex);
+					outLOD0.Indices.Add(NewIndex);
 
 					// 노멀 없는 점은 면별 노멀을 유지하도록 공유 안 함
 					if (HasNormal)
@@ -678,13 +682,15 @@ void FObjImporter::convertObjToStaticMesh(const FObjInfo& objInfo, FStaticMesh& 
 
 		// 섹션의 인덱스 개수 계산
 		// 섹션의 인덱스 개수는 현재 인덱스 배열의 크기에서 섹션 시작 인덱스를 뺀 값
-		section.IndexCount = static_cast<uint32>(outStaticMesh.Indices.Num()) - section.StartIndex;
+		section.IndexCount = static_cast<uint32>(outLOD0.Indices.Num()) - section.StartIndex;
 
 		if (section.IndexCount > 0)
 		{
-			outStaticMesh.Sections.Add(section);
+			outLOD0.Sections.Add(section);
 		}
 	}
+
+	outStaticMesh.LODs.Add(outLOD0);
 }
 
 
