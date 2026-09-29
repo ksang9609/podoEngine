@@ -190,7 +190,7 @@ void FEngineLoop::Tick(bool bPumpMessages)
 	FrameTimer->StartFrame();
 	float deltaTime = FrameTimer->GetDeltaTime();
 
-	mStatManager.UpdateFrame(*FrameTimer);
+	mStatManager.UpdateFrame(*FrameTimer, *mGraphicsManager->GetRenderer());
 	mStatManager.UpdateMemory(deltaTime,{*mSceneManager,*mAssetManager,*mGpuResourceManager});
 	mStatManager.UpdatePicking();
 

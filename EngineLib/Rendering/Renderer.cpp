@@ -54,6 +54,12 @@ void URenderer::Initialize(HWND hWindow, FGpuResourceManager& gpuResourceManager
 			backBufferDesc.Width,
 			backBufferDesc.Height);
 	}
+
+	HRESULT hr = mGpuTimer.Initialize(mDevice.Get());
+	if (FAILED(hr))
+	{
+		UE_LOG(Error, Render, "Failed to initialize GPU timer. HRESULT: 0x%08X", hr);
+	}
 }
 
 void URenderer::createDeviceAndSwapChain(HWND hWindow)
@@ -235,6 +241,8 @@ bool URenderer::RenderSimpleInstanced(
 
 void URenderer::Release()
 {
+	mGpuTimer.Shutdown();
+
 	mDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 	releaseDepthStencilBuffer();
@@ -246,12 +254,24 @@ void URenderer::Release()
 
 void URenderer::SwapBuffer()
 {
+	mGpuTimer.End(mDeviceContext.Get());
+
 	mSwapChain->Present(0, 0);
 }
 
 // Prepare global rendering state for a new frame
 void URenderer::BeginFrame()
 {
+	HRESULT hr = mGpuTimer.Poll(mDeviceContext.Get());
+	if (FAILED(hr))
+	{
+		UE_LOG(Error, Render, "Failed to poll GPU timer. HRESULT: 0x%08X", hr);
+		mGpuTimer.Shutdown();
+	}
+
+	mGpuTimer.Begin(mDeviceContext.Get());
+
+
 	mDeviceContext->ClearRenderTargetView(mFrameBufferRTV.Get(), mClearColor);
 
 	//매 프레임 깊이 버퍼를 1.0(가장 먼 값)으로 초기화

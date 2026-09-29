@@ -6,6 +6,7 @@ class FFrameTimer;
 class FSceneManager;
 class FAssetManager;
 class FGpuResourceManager;
+class URenderer;
 
 struct FStatCollectionSources
 {
@@ -23,7 +24,7 @@ public:
 	bool IsEnabled(EStatGroup group) const;
 	bool HasAnyEnabledStat() const;
 
-	void UpdateFrame(const FFrameTimer& frameTimer);
+	void UpdateFrame(const FFrameTimer& frameTimer, const URenderer& renderer);
 
 	void UpdateMemory(float deltaTime, const FStatCollectionSources& sources);
 	void UpdatePicking();
