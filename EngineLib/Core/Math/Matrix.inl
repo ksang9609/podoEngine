@@ -283,13 +283,13 @@ inline FMatrix FMatrix::Rotate(const FRotator r)
 //	|	1 - 2 (y^2 + z^2)	2xy + 2wz			2xz - 2wy			|
 //	|	2xy - 2wz			1 - 2 (x^2 + z^2)	2yz + 2wx			|
 //	|	2xz + 2wy			2yz - 2wx			1 - 2 (x^2 + y^2)	|
-inline FMatrix FMatrix::Rotate(const FQuat q)
+inline FMatrix FMatrix::Rotate(const FQuat& q)
 {
 	FMatrix result;
 
 	const __m128 Constant1110 = _mm_setr_ps(1.0f, 1.0f, 1.0f, 0.0f);
 	// x y z w
-	__m128 Q0 = _mm_load_ps(&q.x);
+	__m128 Q0 = _mm_loadu_ps(&q.x); // 안전 위해 비정렬 로드 사용
 	// 2x 2y 2z 2w
 	__m128 Q1 = _mm_add_ps(Q0, Q0);
 	// 2x^2 2y^2 2z^2 2w^2
