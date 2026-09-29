@@ -210,21 +210,24 @@ UPrimitiveComponent::GetDeclaredProperties()
 			UPrimitiveComponent,
 			mePrimitive),
 
-		REFLECT_PROPERTY(
+		REFLECT_PROPERTY_SETTER(
 			UPrimitiveComponent,
 			mbUseTexture,
+			&UPrimitiveComponent::SetUseTexture,
 			EPropertyFlags::Serializable | EPropertyFlags::Editable
 		),
 
-		REFLECT_PROPERTY(
+		REFLECT_PROPERTY_SETTER(
 			UPrimitiveComponent,
 			mbShowBoundingBox,
+			&UPrimitiveComponent::SetShowBoundingBox,
 			EPropertyFlags::Serializable | EPropertyFlags::Editable
 		),
 
-		REFLECT_PROPERTY(
+		REFLECT_PROPERTY_SETTER(
 			UPrimitiveComponent,
 			mColor,
+			&UPrimitiveComponent::SetColor,
 			EPropertyFlags::Serializable | EPropertyFlags::Editable
 		),
 	};
