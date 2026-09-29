@@ -11,15 +11,15 @@ inline FMatrix FMatrix::operator* (const FMatrix& Other) const
 {
 	FMatrix result;
 
-	__m128 B0 = _mm_load_ps(&Other.M[0][0]);
-	__m128 B1 = _mm_load_ps(&Other.M[1][0]);
-	__m128 B2 = _mm_load_ps(&Other.M[2][0]);
-	__m128 B3 = _mm_load_ps(&Other.M[3][0]);
+	__m128 B0 = _mm_loadu_ps(&Other.M[0][0]);
+	__m128 B1 = _mm_loadu_ps(&Other.M[1][0]);
+	__m128 B2 = _mm_loadu_ps(&Other.M[2][0]);
+	__m128 B3 = _mm_loadu_ps(&Other.M[3][0]);
 
 	for (int i = 0; i < 4; i++)
 	{
 		// A의 i번째 행 가져옴
-		__m128 A = _mm_load_ps(&M[i][0]);
+		__m128 A = _mm_loadu_ps(&M[i][0]);
 		// i번째 행의 0번째 원소들을 복사해서 128비트 레지스터 4칸에 채워 넣는다
 		__m128 A0 = _mm_shuffle_ps(A, A, _MM_SHUFFLE(0, 0, 0, 0));
 		// 행벡터의 0번째 원소들을 복사해서 만든 4칸 레지스터에 곱하려는 행렬의 0번째 행을 곱한다
@@ -31,7 +31,7 @@ inline FMatrix FMatrix::operator* (const FMatrix& Other) const
 		__m128 A3 = _mm_shuffle_ps(A, A, _MM_SHUFFLE(3, 3, 3, 3));
 		Res = _mm_add_ps(Res, _mm_mul_ps(A3, B3));
 
-		_mm_store_ps(&result.M[i][0], Res);
+		_mm_storeu_ps(&result.M[i][0], Res);
 	}
 	return result;
 }
@@ -44,10 +44,10 @@ inline FMatrix FMatrix::operator*(float Scalar) const
 
 	for (int i = 0; i < 4; i++)
 	{
-		__m128 A = _mm_load_ps(&M[i][0]);
+		__m128 A = _mm_loadu_ps(&M[i][0]);
 		__m128 Res = _mm_mul_ps(A, B);
 
-		_mm_store_ps(&result.M[i][0], Res);
+		_mm_storeu_ps(&result.M[i][0], Res);
 	}
 
 	return result;
@@ -59,9 +59,9 @@ inline FMatrix FMatrix::operator+ (const FMatrix& Other) const
 
 	for (int i = 0; i < 4; i++)
 	{
-		__m128 iA = _mm_load_ps(&M[i][0]);
-		__m128 iB = _mm_load_ps(&Other.M[i][0]);
-		_mm_store_ps(&result.M[i][0], _mm_add_ps(iA, iB));
+		__m128 iA = _mm_loadu_ps(&M[i][0]);
+		__m128 iB = _mm_loadu_ps(&Other.M[i][0]);
+		_mm_storeu_ps(&result.M[i][0], _mm_add_ps(iA, iB));
 	}
 	return result;
 }
@@ -72,9 +72,9 @@ inline FMatrix FMatrix::operator- (const FMatrix& Other) const
 
 	for (int i = 0; i < 4; i++)
 	{
-		__m128 iA = _mm_load_ps(&M[i][0]);
-		__m128 iB = _mm_load_ps(&Other.M[i][0]);
-		_mm_store_ps(&result.M[i][0], _mm_sub_ps(iA, iB));
+		__m128 iA = _mm_loadu_ps(&M[i][0]);
+		__m128 iB = _mm_loadu_ps(&Other.M[i][0]);
+		_mm_storeu_ps(&result.M[i][0], _mm_sub_ps(iA, iB));
 	}
 	return result;
 }
@@ -86,8 +86,8 @@ inline FMatrix FMatrix::operator+(float f) const
 	__m128 B = _mm_set1_ps(f);
 	for (int i = 0; i < 4; i++)
 	{
-		__m128 iA = _mm_load_ps(&M[i][0]);
-		_mm_store_ps(&result.M[i][0], _mm_add_ps(iA, B));
+		__m128 iA = _mm_loadu_ps(&M[i][0]);
+		_mm_storeu_ps(&result.M[i][0], _mm_add_ps(iA, B));
 	}
 	return result;
 }
@@ -99,8 +99,8 @@ inline FMatrix FMatrix::operator-(float f) const
 	__m128 B = _mm_set1_ps(f);
 	for (int i = 0; i < 4; i++)
 	{
-		__m128 iA = _mm_load_ps(&M[i][0]);
-		_mm_store_ps(&result.M[i][0], _mm_sub_ps(iA, B));
+		__m128 iA = _mm_loadu_ps(&M[i][0]);
+		_mm_storeu_ps(&result.M[i][0], _mm_sub_ps(iA, B));
 	}
 	return result;
 }
@@ -109,8 +109,8 @@ inline bool FMatrix::operator==(const FMatrix& m) const
 {
 	for (int i = 0; i < 4; i++)
 	{
-		__m128 A = _mm_load_ps(&M[i][0]);
-		__m128 B = _mm_load_ps(&m.M[i][0]);
+		__m128 A = _mm_loadu_ps(&M[i][0]);
+		__m128 B = _mm_loadu_ps(&m.M[i][0]);
 
 		// 두 행의 4개 원소가 같으면 0xFFFFFFFF, 다르면 0x0
 		__m128 Cmp = _mm_cmpeq_ps(A, B);
@@ -137,8 +137,8 @@ inline bool FMatrix::Equals(const FMatrix& m, float Tolerance) const
 
 	for (int i = 0; i < 4; i++)
 	{
-		__m128 A = _mm_load_ps(&M[i][0]);
-		__m128 B = _mm_load_ps(&m.M[i][0]);
+		__m128 A = _mm_loadu_ps(&M[i][0]);
+		__m128 B = _mm_loadu_ps(&m.M[i][0]);
 
 		__m128 Diff = _mm_sub_ps(A, B);
 		__m128 AbsDiff = _mm_and_ps(Diff, AbsMask);
@@ -155,20 +155,20 @@ inline bool FMatrix::Equals(const FMatrix& m, float Tolerance) const
 inline inline FMatrix FMatrix::Transpose() const
 {
 	FMatrix result;
-	__m128 A0 = _mm_load_ps(&M[0][0]);
-	__m128 A1 = _mm_load_ps(&M[1][0]);
-	__m128 A2 = _mm_load_ps(&M[2][0]);
-	__m128 A3 = _mm_load_ps(&M[3][0]);
+	__m128 A0 = _mm_loadu_ps(&M[0][0]);
+	__m128 A1 = _mm_loadu_ps(&M[1][0]);
+	__m128 A2 = _mm_loadu_ps(&M[2][0]);
+	__m128 A3 = _mm_loadu_ps(&M[3][0]);
 
 	__m128 T0 = _mm_unpacklo_ps(A0, A1);
 	__m128 T1 = _mm_unpacklo_ps(A2, A3);
 	__m128 T2 = _mm_unpackhi_ps(A0, A1);
 	__m128 T3 = _mm_unpackhi_ps(A2, A3);
 
-	_mm_store_ps(&result.M[0][0], _mm_movelh_ps(T0, T1));
-	_mm_store_ps(&result.M[1][0], _mm_movehl_ps(T1, T0));
-	_mm_store_ps(&result.M[2][0], _mm_movelh_ps(T2, T3));
-	_mm_store_ps(&result.M[3][0], _mm_movehl_ps(T3, T2));
+	_mm_storeu_ps(&result.M[0][0], _mm_movelh_ps(T0, T1));
+	_mm_storeu_ps(&result.M[1][0], _mm_movehl_ps(T1, T0));
+	_mm_storeu_ps(&result.M[2][0], _mm_movelh_ps(T2, T3));
+	_mm_storeu_ps(&result.M[3][0], _mm_movehl_ps(T3, T2));
 
 	return result;
 
@@ -339,19 +339,19 @@ inline FMatrix FMatrix::Rotate(const FQuat& q)
 	__m128 Row = _mm_shuffle_ps(R0, V0, _MM_SHUFFLE(1, 0, 3, 0));
 	// 0행 정렬 1 - (yy2 + zz2), 2xy + 2wz, 2xz - 2wy, 0.0f
 	Row = _mm_shuffle_ps(Row, Row, _MM_SHUFFLE(1, 3, 2, 0));
-	_mm_store_ps(&result.M[0][0], Row);
+	_mm_storeu_ps(&result.M[0][0], Row);
 
 	// 1행 순서 정렬 전 1 - (xx2 + zz2), 0.0f, 2yz + 2wx, 2xy - 2wz
 	Row = _mm_shuffle_ps(R0, V0, _MM_SHUFFLE(2, 3, 3, 1));
 	// 1행 정렬 2xy - 2wz, 1 - (xx2 + zz2), 2yz + 2wx, 0.0f
 	Row = _mm_shuffle_ps(Row, Row, _MM_SHUFFLE(1, 2, 0, 3));
-	_mm_store_ps(&result.M[1][0], Row);
+	_mm_storeu_ps(&result.M[1][0], Row);
 
 	// 2행 정렬 2xz + 2wy, 2yz - 2wx	, 1 - (xx2 + yy2), 0.0f
 	Row = _mm_shuffle_ps(V1, R0, _MM_SHUFFLE(3, 2, 1, 0));
-	_mm_store_ps(&result.M[2][0], Row);
+	_mm_storeu_ps(&result.M[2][0], Row);
 
-	_mm_store_ps(&result.M[3][0], _mm_setr_ps(0.0f, 0.0f, 0.0f, 1.0f));
+	_mm_storeu_ps(&result.M[3][0], _mm_setr_ps(0.0f, 0.0f, 0.0f, 1.0f));
 
 	return result;
 }
