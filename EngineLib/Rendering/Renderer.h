@@ -42,6 +42,8 @@ public:
 	ID3D11Device* GetDevice() const { return mDevice.Get(); }
 	ID3D11DeviceContext* GetDeviceContext() const { return mDeviceContext.Get(); }
 	ID3D11ShaderResourceView* GetDepthBufferSRV() const { return mDepthBufferSRV.Get(); }
+	ID3D11RenderTargetView* GetFrameBufferRTV() const { return mFrameBufferRTV.Get(); }
+	ID3D11DepthStencilView* GetDepthStencilView() const { return mDepthStencilView.Get(); }
 
 	// Release all resources that this render holds.
 	void Release();

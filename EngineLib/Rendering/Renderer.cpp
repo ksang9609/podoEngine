@@ -140,7 +140,7 @@ void URenderer::createDepthStencilBuffer(UINT width, UINT height)
 	mDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), &dsvdesc, &mDepthStencilView);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 	srvDesc.Texture2D.MostDetailedMip = 0;

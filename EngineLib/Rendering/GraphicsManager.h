@@ -16,6 +16,8 @@
 #include "Rendering/GpuResourceManager.h"
 #include "SceneView.h"
 
+#include "FHiZBuffer.h"
+
 struct FFrustum;
 struct FTexture
 {
@@ -151,9 +153,9 @@ private:
 	EViewModeIndex mViewMode = EViewModeIndex::VMI_Lit;
 
 	uint32 mShowFlags = ~0;
-		//static_cast<uint32>(EEngineShowFlags::SF_Primitives) |
-		//static_cast<uint32>(EEngineShowFlags::SF_BillboardText) |
-		//static_cast<uint32>(EEngineShowFlags::SF_WorldAxis);
+	//static_cast<uint32>(EEngineShowFlags::SF_Primitives) |
+	//static_cast<uint32>(EEngineShowFlags::SF_BillboardText) |
+	//static_cast<uint32>(EEngineShowFlags::SF_WorldAxis);
 
 	bool mbShowPrimitives = true;
 	//void RenderBillboardText();
@@ -163,7 +165,7 @@ private:
 		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
 		const FFrustum* frustum, uint32 showFlags);
 
-	static bool HasViewShowFlag(uint32 showFlags, EEngineShowFlags flag){return (showFlags & static_cast<uint32>(flag)) != 0;}
+	static bool HasViewShowFlag(uint32 showFlags, EEngineShowFlags flag) { return (showFlags & static_cast<uint32>(flag)) != 0; }
 
 	/* Rendering Functions */
 	void renderSimplePrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
@@ -184,4 +186,15 @@ private:
 	// Instancing Test
 	//void RenderInstancingTest();
 	//ID3D11Buffer* mTestInstanceIndexBuffer = nullptr;
+
+// HiZ Buffer
+private:
+	FHiZBuffer mHiZBuffer;
+	bool mbEnableHiZ = true;
+	TArray<uint8> mVisibilityLifeCounters;
+	uint8 MaxVisibilityHoldFrames = 2;
+
+public:
+	void SetEnableHiZ(bool bEnable);
+	bool IsHiZEnabled() { return mbEnableHiZ; }
 };
