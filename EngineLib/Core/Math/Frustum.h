@@ -107,12 +107,10 @@ struct FFrustum
 			M.M[3][3] - M.M[3][2]
 		};
 
-		result.Plane(EFrustumPlane::Left).Normalize();
-		result.Plane(EFrustumPlane::Right).Normalize();
-		result.Plane(EFrustumPlane::Bottom).Normalize();
-		result.Plane(EFrustumPlane::Top).Normalize();
-		result.Plane(EFrustumPlane::Near).Normalize();
-		result.Plane(EFrustumPlane::Far).Normalize();
+		for (FPlane& plane : result.Planes)
+		{
+			plane.Normalize();
+		}
 
 		return result;
 	}
