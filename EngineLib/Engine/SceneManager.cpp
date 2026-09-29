@@ -23,6 +23,7 @@
 #include "Core/FrameTimer.h"
 #include "Engine/Components/ActorComponent.h"
 #include "Engine/Components/CubeComponent.h"
+#include "Stats/ScopeCycleCounter.h"
 
 FSceneManager::~FSceneManager()
 {
@@ -38,22 +39,33 @@ void FSceneManager::Update(float deltaTime)
 
 	mCurrentWorld->Update(deltaTime);
 	
+	// 오브젝트 개수가 달라질 때마다 재빌드 표시 찍기
+	const int32 currentCount = GetRenderInfos().Num();
+	if (currentCount != mLastRenderInfoCount)
+	{
+		mLastRenderInfoCount = currentCount;
+		mbOctreeDirty = true;
+	}
+
+	if (mbOctreeDirty)
+	{
+		FScopeCycleCounter counter({ EStatId::OctreeBuild });
+		mOctree.Build(GetRenderInfos());
+		mbOctreeDirty = false;
+	}
+
+
 	// ---------------------------
 	//		임시용(삭제 필요)
 	// ---------------------------
-	// 오브젝트 개수가 달라질 때마다 한 번씩 찍는다
-	mOctree.Build(GetRenderInfos());
-
-	static int32 sLastTotal = -1;
-	const int32 total = GetRenderInfos().Num();
-
-	if (total > 0 && total != sLastTotal)
+	static int32 sFrames = 0;
+	if (++sFrames % 120 == 0)
 	{
-		sLastTotal = total;
+		const FCycleStat& stat = FScopeCycleCounter::GetCycleStat({ EStatId::OctreeBuild });
 
-		UE_LOG_F(Warning, Core, "Octree: nodes={} inside={} outside={} rootObjects={} total={}",
-			mOctree.GetNodeCount(), mOctree.GetInsideCount(),
-			mOctree.GetOutsideCount(), mOctree.GetRootObjectCount(), total);
+		UE_LOG_F(Warning, Core, "Octree build: last={} ms, avg={} ms",
+			FPlatformTime::ToMilliseconds(stat.LastCycles),
+			stat.CycleCount > 0 ? FPlatformTime::ToMilliseconds(stat.TotalCycles) / stat.CycleCount : 0.0);
 	}
 }
 

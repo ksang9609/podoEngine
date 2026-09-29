@@ -72,7 +72,9 @@ public:
 
 	float GetPanelWidth() const;
 
-	const FOctree &GetOctree() { return mOctree; }
+	const FOctree &GetOctree() const { return mOctree; }
+	void MarkOctreeDirty() { mbOctreeDirty = true; }
+
 	
 private:
 	//static constexpr float MIN_WIDTH_RATIO = 0.2f;
@@ -90,4 +92,6 @@ private:
 	FEditorSetting mEditorSetting;
 
 	FOctree mOctree;
+	bool mbOctreeDirty = true;
+	int32 mLastRenderInfoCount = -1;
 };

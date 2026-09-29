@@ -592,6 +592,7 @@ void FEngineLoop::processEditorCommand(const FSetActorLocationCommand& command)
 	if (actor)
 	{
 		actor->SetLocation(command.Location);
+		mSceneManager->MarkOctreeDirty();
 	}
 }
 
@@ -601,6 +602,8 @@ void FEngineLoop::processEditorCommand(const FSetActorRotationCommand& command)
 	if (actor)
 	{
 		actor->SetRotation(command.Rotation);
+		mSceneManager->MarkOctreeDirty();
+
 	}
 }
 
@@ -610,6 +613,7 @@ void FEngineLoop::processEditorCommand(const FSetActorScaleCommand& command)
 	if (actor)
 	{
 		actor->SetScale(command.Scale);
+		mSceneManager->MarkOctreeDirty();
 	}
 }
 
