@@ -60,14 +60,16 @@ void FSceneManager::Update(float deltaTime)
 
 		const FCycleStat& stat = FScopeCycleCounter::GetCycleStat({ EStatId::OctreeBuild });
 
-		UE_LOG_F(Warning, Core, "Octree build: count={}, last={} ms, avg={} ms, nodes={}, inside={}, outside={}, maxNodeObjects={}",
+		UE_LOG_F(Warning, Core, "Octree build: count={}, last={} ms, avg={} ms, nodes={}, inside={}, outside={}, maxNodeObjects={}, rootHalf={}",
 			stat.CycleCount,
 			FPlatformTime::ToMilliseconds(stat.LastCycles),
 			stat.CycleCount > 0 ? FPlatformTime::ToMilliseconds(stat.TotalCycles) / stat.CycleCount : 0.0,
 			mOctree.GetNodeCount(),
 			mOctree.GetInsideCount(),
 			mOctree.GetOutsideCount(),
-			mOctree.GetMaxNodeObjectCount());
+			mOctree.GetMaxNodeObjectCount(),
+			mOctree.GetRootHalfSize());
+
 
 		mbOctreeDirty = false;
 	}
@@ -231,6 +233,16 @@ void  FSceneManager::SetSelectedActor(AActor* actor)
 float FSceneManager::GetPanelWidth() const
 {
 	return mPanelWidth;
+}
+
+void FSceneManager::NotifyObjectMoved(uint32 objectIndex)
+{
+	mOctree.MarkObjectMoved(objectIndex);
+
+	if (mOctree.NeedsRebuild())
+	{
+		mbOctreeDirty = true;
+	}
 }
 
 const TArray<const FRenderInfo*>& FSceneManager::GetRenderInfos() const
