@@ -357,7 +357,7 @@ void FGraphicsManager::RenderSceneView(
 	mRenderer->SetViewMode(view.viewMode);
 	const FFrustum frustum = FFrustum::FrustumFromViewProjection(view.viewProjectionMatrix);
 
-	octree.FrustumCull(frustum, mCullInside, mCullIntersect);
+	octree.FrustumCull(frustum, view.cameraLocation, mCullInside, mCullIntersect);
 
 	// 인스턴스 테스트용(큐브 1만개 출력=
 	// Prepare Render queue

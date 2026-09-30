@@ -32,7 +32,7 @@ public:
 	uint32 GetRootObjectCount() const { return mNodes.IsEmpty() ? 0u : mNodes[0].ObjectCount; }
 
 public:
-	void FrustumCull(const FFrustum & frustum, TArray<uint32> & outInside, TArray<uint32>& outIntersect) const;
+	void FrustumCull(const FFrustum & frustum, const FVector & cameraPos, TArray<uint32> & outInside, TArray<uint32>& outIntersect) const;
 
 
 private:
@@ -48,8 +48,8 @@ private:
 	bool intersectLooseBounds(uint32 nodeIndex, const FVector& origin, const FVector& invDir, float tMax, float& outTEnter) const;
 
 private:
-	void addSubtreeAll(uint32 nodeIndex, TArray <uint32>& outVisible) const;
-	void cullNode(uint32 nodeIndex, const FFrustum& frustum, TArray <uint32>& outInside, TArray <uint32>& outIntersect) const;
+	void addSubtreeAll(uint32 nodeIndex, const FVector& cameraPos, TArray <uint32>& outVisible) const;
+	void cullNode(uint32 nodeIndex, const FVector& cameraPos, const FFrustum& frustum, TArray <uint32>& outInside, TArray <uint32>& outIntersect) const;
 
 
 private:
