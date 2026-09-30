@@ -57,27 +57,19 @@ void FSceneManager::Update(float deltaTime)
 		// ---------------------------
 		//		임시용(삭제 필요)
 		// ---------------------------
-		UE_LOG_F(Warning, Core, "Octree: nodes={}, inside={}, outside={}, maxNodeObjects={}",
+
+		const FCycleStat& stat = FScopeCycleCounter::GetCycleStat({ EStatId::OctreeBuild });
+
+		UE_LOG_F(Warning, Core, "Octree build: count={}, last={} ms, avg={} ms, nodes={}, inside={}, outside={}, maxNodeObjects={}",
+			stat.CycleCount,
+			FPlatformTime::ToMilliseconds(stat.LastCycles),
+			stat.CycleCount > 0 ? FPlatformTime::ToMilliseconds(stat.TotalCycles) / stat.CycleCount : 0.0,
 			mOctree.GetNodeCount(),
 			mOctree.GetInsideCount(),
 			mOctree.GetOutsideCount(),
 			mOctree.GetMaxNodeObjectCount());
 
 		mbOctreeDirty = false;
-	}
-
-
-	// ---------------------------
-	//		임시용(삭제 필요)
-	// ---------------------------
-	static int32 sFrames = 0;
-	if (++sFrames % 120 == 0)
-	{
-		const FCycleStat& stat = FScopeCycleCounter::GetCycleStat({ EStatId::OctreeBuild });
-
-		UE_LOG_F(Warning, Core, "Octree build: last={} ms, avg={} ms",
-			FPlatformTime::ToMilliseconds(stat.LastCycles),
-			stat.CycleCount > 0 ? FPlatformTime::ToMilliseconds(stat.TotalCycles) / stat.CycleCount : 0.0);
 	}
 }
 
