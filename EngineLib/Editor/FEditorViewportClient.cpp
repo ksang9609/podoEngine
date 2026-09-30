@@ -505,8 +505,6 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
 	if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
 	{
-		sceneManager->MarkOctreeDirty();
-
 		if (mGizmo.eType == EGIZMO_TYPE::TRANSLATE)
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다
@@ -539,6 +537,10 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	if (Input.WasReleased(VK_LBUTTON))
 	{
+		if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE) {
+			sceneManager->MarkOctreeDirty();
+		}
+
 		mGizmo.mDraggingAxis = EGIZMO_AXIS::NONE;
 	}
 
