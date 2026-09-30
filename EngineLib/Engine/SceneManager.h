@@ -76,6 +76,7 @@ public:
 
 	void MarkOctreeDirty() { mbOctreeDirty = true; }
 	void NotifyObjectMoved(uint32 objectIndex);
+	void FinishObjectMove();
 
 	
 private:

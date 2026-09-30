@@ -238,7 +238,10 @@ float FSceneManager::GetPanelWidth() const
 void FSceneManager::NotifyObjectMoved(uint32 objectIndex)
 {
 	mOctree.MarkObjectMoved(objectIndex);
+}
 
+void FSceneManager::FinishObjectMove()
+{
 	if (mOctree.NeedsRebuild())
 	{
 		mbOctreeDirty = true;

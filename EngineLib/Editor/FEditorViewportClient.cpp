@@ -544,6 +544,11 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	if (Input.WasReleased(VK_LBUTTON))
 	{
+		if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE)
+		{
+			sceneManager->FinishObjectMove();
+		}
+
 		mGizmo.mDraggingAxis = EGIZMO_AXIS::NONE;
 	}
 
