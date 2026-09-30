@@ -371,11 +371,16 @@ void FGraphicsManager::PrepareForUI()
 
 void FGraphicsManager::updateRenderQueue(
 	const TArray<const FRenderInfo*>& renderInfos,
+	const TArray<uint32>* objectIndices,
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
-	const FFrustum* frustum, uint32 showFlags)
-{	
-	for (const FRenderInfo* renderInfo : renderInfos)
-	{
+	const FFrustum* frustum, uint32 showFlags
+	)
+{
+	const int32 count = objectIndices ? objectIndices->Num() : renderInfos.Num();
+
+	for(int32 k = 0; k < count; k++){
+		const FRenderInfo* renderInfo = objectIndices ? renderInfos[(*objectIndices)[k]] : renderInfos[k];
+
 		if (frustum != nullptr)
 		{
 			if (!frustum->Intersects(renderInfo->WorldBounds))
@@ -449,7 +454,8 @@ void FGraphicsManager::RenderSceneView(
 	const TArray<const FRenderInfo*>& scenerRenderInfos,
 	const TArray<const FRenderInfo*>& axisRenderInfos,
 	const FSceneView& view,
-	const AActor* selectedActor)
+	const AActor* selectedActor,
+	const FOctree & octree)
 {
 
 	if (!view.isValid())
@@ -467,13 +473,24 @@ void FGraphicsManager::RenderSceneView(
 	mRenderer->SetViewMode(view.viewMode);
 	const FFrustum frustum = FFrustum::FrustumFromViewProjection(view.viewProjectionMatrix);
 
+	octree.FrustumCull(frustum, view.cameraLocation, mCullInside, mCullIntersect);
+
+	for (uint32 idx : mCullIntersect)
+	{
+		const FRenderInfo* renderInfo = scenerRenderInfos[idx];
+		if (frustum.InterSectsSIMD(renderInfo->WorldBounds))
+		{
+			mCullInside.Add(idx);
+		}
+	}
 	// 인스턴스 테스트용(큐브 1만개 출력=
 	// Prepare Render queue
 	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
 	// Each render info is splitted into different render queues
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
-	updateRenderQueue(scenerRenderInfos, renderQueueMap, &frustum, view.showFlags);
-	updateRenderQueue(axisRenderInfos, renderQueueMap, nullptr, view.showFlags);
+	updateRenderQueue(scenerRenderInfos, &mCullInside, renderQueueMap, nullptr, view.showFlags);
+	//updateRenderQueue(scenerRenderInfos, &mCullIntersect, renderQueueMap, &frustum, view.showFlags);
+	updateRenderQueue(axisRenderInfos, nullptr, renderQueueMap, nullptr, view.showFlags);
 
 	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], view.cameraLocation, view.cameraForward);
 
@@ -562,7 +579,7 @@ void FGraphicsManager::RenderGizmoView(const TArray<const FRenderInfo*>& gizmoRe
 
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
 
-	updateRenderQueue(gizmoRenderInfos, renderQueueMap, nullptr, view.showFlags);
+	updateRenderQueue(gizmoRenderInfos, nullptr, renderQueueMap, nullptr, view.showFlags);
 	renderGizmo(renderQueueMap[RQT_Gizmo], view);
 }
 
@@ -627,8 +644,8 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 			renderInfo->GetLocation(), renderInfo->GetScale(),
 			view.viewProjectionMatrix,
 			cameraRight, cameraUp,
-			renderInfo->numRows, renderInfo->numCols,
-			renderInfo->currentFrame, renderInfo->nextFrame, renderInfo->frameRatio,
+			*renderInfo->numRows, *renderInfo->numCols,
+			*renderInfo->currentFrame, *renderInfo->nextFrame, *renderInfo->frameRatio,
 			renderInfo->Color
 		);
 

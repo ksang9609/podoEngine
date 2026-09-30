@@ -6,6 +6,7 @@
 #include "Core/Container/TArray.h"
 #include "Rendering/RenderInfo.h"
 #include "Core/enum.h"
+#include "Core/Math/FOctree.h"
 #include "Editor/EditorSetting.h"
 
 inline constexpr std::string_view kSceneDataDir = "SceneData\\";
@@ -70,6 +71,13 @@ public:
 	void ResetSelectedActor() { mSelectedActor = nullptr; }
 
 	float GetPanelWidth() const;
+
+	const FOctree &GetOctree() const { return mOctree; }
+
+	void MarkOctreeDirty() { mbOctreeDirty = true; }
+	void NotifyObjectMoved(uint32 objectIndex);
+	void FinishObjectMove();
+
 	
 private:
 	//static constexpr float MIN_WIDTH_RATIO = 0.2f;
@@ -85,4 +93,8 @@ private:
 	std::string LoadScenename;
 
 	FEditorSetting mEditorSetting;
+
+	FOctree mOctree;
+	bool mbOctreeDirty = true;
+	int32 mLastRenderInfoCount = -1;
 };

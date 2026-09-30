@@ -15,7 +15,17 @@
 
 class AActor;
 class FSceneManager;
+class FOctree;
 struct FViewportSharedSettings;
+
+struct FPickCandidate {
+	float TMin;
+	uint32 ObjectIndex;
+
+	bool operator<(const FPickCandidate& other) const {
+		return this->TMin < other.TMin;
+	}
+};
 
 struct FEditorViewportClient
 {
@@ -28,8 +38,7 @@ public:
 	}
 
 	void Initialize(FAssetManager& assetManagerRef);
-	bool RaycastBounds(const FVector& rayStart,const FVector& rayEnd,const FBoundingBox& bounds);
-	void RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject);
+	void RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject, const FOctree& octree);
 	float GetFov() const { return mCamera.mFovDegree; }
 	void Update(float deltaTime, const FViewRect& viewrect, FSceneManager* sceneManager, bool bViewportHoverd, bool bViewportFocused);
 	bool IsMouseHit() const { return bMouseHit; }
@@ -66,19 +75,13 @@ private:
 	//마우스 밑 무언가의
 	FRenderInfo mHoveredRenderInfo;
 
+	static constexpr uint32 InvalidObjectIndex = UINT32_MAX;
+	uint32 mHoveredObjectIndex = InvalidObjectIndex;
+
 	// 선택된 액터의 RenderInfo는 캐시하지 않는다. 필요할 때 ClickedActor->GetRenderInfos()로 그때그때 뽑는다.
 	//마우스 밑 무언가가 Actor이면 저장. RayCast 에서 채워야 함 (아직 미구현)
 	// INFO: mClickedActor moved to FSceneManager::mSelectedActor.
 	//AActor* mClickedActor = nullptr;
-
-
-	bool RayIntersectsTriangle( // 두개의 
-		const FVector& Origin,
-		const FVector& Dir,
-		const FVector& V0,
-		const FVector& V1,
-		const FVector& V2,
-		float& OutT, float& OutU, float& OutV);
 
 	void DeprojectScreenToWorld(int32 MouseX, int32 MouseY,
 		float ScreenW, float ScreenH, float NearZ, float FarZ,

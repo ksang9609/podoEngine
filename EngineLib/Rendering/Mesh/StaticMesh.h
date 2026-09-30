@@ -7,6 +7,7 @@
 #include "Core/Object/Object.h"
 #include "Core/Core.h"
 #include "Core/Name.h"
+#include "Core/Math/BVH.h"
 #include "Rendering/VertexType.h"
 #include "Material.h"
 
@@ -82,9 +83,14 @@ public:
 	int32 GetLODCount() const { return mStaticMeshAsset->LODs.Num(); }
 	FStaticMeshLOD GetLOD(int32 index) const { return mStaticMeshAsset->LODs[index]; }
 
+	inline const FMeshBVH& GetBVH() const { return mBVH; }
+
 private:
 	std::unique_ptr<FStaticMesh> mStaticMeshAsset;
 
 	TArray<const UMaterial*> mDefaultMaterialRefs;
+
+	/* BVH */
+	FMeshBVH mBVH;
 };
 

@@ -23,6 +23,7 @@
 #include "Core/FrameTimer.h"
 #include "Engine/Components/ActorComponent.h"
 #include "Engine/Components/CubeComponent.h"
+#include "Stats/ScopeCycleCounter.h"
 
 FSceneManager::~FSceneManager()
 {
@@ -37,6 +38,54 @@ void FSceneManager::Update(float deltaTime)
 	}
 
 	mCurrentWorld->Update(deltaTime);
+	
+	// 새로 스폰되면 stray에 넣기
+	const int32 currentCount = GetRenderInfos().Num();
+	if (currentCount != mLastRenderInfoCount)
+	{
+		if (mLastRenderInfoCount >= 0 && currentCount > mLastRenderInfoCount)
+		{
+			mOctree.AppendObjects(currentCount);
+
+			if (mOctree.NeedsRebuild())
+			{
+				mbOctreeDirty = true;
+			}
+		}
+		else
+		{
+			mbOctreeDirty = true;
+		}
+
+		mLastRenderInfoCount = currentCount;
+	}
+
+	if (mbOctreeDirty)
+	{
+		{
+			FScopeCycleCounter counter({ EStatId::OctreeBuild });
+			mOctree.Build(GetRenderInfos());
+		}
+
+		// ---------------------------
+		//		임시용(삭제 필요)
+		// ---------------------------
+
+		const FCycleStat& stat = FScopeCycleCounter::GetCycleStat({ EStatId::OctreeBuild });
+
+		UE_LOG_F(Warning, Core, "Octree build: count={}, last={} ms, avg={} ms, nodes={}, inside={}, outside={}, maxNodeObjects={}, rootHalf={}",
+			stat.CycleCount,
+			FPlatformTime::ToMilliseconds(stat.LastCycles),
+			stat.CycleCount > 0 ? FPlatformTime::ToMilliseconds(stat.TotalCycles) / stat.CycleCount : 0.0,
+			mOctree.GetNodeCount(),
+			mOctree.GetInsideCount(),
+			mOctree.GetOutsideCount(),
+			mOctree.GetMaxNodeObjectCount(),
+			mOctree.GetRootHalfSize());
+
+
+		mbOctreeDirty = false;
+	}
 }
 
 void FSceneManager::NewScene()
@@ -197,6 +246,19 @@ void  FSceneManager::SetSelectedActor(AActor* actor)
 float FSceneManager::GetPanelWidth() const
 {
 	return mPanelWidth;
+}
+
+void FSceneManager::NotifyObjectMoved(uint32 objectIndex)
+{
+	mOctree.MarkObjectMoved(objectIndex);
+}
+
+void FSceneManager::FinishObjectMove()
+{
+	if (mOctree.NeedsRebuild())
+	{
+		mbOctreeDirty = true;
+	}
 }
 
 const TArray<const FRenderInfo*>& FSceneManager::GetRenderInfos() const

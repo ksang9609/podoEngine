@@ -3,6 +3,7 @@
 #include "Console.h"
 #include "Core/Math/MathUtility.h"
 #include "Core/Math/Quat.h"
+#include "Core/Math/RayCast.h"
 #include "Engine/SceneManager.h"
 #include "Engine/Stats/ScopeCycleCounter.h"
 #include "Platform/WindowApplication.h"
@@ -16,6 +17,7 @@
 #include "Rendering/Primitives/Primitives.h"
 #include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/Triangle.h"
+#include <algorithm>
 
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
@@ -59,53 +61,7 @@ void FEditorViewportClient::Initialize(FAssetManager& assetManagerRef)
 	mGizmo.Reset();	
 }
 
-bool FEditorViewportClient::RaycastBounds(
-	const FVector& rayStart,
-	const FVector& rayEnd,
-	const FBoundingBox& bounds)
-{
-	const FVector direction = rayEnd - rayStart;
-
-	float tMin = 0.0f;
-	float tMax = 1.0f;
-
-	for (int axis = 0; axis < 3; ++axis)
-	{
-		const float origin = rayStart[axis];
-		const float dir = direction[axis];
-		const float minValue = bounds.min[axis];
-		const float maxValue = bounds.max[axis];
-
-		if (fabsf(dir) < 1e-6f)
-		{
-			if (origin < minValue || origin > maxValue)
-			{
-				return false;
-			}
-			continue;
-		}
-
-		float t1 = (minValue - origin) / dir;
-		float t2 = (maxValue - origin) / dir;
-
-		if (t1 > t2)
-		{
-			std::swap(t1, t2);
-		}
-
-		tMin = max(tMin, t1);
-		tMax = min(tMax, t2);
-
-		if (tMin > tMax)
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject)
+void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject, const FOctree& octree)
 {
 	assert(mAssetManagerRef != nullptr);
 
@@ -156,12 +112,21 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 		return;
 	}
 
+	mHoveredObjectIndex = InvalidObjectIndex;
+
 	// Record the time spent in RayCast for profiling until the end of this function
 	FScopeCycleCounter cycleCounter({ EStatId::Picking });
 
+	TArray<uint32> candidates;
+	octree.Raycast(NearPoint, FarPoint - NearPoint, candidates);
+
+	TArray<FPickCandidate> Hits;
+
 	// Object 탐색
-	for (const FRenderInfo* RI : renderInfos)
+	for (uint32 objectIndex : candidates)
 	{
+		const FRenderInfo* RI = renderInfos[objectIndex];
+
 		assert(RI);
 
 		if (!HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Raycastable))
@@ -169,37 +134,79 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			continue;
 		}
 
-		const FMatrix effectiveWorld = RI->GetTransformMatrix(mCamera.Rotation);
+		FBoundingBox worldBounds;
+		if (RI->MeshName == BuiltinAssets::BillboardQuadTextured)
+		{
+			worldBounds = TransformBoundingBox(RI->LocalBounds, RI->GetTransformMatrix(mCamera.Rotation));
+		}
+		else
+		{
+			worldBounds = RI->WorldBounds;
+		}
 
-		const FBoundingBox worldBounds =
-			RI->MeshName == BuiltinAssets::BillboardQuadTextured
-			? TransformBoundingBox(RI->LocalBounds, effectiveWorld)
-			: RI->WorldBounds;
-
-		// 월드 AABB 검사
-		if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
+		// 월드 AABB 검사=
+		float enter, exit;
+		if (!Raycast::IntersectSegmentAABB(NearPoint, FarPoint, worldBounds, 1.0f, enter, exit))
 		{
 			continue;
 		}
+
+		Hits.Add({ enter, objectIndex });
+	}
+	std::sort(Hits.begin(), Hits.end());
+
+	for (const FPickCandidate& Hit : Hits)
+	{
+		if (Hit.TMin >= NearlistT) break;
+
+		const FRenderInfo* RI = renderInfos[Hit.ObjectIndex];
+		const FMatrix effectiveWorld = RI->GetTransformMatrix(mCamera.Rotation);
+
+		const FMatrix WorldToLocal = effectiveWorld.Inverse();
+
+		//역행렬이 존재하지 않으면(스케일이 작아 det이 0에 가까운 경우) Racast 대상에서 제외
+		if (WorldToLocal == FMatrix::Zero) continue;
+
+		const FVector LocalNear = WorldToLocal.TransformPosition(NearPoint);
+		const FVector LocalFar = WorldToLocal.TransformPosition(FarPoint);
+
+		//if (!RaycastBounds(LocalNear, LocalFar, RI->LocalBounds))
+		if (!Raycast::IntersectSegmentAABB(LocalNear, LocalFar, RI->LocalBounds, 1.0f))
+		{
+			continue;
+		}
+
+		// Use BVH if renderinfo has UStaticMesh
+		if (RI->StaticMeshAsset)
+		{
+			const FStaticMesh& staticMesh = *RI->StaticMeshAsset->GetStaticMeshAsset();
+			const FMeshBVH& bvh = RI->StaticMeshAsset->GetBVH();
+
+			assert(!bvh.IsEmpty());
+
+			FRayTriangleHit hitResult;
+			if (bvh.Raycast(LocalNear, LocalFar,
+				staticMesh.LODs[0].Vertices, staticMesh.LODs[0].Indices,
+				hitResult, 1.0f) &&
+				(hitResult.T < NearlistT))
+			{
+				NearlistT = hitResult.T;
+				bMouseHit = true;
+				mHoveredRenderInfo = *RI;
+			}
+
+			continue;
+		}
+
+		// For raycasting with other types that is not a static mesh
+		// TODO: Optimize this part
 
 		TArray<FVector> vertexArray;
 		TArray<uint32> indexArray;
 		const FVertexSimple* vertices = nullptr;
 		uint32 length = 0;
 
-		if (RI->StaticMeshAsset)
-		{
-			const FStaticMesh& staticMesh = *RI->StaticMeshAsset->GetStaticMeshAsset();
-			for (const auto& vertex : staticMesh.LODs[0].Vertices)
-			{
-				vertexArray.Add(vertex.pos);
-			}
-			for (const auto& index : staticMesh.LODs[0].Indices)
-			{
-				indexArray.Add(index);
-			}
-		}
-		else if (HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Billboard))
+		if (HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Billboard))
 		{
 			for (const auto& vertex : Quad_textured_indexed_vertices)
 			{
@@ -215,19 +222,6 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			continue;
 		}
 
-		const FMatrix WorldToLocal = effectiveWorld.Inverse();
-
-		//역행렬이 존재하지 않으면(스케일이 작아 det이 0에 가까운 경우) Racast 대상에서 제외
-		if (WorldToLocal == FMatrix::Zero) continue;
-
-		const FVector LocalNear = WorldToLocal.TransformPosition(NearPoint);
-		const FVector LocalFar = WorldToLocal.TransformPosition(FarPoint);
-
-		if (!RaycastBounds(LocalNear, LocalFar, RI->LocalBounds))
-		{
-			continue;
-		}
-
 		// 삼각형 리스트라 정점 3개씩 묶인다
 		for (uint32 i = 0; i + 2 < indexArray.Num(); i += 3)
 		{
@@ -235,14 +229,15 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			const FVector V1 = vertexArray[indexArray[i + 1]];
 			const FVector V2 = vertexArray[indexArray[i + 2]];
 
-			float OutT, OutU, OutV;
-			if (RayIntersectsTriangle(LocalNear, LocalFar, V0, V1, V2, OutT, OutU, OutV)
-				&& OutT < NearlistT)
+			FRayTriangleHit hitResult;
+			if (Raycast::IntersectSegmentTriangle(LocalNear, LocalFar, V0, V1, V2, 1.0f, hitResult)
+				&& hitResult.T < NearlistT)
 			{
 				// 같은 메시 안에서도 더 가까운 삼각형이 뒤에 나올 수 있으므로 break 하지 않는다
-				NearlistT = OutT;
+				NearlistT = hitResult.T;
 				bMouseHit = true;
 				mHoveredRenderInfo = *RI;
+				mHoveredObjectIndex = Hit.ObjectIndex;
 			}
 		}
 	}
@@ -366,7 +361,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	const bool bLeftClicked = bViewportHovered && Input.WasPressed(VK_LBUTTON);
 
-	RayCast(viewRect, sceneManager->GetRenderInfos(), bLeftClicked);
+	RayCast(viewRect, sceneManager->GetRenderInfos(), bLeftClicked, sceneManager->GetOctree());
 
 	////Editor Click 처리
 	//if (mClickedActor)
@@ -483,6 +478,10 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
 	if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
 	{
+		if (mHoveredObjectIndex != InvalidObjectIndex)
+		{
+			sceneManager->NotifyObjectMoved(mHoveredObjectIndex);
+		}
 		if (mGizmo.eType == EGIZMO_TYPE::TRANSLATE)
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다
@@ -515,45 +514,16 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	if (Input.WasReleased(VK_LBUTTON))
 	{
+		if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE)
+		{
+			sceneManager->FinishObjectMove();
+		}
+
 		mGizmo.mDraggingAxis = EGIZMO_AXIS::NONE;
 	}
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
 	UpdateGizmoForView(sceneManager->GetSelectedActor());
-}
-
-bool FEditorViewportClient::RayIntersectsTriangle(const FVector& Origin, const FVector& Dir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT, float& OutU, float& OutV)
-{
-	static const float EPSILON = 1e-6f;
-
-	//삼각형판정 => O +tD = V0+ uE1+vE2
-	// -tD + uE1 + vE2 = O - V0
-	//E2=v2-v0. E1=v1-v0
-
-	FVector D = Dir - Origin;
-	FVector T = Origin - V0;
-	FVector E2 = V2 - V0;
-	FVector E1 = V1 - V0;
-	FVector P = FVector::cross(D, E2);
-	float Det = FVector::dot(E1, P);
-
-	if (fabsf(Det) < EPSILON) return false;   // 평면과 평행
-
-	float InvDet = 1.0f / Det;
-
-	OutU = FVector::dot(T, P) * InvDet;
-	if (OutU < 0.0f || OutU > 1.0f) return false;
-
-	FVector Q = FVector::cross(T, E1);
-	OutV = FVector::dot(D, Q) * InvDet;
-	if (OutV < 0.0f || OutU + OutV > 1.0f) return false;
-
-	OutT = FVector::dot(E2, Q) * InvDet;
-
-	return (OutT > EPSILON);                  // 광선 앞쪽만
-
-	// OutT : 맞은물체가 얼마나 가까이있나(float)
-	// OutU, OutV 정확환 클릭지점을 확인하려면 필요
 }
 
 void FEditorViewportClient::DeprojectScreenToWorld(int32 MouseX, int32 MouseY, float ScreenW, float ScreenH, float NearZ, float FarZ, FVector& OutNearPoint, FVector& OutFarPoint)
@@ -641,6 +611,7 @@ void FEditorViewportClient::DeprojectScreenToWorldForUnified(
 void FEditorViewportClient::Reset()
 {
 	mHoveredRenderInfo = FRenderInfo();
+	mHoveredObjectIndex = InvalidObjectIndex;
 	bMouseHit = false;
 	mGizmo.Reset();
 }

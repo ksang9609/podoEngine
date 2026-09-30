@@ -320,7 +320,8 @@ void FEngineLoop::Tick(bool bPumpMessages)
 				mSceneManager->GetRenderInfos(),
 				mSceneManager->GetAxisRenderInfos(),
 				sceneView,
-				selectedActor);
+				selectedActor,
+				mSceneManager->GetOctree());
 		}
 
 		// Scene의 Depth만 한 번 초기화
@@ -592,6 +593,7 @@ void FEngineLoop::processEditorCommand(const FSetActorLocationCommand& command)
 	if (actor)
 	{
 		actor->SetLocation(command.Location);
+		mSceneManager->MarkOctreeDirty();
 	}
 }
 
@@ -601,6 +603,8 @@ void FEngineLoop::processEditorCommand(const FSetActorRotationCommand& command)
 	if (actor)
 	{
 		actor->SetRotation(command.Rotation);
+		mSceneManager->MarkOctreeDirty();
+
 	}
 }
 
@@ -610,6 +614,7 @@ void FEngineLoop::processEditorCommand(const FSetActorScaleCommand& command)
 	if (actor)
 	{
 		actor->SetScale(command.Scale);
+		mSceneManager->MarkOctreeDirty();
 	}
 }
 

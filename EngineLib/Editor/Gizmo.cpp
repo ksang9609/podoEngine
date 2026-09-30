@@ -484,21 +484,22 @@ TArray<const FRenderInfo*>	FGizmo::GetGizmoRenderInfo() const // Gizmo 모형 �
 
 	for (int i = 0; i < 3; ++i)
 	{
+		FRenderInfo* gizmoInfo = nullptr;
 		if (eType == EGIZMO_TYPE::SCALE)
 		{
-			scaleGizmoInfos[i].WorldTransformMatrix = GetAxisMatrix(axis[i]);
-			renderInfos.Add(&scaleGizmoInfos[i]);
+			gizmoInfo = &scaleGizmoInfos[i];
 		}
 		else if (eType == EGIZMO_TYPE::ROTATE)
 		{
-			rotateGizmoInfos[i].WorldTransformMatrix = GetAxisMatrix(axis[i]);
-			renderInfos.Add(&rotateGizmoInfos[i]);
+			gizmoInfo = &rotateGizmoInfos[i];
 		}
 		else // eType == EGIZMO_TYPE::TRANSLATE
 		{
-			translateGizmoInfos[i].WorldTransformMatrix = GetAxisMatrix(axis[i]);
-			renderInfos.Add(&translateGizmoInfos[i]);
+			gizmoInfo = &translateGizmoInfos[i];
 		}
+		gizmoInfo->WorldTransformMatrix = GetAxisMatrix(axis[i]);
+		gizmoInfo->Color = GetAxisColor(axis[i]);
+		renderInfos.Add(gizmoInfo);
 	}
 	return renderInfos;
 }

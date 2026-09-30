@@ -7,6 +7,7 @@
 
 #include "Core/Container/TArray.h"
 #include "Core/Container/TMap.h"
+#include "Core/Math/FOctree.h"
 #include "Renderer.h"
 #include "Camera.h"
 #include "RenderInfo.h"
@@ -56,7 +57,8 @@ public:
 		const TArray<const FRenderInfo*>& scenerRenderInfos,
 		const TArray<const FRenderInfo*>& axisRenderInfos,
 		const FSceneView& view,
-		const AActor* selectedActor);
+		const AActor* selectedActor,
+		const FOctree & octree);
 	void RenderGizmoView(
 		const TArray<const FRenderInfo*>& gizmoRenderInfos,
 		const FSceneView& view
@@ -162,6 +164,7 @@ private:
 
 	void updateRenderQueue(
 		const TArray<const FRenderInfo*>& renderInfos,
+		const TArray<uint32>* objectIndices,
 		TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
 		const FFrustum* frustum, uint32 showFlags);
 
@@ -182,9 +185,11 @@ private:
 	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 	void renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 
-	//int32 calculateMeshLODIndex(const FRenderInfo* renderInfo, const FSceneView& view);
-	//void generateMeshLod(UStaticMesh& staticMesh, const FSceneView& view,
-	//	float screenSize, float radius);
+	//Culling
+	TArray<uint32> mCullInside;
+	TArray<uint32> mCullIntersect;
+
+
 	// Instancing Test
 	//void RenderInstancingTest();
 	//ID3D11Buffer* mTestInstanceIndexBuffer = nullptr;
