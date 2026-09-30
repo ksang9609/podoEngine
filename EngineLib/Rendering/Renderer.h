@@ -41,6 +41,9 @@ public:
 
 	ID3D11Device* GetDevice() const { return mDevice.Get(); }
 	ID3D11DeviceContext* GetDeviceContext() const { return mDeviceContext.Get(); }
+	ID3D11ShaderResourceView* GetDepthBufferSRV() const { return mDepthBufferSRV.Get(); }
+	ID3D11RenderTargetView* GetFrameBufferRTV() const { return mFrameBufferRTV.Get(); }
+	ID3D11DepthStencilView* GetDepthStencilView() const { return mDepthStencilView.Get(); }
 
 	// Release all resources that this render holds.
 	void Release();
@@ -163,6 +166,7 @@ private:
 	ComPtr<ID3D11RenderTargetView> mFrameBufferRTV = nullptr;
 	ComPtr<ID3D11Texture2D> mDepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ComPtr<ID3D11DepthStencilView> mDepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
+	ComPtr<ID3D11ShaderResourceView> mDepthBufferSRV = nullptr;
 
 	/* Resources for highlighting */
 	ComPtr<ID3D11Texture2D> mSelectionMaskTexture = nullptr;

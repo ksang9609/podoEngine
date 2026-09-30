@@ -1053,6 +1053,11 @@ void FEditorUIManager::updateControlPanelGUI(const FGuiReference& guiReference, 
 
 	}
 
+	bool bEnableHiZ = const_cast<FGraphicsManager&>(guiReference.GraphicsManager).IsHiZEnabled();
+	if (ImGui::Checkbox("Enable Hi-Z Occlusion", &bEnableHiZ))
+	{		
+		const_cast<FGraphicsManager&>(guiReference.GraphicsManager).SetEnableHiZ(bEnableHiZ);
+	}
 
 	ImGui::End();
 }
