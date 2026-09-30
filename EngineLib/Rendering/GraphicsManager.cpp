@@ -668,7 +668,7 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 	{
 		return;
 	}
-
+	
 	TArray<const FRenderInfo*> visibleRenderInfos;
 	if (mbEnableHiZ)
 	{
@@ -980,12 +980,12 @@ void FGraphicsManager::hiZOcclusionCulling(FHiZBuffer* inHiZBuffer, const TArray
 
 	inHiZBuffer->UnmapVisibility(context);
 
-	uint32 frustumPassed = (uint32)inRenderInfos.Num();
-	uint32 actuallyRendered = (uint32)outRenderInfos.Num();
-	uint32 occludedCount = (frustumPassed >= actuallyRendered) ? (frustumPassed - actuallyRendered) : 0;
-	float cullRatio = (frustumPassed > 0) ? ((float)occludedCount / frustumPassed * 100.0f) : 0.0f;
-	UE_LOG(Log, Render, "[Hi-Z Stats] Occlusion pass: %u -> rendering: %u (culling: %u, %.1f%%)",
-		frustumPassed, actuallyRendered, occludedCount, cullRatio);
+	//uint32 frustumPassed = (uint32)inRenderInfos.Num();
+	//uint32 actuallyRendered = (uint32)outRenderInfos.Num();
+	//uint32 occludedCount = (frustumPassed >= actuallyRendered) ? (frustumPassed - actuallyRendered) : 0;
+	//float cullRatio = (frustumPassed > 0) ? ((float)occludedCount / frustumPassed * 100.0f) : 0.0f;
+	//UE_LOG(Log, Render, "[Hi-Z Stats] Occlusion pass: %u -> rendering: %u (culling: %u, %.1f%%)",
+	//	frustumPassed, actuallyRendered, occludedCount, cullRatio);
 }
 
 void FGraphicsManager::SetEnableHiZ(bool bEnable)
