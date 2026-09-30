@@ -316,10 +316,29 @@ void FOctree::MarkObjectMoved(uint32 objectIndex)
 	mOutsideObjects.Add(objectIndex);
 }
 
+void FOctree::AppendObjects(int32 newTotal)
+{
+	const int32 oldTotal = mStaleFlags.Num();
+	if (newTotal <= oldTotal) return;
+
+	mStaleFlags.SetNum(newTotal);
+	mBuildObject.SetNum(newTotal);
+
+	for (int32 i = oldTotal; i < newTotal; i++)
+	{
+		mStaleFlags[i] = true;
+		mOutsideObjects.Add(static_cast<uint32>(i));
+	}
+}
+
 bool FOctree::NeedsRebuild() const
 {
 	const int32 total = mStaleFlags.Num();
 	if (total == 0) return false;
+
+	const int32 strayCount = mOutsideObjects.Num();
+
+	if (strayCount < MinStrayForRebuild) return false;
 
 	return mOutsideObjects.Num() * 10 > total;
 }

@@ -26,6 +26,7 @@ public:
 	void Raycast(const FVector& origin, const FVector& direction, TArray<uint32>& outCandidates) const;
 	void MarkObjectMoved(uint32 objectIndex);
 
+	void AppendObjects(int32 newTotal);
 	bool NeedsRebuild() const;
 
 public:
@@ -70,6 +71,7 @@ private:
 	static constexpr float margin = 1.5f;
 	static constexpr int32 MaxObjectCount = 8;
 	static constexpr uint32 MaxDepth = 8;
+	static constexpr int32 MinStrayForRebuild = 16;
 
 	FVector mRootCenter;
 	float   mRootHalfSize = 0.0f;

@@ -39,12 +39,25 @@ void FSceneManager::Update(float deltaTime)
 
 	mCurrentWorld->Update(deltaTime);
 	
-	// 오브젝트 개수가 달라질 때마다 재빌드 표시 찍기
+	// 새로 스폰되면 stray에 넣기
 	const int32 currentCount = GetRenderInfos().Num();
 	if (currentCount != mLastRenderInfoCount)
 	{
+		if (mLastRenderInfoCount >= 0 && currentCount > mLastRenderInfoCount)
+		{
+			mOctree.AppendObjects(currentCount);
+
+			if (mOctree.NeedsRebuild())
+			{
+				mbOctreeDirty = true;
+			}
+		}
+		else
+		{
+			mbOctreeDirty = true;
+		}
+
 		mLastRenderInfoCount = currentCount;
-		mbOctreeDirty = true;
 	}
 
 	if (mbOctreeDirty)
