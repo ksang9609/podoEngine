@@ -24,6 +24,10 @@ class FOctree {
 public:
 	void Build(const TArray<const FRenderInfo*>& renderInfos);
 	void Raycast(const FVector& origin, const FVector& direction, TArray<uint32>& outCandidates) const;
+	void MarkObjectMoved(uint32 objectIndex);
+
+	void AppendObjects(int32 newTotal);
+	bool NeedsRebuild() const;
 
 public:
 	int32  GetNodeCount()    const { return mNodes.Num(); }
@@ -31,6 +35,8 @@ public:
 	int32  GetOutsideCount() const { return mOutsideObjects.Num(); }
 	uint32 GetRootObjectCount() const { return mNodes.IsEmpty() ? 0u : mNodes[0].ObjectCount; }
 	uint32 GetMaxNodeObjectCount() const;	
+	float GetRootHalfSize() const { return mRootHalfSize; }
+
 
 public:
 	void FrustumCull(const FFrustum & frustum, const FVector & cameraPos, TArray<uint32> & outInside, TArray<uint32>& outIntersect) const;
@@ -57,6 +63,7 @@ private:
 	TArray <FOctreeNode> mNodes;
 	TArray <uint32> mInsideIndices;
 	TArray <uint32> mOutsideObjects;
+	TArray <uint8> mStaleFlags;	// 해당 자리 믿지 마라!
 
 	TArray <FOctreeBuildObject> mBuildObject;	// 조회용
 	TArray<TArray<uint32>> mBuildBuckets;		// 저장용
@@ -64,4 +71,9 @@ private:
 	static constexpr float margin = 1.5f;
 	static constexpr int32 MaxObjectCount = 8;
 	static constexpr uint32 MaxDepth = 8;
+	static constexpr int32 MinStrayForRebuild = 16;
+
+	FVector mRootCenter;
+	float   mRootHalfSize = 0.0f;
+	bool    mbHasRootBox = false;
 };
