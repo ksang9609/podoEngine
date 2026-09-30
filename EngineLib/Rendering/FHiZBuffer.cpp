@@ -173,14 +173,7 @@ void FHiZBuffer::ExecuteOcclusionCull(ID3D11DeviceContext* context, ID3D11Device
 		return;
 	}
 
-	uint32 maxObjectId = 0;
-	for (uint32 i = 0; i < numObjects; ++i)
-	{
-		if (renderInfos[i]->ObejctID.InternalIndex > maxObjectId)
-		{
-			maxObjectId = renderInfos[i]->ObejctID.InternalIndex;
-		}
-	}
+	uint32 maxObjectId = (uint32)UObject::GetGObjectArray().Size();
 
 	ensureBufferCapacity(device, numObjects, maxObjectId + 1);
 
@@ -250,7 +243,7 @@ const uint32* FHiZBuffer::ReadbackVisibility(ID3D11DeviceContext* contex, uint32
 	HRESULT hr = contex->Map(mStagingBuffers[readIndex].Get(), 0, D3D11_MAP_READ, 0, &mapped);
 	if (SUCCEEDED(hr))
 	{
-		outCount = mAllocatedAABBCount;
+		outCount = mAllocatedVisibilityCount;
 		return (const uint32*)mapped.pData;
 	}
 
@@ -289,7 +282,7 @@ void FHiZBuffer::createCullShader(ID3D11Device* device)
 void FHiZBuffer::ensureBufferCapacity(ID3D11Device* device, uint32 requiredAABBCount, uint32 requiredVisibilityCount)
 {
 	// not need to realloc
-	if (((requiredAABBCount <= mAllocatedAABBCount) || (requiredVisibilityCount <= mAllocatedAABBCount)) && mAABBBuffer)
+	if (((requiredAABBCount <= mAllocatedAABBCount) && mAABBBuffer) || ((requiredVisibilityCount <= mAllocatedAABBCount) && mVisibilityBuffer))
 	{
 		return;
 	}
