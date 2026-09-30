@@ -3,6 +3,7 @@
 #include "Console.h"
 #include "Core/Math/MathUtility.h"
 #include "Core/Math/Quat.h"
+#include "Core/Math/RayCast.h"
 #include "Engine/SceneManager.h"
 #include "Engine/Stats/ScopeCycleCounter.h"
 #include "Platform/WindowApplication.h"
@@ -57,52 +58,6 @@ void FEditorViewportClient::Initialize(FAssetManager& assetManagerRef)
 {
 	mAssetManagerRef = &assetManagerRef;
 	mGizmo.Reset();
-}
-
-bool FEditorViewportClient::RaycastBounds(
-	const FVector& rayStart,
-	const FVector& rayEnd,
-	const FBoundingBox& bounds)
-{
-	const FVector direction = rayEnd - rayStart;
-
-	float tMin = 0.0f;
-	float tMax = 1.0f;
-
-	for (int axis = 0; axis < 3; ++axis)
-	{
-		const float origin = rayStart[axis];
-		const float dir = direction[axis];
-		const float minValue = bounds.min[axis];
-		const float maxValue = bounds.max[axis];
-
-		if (fabsf(dir) < 1e-6f)
-		{
-			if (origin < minValue || origin > maxValue)
-			{
-				return false;
-			}
-			continue;
-		}
-
-		float t1 = (minValue - origin) / dir;
-		float t2 = (maxValue - origin) / dir;
-
-		if (t1 > t2)
-		{
-			std::swap(t1, t2);
-		}
-
-		tMin = max(tMin, t1);
-		tMax = min(tMax, t2);
-
-		if (tMin > tMax)
-		{
-			return false;
-		}
-	}
-
-	return true;
 }
 
 void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject)
@@ -177,7 +132,8 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			: RI->WorldBounds;
 
 		// 월드 AABB 검사
-		if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
+		//if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
+		if (!Raycast::IntersectSegmentAABB(NearPoint, FarPoint, worldBounds, 1.0f))
 		{
 			continue;
 		}
@@ -223,7 +179,8 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 		const FVector LocalNear = WorldToLocal.TransformPosition(NearPoint);
 		const FVector LocalFar = WorldToLocal.TransformPosition(FarPoint);
 
-		if (!RaycastBounds(LocalNear, LocalFar, RI->LocalBounds))
+		//if (!RaycastBounds(LocalNear, LocalFar, RI->LocalBounds))
+		if (!Raycast::IntersectSegmentAABB(LocalNear, LocalFar, RI->LocalBounds, 1.0f))
 		{
 			continue;
 		}
@@ -235,12 +192,15 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			const FVector V1 = vertexArray[indexArray[i + 1]];
 			const FVector V2 = vertexArray[indexArray[i + 2]];
 
-			float OutT, OutU, OutV;
-			if (RayIntersectsTriangle(LocalNear, LocalFar, V0, V1, V2, OutT, OutU, OutV)
-				&& OutT < NearlistT)
+			//float OutT, OutU, OutV;
+			FRayTriangleHit hitResult;
+			//if (RayIntersectsTriangle(LocalNear, LocalFar, V0, V1, V2, OutT, OutU, OutV)
+			//	&& OutT < NearlistT)
+			if (Raycast::IntersectSegmentTriangle(LocalNear, LocalFar, V0, V1, V2, 1.0f, hitResult)
+				&& hitResult.T < NearlistT)
 			{
 				// 같은 메시 안에서도 더 가까운 삼각형이 뒤에 나올 수 있으므로 break 하지 않는다
-				NearlistT = OutT;
+				NearlistT = hitResult.T;
 				bMouseHit = true;
 				mHoveredRenderInfo = *RI;
 			}
@@ -520,40 +480,6 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	//변형된 Actor를 바탕으로 Gizmo를 위치시킨다.
 	UpdateGizmoForView(sceneManager->GetSelectedActor());
-}
-
-bool FEditorViewportClient::RayIntersectsTriangle(const FVector& Origin, const FVector& Dir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT, float& OutU, float& OutV)
-{
-	static const float EPSILON = 1e-6f;
-
-	//삼각형판정 => O +tD = V0+ uE1+vE2
-	// -tD + uE1 + vE2 = O - V0
-	//E2=v2-v0. E1=v1-v0
-
-	FVector D = Dir - Origin;
-	FVector T = Origin - V0;
-	FVector E2 = V2 - V0;
-	FVector E1 = V1 - V0;
-	FVector P = FVector::cross(D, E2);
-	float Det = FVector::dot(E1, P);
-
-	if (fabsf(Det) < EPSILON) return false;   // 평면과 평행
-
-	float InvDet = 1.0f / Det;
-
-	OutU = FVector::dot(T, P) * InvDet;
-	if (OutU < 0.0f || OutU > 1.0f) return false;
-
-	FVector Q = FVector::cross(T, E1);
-	OutV = FVector::dot(D, Q) * InvDet;
-	if (OutV < 0.0f || OutU + OutV > 1.0f) return false;
-
-	OutT = FVector::dot(E2, Q) * InvDet;
-
-	return (OutT > EPSILON);                  // 광선 앞쪽만
-
-	// OutT : 맞은물체가 얼마나 가까이있나(float)
-	// OutU, OutV 정확환 클릭지점을 확인하려면 필요
 }
 
 void FEditorViewportClient::DeprojectScreenToWorld(int32 MouseX, int32 MouseY, float ScreenW, float ScreenH, float NearZ, float FarZ, FVector& OutNearPoint, FVector& OutFarPoint)

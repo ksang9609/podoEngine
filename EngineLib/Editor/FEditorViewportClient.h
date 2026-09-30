@@ -27,7 +27,6 @@ public:
 	}
 
 	void Initialize(FAssetManager& assetManagerRef);
-	bool RaycastBounds(const FVector& rayStart,const FVector& rayEnd,const FBoundingBox& bounds);
 	void RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject);
 	float GetFov() const { return mCamera.mFovDegree; }
 	void Update(float deltaTime, const FViewRect& viewrect, FSceneManager* sceneManager, bool bViewportHoverd, bool bViewportFocused);
@@ -69,15 +68,6 @@ private:
 	//마우스 밑 무언가가 Actor이면 저장. RayCast 에서 채워야 함 (아직 미구현)
 	// INFO: mClickedActor moved to FSceneManager::mSelectedActor.
 	//AActor* mClickedActor = nullptr;
-
-
-	bool RayIntersectsTriangle( // 두개의 
-		const FVector& Origin,
-		const FVector& Dir,
-		const FVector& V0,
-		const FVector& V1,
-		const FVector& V2,
-		float& OutT, float& OutU, float& OutV);
 
 	void DeprojectScreenToWorld(int32 MouseX, int32 MouseY,
 		float ScreenW, float ScreenH, float NearZ, float FarZ,
