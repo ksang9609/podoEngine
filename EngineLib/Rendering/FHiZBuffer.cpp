@@ -3,9 +3,14 @@
 
 void FHiZBuffer::Initialize(ID3D11Device* device)
 {
-	createResources(device);
-	createShader(device);
-	createCullShader(device);
+	if (!mbIsInitialized)
+	{
+		createResources(device);
+		createShader(device);
+		createCullShader(device);
+
+		mbIsInitialized = true;
+	}	
 }
 
 void FHiZBuffer::Release()

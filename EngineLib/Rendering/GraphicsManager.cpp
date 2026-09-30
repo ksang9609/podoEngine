@@ -175,7 +175,7 @@ namespace
 			if (screenSize >= minScreenSizes[i])
 			{
 				return i;
-			}
+			}	
 		}
 		return staticMesh.GetLODCount() - 1;
 	}
@@ -318,9 +318,7 @@ void FGraphicsManager::Initialize(
 	mRenderer->Initialize(hWindow, gpuResourceManager);
 
 	mGpuResourceManagerRef = &gpuResourceManager;
-	mAssetManagerRef = &assetManager;
-
-	mHiZBuffer.Initialize(mRenderer->GetDevice());
+	mAssetManagerRef = &assetManager;	
 }
 
 void FGraphicsManager::BeginFrame()
@@ -375,7 +373,7 @@ void FGraphicsManager::updateRenderQueue(
 	const TArray<const FRenderInfo*>& renderInfos,
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>>& outRenderQueueMap,
 	const FFrustum* frustum, uint32 showFlags)
-{
+{	
 	for (const FRenderInfo* renderInfo : renderInfos)
 	{
 		if (frustum != nullptr)
@@ -459,6 +457,12 @@ void FGraphicsManager::RenderSceneView(
 		return;
 	}
 
+	if (view.HiZBuffer && !view.HiZBuffer->IsInitialized())
+	{
+		view.HiZBuffer->Initialize(mRenderer->GetDevice());
+	}
+		
+
 	mRenderer->BeginView(view.Rect);
 	mRenderer->SetViewMode(view.viewMode);
 	const FFrustum frustum = FFrustum::FrustumFromViewProjection(view.viewProjectionMatrix);
@@ -517,7 +521,7 @@ void FGraphicsManager::RenderSceneView(
 			context->OMSetRenderTargets(1, &nullRTV, nullptr);
 
 			// Create Mipmap
-			mHiZBuffer.BuildHiZ(
+			view.HiZBuffer->BuildHiZ(
 				context,
 				depthSRV,
 				view.Rect.X,
@@ -529,7 +533,7 @@ void FGraphicsManager::RenderSceneView(
 			);
 
 			// Copy staging for next frame
-			mHiZBuffer.ExecuteOcclusionCull(
+			view.HiZBuffer->ExecuteOcclusionCull(
 				context,
 				device,
 				staticMeshQueue,
@@ -651,7 +655,7 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 	TArray<const FRenderInfo*> visibleRenderInfos;
 	if (mbEnableHiZ)
 	{
-		hiZOcclusionCulling(renderInfos, visibleRenderInfos);
+		hiZOcclusionCulling(view.HiZBuffer,renderInfos, visibleRenderInfos);
 	}
 
 	assert(mGpuResourceManagerRef);
@@ -929,7 +933,7 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 
 //}
 
-void FGraphicsManager::hiZOcclusionCulling(const TArray<const FRenderInfo*>& inRenderInfos, TArray<const FRenderInfo*>& outRenderInfos)
+void FGraphicsManager::hiZOcclusionCulling(FHiZBuffer* inHiZBuffer, const TArray<const FRenderInfo*>& inRenderInfos, TArray<const FRenderInfo*>& outRenderInfos)
 {
 	// Get visibility mask from prev frame(N - 1)
 	ID3D11DeviceContext* context = mRenderer->GetDeviceContext();
@@ -937,7 +941,7 @@ void FGraphicsManager::hiZOcclusionCulling(const TArray<const FRenderInfo*>& inR
 	const uint32* visibilityMask = nullptr;
 	if (mbEnableHiZ)
 	{
-		visibilityMask = mHiZBuffer.ReadbackVisibility(context, maskCount);
+		visibilityMask = inHiZBuffer->ReadbackVisibility(context, maskCount);
 	}
 
 	if (!visibilityMask)
@@ -957,7 +961,7 @@ void FGraphicsManager::hiZOcclusionCulling(const TArray<const FRenderInfo*>& inR
 		}
 	}
 
-	mHiZBuffer.UnmapVisibility(context);
+	inHiZBuffer->UnmapVisibility(context);
 
 	uint32 frustumPassed = (uint32)inRenderInfos.Num();
 	uint32 actuallyRendered = (uint32)outRenderInfos.Num();
@@ -974,7 +978,7 @@ void FGraphicsManager::SetEnableHiZ(bool bEnable)
 		mbEnableHiZ = bEnable;
 		if (mbEnableHiZ)
 		{
-			mHiZBuffer.ResetStagingState();			
+			//mHiZBuffer.ResetStagingState();			
 		}
 	}
 }

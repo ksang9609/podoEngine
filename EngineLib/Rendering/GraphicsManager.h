@@ -190,11 +190,10 @@ private:
 	//ID3D11Buffer* mTestInstanceIndexBuffer = nullptr;
 
 // HiZ Buffer
-private:
-	FHiZBuffer mHiZBuffer;
+private:	
 	bool mbEnableHiZ = true;
 
-	void hiZOcclusionCulling(const TArray<const FRenderInfo*>& inRenderInfos, TArray<const FRenderInfo*>& outRenderInfos);
+	void hiZOcclusionCulling(FHiZBuffer* inHiZBuffer, const TArray<const FRenderInfo*>& inRenderInfos, TArray<const FRenderInfo*>& outRenderInfos);
 
 public:
 	void SetEnableHiZ(bool bEnable);
