@@ -28,11 +28,11 @@ struct FRenderInfo
 	TArray<const UMaterial*> Materials; 
 
 	// For particle rendering
-	int32 numRows;
-	int32 numCols;
-	int32 currentFrame;
-	int32 nextFrame;
-	float frameRatio;
+	const uint32* numRows;
+	const uint32* numCols;
+	const uint32* currentFrame;
+	const uint32* nextFrame;
+	const float* frameRatio;
 
 	// For billboard rendering
 

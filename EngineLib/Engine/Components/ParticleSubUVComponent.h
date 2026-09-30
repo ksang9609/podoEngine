@@ -31,7 +31,7 @@ public:
 	void SetBlendStateType(EBlendStateType blendStateType) { mBlendStateType = blendStateType; mbRenderInfoDirty = true; }
 
 private:
-	FSubUVMesh mSubUVMesh;
+	//FSubUVMesh mSubUVMesh;
 
 	/* Particle texture rows and columns */
 	uint32 mNumRows = 1;

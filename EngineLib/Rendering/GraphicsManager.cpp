@@ -577,8 +577,8 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 			renderInfo->GetLocation(), renderInfo->GetScale(),
 			view.viewProjectionMatrix,
 			cameraRight, cameraUp,
-			renderInfo->numRows, renderInfo->numCols,
-			renderInfo->currentFrame, renderInfo->nextFrame, renderInfo->frameRatio,
+			*renderInfo->numRows, *renderInfo->numCols,
+			*renderInfo->currentFrame, *renderInfo->nextFrame, *renderInfo->frameRatio,
 			renderInfo->Color
 		);
 

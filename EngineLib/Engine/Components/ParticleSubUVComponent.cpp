@@ -2,7 +2,8 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UParticleSubUVComponent, UBillboardComponent);
 IMPLEMENT_SERIALIZATION(UParticleSubUVComponent, UBillboardComponent,
-	{ mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0); })
+	//{ mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0); })
+	{})
 
 	void UParticleSubUVComponent::Initialize(FVector location, FRotator rotation, FVector scale3D,
 		uint32 numRows, uint32 numCols,
@@ -20,7 +21,7 @@ IMPLEMENT_SERIALIZATION(UParticleSubUVComponent, UBillboardComponent,
 	mbIsFinished = false;
 
 	// Initialize the sub UV mesh
-	mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0);
+	//mSubUVMesh.UpdateMesh(mNumRows, mNumCols, 0);
 
 	// Call the base class Initialize
 	UBillboardComponent::Initialize(location, rotation, scale3D);
@@ -40,7 +41,7 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<const FRenderInfo*>
 		mNextFrameIndex = 1;
 		mElapsedFrameRatio = 0;
 
-		mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
+		//mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
 		restarted = true;
 	}
 
@@ -79,10 +80,10 @@ void UParticleSubUVComponent::Update(float deltaTime, TArray<const FRenderInfo*>
 			? (mCurrentFrameIndex + 1) % totalFrames
 			: FMath::Min(mCurrentFrameIndex + 1, totalFrames - 1);
 
-		if (mCurrentFrameIndex != previousFrameIndex)
-		{
-			mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
-		}
+		//if (mCurrentFrameIndex != previousFrameIndex)
+		//{
+		//	mSubUVMesh.UpdateMesh(mNumRows, mNumCols, mCurrentFrameIndex);
+		//}
 	}
 
 	UBillboardComponent::Update(deltaTime, outRenderInfos);
@@ -92,7 +93,7 @@ void UParticleSubUVComponent::updateRenderInfo()
 {
 	UBillboardComponent::updateRenderInfo();
 
-	mRenderInfo.SubUVMesh = &mSubUVMesh;
+	//mRenderInfo.SubUVMesh = &mSubUVMesh;
 
 	// TODO: Get texture name at initialization and return it
 	mRenderInfo.MeshName = BuiltinAssets::BillboardQuadTextured;
@@ -109,11 +110,11 @@ void UParticleSubUVComponent::updateRenderInfo()
 
 	mRenderInfo.BlendStateType = static_cast<EBlendStateType>(mBlendStateType);
 
-	mRenderInfo.numRows = mNumRows;
-	mRenderInfo.numCols = mNumCols;
-	mRenderInfo.currentFrame = mCurrentFrameIndex;
-	mRenderInfo.nextFrame = mNextFrameIndex;
-	mRenderInfo.frameRatio = mElapsedFrameRatio;
+	mRenderInfo.numRows = &mNumRows;
+	mRenderInfo.numCols = &mNumCols;
+	mRenderInfo.currentFrame = &mCurrentFrameIndex;
+	mRenderInfo.nextFrame = &mNextFrameIndex;
+	mRenderInfo.frameRatio = &mElapsedFrameRatio;
 }
 
 std::span<const FPropertyInfo> UParticleSubUVComponent::GetDeclaredProperties()
