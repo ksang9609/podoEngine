@@ -11,6 +11,7 @@
 #include "Core/Math/FBoundingBox.h"
 #include "Core/AssetManager.h"
 
+#include "Rendering/FHiZBuffer.h"
 
 class AActor;
 class FSceneManager;
@@ -135,4 +136,14 @@ private:
 	json::JSON copyObject;
 
 	FViewportSharedSettings& mSharedSettings;
+
+// HiZ Buffer
+private:
+	FHiZBuffer mHiZBuffer;
+	bool mbEnableHiZ = true;
+
+public:
+	FHiZBuffer* GetHiZBuffer() { return &mHiZBuffer; }
+	void SetEnableHiZ(bool bEnable);
+	bool IsHiZEnabled() { return mbEnableHiZ; }
 };
