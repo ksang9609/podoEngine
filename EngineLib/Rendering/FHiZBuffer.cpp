@@ -37,21 +37,29 @@ void FHiZBuffer::BuildHiZ(ID3D11DeviceContext* context, ID3D11ShaderResourceView
 	uint32 currentDstWidth = HZBWidth;
 	uint32 currentDstHeight = HZBHeight;	
 
+	uint32 prevWidth = currentDstWidth;
+	uint32 prevHeight = currentDstHeight;
+
 	for (uint32 mip = 0; mip < MipLevels; ++mip)
 	{
 		// Update constant buffer
 		FHiZBufferConstants cbData = {};
-		cbData.DstWidth = currentDstWidth;
-		cbData.DstHeight = currentDstHeight;
-		cbData.InvDstWidth = 1.0f / (float)currentDstWidth;
-		cbData.InvDstHeight = 1.0f / (float)currentDstHeight;
-
-		cbData.ViewportUVOffsetX = viewportX / totalBufferWidth;
-		cbData.ViewportUVOffsetY = viewportY / totalBufferHeight;
-		cbData.ViewportUVScaleX = viewportWidth / totalBufferWidth;
-		cbData.ViewportUVScaleY = viewportHeight / totalBufferHeight;
-
-		cbData.IsPass0 = (mip == 0) ? 1 : 0;
+		if (mip == 0)
+		{
+			cbData.inputOffsetX = (uint32)viewportX;
+			cbData.inputOffsetY = (uint32)viewportY;
+			cbData.inputWidth = (uint32)viewportWidth;
+			cbData.inputHeight = (uint32)viewportHeight;
+		}
+		else
+		{
+			cbData.inputOffsetX = 0;
+			cbData.inputOffsetY = 0;
+			cbData.inputWidth = prevWidth;
+			cbData.inputHeight = prevHeight;
+		}
+		cbData.outputWidth = currentDstWidth;
+		cbData.outputHeight = currentDstHeight;
 
 		context->UpdateSubresource(mConstantBuffer.Get(), 0, nullptr, &cbData, 0, 0);
 		context->CSSetConstantBuffers(0, 1, mConstantBuffer.GetAddressOf());
@@ -73,7 +81,9 @@ void FHiZBuffer::BuildHiZ(ID3D11DeviceContext* context, ID3D11ShaderResourceView
 		context->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
 
 		// Update next Width, Height
-		
+
+		prevWidth = currentDstWidth;
+		prevHeight = currentDstHeight;
 		currentDstWidth = (currentDstWidth > 1) ? (currentDstWidth / 2) : 1;
 		currentDstHeight = (currentDstHeight > 1) ? (currentDstHeight / 2) : 1;
 	}
@@ -163,7 +173,16 @@ void FHiZBuffer::ExecuteOcclusionCull(ID3D11DeviceContext* context, ID3D11Device
 		return;
 	}
 
-	ensureBufferCapacity(device, numObjects);
+	uint32 maxObjectId = 0;
+	for (uint32 i = 0; i < numObjects; ++i)
+	{
+		if (renderInfos[i]->ObejctID.InternalIndex > maxObjectId)
+		{
+			maxObjectId = renderInfos[i]->ObejctID.InternalIndex;
+		}
+	}
+
+	ensureBufferCapacity(device, numObjects, maxObjectId + 1);
 
 	// Copy WorldAABB from CPU to GPU
 	D3D11_MAPPED_SUBRESOURCE mapped = {};
@@ -174,6 +193,7 @@ void FHiZBuffer::ExecuteOcclusionCull(ID3D11DeviceContext* context, ID3D11Device
 		{
 			dstAABB[i].Min = renderInfos[i]->WorldBounds.min;
 			dstAABB[i].Max = renderInfos[i]->WorldBounds.max;
+			dstAABB[i].InternalID = renderInfos[i]->ObejctID.InternalIndex;
 		}
 		context->Unmap(mAABBBuffer.Get(), 0);
 	}
@@ -181,8 +201,8 @@ void FHiZBuffer::ExecuteOcclusionCull(ID3D11DeviceContext* context, ID3D11Device
 	// Update constant buffer
 	FCullConstants cbData = {};
 	cbData.ViewProjection = viewProjectionMatrix;
-	cbData.ScreenWidth = screenWidth;
-	cbData.ScreenHeight = screenHeight;
+	cbData.ScreenWidth = (float)HZBWidth;
+	cbData.ScreenHeight = (float)HZBHeight;
 	cbData.NearPlane = nearPlane;
 	cbData.NumObject = numObjects;
 	context->UpdateSubresource(mCullConstantBuffer.Get(), 0, nullptr, &cbData, 0, 0);
@@ -222,7 +242,6 @@ const uint32* FHiZBuffer::ReadbackVisibility(ID3D11DeviceContext* contex, uint32
 		outCount = 0;
 		return nullptr;
 	}
-
 
 	// GPU always read staged buffer
 	uint32 readIndex = 1 - mCurrentStatingIndex;
@@ -267,17 +286,17 @@ void FHiZBuffer::createCullShader(ID3D11Device* device)
 	device->CreateBuffer(&cbDesc, nullptr, &mCullConstantBuffer);
 }
 
-void FHiZBuffer::ensureBufferCapacity(ID3D11Device* device, uint32 requiredCount)
+void FHiZBuffer::ensureBufferCapacity(ID3D11Device* device, uint32 requiredAABBCount, uint32 requiredVisibilityCount)
 {
 	// not need to realloc
-	if (requiredCount <= mAllocatedAABBCount && mAABBBuffer)
+	if (((requiredAABBCount <= mAllocatedAABBCount) || (requiredVisibilityCount <= mAllocatedAABBCount)) && mAABBBuffer)
 	{
 		return;
 	}
 
 	// Increase capcity
 	uint32 newCapacity = 2 << 11;
-	while (newCapacity < requiredCount)
+	while (newCapacity < requiredAABBCount)
 	{
 		newCapacity *= 2;
 	}
@@ -308,9 +327,18 @@ void FHiZBuffer::ensureBufferCapacity(ID3D11Device* device, uint32 requiredCount
 	srvDesc.Buffer.NumElements = mAllocatedAABBCount;
 	device->CreateShaderResourceView(mAABBBuffer.Get(), &srvDesc, &mAABBSRV);
 
+	// Increase Capacity
+	uint32 newVisibilityCap = 2 << 11;
+	while (newVisibilityCap < requiredVisibilityCount)
+	{
+		newVisibilityCap *= 2;
+	}
+
+	mAllocatedVisibilityCount = newVisibilityCap;
+
 	// Create visibility buffer
 	D3D11_BUFFER_DESC visDesc = {};
-	visDesc.ByteWidth = sizeof(uint32) * mAllocatedAABBCount;
+	visDesc.ByteWidth = sizeof(uint32) * mAllocatedVisibilityCount;
 	visDesc.Usage = D3D11_USAGE_DEFAULT;
 	visDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
 	visDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
@@ -320,12 +348,12 @@ void FHiZBuffer::ensureBufferCapacity(ID3D11Device* device, uint32 requiredCount
 	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 	uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.NumElements = mAllocatedAABBCount;
+	uavDesc.Buffer.NumElements = mAllocatedVisibilityCount;
 	device->CreateUnorderedAccessView(mVisibilityBuffer.Get(), &uavDesc, &mVisibilityUAV);
 
 	// Create Staging buffer
 	D3D11_BUFFER_DESC stagingDesc = {};
-	stagingDesc.ByteWidth = sizeof(uint32) * mAllocatedAABBCount;
+	stagingDesc.ByteWidth = sizeof(uint32) * mAllocatedVisibilityCount;
 	stagingDesc.Usage = D3D11_USAGE_STAGING;
 	stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 	device->CreateBuffer(&stagingDesc, nullptr, &mStagingBuffers[0]);

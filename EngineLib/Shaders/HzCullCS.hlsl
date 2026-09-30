@@ -1,7 +1,7 @@
 struct FWorldAABB
 {
     float3 Min;
-    float Pad1;
+    uint InternalID;
     float3 Max;
     float Pad2;
 };
@@ -16,7 +16,7 @@ SamplerState PointClampSampler : register(s0);
 cbuffer CullConstants : register(b0)
 {
     row_major float4x4 ViewProjection;
-    float2 ScreenSize;
+    float2 HZBSize;
     uint NumObjects;
     float NearPlane;
 };
@@ -45,8 +45,9 @@ void mainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float3 minNDC = float3(100.0f, 100.0f, 100.0f);
     float3 maxNDC = float3(-100.0f, -100.0f, -100.0f);
-
-    float minClipW = 10000.0f;
+    
+    bool bIntersectNearPlane = false;
+    bool bAllBehind = true;
     
     // Check Clipping AABB corners from Project and Near Plane
     [unroll]
@@ -54,25 +55,28 @@ void mainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     {
         float4 clipPos = mul(float4(corners[i], 1.0f), ViewProjection);
         
-        // Get NDC
-        float3 ndc = clipPos.xyz / clipPos.w;
-        minNDC = min(minNDC, ndc);
-        maxNDC = max(maxNDC, ndc);
-    }
-
-
-    if (minClipW < 300.0f) // 프로젝트 월드 단위에 맞춰 200~400 조절
+        if (clipPos.w <= 0.0f)
+        {
+            bIntersectNearPlane = true;
+        }
+        else
+        {
+            bAllBehind = false;
+            // Get NDC
+            float3 ndc = clipPos.xyz / clipPos.w;
+            minNDC = min(minNDC, ndc);
+            maxNDC = max(maxNDC, ndc);
+        }
+    }   
+    
+    if (bAllBehind)
     {
-        OutVisibility[index] = 1;
+        OutVisibility[aabb.InternalID] = 0;
         return;
     }
-    
-    // Out of screen
-     if(maxNDC.x < -1.0f || minNDC.x > 1.0f ||
-        maxNDC.y < -1.0f || minNDC.y > 1.0f ||
-        maxNDC.z < -1.0f || minNDC.z > 1.0f)
+    if (bIntersectNearPlane)
     {
-        OutVisibility[index] = 0;
+        OutVisibility[aabb.InternalID] = 1;
         return;
     }
     
@@ -85,22 +89,24 @@ void mainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     maxUV.x = saturate(maxNDC.x * 0.5f + 0.5f);
     maxUV.y = saturate(minNDC.y * -0.5f + 0.5f);
 
-    float2 uvCenter = (minUV + maxUV) * 0.5f;
-    float2 uvHalfExtent = (maxUV - minUV) * 0.5f * 0.8f;
-    float2 sampleMinUV = clamp(uvCenter - uvHalfExtent, 0.001f, 0.999f);
-    float2 sampleMaxUV = clamp(uvCenter + uvHalfExtent, 0.001f, 0.999f);
-
-    
     // Get PixelSize and MipLevel    
-    float2 pixelSize = (maxUV - minUV) * ScreenSize;
-    if (max(pixelSize.x, pixelSize.y) > 60.0f)
-    {
-        OutVisibility[index] = 1;
-        return;
-    }
-    
-    uint mipLevel = (uint) clamp(floor(log2(max(pixelSize.x, pixelSize.y))) - 1.0f, 0.0f, 10.0f);
-    //uint mipLevel = 0;
+    float2 pixelSize = (maxUV - minUV) * HZBSize;
+    uint mipLevel = (uint)ceil(log2(max(max(pixelSize.x, pixelSize.y), 1.0f)));
+    mipLevel = min(mipLevel, 10);
+
+    uint2 mipSize = max(uint2(1, 1), (uint2) HZBSize >> mipLevel);
+    uint2 maxCoord = mipSize - uint2(1, 1);
+
+    #define SAMPLE_HIZ(uv) HiZTexture.Load(int3(min((uint2)(saturate(uv) * mipSize), maxCoord), (int)mipLevel))
+
+    float2 uvCenter = (minUV + maxUV) * 0.5f;
+    float hiZDepth = SAMPLE_HIZ(uvCenter);
+
+    hiZDepth = max(hiZDepth, SAMPLE_HIZ(minUV));
+    hiZDepth = max(hiZDepth, SAMPLE_HIZ(maxUV));
+    hiZDepth = max(hiZDepth, SAMPLE_HIZ(float2(minUV.x, maxUV.y)));
+    hiZDepth = max(hiZDepth, SAMPLE_HIZ(float2(maxUV.x, minUV.y)));
+    #undef SAMPLE_HIZ
     
     // Get HiZDepth
     //float d0 = HiZTexture.SampleLevel(PointClampSampler, float2(minUV.x, minUV.y), mipLevel);
@@ -108,21 +114,10 @@ void mainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     //float d2 = HiZTexture.SampleLevel(PointClampSampler, float2(minUV.x, maxUV.y), mipLevel);
     //float d3 = HiZTexture.SampleLevel(PointClampSampler, float2(maxUV.x, maxUV.y), mipLevel);
 
-    //float2 centerUV = (minUV + maxUV) * 0.5f;
-    //float dCenter = HiZTexture.SampleLevel(PointClampSampler, centerUV, mipLevel);
-
-    float d0 = HiZTexture.SampleLevel(PointClampSampler, float2(sampleMinUV.x, sampleMinUV.y), mipLevel);
-    float d1 = HiZTexture.SampleLevel(PointClampSampler, float2(sampleMaxUV.x, sampleMinUV.y), mipLevel);
-    float d2 = HiZTexture.SampleLevel(PointClampSampler, float2(sampleMinUV.x, sampleMaxUV.y), mipLevel);
-    float d3 = HiZTexture.SampleLevel(PointClampSampler, float2(sampleMaxUV.x, sampleMaxUV.y), mipLevel);
-    float dCenter = HiZTexture.SampleLevel(PointClampSampler, uvCenter, mipLevel);
-    
-    float maxHiZDepth = max(max(max(d0, d1), max(d2, d3)), dCenter);
+    //float maxHiZDepth = max(max(d0, d1), max(d2, d3));
     
     float minObjectDepth = minNDC.z;
-    //float linearDist = max(minClipW, 1.0f);
-    //float bias = clamp(0.015f / linearDist, 0.001f, 0.0025f);
-    float bias = 0.003f;
-    
-    OutVisibility[index] = (minObjectDepth <= maxHiZDepth + bias) ? 1 : 0;    
+    float bias = 0.00001f;
+        
+    OutVisibility[aabb.InternalID] = (minObjectDepth <= hiZDepth + bias) ? 1 : 0;
 }

@@ -193,8 +193,8 @@ private:
 private:
 	FHiZBuffer mHiZBuffer;
 	bool mbEnableHiZ = true;
-	TArray<uint8> mVisibilityLifeCounters;
-	uint8 MaxVisibilityHoldFrames = 2;
+
+	void hiZOcclusionCulling(const TArray<const FRenderInfo*>& inRenderInfos, TArray<const FRenderInfo*>& outRenderInfos);
 
 public:
 	void SetEnableHiZ(bool bEnable);

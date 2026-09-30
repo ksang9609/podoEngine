@@ -9,24 +9,19 @@
 
 struct alignas(16) FHiZBufferConstants
 {
-	uint32 DstWidth;
-	uint32 DstHeight;
-	float InvDstWidth;
-	float InvDstHeight;
-
-	float ViewportUVOffsetX;
-	float ViewportUVOffsetY;
-	float ViewportUVScaleX;
-	float ViewportUVScaleY;
-	
-	uint32 IsPass0;
-	uint32 Pad[3];	
+	uint32 inputOffsetX;
+	uint32 inputOffsetY;
+	uint32 inputWidth;
+	uint32 inputHeight;
+	uint32 outputWidth;
+	uint32 outputHeight;
+	uint32 pad[2];
 };
 
 struct alignas(16) FGpuAABB
 {
 	FVector Min;
-	float Pad1;
+	uint32 InternalID;
 	FVector Max;
 	float Pad2;
 };
@@ -47,7 +42,7 @@ class FHiZBuffer
 
 public:
 	static constexpr uint32 HZBWidth = 1024;
-	static constexpr uint32 HZBHeight = 512;
+	static constexpr uint32 HZBHeight = 1024;
 	static constexpr uint32 MipLevels = 11; // 1024x512 to 1x1
 
 	void Initialize(ID3D11Device* device);
@@ -90,6 +85,7 @@ private:
 	ComPtr<ID3D11ShaderResourceView> mAABBSRV = nullptr;
 	ComPtr<ID3D11Buffer> mAABBBuffer = nullptr;
 	uint32 mAllocatedAABBCount = 0;
+	uint32 mAllocatedVisibilityCount = 0;
 
 	// Visibility
 	ComPtr<ID3D11Buffer> mVisibilityBuffer = nullptr;
@@ -103,5 +99,5 @@ private:
 	void createResources(ID3D11Device* device);
 	void createShader(ID3D11Device* device);
 	void createCullShader(ID3D11Device* device);
-	void ensureBufferCapacity(ID3D11Device* device, uint32 requiredCount); // Reallocate GPU buffer when increasing objects
+	void ensureBufferCapacity(ID3D11Device* device, uint32 requiredAABBCount, uint32 requiredVisibilityCount); // Reallocate GPU buffer when increasing objects
 };

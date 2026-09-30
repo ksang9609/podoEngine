@@ -380,10 +380,10 @@ void FGraphicsManager::updateRenderQueue(
 	{
 		if (frustum != nullptr)
 		{
-			//if (!frustum->Intersects(renderInfo->WorldBounds))
-			//{
-			//	continue;
-			//}
+			if (!frustum->Intersects(renderInfo->WorldBounds))
+			{
+				continue;
+			}
 		}
 
 		ERenderFlags renderFlags = renderInfo->eRenderFlags;
@@ -648,57 +648,15 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 		return;
 	}
 
+	TArray<const FRenderInfo*> visibleRenderInfos;
+	if (mbEnableHiZ)
+	{
+		hiZOcclusionCulling(renderInfos, visibleRenderInfos);
+	}
+
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
 	auto& assets = *mAssetManagerRef;
-
-	// Get visibility mask from prev frame(N - 1)
-	ID3D11DeviceContext* context = mRenderer->GetDeviceContext();
-	uint32 maskCount = 0;
-	const uint32* visibilityMask = nullptr;
-	if (mbEnableHiZ)
-	{
-		visibilityMask = mHiZBuffer.ReadbackVisibility(context, maskCount);
-	}
-
-	// Get renderInfos
-	TArray<const FRenderInfo*> visibleRenderInfos;
-	if (visibilityMask && maskCount >= (uint32)renderInfos.Num())
-	{
-		// 1. 오브젝트 수에 맞춰 카운터 배열 크기 보정
-		if (mVisibilityLifeCounters.Num() < renderInfos.Num())
-		{
-			mVisibilityLifeCounters.SetNum(renderInfos.Num(), 0);
-		}		
-
-		// 2. 가시성 카운터(Hysteresis) 갱신					
-		visibleRenderInfos.Reserve(renderInfos.Num());
-		for (int32 i = 0; i < renderInfos.Num(); ++i)
-		{
-			if (visibilityMask[i] != 0)
-			{
-				mVisibilityLifeCounters[i] = MaxVisibilityHoldFrames;
-			}
-			else if (mVisibilityLifeCounters[i] > 0)
-			{
-				mVisibilityLifeCounters[i]--;
-			}
-
-			if (mVisibilityLifeCounters[i] > 0)
-			{
-				visibleRenderInfos.Add(renderInfos[i]);
-			}
-		}
-	}
-
-	if (visibilityMask)
-	{
-		mHiZBuffer.UnmapVisibility(context);
-	}
-
-	const TArray<const FRenderInfo*>& targetInfos = (visibilityMask != nullptr)
-		? visibleRenderInfos
-		: renderInfos;
 
 	mRenderer->PrepareStaticMesh();
 
@@ -712,7 +670,7 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 
 	const UMaterial* defaultMaterialAsset = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial);
 	assert(defaultMaterialAsset != nullptr);
-	sortStaticMeshRenderQueue(targetInfos,
+	sortStaticMeshRenderQueue((mbEnableHiZ ? visibleRenderInfos : renderInfos),
 		sortedQueue,
 		view,
 		*defaultMaterialAsset,
@@ -971,6 +929,42 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 
 //}
 
+void FGraphicsManager::hiZOcclusionCulling(const TArray<const FRenderInfo*>& inRenderInfos, TArray<const FRenderInfo*>& outRenderInfos)
+{
+	// Get visibility mask from prev frame(N - 1)
+	ID3D11DeviceContext* context = mRenderer->GetDeviceContext();
+	uint32 maskCount = 0;
+	const uint32* visibilityMask = nullptr;
+	if (mbEnableHiZ)
+	{
+		visibilityMask = mHiZBuffer.ReadbackVisibility(context, maskCount);
+	}
+
+	if (!visibilityMask)
+	{
+		outRenderInfos = inRenderInfos;
+		return;
+	}
+
+	// Get renderInfos	
+	outRenderInfos.Reserve(inRenderInfos.Num());
+	for (const FRenderInfo* info : inRenderInfos)
+	{
+		uint32 id = info->ObejctID.InternalIndex;
+		if (id >= maskCount || visibilityMask[id] != 0)
+		{
+			outRenderInfos.Add(info);
+		}
+	}
+
+	mHiZBuffer.UnmapVisibility(context);
+
+	uint32 frustumPassed = (uint32)inRenderInfos.Num();
+	uint32 actuallyRendered = (uint32)outRenderInfos.Num();
+	uint32 occludedCount = (frustumPassed >= actuallyRendered) ? (frustumPassed - actuallyRendered) : 0;
+	float cullRatio = (frustumPassed > 0) ? ((float)occludedCount / frustumPassed * 100.0f) : 0.0f;
+	UE_LOG(Log, Render, "[Hi-Z Stats] Occlusion pass: %u -> rendering: %u (culling: %u, %.1f%%)",
+		frustumPassed, actuallyRendered, occludedCount, cullRatio);
 }
 
 void FGraphicsManager::SetEnableHiZ(bool bEnable)
@@ -980,8 +974,7 @@ void FGraphicsManager::SetEnableHiZ(bool bEnable)
 		mbEnableHiZ = bEnable;
 		if (mbEnableHiZ)
 		{
-			mHiZBuffer.ResetStagingState();
-			mVisibilityLifeCounters.Reset(MaxVisibilityHoldFrames);
+			mHiZBuffer.ResetStagingState();			
 		}
 	}
 }
