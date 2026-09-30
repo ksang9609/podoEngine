@@ -219,7 +219,7 @@ bool FMeshBVH::traverseNode(
 
 	// closestT might have been updated,
 	// so we need to check if we should traverse the far child
-	if (farEnter < closestT)
+	if (farEnter <= closestT)
 	{
 		const bool farFound = traverseNode(
 			farChild, start, end,
