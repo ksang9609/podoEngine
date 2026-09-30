@@ -357,7 +357,7 @@ void FGraphicsManager::RenderSceneView(
 	mRenderer->SetViewMode(view.viewMode);
 	const FFrustum frustum = FFrustum::FrustumFromViewProjection(view.viewProjectionMatrix);
 
-	octree.FrustumCull(frustum, mCullInside, mCullIntersect);
+	octree.FrustumCull(frustum, view.cameraLocation, mCullInside, mCullIntersect);
 
 	for (uint32 idx : mCullIntersect)
 	{

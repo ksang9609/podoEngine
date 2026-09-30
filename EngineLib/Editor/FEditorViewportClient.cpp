@@ -16,6 +16,7 @@
 #include "Rendering/Primitives/Primitives.h"
 #include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/Triangle.h"
+#include <algorithm>
 
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
@@ -62,7 +63,8 @@ void FEditorViewportClient::Initialize(FAssetManager& assetManagerRef)
 bool FEditorViewportClient::RaycastBounds(
 	const FVector& rayStart,
 	const FVector& rayEnd,
-	const FBoundingBox& bounds)
+	const FBoundingBox& bounds,
+	float& OutTMin)
 {
 	const FVector direction = rayEnd - rayStart;
 
@@ -102,6 +104,7 @@ bool FEditorViewportClient::RaycastBounds(
 		}
 	}
 
+	OutTMin = tMin;
 	return true;
 }
 
@@ -162,6 +165,8 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 	// Record the time spent in RayCast for profiling until the end of this function
 	FScopeCycleCounter cycleCounter({ EStatId::Picking });
 
+	TArray <FPickCandidate> Hits;
+
 	// Object 탐색
 	for (uint32 objectIndex : candidates)
 	{
@@ -182,10 +187,21 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			: RI->WorldBounds;
 
 		// 월드 AABB 검사
-		if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
+		float TMin = 0.0f;
+		if (!RaycastBounds(NearPoint, FarPoint, worldBounds, TMin))
 		{
 			continue;
 		}
+
+		Hits.Add({ TMin, objectIndex });
+	}
+	std::sort(Hits.begin(), Hits.end());
+
+	for (const FPickCandidate& Hit : Hits) {
+		if (Hit.TMin >= NearlistT) break;
+
+		const FRenderInfo* RI = renderInfos[Hit.ObjectIndex];
+		const FMatrix effectiveWorld = RI->GetTransformMatrix(mCamera.Rotation);
 
 		TArray<FVector> vertexArray;
 		TArray<uint32> indexArray;
@@ -228,7 +244,8 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 		const FVector LocalNear = WorldToLocal.TransformPosition(NearPoint);
 		const FVector LocalFar = WorldToLocal.TransformPosition(FarPoint);
 
-		if (!RaycastBounds(LocalNear, LocalFar, RI->LocalBounds))
+		float UnusedTMin = 0.0f;
+		if (!RaycastBounds(LocalNear, LocalFar, RI->LocalBounds, UnusedTMin))
 		{
 			continue;
 		}
@@ -488,8 +505,6 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
 	if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
 	{
-		sceneManager->MarkOctreeDirty();
-
 		if (mGizmo.eType == EGIZMO_TYPE::TRANSLATE)
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다
@@ -522,6 +537,10 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	if (Input.WasReleased(VK_LBUTTON))
 	{
+		if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE) {
+			sceneManager->MarkOctreeDirty();
+		}
+
 		mGizmo.mDraggingAxis = EGIZMO_AXIS::NONE;
 	}
 

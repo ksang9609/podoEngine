@@ -1,9 +1,9 @@
 ﻿#include "FOctree.h"
 
-void FOctree::addSubtreeAll(uint32 nodeIndex, TArray<uint32> & outVisible) const
+void FOctree::addSubtreeAll(uint32 nodeIndex, const FVector& cameraPos, TArray<uint32> & outVisible) const
 {
 	// Inside 확정된 가지만 모아서 재귀해주는 함수
-	FOctreeNode node = mNodes[nodeIndex];
+	const FOctreeNode &node = mNodes[nodeIndex];
 
 	for (int i = 0; i < node.ObjectCount; i++) {
 		outVisible.Add(mInsideIndices[node.ObjectStart + i]);
@@ -11,12 +11,18 @@ void FOctree::addSubtreeAll(uint32 nodeIndex, TArray<uint32> & outVisible) const
 
 	if (node.ChildStart == 0) return;
 
-	for (int i = 0; i < 8; i++) {
-		addSubtreeAll(node.ChildStart + i, outVisible);
+
+	const uint8 nearestOctant = (cameraPos.x >= node.Center.x ? 1 : 0)
+		+ (cameraPos.y >= node.Center.y ? 2 : 0)
+		+ (cameraPos.z >= node.Center.z ? 4 : 0);
+
+	for (uint32 i = 0; i < 8; i++) {
+		uint8 octant = nearestOctant ^ i;	// 카메라와 가까운순 탐색
+		addSubtreeAll(node.ChildStart + octant, cameraPos, outVisible);
 	}
 }
 
-void FOctree::cullNode(uint32 nodeIndex, const FFrustum& frustum, TArray<uint32>& outInside, TArray<uint32>& outIntersect) const
+void FOctree::cullNode(uint32 nodeIndex, const FVector & cameraPos, const FFrustum& frustum, TArray<uint32>& outInside, TArray<uint32>& outIntersect) const
 {
 	// 해당 노드가 Outside/Inside/Intersect 상태인지 판별해서 outInside/outIntersect 에 담아줌
 	const FOctreeNode &node = mNodes[nodeIndex];
@@ -30,30 +36,53 @@ void FOctree::cullNode(uint32 nodeIndex, const FFrustum& frustum, TArray<uint32>
 
 	switch (state)
 	{
-	case EContainment::Outside:
-		return;
-	case EContainment::Inside:
-		addSubtreeAll(nodeIndex, outInside);
-		return;
-	case EContainment::Intersect:
-		for(int i = 0; i < node.ObjectCount; i++)
-			outIntersect.Add(mInsideIndices[node.ObjectStart + i]);
-		if (node.ChildStart == 0) return;
-		for (int i = 0; i < 8; i++) {
-			cullNode(node.ChildStart + i, frustum, outInside, outIntersect);
+		case EContainment::Outside:
+			return;
+		case EContainment::Inside:
+			addSubtreeAll(nodeIndex, cameraPos, outInside);
+			return;
+		case EContainment::Intersect:
+		{
+			for (int i = 0; i < node.ObjectCount; i++)
+				outIntersect.Add(mInsideIndices[node.ObjectStart + i]);
+			if (node.ChildStart == 0) return;
+
+			const uint8 nearestOctant = (cameraPos.x >= node.Center.x ? 1 : 0)
+				+ (cameraPos.y >= node.Center.y ? 2 : 0)
+				+ (cameraPos.z >= node.Center.z ? 4 : 0);
+
+			for (uint32 i = 0; i < 8; i++) {
+				uint8 octant = nearestOctant ^ i;	// 카메라와 가까운순 탐색
+				cullNode(node.ChildStart + octant, cameraPos, frustum, outInside, outIntersect);
+			}
+			return;
 		}
-		return;
 	}
 }
 
-void FOctree::FrustumCull(const FFrustum& frustum, TArray<uint32>& outInside, TArray<uint32>& outIntersect) const
+uint32 FOctree::GetMaxNodeObjectCount() const
+{
+	uint32 maxCount = 0;
+
+	for (const FOctreeNode& node : mNodes)
+	{
+		if (node.ObjectCount > maxCount)
+		{
+			maxCount = node.ObjectCount;
+		}
+	}
+
+	return maxCount;
+}
+
+void FOctree::FrustumCull(const FFrustum& frustum, const FVector & cameraPos, TArray<uint32>& outInside, TArray<uint32>& outIntersect) const
 {
 	outInside.Reset(0);
 	outIntersect.Reset(0);
 
 	if (mNodes.Num() == 0) return;
 
-	cullNode(0, frustum, outInside, outIntersect);
+	cullNode(0, cameraPos, frustum, outInside, outIntersect);
 	for (auto i : mOutsideObjects) {
 		outIntersect.Add(i);
 	}
