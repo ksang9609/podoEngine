@@ -112,11 +112,11 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 		return;
 	}
 
-	TArray<uint32> candidates;
-	octree.Raycast(NearPoint, FarPoint - NearPoint, candidates);
-
 	// Record the time spent in RayCast for profiling until the end of this function
 	FScopeCycleCounter cycleCounter({ EStatId::Picking });
+
+	TArray<uint32> candidates;
+	octree.Raycast(NearPoint, FarPoint - NearPoint, candidates);
 
 	TArray<FPickCandidate> Hits;
 
