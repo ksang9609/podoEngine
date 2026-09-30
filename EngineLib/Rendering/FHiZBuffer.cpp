@@ -182,11 +182,19 @@ void FHiZBuffer::ExecuteOcclusionCull(ID3D11DeviceContext* context, ID3D11Device
 	if (SUCCEEDED(context->Map(mAABBBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
 	{
 		FGpuAABB* dstAABB = (FGpuAABB*)mapped.pData;
+		const FRenderInfo* const* rawInfos = renderInfos.GetData();
+
 		for (uint32 i = 0; i < numObjects; ++i)
 		{
-			dstAABB[i].Min = renderInfos[i]->WorldBounds.min;
-			dstAABB[i].Max = renderInfos[i]->WorldBounds.max;
-			dstAABB[i].InternalID = renderInfos[i]->ObejctID.InternalIndex;
+			const FRenderInfo* info = rawInfos[i];
+
+			FGpuAABB curAABB;
+			curAABB.Min = info->WorldBounds.min;
+			curAABB.InternalID = info->ObejctID.InternalIndex;
+			curAABB.Max = info->WorldBounds.max;
+			curAABB.Pad2 = 0.0f;
+
+			dstAABB[i] = curAABB;
 		}
 		context->Unmap(mAABBBuffer.Get(), 0);
 	}
