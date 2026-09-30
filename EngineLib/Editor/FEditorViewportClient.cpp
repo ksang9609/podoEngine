@@ -58,7 +58,7 @@ static bool GetPrimitiveMesh(EPrimitive ePrimitive, const FVertexSimple*& OutVer
 void FEditorViewportClient::Initialize(FAssetManager& assetManagerRef)
 {
 	mAssetManagerRef = &assetManagerRef;
-	mGizmo.Reset();
+	mGizmo.Reset();	
 }
 
 void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject, const FOctree& octree)

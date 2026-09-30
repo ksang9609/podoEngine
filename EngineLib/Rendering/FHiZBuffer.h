@@ -66,6 +66,8 @@ public:
 
 	ID3D11ShaderResourceView* GetHzbSRV() const { return mHzbFullSRV.Get(); }
 
+	bool IsInitialized() const { return mbIsInitialized; }
+
 private:
 	ComPtr<ID3D11Texture2D> mHzbTexture = nullptr; // Hi-Z buffer Texture	
 
@@ -95,6 +97,8 @@ private:
 	ComPtr<ID3D11Buffer> mStagingBuffers[2] = { nullptr, nullptr };
 	uint32 mCurrentStatingIndex = 0;
 	bool mHasValidStagingData = false;
+
+	bool mbIsInitialized = false;
 
 	void createResources(ID3D11Device* device);
 	void createShader(ID3D11Device* device);

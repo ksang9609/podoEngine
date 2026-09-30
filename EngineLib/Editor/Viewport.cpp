@@ -39,6 +39,8 @@ FSceneView FViewport::buildSceneView() const
 	FSceneView view = makeSceneView(Client->GetCamera(), renderRect, Client->getProjectionRatio());
 	view.viewMode = renderSettings.ViewMode;
 	view.showFlags = renderSettings.ShowFlags;
+	
+	view.HiZBuffer = Client.get()->GetHiZBuffer();
 	return view;
 }
 

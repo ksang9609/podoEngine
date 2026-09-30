@@ -6,6 +6,7 @@
 #include "../Core/enum.h"
 
 class FCamera;
+class FHiZBuffer;
 
 struct FViewRect
 {
@@ -32,6 +33,8 @@ struct FSceneView
 	FVector cameraRight;
 	FVector cameraUp;
 	FRotator cameraRotation;
+
+	FHiZBuffer* HiZBuffer = nullptr;
 
 	float fovDegree = 60.0f;
 	float orthoDistance = 5.0f;
