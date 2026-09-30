@@ -49,8 +49,20 @@ void FSceneManager::Update(float deltaTime)
 
 	if (mbOctreeDirty)
 	{
-		FScopeCycleCounter counter({ EStatId::OctreeBuild });
-		mOctree.Build(GetRenderInfos());
+		{
+			FScopeCycleCounter counter({ EStatId::OctreeBuild });
+			mOctree.Build(GetRenderInfos());
+		}
+
+		// ---------------------------
+		//		임시용(삭제 필요)
+		// ---------------------------
+		UE_LOG_F(Warning, Core, "Octree: nodes={}, inside={}, outside={}, maxNodeObjects={}",
+			mOctree.GetNodeCount(),
+			mOctree.GetInsideCount(),
+			mOctree.GetOutsideCount(),
+			mOctree.GetMaxNodeObjectCount());
+
 		mbOctreeDirty = false;
 	}
 

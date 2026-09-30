@@ -60,6 +60,21 @@ void FOctree::cullNode(uint32 nodeIndex, const FVector & cameraPos, const FFrust
 	}
 }
 
+uint32 FOctree::GetMaxNodeObjectCount() const
+{
+	uint32 maxCount = 0;
+
+	for (const FOctreeNode& node : mNodes)
+	{
+		if (node.ObjectCount > maxCount)
+		{
+			maxCount = node.ObjectCount;
+		}
+	}
+
+	return maxCount;
+}
+
 void FOctree::FrustumCull(const FFrustum& frustum, const FVector & cameraPos, TArray<uint32>& outInside, TArray<uint32>& outIntersect) const
 {
 	outInside.Reset(0);

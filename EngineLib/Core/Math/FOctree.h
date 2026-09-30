@@ -30,6 +30,7 @@ public:
 	int32  GetInsideCount()  const { return mInsideIndices.Num(); }
 	int32  GetOutsideCount() const { return mOutsideObjects.Num(); }
 	uint32 GetRootObjectCount() const { return mNodes.IsEmpty() ? 0u : mNodes[0].ObjectCount; }
+	uint32 GetMaxNodeObjectCount() const;	
 
 public:
 	void FrustumCull(const FFrustum & frustum, const FVector & cameraPos, TArray<uint32> & outInside, TArray<uint32>& outIntersect) const;
