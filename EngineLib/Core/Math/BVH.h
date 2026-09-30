@@ -15,10 +15,9 @@ struct FBVHNode
 	int32 LeftChildIndex = -1;  // -1 indicates no child
 	int32 RightChildIndex = -1; // -1 indicates no child
 
-	uint32 First = 0;
-	uint32 Count = 0; // leaf node if Count > 0
+	int32 PacketIndex = -1;
 
-	bool IsLeaf() const { return Count > 0; }
+	bool IsLeaf() const { return PacketIndex >= 0; }
 };
 
 // Only used during BVH construction, not stored in the final BVH structure
@@ -51,13 +50,15 @@ public:
 
 private:
 	TArray<FBVHNode> mNodes;
-	TArray<uint32> mTriangleOrder;
+	TArray<FTriangle4> mTrianglePackets;
 
 	int32 buildNode(
 		TArray<FBVHBuildPrimitive>& primitives,
 		uint32 first,
 		uint32 count,
-		uint32 maxLeafSize);
+		uint32 maxLeafSize,
+		const TArray<FNormalVertex>& vertices,
+		const TArray<uint32>& indices);
 
 	bool traverseNode(
 		int32 nodeIndex,
@@ -67,5 +68,12 @@ private:
 		const TArray<uint32>& indices,
 		float& closestT,
 		FRayTriangleHit& outHit) const;
+
+	FTriangle4 packTriangles(
+		const TArray<FBVHBuildPrimitive>& primitives,
+		uint32 first,
+		uint32 count,
+		const TArray<FNormalVertex>& vertices,
+		const TArray<uint32>& indices);
 };
 

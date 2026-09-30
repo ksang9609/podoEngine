@@ -64,7 +64,7 @@ void FMeshBVH::Build(
 		}
 	}
 
-	maxLeafSize = std::max(1u, maxLeafSize);
+	maxLeafSize = std::clamp(maxLeafSize, 1u, 4u);
 
 	const uint32 triangleCount = indices.Num() / 3;
 
@@ -84,12 +84,7 @@ void FMeshBVH::Build(
 			});
 	}
 
-	buildNode(primitives, 0, triangleCount, maxLeafSize);
-
-	for (const FBVHBuildPrimitive& primitive : primitives)
-	{
-		mTriangleOrder.Add(primitive.TriangleIndex);
-	}
+	buildNode(primitives, 0, triangleCount, maxLeafSize, vertices, indices);
 }
 
 bool FMeshBVH::Raycast(
@@ -146,32 +141,41 @@ bool FMeshBVH::traverseNode(
 	// Check the intersection with the triangles
 	if (node.IsLeaf())
 	{
-		bool found = false;
-
 		// TODO: Use SIMD to accelerate triangle intersection tests
-		for (uint32 i = node.First; i < node.First + node.Count; ++i)
+		//for (uint32 i = node.First; i < node.First + node.Count; ++i)
+		//{
+		//	const uint32 triangleIndex = mTriangleOrder[i];
+		//	const uint32 base = triangleIndex * 3;
+
+		//	const FVector& v0 = vertices[indices[base + 0]].pos;
+		//	const FVector& v1 = vertices[indices[base + 1]].pos;
+		//	const FVector& v2 = vertices[indices[base + 2]].pos;
+
+		//	FRayTriangleHit hit;
+		//	if (Raycast::IntersectSegmentTriangle(
+		//		start, end, v0, v1, v2,
+		//		closestT, hit))
+		//	{
+		//		closestT = hit.T;
+
+		//		hit.TriangleIndex = triangleIndex;
+		//		outHit = hit;
+		//		found = true;
+		//	}
+
+		FRayTriangleHit hit;
+		if (!Raycast::IntersectSegmentTriangle4x(
+			start, end,
+			mTrianglePackets[node.PacketIndex],
+			closestT,
+			hit))
 		{
-			const uint32 triangleIndex = mTriangleOrder[i];
-			const uint32 base = triangleIndex * 3;
-
-			const FVector& v0 = vertices[indices[base + 0]].pos;
-			const FVector& v1 = vertices[indices[base + 1]].pos;
-			const FVector& v2 = vertices[indices[base + 2]].pos;
-
-			FRayTriangleHit hit;
-			if (Raycast::IntersectSegmentTriangle(
-				start, end, v0, v1, v2,
-				closestT, hit))
-			{
-				closestT = hit.T;
-
-				hit.TriangleIndex = triangleIndex;
-				outHit = hit;
-				found = true;
-			}
+			return false;
 		}
 
-		return found;
+		closestT = hit.T;
+		outHit = hit;
+		return true;
 	}
 
 	int32 nearChild = node.LeftChildIndex;
@@ -234,7 +238,7 @@ bool FMeshBVH::traverseNode(
 void FMeshBVH::Clear()
 {
 	mNodes.Reset(0);
-	mTriangleOrder.Reset(0);
+	mTrianglePackets.Reset(0);
 }
 
 bool FMeshBVH::IsEmpty() const
@@ -246,7 +250,9 @@ int32 FMeshBVH::buildNode(
 	TArray<FBVHBuildPrimitive>& primitives,
 	uint32 first,
 	uint32 count,
-	uint32 maxLeafSize)
+	uint32 maxLeafSize,
+	const TArray<FNormalVertex>& vertices,
+	const TArray<uint32>& indices)
 {
 	FBoundingBox bounds = primitives[first].Bounds;
 
@@ -275,8 +281,15 @@ int32 FMeshBVH::buildNode(
 
 	if (count <= maxLeafSize)
 	{
-		mNodes[nodeIndex].First = first;
-		mNodes[nodeIndex].Count = count;
+		// Make packet
+		const FTriangle4 packet = packTriangles(
+			primitives,
+			first, count,
+			vertices, indices);
+
+		mNodes[nodeIndex].PacketIndex =
+			static_cast<int32>(mTrianglePackets.Add(packet));
+
 		return nodeIndex;
 	}
 
@@ -304,14 +317,62 @@ int32 FMeshBVH::buildNode(
 	);
 
 	const int32 left = buildNode(
-		primitives, first, mid - first, maxLeafSize);
+		primitives, first, mid - first, maxLeafSize, vertices, indices);
 
 	const int32 right = buildNode(
-		primitives, mid, first + count - mid, maxLeafSize);
+		primitives, mid, first + count - mid, maxLeafSize, vertices, indices);
 
 	// Update the current node with child indices
 	mNodes[nodeIndex].LeftChildIndex = left;
 	mNodes[nodeIndex].RightChildIndex = right;
 
 	return nodeIndex;
+}
+
+FTriangle4 FMeshBVH::packTriangles(
+	const TArray<FBVHBuildPrimitive>& primitives,
+	uint32 first,
+	uint32 count,
+	const TArray<FNormalVertex>& vertices,
+	const TArray<uint32>& indices)
+{
+	assert(count >= 1 && count <= 4);
+
+	// [정점 V0/V1/V2][좌표 X/Y/Z][삼각형 lane]
+	float data[3][3][4]{};
+
+	FTriangle4 packet{};
+	packet.Count = count;
+
+	for (uint32 lane = 0; lane < count; ++lane)
+	{
+		const uint32 triangleIndex =
+			primitives[first + lane].TriangleIndex;
+
+		const uint32 base = triangleIndex * 3;
+
+		for (uint32 corner = 0; corner < 3; ++corner)
+		{
+			const FVector& position =
+				vertices[indices[base + corner]].pos;
+
+			for (uint32 axis = 0; axis < 3; ++axis)
+				data[corner][axis][lane] = position[axis];
+		}
+		packet.TriangleIndices[lane] = static_cast<int32>(triangleIndex);
+	}
+
+	packet.V0.X = _mm_loadu_ps(data[0][0]);
+	packet.V0.Y = _mm_loadu_ps(data[0][1]);
+	packet.V0.Z = _mm_loadu_ps(data[0][2]);
+
+	packet.V1.X = _mm_loadu_ps(data[1][0]);
+	packet.V1.Y = _mm_loadu_ps(data[1][1]);
+	packet.V1.Z = _mm_loadu_ps(data[1][2]);
+
+	packet.V2.X = _mm_loadu_ps(data[2][0]);
+	packet.V2.Y = _mm_loadu_ps(data[2][1]);
+	packet.V2.Z = _mm_loadu_ps(data[2][2]);
+
+	return packet;
 }

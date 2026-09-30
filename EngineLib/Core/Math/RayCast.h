@@ -2,11 +2,27 @@
 
 #pragma once
 
+#include <immintrin.h>
 #include <algorithm>
 
 #include "Core/Core.h"
 #include "Core/Math/Vector.h"
 #include "Core/Math/FBoundingBox.h"
+
+struct alignas(16) FVector4x
+{
+	__m128 X, Y, Z;
+};
+
+struct alignas(16) FTriangle4
+{
+	FVector4x V0;
+	FVector4x V1;
+	FVector4x V2;
+
+	int32 TriangleIndices[4] = { -1, -1, -1, -1 };
+	uint32 Count = 0; // Number of valid triangles in this packet
+};
 
 struct FRayTriangleHit
 {
@@ -19,6 +35,7 @@ struct FRayTriangleHit
 
 	// -1 if no triangle information is available
 	int32 TriangleIndex = -1;
+	bool bHit = false;
 };
 
 namespace Raycast
@@ -140,5 +157,69 @@ namespace Raycast
 		outHit.U = u;
 		outHit.V = v;
 		return true;
+	}
+
+	inline bool IntersectSegmentTriangle4x(
+		const FVector& rayStart,
+		const FVector& rayEnd,
+		const FTriangle4& triangle,
+		float tMax,
+		FRayTriangleHit& outHit)
+	{
+		assert(triangle.Count <= 4);
+
+		float data[3][3][4];
+
+		_mm_storeu_ps(data[0][0], triangle.V0.X);
+		_mm_storeu_ps(data[0][1], triangle.V0.Y);
+		_mm_storeu_ps(data[0][2], triangle.V0.Z);
+
+		_mm_storeu_ps(data[1][0], triangle.V1.X);
+		_mm_storeu_ps(data[1][1], triangle.V1.Y);
+		_mm_storeu_ps(data[1][2], triangle.V1.Z);
+
+		_mm_storeu_ps(data[2][0], triangle.V2.X);
+		_mm_storeu_ps(data[2][1], triangle.V2.Y);
+		_mm_storeu_ps(data[2][2], triangle.V2.Z);
+
+		float bestT = tMax;
+		bool found = false;
+		FRayTriangleHit bestHit;
+
+		for (uint32 i = 0; i < triangle.Count; ++i)
+		{
+			const FVector v0(
+				data[0][0][i], data[0][1][i], data[0][2][i]);
+
+			const FVector v1(
+				data[1][0][i], data[1][1][i], data[1][2][i]);
+
+			const FVector v2(
+				data[2][0][i], data[2][1][i], data[2][2][i]);
+
+			FRayTriangleHit hit;
+
+			if (!IntersectSegmentTriangle(
+				rayStart, rayEnd, v0, v1, v2, bestT, hit))
+			{
+				continue;
+			}
+
+			if (!found || hit.T < bestT)
+			{
+				bestT = hit.T;
+
+				hit.TriangleIndex = triangle.TriangleIndices[i];
+				hit.bHit = true;
+
+				bestHit = hit;
+				found = true;
+			}
+		}
+
+		if (found)
+			outHit = bestHit;
+
+		return found;
 	}
 }
