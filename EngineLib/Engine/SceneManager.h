@@ -73,7 +73,10 @@ public:
 	float GetPanelWidth() const;
 
 	const FOctree &GetOctree() const { return mOctree; }
+
 	void MarkOctreeDirty() { mbOctreeDirty = true; }
+	void NotifyObjectMoved(uint32 objectIndex);
+	void FinishObjectMove();
 
 	
 private:

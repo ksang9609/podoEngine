@@ -6,7 +6,9 @@ void FOctree::addSubtreeAll(uint32 nodeIndex, const FVector& cameraPos, TArray<u
 	const FOctreeNode &node = mNodes[nodeIndex];
 
 	for (int i = 0; i < node.ObjectCount; i++) {
-		outVisible.Add(mInsideIndices[node.ObjectStart + i]);
+		const uint32 objectIndex = mInsideIndices[node.ObjectStart + i];
+		if (mStaleFlags[objectIndex]) continue;   
+		outVisible.Add(objectIndex);
 	}
 
 	if (node.ChildStart == 0) return;
@@ -43,8 +45,13 @@ void FOctree::cullNode(uint32 nodeIndex, const FVector & cameraPos, const FFrust
 			return;
 		case EContainment::Intersect:
 		{
-			for (int i = 0; i < node.ObjectCount; i++)
-				outIntersect.Add(mInsideIndices[node.ObjectStart + i]);
+			for (uint32 i = 0; i < node.ObjectCount; i++)
+			{
+				const uint32 objectIndex = mInsideIndices[node.ObjectStart + i];
+				if (mStaleFlags[objectIndex]) continue;
+				outIntersect.Add(objectIndex);
+			}
+
 			if (node.ChildStart == 0) return;
 
 			const uint8 nearestOctant = (cameraPos.x >= node.Center.x ? 1 : 0)
@@ -90,16 +97,49 @@ void FOctree::FrustumCull(const FFrustum& frustum, const FVector & cameraPos, TA
 
 void FOctree::createRootNode(const TArray<const FRenderInfo*>& renderInfos)
 {
+	if (mbHasRootBox)
+	{
+		FOctreeNode cachedRoot;
+		cachedRoot.Center = mRootCenter;
+		cachedRoot.HalfSize = mRootHalfSize;
+		cachedRoot.ChildStart = 0;
+		cachedRoot.ObjectStart = 0;
+		cachedRoot.ObjectCount = 0;
+
+		mNodes.Add(cachedRoot);
+		mBuildBuckets.Add(TArray<uint32>());
+
+		int32 fitCount = 0;
+		for (const FRenderInfo* renderInfo : renderInfos)
+		{
+			if (!outsideRoot(renderInfo->WorldBounds))
+			{
+				fitCount++;
+			}
+		}
+
+		if (fitCount * 10 >= renderInfos.Num() * 9)
+		{
+			return;
+		}
+
+		mNodes.Reset(0);
+		mBuildBuckets.Reset(0);
+	}
+
+
+
+
 	FVector sceneMin = FLT_MAX;
 	FVector sceneMax = -FLT_MAX;
 
 	for (const FRenderInfo* renderInfo : renderInfos) {
-		sceneMin.x = std::min(sceneMin.x, renderInfo->WorldBounds.min.x);
-		sceneMin.y = std::min(sceneMin.y, renderInfo->WorldBounds.min.y);
-		sceneMin.z = std::min(sceneMin.z, renderInfo->WorldBounds.min.z);
-		sceneMax.x = std::max(sceneMax.x, renderInfo->WorldBounds.max.x);
-		sceneMax.y = std::max(sceneMax.y, renderInfo->WorldBounds.max.y);
-		sceneMax.z = std::max(sceneMax.z, renderInfo->WorldBounds.max.z);
+		sceneMin.x = (std::min)(sceneMin.x, renderInfo->WorldBounds.min.x);
+		sceneMin.y = (std::min)(sceneMin.y, renderInfo->WorldBounds.min.y);
+		sceneMin.z = (std::min)(sceneMin.z, renderInfo->WorldBounds.min.z);
+		sceneMax.x = (std::max)(sceneMax.x, renderInfo->WorldBounds.max.x);
+		sceneMax.y = (std::max)(sceneMax.y, renderInfo->WorldBounds.max.y);
+		sceneMax.z = (std::max)(sceneMax.z, renderInfo->WorldBounds.max.z);
 	}
 
 	FOctreeNode rootNode;
@@ -114,6 +154,9 @@ void FOctree::createRootNode(const TArray<const FRenderInfo*>& renderInfos)
 
 	mNodes.Add(rootNode);
 	mBuildBuckets.Add(TArray<uint32>());
+	mRootCenter = rootNode.Center;
+	mRootHalfSize = rootNode.HalfSize;
+	mbHasRootBox = true;
 }
 
 void FOctree::insertAllObjects(const TArray<const FRenderInfo*>& renderInfos)
@@ -128,6 +171,7 @@ void FOctree::insertAllObjects(const TArray<const FRenderInfo*>& renderInfos)
 
 		if (outsideRoot(box)) {
 			mOutsideObjects.Add(i);
+			mStaleFlags[i] = true;
 			continue;
 		}
 
@@ -226,7 +270,6 @@ void FOctree::flattenObjects() {
 		}
 	}
 
-	mBuildObject.Reset(0);
 	mBuildBuckets.Reset(0);
 }
 
@@ -236,8 +279,13 @@ void FOctree::Build(const TArray<const FRenderInfo*>& renderInfos)
 	mInsideIndices.Reset(0);
 	mOutsideObjects.Reset(0);
 	mBuildObject.Reset(0);
-	mBuildBuckets.Reset(0); 
+	mBuildBuckets.Reset(0);
+	mStaleFlags.Reset(0);
+
+
 	mBuildObject.SetNum(renderInfos.Num());
+	mStaleFlags.SetNum(renderInfos.Num());
+
 
 	if (renderInfos.IsEmpty()) return;
 
@@ -259,6 +307,42 @@ void FOctree::Raycast(const FVector& origin, const FVector& direction, TArray<ui
 	}
 }
 
+void FOctree::MarkObjectMoved(uint32 objectIndex)
+{
+	if (objectIndex >= static_cast<uint32> (mStaleFlags.Num())) return;
+	if (mStaleFlags[objectIndex]) return;
+
+	mStaleFlags[objectIndex] = true;
+	mOutsideObjects.Add(objectIndex);
+}
+
+void FOctree::AppendObjects(int32 newTotal)
+{
+	const int32 oldTotal = mStaleFlags.Num();
+	if (newTotal <= oldTotal) return;
+
+	mStaleFlags.SetNum(newTotal);
+	mBuildObject.SetNum(newTotal);
+
+	for (int32 i = oldTotal; i < newTotal; i++)
+	{
+		mStaleFlags[i] = true;
+		mOutsideObjects.Add(static_cast<uint32>(i));
+	}
+}
+
+bool FOctree::NeedsRebuild() const
+{
+	const int32 total = mStaleFlags.Num();
+	if (total == 0) return false;
+
+	const int32 strayCount = mOutsideObjects.Num();
+
+	if (strayCount < MinStrayForRebuild) return false;
+
+	return mOutsideObjects.Num() * 10 > total;
+}
+
 void FOctree::raycastNode(uint32 nodeIndex, const FVector& origin, const FVector& invDir, TArray<uint32>& outCandidates) const
 {
 	float outTEnter = 0.0f;
@@ -266,7 +350,9 @@ void FOctree::raycastNode(uint32 nodeIndex, const FVector& origin, const FVector
 
 	const FOctreeNode& node = mNodes[nodeIndex];
 	for (int32 i = 0; i < node.ObjectCount; i++) {
-		outCandidates.Add(mInsideIndices[node.ObjectStart + i]);
+		const uint32 objectIndex = mInsideIndices[node.ObjectStart + i];
+		if (mStaleFlags[objectIndex]) continue;
+		outCandidates.Add(objectIndex);
 	}
 
 	if (node.ChildStart == 0) return;
@@ -297,8 +383,8 @@ bool FOctree::intersectLooseBounds(uint32 nodeIndex, const FVector& origin, cons
 			std::swap(t1, t2);
 		}
 
-		tMin = std::max(tMin, t1);
-		tMax = std::min(tMax, t2);
+		tMin = (std::max)(tMin, t1);
+		tMax = (std::min)(tMax, t2);
 
 		if (tMin > tMax)
 		{
