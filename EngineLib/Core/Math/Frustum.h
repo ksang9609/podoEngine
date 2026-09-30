@@ -107,6 +107,7 @@ struct FFrustum
 		return result;
 	}
 
+	// 프로파일링 후 삭제
 	bool Intersects(const FBoundingBox& bounds) const
 	{
 		for (const FPlane& plane : Planes)
@@ -130,7 +131,37 @@ struct FFrustum
 				return false;
 			}
 		}
+		return true;
+	}
 
+	bool InterSectsSIMD(const FBoundingBox& bounds) const
+	{
+		// 중점
+		const FVector vCenter = (bounds.max + bounds.min) * 0.5f;
+		// 범위
+		const FVector vExtent = (bounds.max - bounds.min) * 0.5f;
+
+		const __m128 rCenter = _mm_set_ps(0.0f, vCenter.z, vCenter.y, vCenter.x);
+		const __m128 rExtent = _mm_set_ps(0.0f, vExtent.z, vExtent.y, vExtent.x);
+		// Extent 부호 비트 제거용
+		const __m128 AbsMask = _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF)); 
+
+		for (const FPlane& Plane : Planes )
+		{
+			__m128 Normal = _mm_set_ps(0.0f, Plane.Normal.z, Plane.Normal.y, Plane.Normal.x);
+
+			const __m128 dotC = _mm_dp_ps(rCenter, Normal, 0x71);
+			const float dCenter = _mm_cvtss_f32(dotC) + Plane.Offset;
+
+			Normal = _mm_and_ps(AbsMask, Normal);
+			const __m128 dotE = _mm_dp_ps(rExtent, Normal, 0x71);
+			const float dExtent = _mm_cvtss_f32(dotE);
+
+			if (dCenter + dExtent < 0)
+			{
+				return false;
+			}
+		}
 		return true;
 	}
 
