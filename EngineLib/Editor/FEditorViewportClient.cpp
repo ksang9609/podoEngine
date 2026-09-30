@@ -138,39 +138,6 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			continue;
 		}
 
-		TArray<FVector> vertexArray;
-		TArray<uint32> indexArray;
-		const FVertexSimple* vertices = nullptr;
-		uint32 length = 0;
-
-		if (RI->StaticMeshAsset)
-		{
-			const FStaticMesh& staticMesh = *RI->StaticMeshAsset->GetStaticMeshAsset();
-			for (const auto& vertex : staticMesh.LODs[0].Vertices)
-			{
-				vertexArray.Add(vertex.pos);
-			}
-			for (const auto& index : staticMesh.LODs[0].Indices)
-			{
-				indexArray.Add(index);
-			}
-		}
-		else if (HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Billboard))
-		{
-			for (const auto& vertex : Quad_textured_indexed_vertices)
-			{
-				vertexArray.Add(vertex.GetPosition());
-			}
-			for (uint32 i = 0; i < sizeof(Quad_indices) / sizeof(uint32); i++)
-			{
-				indexArray.Add(Quad_indices[i]);
-			}
-		}
-		else
-		{
-			continue;
-		}
-
 		const FMatrix WorldToLocal = effectiveWorld.Inverse();
 
 		//역행렬이 존재하지 않으면(스케일이 작아 det이 0에 가까운 경우) Racast 대상에서 제외
@@ -195,7 +162,7 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 
 			FRayTriangleHit hitResult;
 			if (bvh.Raycast(LocalNear, LocalFar,
-				staticMesh.LODs[0].Vertices, indexArray,
+				staticMesh.LODs[0].Vertices, staticMesh.LODs[0].Indices,
 				hitResult, 1.0f) &&
 				(hitResult.T < NearlistT))
 			{
@@ -207,6 +174,30 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			continue;
 		}
 
+		// For raycasting with other types that is not a static mesh
+		// TODO: Optimize this part
+
+		TArray<FVector> vertexArray;
+		TArray<uint32> indexArray;
+		const FVertexSimple* vertices = nullptr;
+		uint32 length = 0;
+
+		if (HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Billboard))
+		{
+			for (const auto& vertex : Quad_textured_indexed_vertices)
+			{
+				vertexArray.Add(vertex.GetPosition());
+			}
+			for (uint32 i = 0; i < sizeof(Quad_indices) / sizeof(uint32); i++)
+			{
+				indexArray.Add(Quad_indices[i]);
+			}
+		}
+		else
+		{
+			continue;
+		}
+
 		// 삼각형 리스트라 정점 3개씩 묶인다
 		for (uint32 i = 0; i + 2 < indexArray.Num(); i += 3)
 		{
@@ -214,10 +205,7 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			const FVector V1 = vertexArray[indexArray[i + 1]];
 			const FVector V2 = vertexArray[indexArray[i + 2]];
 
-			//float OutT, OutU, OutV;
 			FRayTriangleHit hitResult;
-			//if (RayIntersectsTriangle(LocalNear, LocalFar, V0, V1, V2, OutT, OutU, OutV)
-			//	&& OutT < NearlistT)
 			if (Raycast::IntersectSegmentTriangle(LocalNear, LocalFar, V0, V1, V2, 1.0f, hitResult)
 				&& hitResult.T < NearlistT)
 			{
