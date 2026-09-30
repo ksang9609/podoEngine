@@ -23,6 +23,7 @@
 #include "Core/FrameTimer.h"
 #include "Engine/Components/ActorComponent.h"
 #include "Engine/Components/CubeComponent.h"
+#include "Stats/ScopeCycleCounter.h"
 
 FSceneManager::~FSceneManager()
 {
@@ -37,6 +38,47 @@ void FSceneManager::Update(float deltaTime)
 	}
 
 	mCurrentWorld->Update(deltaTime);
+	
+	// 오브젝트 개수가 달라질 때마다 재빌드 표시 찍기
+	const int32 currentCount = GetRenderInfos().Num();
+	if (currentCount != mLastRenderInfoCount)
+	{
+		mLastRenderInfoCount = currentCount;
+		mbOctreeDirty = true;
+	}
+
+	if (mbOctreeDirty)
+	{
+		{
+			FScopeCycleCounter counter({ EStatId::OctreeBuild });
+			mOctree.Build(GetRenderInfos());
+		}
+
+		// ---------------------------
+		//		임시용(삭제 필요)
+		// ---------------------------
+		UE_LOG_F(Warning, Core, "Octree: nodes={}, inside={}, outside={}, maxNodeObjects={}",
+			mOctree.GetNodeCount(),
+			mOctree.GetInsideCount(),
+			mOctree.GetOutsideCount(),
+			mOctree.GetMaxNodeObjectCount());
+
+		mbOctreeDirty = false;
+	}
+
+
+	// ---------------------------
+	//		임시용(삭제 필요)
+	// ---------------------------
+	static int32 sFrames = 0;
+	if (++sFrames % 120 == 0)
+	{
+		const FCycleStat& stat = FScopeCycleCounter::GetCycleStat({ EStatId::OctreeBuild });
+
+		UE_LOG_F(Warning, Core, "Octree build: last={} ms, avg={} ms",
+			FPlatformTime::ToMilliseconds(stat.LastCycles),
+			stat.CycleCount > 0 ? FPlatformTime::ToMilliseconds(stat.TotalCycles) / stat.CycleCount : 0.0);
+	}
 }
 
 void FSceneManager::NewScene()

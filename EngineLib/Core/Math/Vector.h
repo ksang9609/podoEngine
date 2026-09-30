@@ -47,6 +47,7 @@ typedef struct FVector
 
 const FVector operator*(const FVector& v, float f);
 const FVector operator*(float f, const FVector& v);
+const FVector operator/(const FVector& v, float f);
 
 //Vector 4
 typedef struct alignas(16) FVector4

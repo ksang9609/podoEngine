@@ -144,6 +144,11 @@ inline const FVector operator*(float f, const FVector& v)
 	return FVector(v.x * f, v.y * f, v.z * f);
 }
 
+inline const FVector operator/(const FVector& v, float f)
+{
+	return FVector(v.x / f, v.y / f, v.z / f);
+}
+
 inline void FVector::Serialize(FStructuredArchive& archive)
 {
 	archive << TNamedValue{ "x", x };
