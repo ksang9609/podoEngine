@@ -185,6 +185,28 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			continue;
 		}
 
+		// Use BVH if renderinfo has UStaticMesh
+		if (RI->StaticMeshAsset)
+		{
+			const FStaticMesh& staticMesh = *RI->StaticMeshAsset->GetStaticMeshAsset();
+			const FMeshBVH& bvh = RI->StaticMeshAsset->GetBVH();
+
+			assert(!bvh.IsEmpty());
+
+			FRayTriangleHit hitResult;
+			if (bvh.Raycast(LocalNear, LocalFar,
+				staticMesh.LODs[0].Vertices, indexArray,
+				hitResult, 1.0f) &&
+				(hitResult.T < NearlistT))
+			{
+				NearlistT = hitResult.T;
+				bMouseHit = true;
+				mHoveredRenderInfo = *RI;
+			}
+
+			continue;
+		}
+
 		// 삼각형 리스트라 정점 3개씩 묶인다
 		for (uint32 i = 0; i + 2 < indexArray.Num(); i += 3)
 		{

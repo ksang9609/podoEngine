@@ -41,7 +41,7 @@ void UStaticMesh::SetStaticMeshAsset(FStaticMesh* inStaticMesh)
 	{
 		mStaticMeshAsset->LODs[0].BufferKey = mStaticMeshAsset->PathFileName;
 	}
-
+	mBVH.Build(mStaticMeshAsset->LODs[0].Vertices, mStaticMeshAsset->LODs[0].Indices);
 }
 
 void UStaticMesh::SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh)
@@ -52,6 +52,7 @@ void UStaticMesh::SetStaticMeshAsset(std::unique_ptr<FStaticMesh> inStaticMesh)
 	{
 		mStaticMeshAsset->LODs[0].BufferKey = mStaticMeshAsset->PathFileName;
 	}
+	mBVH.Build(mStaticMeshAsset->LODs[0].Vertices, mStaticMeshAsset->LODs[0].Indices);
 }
 
 const FStaticMesh* UStaticMesh::GetStaticMeshAsset() const

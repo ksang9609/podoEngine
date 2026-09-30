@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 #include "Core/Core.h"
 #include "Core/Math/Vector.h"
 #include "Core/Math/FBoundingBox.h"
@@ -59,8 +61,8 @@ namespace Raycast
 				std::swap(t0, t1);
 			}
 
-			enter = std::max(enter, t0);
-			exit = std::min(exit, t1);
+			enter = (std::max)(enter, t0);
+			exit = (std::min)(exit, t1);
 
 			if (enter > exit)
 			{
