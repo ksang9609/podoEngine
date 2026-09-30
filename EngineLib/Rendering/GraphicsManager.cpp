@@ -319,6 +319,8 @@ void FGraphicsManager::Initialize(
 
 	mGpuResourceManagerRef = &gpuResourceManager;
 	mAssetManagerRef = &assetManager;
+
+	mHiZBuffer.Initialize(mRenderer->GetDevice());
 }
 
 void FGraphicsManager::BeginFrame()
@@ -508,6 +510,50 @@ void FGraphicsManager::RenderSceneView(
 		selectedActor->GetFirstRenderInfo(clickedRenderInfo);
 		renderHighLight(clickedRenderInfo, view);
 	}
+
+	if (mbEnableHiZ)
+	{
+		ID3D11DeviceContext* context = mRenderer->GetDeviceContext();
+		ID3D11Device* device = mRenderer->GetDevice();
+		ID3D11ShaderResourceView* depthSRV = mRenderer->GetDepthBufferSRV();
+		const TArray<const FRenderInfo*>& staticMeshQueue = renderQueueMap[RQT_StaticMesh];
+		D3D11_VIEWPORT totalVP = mRenderer->GetViewportInfo();
+
+		if (depthSRV && staticMeshQueue.Num() > 0)
+		{
+			// To prevent hazard
+			ID3D11RenderTargetView* nullRTV = nullptr;
+			context->OMSetRenderTargets(1, &nullRTV, nullptr);
+
+			// Create Mipmap
+			mHiZBuffer.BuildHiZ(
+				context,
+				depthSRV,
+				view.Rect.X,
+				view.Rect.Y,
+				view.Rect.Width,
+				view.Rect.Height,
+				totalVP.Width,
+				totalVP.Height
+			);
+
+			// Copy staging for next frame
+			mHiZBuffer.ExecuteOcclusionCull(
+				context,
+				device,
+				staticMeshQueue,
+				view.viewProjectionMatrix,
+				(float)view.Rect.Width,
+				(float)view.Rect.Height,
+				view.nearZ
+			);
+
+			// Restore RTV
+			ID3D11RenderTargetView* mainRTV = mRenderer->GetFrameBufferRTV();
+			ID3D11DepthStencilView* mainDSV = mRenderer->GetDepthStencilView();
+			context->OMSetRenderTargets(1, &mainRTV, mainDSV);
+		}
+	}
 }
 
 void FGraphicsManager::RenderGizmoView(const TArray<const FRenderInfo*>& gizmoRenderInfos, const FSceneView& view)
@@ -606,6 +652,17 @@ void FGraphicsManager::renderParticle(const TArray<const FRenderInfo*>& renderIn
 
 void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
+	if (renderInfos.Num() == 0)
+	{
+		return;
+	}
+
+	TArray<const FRenderInfo*> visibleRenderInfos;
+	if (mbEnableHiZ)
+	{
+		hiZOcclusionCulling(renderInfos, visibleRenderInfos);
+	}
+
 	assert(mGpuResourceManagerRef);
 	auto& resources = *mGpuResourceManagerRef;
 	auto& assets = *mAssetManagerRef;
@@ -622,9 +679,7 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 
 	const UMaterial* defaultMaterialAsset = assets.FindMaterialAssetOrNull(BuiltinAssets::DefaultMaterial);
 	assert(defaultMaterialAsset != nullptr);
-
-
-	sortStaticMeshRenderQueue(renderInfos,
+	sortStaticMeshRenderQueue((mbEnableHiZ ? visibleRenderInfos : renderInfos),
 		sortedQueue,
 		view,
 		*defaultMaterialAsset,
@@ -883,7 +938,55 @@ void FGraphicsManager::renderStaticMesh(const TArray<const FRenderInfo*>& render
 
 //}
 
+void FGraphicsManager::hiZOcclusionCulling(const TArray<const FRenderInfo*>& inRenderInfos, TArray<const FRenderInfo*>& outRenderInfos)
+{
+	// Get visibility mask from prev frame(N - 1)
+	ID3D11DeviceContext* context = mRenderer->GetDeviceContext();
+	uint32 maskCount = 0;
+	const uint32* visibilityMask = nullptr;
+	if (mbEnableHiZ)
+	{
+		visibilityMask = mHiZBuffer.ReadbackVisibility(context, maskCount);
+	}
 
+	if (!visibilityMask)
+	{
+		outRenderInfos = inRenderInfos;
+		return;
+	}
+
+	// Get renderInfos	
+	outRenderInfos.Reserve(inRenderInfos.Num());
+	for (const FRenderInfo* info : inRenderInfos)
+	{
+		uint32 id = info->ObejctID.InternalIndex;
+		if (id >= maskCount || visibilityMask[id] != 0)
+		{
+			outRenderInfos.Add(info);
+		}
+	}
+
+	mHiZBuffer.UnmapVisibility(context);
+
+	uint32 frustumPassed = (uint32)inRenderInfos.Num();
+	uint32 actuallyRendered = (uint32)outRenderInfos.Num();
+	uint32 occludedCount = (frustumPassed >= actuallyRendered) ? (frustumPassed - actuallyRendered) : 0;
+	float cullRatio = (frustumPassed > 0) ? ((float)occludedCount / frustumPassed * 100.0f) : 0.0f;
+	UE_LOG(Log, Render, "[Hi-Z Stats] Occlusion pass: %u -> rendering: %u (culling: %u, %.1f%%)",
+		frustumPassed, actuallyRendered, occludedCount, cullRatio);
+}
+
+void FGraphicsManager::SetEnableHiZ(bool bEnable)
+{
+	if (mbEnableHiZ != bEnable)
+	{
+		mbEnableHiZ = bEnable;
+		if (mbEnableHiZ)
+		{
+			mHiZBuffer.ResetStagingState();			
+		}
+	}
+}
 
 void FGraphicsManager::renderTexturedPrimitive(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view)
 {
