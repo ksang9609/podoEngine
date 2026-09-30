@@ -134,12 +134,15 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			continue;
 		}
 
-		const FMatrix effectiveWorld = RI->GetTransformMatrix(mCamera.Rotation);
-
-		const FBoundingBox worldBounds =
-			RI->MeshName == BuiltinAssets::BillboardQuadTextured
-			? TransformBoundingBox(RI->LocalBounds, effectiveWorld)
-			: RI->WorldBounds;
+		FBoundingBox worldBounds;
+		if (RI->MeshName == BuiltinAssets::BillboardQuadTextured)
+		{
+			worldBounds = TransformBoundingBox(RI->LocalBounds, RI->GetTransformMatrix(mCamera.Rotation));
+		}
+		else
+		{
+			worldBounds = RI->WorldBounds;
+		}
 
 		// 월드 AABB 검사=
 		float enter, exit;
