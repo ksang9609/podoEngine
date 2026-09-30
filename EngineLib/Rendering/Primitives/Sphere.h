@@ -3102,18 +3102,22 @@ inline uint32 Sphere_indices[2400] =
 
 inline FStaticMesh SphereMesh = {
 	.PathFileName = BuiltinAssets::SphereMesh,
-	.Vertices = SphereNormal_vertices,
-	.Indices = Sphere_indices,
+	.LODs = {
+		FStaticMeshLOD{
+			.Vertices = SphereNormal_vertices,
+			.Indices = Sphere_indices,
 
-	.Sections = {
-		{
-			.Name = "SphereSection",
-			.MaterialSlotIndex = 0,
-			.StartIndex = 0,
-			.IndexCount = 2400,
-			.GroupIndex = 0,
+			.Sections = {
+				{
+					.Name = "SphereSection",
+					.MaterialSlotIndex = 0,
+					.StartIndex = 0,
+					.IndexCount = 2400,
+					.GroupIndex = 0,
+				}
+			}
 		}
-	}
+	},
 };
 
 inline FMaterial SphereMaterial = {

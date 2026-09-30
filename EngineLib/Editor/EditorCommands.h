@@ -50,6 +50,8 @@ struct FSetParticleSubUVComponentPlayRateCommand { FObjectID ObjectID; float Pla
 struct FSetParticleSubUVComponentBlendStateTypeCommand { FObjectID ObjectID; EBlendStateType BlendStateType; };
 struct FSetPropertyCommand { FObjectID ObjectID; FString PropertyName; FPropertyValue NewValue; };
 
+struct FGenerateStaticMeshLODCommand { FName StaticMeshKey; float ReductionRate;  float ScreenSize; };
+
 /* EditorViewportClient Commands */
 struct FSetViewModeCommand { EViewModeIndex ViewMode; };
 struct FSetShowFlagCommand { uint32 ShowFlags; };
@@ -106,6 +108,8 @@ using FEditorCommand = std::variant <
 	FSetParticleSubUVComponentPlayRateCommand,
 	FSetParticleSubUVComponentBlendStateTypeCommand,
 	FSetPropertyCommand,
+
+	FGenerateStaticMeshLODCommand,
 
 	FSetViewModeCommand,
 	FSetShowFlagCommand,
