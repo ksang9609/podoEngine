@@ -144,6 +144,11 @@ inline const FVector operator*(float f, const FVector& v)
 	return FVector(v.x * f, v.y * f, v.z * f);
 }
 
+inline const FVector operator/(const FVector& v, float f)
+{
+	return FVector(v.x / f, v.y / f, v.z / f);
+}
+
 inline void FVector::Serialize(FStructuredArchive& archive)
 {
 	archive << TNamedValue{ "x", x };
@@ -153,50 +158,50 @@ inline void FVector::Serialize(FStructuredArchive& archive)
 
 inline FVector4 FVector4::operator-(const FVector4& other) const
 {
-	__m128 A = _mm_load_ps(&x);
-	__m128 B = _mm_load_ps(&other.x);
+	__m128 A = _mm_loadu_ps(&x);
+	__m128 B = _mm_loadu_ps(&other.x);
 	__m128 Res = _mm_sub_ps(A, B);
 
 	FVector4 ret;
-	_mm_store_ps(&ret.x, Res);
+	_mm_storeu_ps(&ret.x, Res);
 	return ret;
 }
 
 inline FVector4 FVector4::operator+(const FVector4& other) const
 {
-	__m128 A = _mm_load_ps(&x);
-	__m128 B = _mm_load_ps(&other.x);
+	__m128 A = _mm_loadu_ps(&x);
+	__m128 B = _mm_loadu_ps(&other.x);
 	__m128 Res = _mm_add_ps(A, B);
 
 	FVector4 ret;
-	_mm_store_ps(&ret.x, Res);
+	_mm_storeu_ps(&ret.x, Res);
 	return ret;
 }
 
 inline FVector4& FVector4::operator+=(const FVector4& other)
 {
-	__m128 A = _mm_load_ps(&x);
-	__m128 B = _mm_load_ps(&other.x);
+	__m128 A = _mm_loadu_ps(&x);
+	__m128 B = _mm_loadu_ps(&other.x);
 	__m128 Res = _mm_add_ps(A, B);
 
-	_mm_store_ps(&x, Res);
+	_mm_storeu_ps(&x, Res);
 	return *this;
 }
 
 inline FVector4& FVector4::operator-=(const FVector4& other)
 {
-	__m128 A = _mm_load_ps(&x);
-	__m128 B = _mm_load_ps(&other.x);
+	__m128 A = _mm_loadu_ps(&x);
+	__m128 B = _mm_loadu_ps(&other.x);
 	__m128 Res = _mm_sub_ps(A, B);
 
-	_mm_store_ps(&x, Res);
+	_mm_storeu_ps(&x, Res);
 	return *this;
 }
 
 inline float FVector4::dot(const FVector4& A, const FVector4& B)
 {
-	__m128 rA = _mm_load_ps(&A.x);
-	__m128 rB = _mm_load_ps(&B.x);
+	__m128 rA = _mm_loadu_ps(&A.x);
+	__m128 rB = _mm_loadu_ps(&B.x);
 	__m128 Res = _mm_dp_ps(rA, rB, 0xF1);
 
 	return _mm_cvtss_f32(Res);
@@ -210,7 +215,7 @@ inline float FVector4::LengthSqr() const
 inline float FVector4::Length() const
 {
 	//return FMath::Sqrt(LengthSqr());
-	__m128 rA = _mm_load_ps(&x);
+	__m128 rA = _mm_loadu_ps(&x);
 	__m128 Dot = _mm_dp_ps(rA, rA, 0xF1);
 	__m128 Len = _mm_sqrt_ss(Dot);
 
@@ -219,24 +224,23 @@ inline float FVector4::Length() const
 
 inline const FVector4 operator*(const FVector4& v, float f)
 {
-	__m128 A = _mm_load_ps(&v.x);
+	__m128 A = _mm_loadu_ps(&v.x);
 	__m128 B = _mm_set1_ps(f);
 	__m128 Res = _mm_mul_ps(A, B);
 
 	FVector4 ret;
-	_mm_store_ps(&ret.x, Res);
+	_mm_storeu_ps(&ret.x, Res);
 	return ret;
 }
 
 inline const FVector4 operator*(float f, const FVector4& v)
 {
-	return FVector4(v.x * f, v.y * f, v.z * f, v.w * f);
-	__m128 A = _mm_load_ps(&v.x);
+	__m128 A = _mm_loadu_ps(&v.x);
 	__m128 B = _mm_set1_ps(f);
 	__m128 Res = _mm_mul_ps(A, B);
 
 	FVector4 ret;
-	_mm_store_ps(&ret.x, Res);
+	_mm_storeu_ps(&ret.x, Res);
 	return ret;
 }
 

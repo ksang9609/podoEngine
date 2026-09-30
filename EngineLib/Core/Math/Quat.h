@@ -2,7 +2,7 @@
 
 struct FRotator;
 
-struct FQuat
+struct alignas(16) FQuat
 {
 	float x, y, z, w;
 

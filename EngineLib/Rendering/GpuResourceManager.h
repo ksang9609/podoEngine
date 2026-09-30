@@ -90,6 +90,9 @@ public:
 	uint32 GetImmutableBufferCount() const { return mImmutableBufferMap.Num(); }
 	uint32 GetTextureCount() const { return mTextureMap.Num(); }
 
+	// LOD
+	void RegisterLODBuffer(FName meshName, int32 lodIndex, const FStaticMeshLOD lodData);
+
 private:
 	/* References */
 	ID3D11Device* mDeviceRef = nullptr;

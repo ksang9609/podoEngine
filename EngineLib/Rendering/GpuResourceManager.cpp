@@ -113,7 +113,7 @@ const FBuffer* FGpuResourceManager::FindImmutableBufferOrAdd(FName bufferName)
 	const FStaticMesh* staticMeshData = staticMeshAsset->GetStaticMeshAsset();
 	if (staticMeshData)
 	{
-		CreateBuffer(bufferName, staticMeshData->Vertices, staticMeshData->Indices);
+		CreateBuffer(bufferName, staticMeshData->LODs[0].Vertices, staticMeshData->LODs[0].Indices);
 		return mImmutableBufferMap.Find(bufferName);
 	}
 	else
@@ -1208,7 +1208,6 @@ bool FGpuResourceManager::EnsureInstanceCapacity(uint32 instanceCount)
 	constexpr uint32 maxCount = 100000; // arbitary limit to prevent excessive memory allocation
 	constexpr uint32 instanceSize = sizeof(FInstanceData);
 
-
 	if (instanceCount > mMaxInstanceCount)
 	{
 		// Recreate the instance buffer with the new size
@@ -1226,4 +1225,11 @@ bool FGpuResourceManager::EnsureInstanceCapacity(uint32 instanceCount)
 		return true;
 	}
 	return true;
+}
+
+void FGpuResourceManager::RegisterLODBuffer(FName meshName, int32 lodIndex, const FStaticMeshLOD lodData)
+{
+	FName lodKey = FName(std::format("{}_LOD{}", meshName.ToString(), lodIndex));
+
+	CreateBuffer(lodKey, lodData.Vertices, lodData.Indices);
 }

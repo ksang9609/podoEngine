@@ -477,15 +477,15 @@ bool FObjViewerApplication::LoadObjFile(const std::filesystem::path& objPath)
 		const UStaticMesh& meshAsset = mAssetManager->FindStaticMeshAssetOrAdd(FName(pathString.c_str()));
 		const FStaticMesh* meshData = meshAsset.GetStaticMeshAsset();
 
-		if (meshData == nullptr || meshData->Vertices.IsEmpty())
+		if (meshData == nullptr || meshData->LODs[0].Vertices.IsEmpty())
 		{
 			return false;
 		}
 
-		FVector boundsMin = meshData->Vertices[0].pos;
+		FVector boundsMin = meshData->LODs[0].Vertices[0].pos;
 		FVector boundsMax = boundsMin;
 
-		for (const FNormalVertex& vertex : meshData->Vertices)
+		for (const FNormalVertex& vertex : meshData->LODs[0].Vertices)
 		{
 			boundsMin.x = FMath::Min(boundsMin.x, vertex.pos.x);
 			boundsMin.y = FMath::Min(boundsMin.y, vertex.pos.y);

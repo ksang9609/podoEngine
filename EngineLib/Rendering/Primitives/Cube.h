@@ -146,17 +146,20 @@ inline uint32 Cube_indices[36] =
 
 inline FStaticMesh CubeMesh = {
 	.PathFileName = BuiltinAssets::CubeMesh,
-	.Vertices = CubeNormal_vertices,
-	.Indices = Cube_indices,
-
-	.Sections = {
-		{
-			.Name = "CubeSection",
-			.MaterialSlotIndex = 0,
-			.StartIndex = 0,
-			.IndexCount = 36,
+	.LODs = {
+		FStaticMeshLOD{
+			.Vertices = CubeNormal_vertices,
+			.Indices = Cube_indices,
+			.Sections = {
+				{
+					.Name = "CubeSection",
+					.MaterialSlotIndex = 0,
+					.StartIndex = 0,
+					.IndexCount = 36,
+				}
+			}
 		}
-	}
+	},
 };
 
 

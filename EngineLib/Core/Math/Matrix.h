@@ -47,7 +47,7 @@ struct alignas(16) FMatrix {
 	static FMatrix RotateZ(float degree); // Yaw : Z축 회전
 	static FMatrix Rotate(const FRotator r);
 	// Rotate matrix from quaternion.
-	static FMatrix Rotate(const FQuat q);
+	static FMatrix Rotate(const FQuat& q);
 
 	static FMatrix Translation(const FVector v);
 
