@@ -2,7 +2,7 @@
 
 workspace "JungleEngine"
     location "."
-    configurations { "Debug", "Release", "ObjViewerDebug"}
+    configurations { "Debug", "Release", "Release_speed", "Release_optimise", "ObjViewerDebug"}
     platforms { "x64" }
     startproject "EngineApp"
 
@@ -31,6 +31,18 @@ workspace "JungleEngine"
         runtime "Release"
         symbols "On"
         optimize "Off"
+
+    filter "configurations:Release_speed"
+        defines { "NDEBUG" }
+        runtime "Release"
+        symbols "On"
+        optimize "Speed"
+
+    filter "configurations:Release_optimise"
+        defines { "NDEBUG" }
+        runtime "Release"
+        symbols "Off"
+        optimize "Full"
         
     filter "configurations:ObjViewerDebug"
         defines { "_DEBUG", "IS_OBJ_VIEWER=1" }
