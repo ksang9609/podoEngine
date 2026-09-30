@@ -183,6 +183,10 @@ private:
 	void renderParticle(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 	void renderStaticMesh(const TArray<const FRenderInfo*>& renderInfos, const FSceneView& view);
 
+	//Culling
+	TArray<uint32> mCullInside;
+	TArray<uint32> mCullIntersect;
+
 
 	// Instancing Test
 	//void RenderInstancingTest();

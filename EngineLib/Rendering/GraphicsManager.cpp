@@ -357,16 +357,15 @@ void FGraphicsManager::RenderSceneView(
 	mRenderer->SetViewMode(view.viewMode);
 	const FFrustum frustum = FFrustum::FrustumFromViewProjection(view.viewProjectionMatrix);
 
-	TArray<uint32> inside, intersect;
-	octree.FrustumCull(frustum, inside, intersect);
+	octree.FrustumCull(frustum, mCullInside, mCullIntersect);
 
 	// 인스턴스 테스트용(큐브 1만개 출력=
 	// Prepare Render queue
 	// renderInfos includes primtives, textured primitives, billboard, and gizmo render infos
 	// Each render info is splitted into different render queues
 	TMap<ERenderQueueType, TArray<const FRenderInfo*>> renderQueueMap;
-	updateRenderQueue(scenerRenderInfos, &inside, renderQueueMap, nullptr, view.showFlags);
-	updateRenderQueue(scenerRenderInfos, &intersect, renderQueueMap, &frustum, view.showFlags);
+	updateRenderQueue(scenerRenderInfos, &mCullInside, renderQueueMap, nullptr, view.showFlags);
+	updateRenderQueue(scenerRenderInfos, &mCullIntersect, renderQueueMap, &frustum, view.showFlags);
 	updateRenderQueue(axisRenderInfos, nullptr, renderQueueMap, nullptr, view.showFlags);
 
 	sortRenderQueueByDistance(renderQueueMap[RQT_Particle], view.cameraLocation, view.cameraForward);
