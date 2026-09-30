@@ -12,6 +12,7 @@ using FPlatformTime = FWindowsPlatformTime;
 enum class EStatId
 {
 	Picking,
+	OctreeBuild,
 };
 
 struct TStatId

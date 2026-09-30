@@ -17,6 +17,7 @@
 #include "Rendering/Primitives/Primitives.h"
 #include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/Triangle.h"
+#include <algorithm>
 
 
 // 정점 배열이 보이는 스코프라 sizeof 로 개수가 나온다.
@@ -60,7 +61,7 @@ void FEditorViewportClient::Initialize(FAssetManager& assetManagerRef)
 	mGizmo.Reset();
 }
 
-void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject)
+void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<const FRenderInfo*>& renderInfos, bool bCheckObject, const FOctree& octree)
 {
 	assert(mAssetManagerRef != nullptr);
 
@@ -111,12 +112,19 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 		return;
 	}
 
+	TArray<uint32> candidates;
+	octree.Raycast(NearPoint, FarPoint - NearPoint, candidates);
+
 	// Record the time spent in RayCast for profiling until the end of this function
 	FScopeCycleCounter cycleCounter({ EStatId::Picking });
 
+	TArray<FPickCandidate> Hits;
+
 	// Object 탐색
-	for (const FRenderInfo* RI : renderInfos)
+	for (uint32 objectIndex : candidates)
 	{
+		const FRenderInfo* RI = renderInfos[objectIndex];
+
 		assert(RI);
 
 		if (!HasAllRenderFlags(RI->eRenderFlags, ERenderFlags::RF_Raycastable))
@@ -131,12 +139,23 @@ void FEditorViewportClient::RayCast(const FViewRect& viewrect, const TArray<cons
 			? TransformBoundingBox(RI->LocalBounds, effectiveWorld)
 			: RI->WorldBounds;
 
-		// 월드 AABB 검사
-		//if (!RaycastBounds(NearPoint, FarPoint, worldBounds))
-		if (!Raycast::IntersectSegmentAABB(NearPoint, FarPoint, worldBounds, 1.0f))
+		// 월드 AABB 검사=
+		float enter, exit;
+		if (!Raycast::IntersectSegmentAABB(NearPoint, FarPoint, worldBounds, 1.0f, enter, exit))
 		{
 			continue;
 		}
+
+		Hits.Add({ enter, objectIndex });
+	}
+	std::sort(Hits.begin(), Hits.end());
+
+	for (const FPickCandidate& Hit : Hits)
+	{
+		if (Hit.TMin >= NearlistT) break;
+
+		const FRenderInfo* RI = renderInfos[Hit.ObjectIndex];
+		const FMatrix effectiveWorld = RI->GetTransformMatrix(mCamera.Rotation);
 
 		const FMatrix WorldToLocal = effectiveWorld.Inverse();
 
@@ -336,7 +355,7 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 
 	const bool bLeftClicked = bViewportHovered && Input.WasPressed(VK_LBUTTON);
 
-	RayCast(viewRect, sceneManager->GetRenderInfos(), bLeftClicked);
+	RayCast(viewRect, sceneManager->GetRenderInfos(), bLeftClicked, sceneManager->GetOctree());
 
 	////Editor Click 처리
 	//if (mClickedActor)
@@ -453,6 +472,8 @@ void FEditorViewportClient::Update(float deltaTime, const FViewRect& viewRect, F
 	//Gizmo 축을 클릭한 상태로 마우스 이동이 있으면 해당 축 방향으로 ClickedActor을 변형한다.
 	if (mGizmo.mDraggingAxis != EGIZMO_AXIS::NONE && sceneManager->IsActorSelected())
 	{
+		sceneManager->MarkOctreeDirty();
+
 		if (mGizmo.eType == EGIZMO_TYPE::TRANSLATE)
 		{
 			// 절대 좌표가 아니라 시작 시점 대비 변위. 축 직선도 시작 시점에 고정돼 있다
