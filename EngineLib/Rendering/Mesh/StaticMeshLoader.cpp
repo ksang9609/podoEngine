@@ -5,6 +5,7 @@
 
 #include "Core/Archive/Archive.h"
 #include "Core/IO/FileManager.h"
+#include "Core/IO/PathEncoding.h"
 #include "Core/IO/WindowsBinReader.h"
 #include "Core/IO/WindowsBinWriter.h"
 #include "Core/Name.h"
@@ -24,7 +25,7 @@ namespace
 		(static_cast<uint32>('S') << 16) |
 		(static_cast<uint32>('H') << 24);
 
-	constexpr uint32 StaticMeshBinaryVersion = 3;
+	constexpr uint32 StaticMeshBinaryVersion = 4;
 
 	constexpr uint32 MaxVertices = 10'000'000;
 	constexpr uint32 MaxIndices = 30'000'000;
@@ -35,7 +36,7 @@ namespace
 	std::filesystem::path ResolvePath(
 		const FString& pathString)
 	{
-		std::filesystem::path path( pathString.CStr());
+		std::filesystem::path path = PathEncoding::FromExternal(pathString.CStr());
 
 		if (path.is_relative())
 		{
@@ -145,7 +146,7 @@ namespace
 		{
 			// 현재 importer가 넣어 주는 텍스처 경로는 절대 경로.
 			const std::filesystem::path absolutePath(
-				texture.ToString().CStr());
+				PathEncoding::FromUtf8(texture.ToString().CStr()));
 
 			const auto relativePath =
 				absolutePath.lexically_relative(binaryDirectory);
@@ -157,14 +158,14 @@ namespace
 				return;
 			}
 
-			storedPath = FString(relativePath.generic_string().c_str());
+			storedPath = FString(PathEncoding::ToUtf8(relativePath).c_str());
 		}
 
 		archive << storedPath;
 
 		if (archive.IsLoading() && !archive.HasError())
 		{
-			const std::filesystem::path relativePath(storedPath.CStr());
+			const std::filesystem::path relativePath(PathEncoding::FromUtf8(storedPath.CStr()));
 
 			if (relativePath.empty() || relativePath.is_absolute())
 			{
@@ -175,7 +176,7 @@ namespace
 			const auto absolutePath =
 				(binaryDirectory / relativePath).lexically_normal();
 
-			texture = FName(FString(absolutePath.string().c_str()));
+			texture = FName(FString(PathEncoding::ToUtf8(absolutePath).c_str()));
 		}
 	}
 
@@ -517,7 +518,7 @@ namespace
 			materialLibraryPaths)
 		{
 			std::filesystem::path materialPath(
-				storedPath.CStr());
+				PathEncoding::FromUtf8(storedPath.CStr()));
 
 			if (materialPath.empty())
 			{

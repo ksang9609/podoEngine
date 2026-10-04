@@ -7,6 +7,7 @@
 #include <Windows.h>
 
 #include "Core/BuiltinAssets.h"
+#include "Core/IO/PathEncoding.h"
 #include "Rendering/Primitives/Cube.h"
 #include "Rendering/Primitives/Sphere.h"
 #include "Rendering/Primitives/Triangle.h"
@@ -161,7 +162,7 @@ ID3D11ShaderResourceView* FGpuResourceManager::FindTextureOrAdd(FName texturePat
 	}
 	else
 	{
-		assert(false && "Failed to create or find texture.");
+		// A failed load is logged by the loader and may be retried on a later request.
 		return nullptr;
 	}
 }
@@ -425,13 +426,18 @@ void FGpuResourceManager::CreateTextureFromDDS(FName texturePath)
 	ComPtr<ID3D11ShaderResourceView> textureSRV;
 
 	FString texturePathStr = texturePath.ToString();
-	std::wstring texturePathW = std::wstring(texturePathStr.begin(), texturePathStr.end());
-	DirectX::CreateDDSTextureFromFile(
+	std::wstring texturePathW = PathEncoding::FromExternal(texturePathStr.CStr()).wstring();
+	HRESULT hr = DirectX::CreateDDSTextureFromFile(
 		mDeviceRef,
 		texturePathW.c_str(),
 		nullptr,
 		textureSRV.GetAddressOf());
 
+	if (FAILED(hr))
+	{
+		UE_LOG(Error, Render, "Failed to load texture '%s' (HRESULT: 0x%08lX)", texturePathStr.CStr(), static_cast<unsigned long>(hr));
+		return;
+	}
 	mTextureMap.Add(texturePath, std::move(textureSRV));
 }
 
@@ -441,8 +447,8 @@ void FGpuResourceManager::CreateTextureFromWIC(FName texturePath)
 	assert(mDeviceRef != nullptr && "Device reference is not set. Call SetDevice() before creating resources.");
 	ComPtr<ID3D11ShaderResourceView> textureSRV;
 	FString  texturePathStr = texturePath.ToString();
-	std::wstring texturePathW = std::wstring(texturePathStr.begin(), texturePathStr.end());
-	DirectX::CreateWICTextureFromFileEx(
+	std::wstring texturePathW = PathEncoding::FromExternal(texturePathStr.CStr()).wstring();
+	HRESULT hr = DirectX::CreateWICTextureFromFileEx(
 		mDeviceRef,
 		texturePathW.c_str(),				// Path to the texture file
 		0,									// Default maximum size (0 means no limit)
@@ -453,6 +459,11 @@ void FGpuResourceManager::CreateTextureFromWIC(FName texturePath)
 		DirectX::WIC_LOADER_IGNORE_SRGB,
 		nullptr,							// No resource pointer needed
 		textureSRV.GetAddressOf());
+	if (FAILED(hr))
+	{
+		UE_LOG(Error, Render, "Failed to load texture '%s' (HRESULT: 0x%08lX)", texturePathStr.CStr(), static_cast<unsigned long>(hr));
+		return;
+	}
 	mTextureMap.Add(texturePath, std::move(textureSRV));
 }
 
@@ -463,9 +474,9 @@ void FGpuResourceManager::CreateUnicodeFontTexture(FName texturePath)
 	ComPtr<ID3D11ShaderResourceView> textureSRV;
 
 	FString  texturePathStr = texturePath.ToString();
-	std::wstring texturePathW = std::wstring(texturePathStr.begin(), texturePathStr.end());
+	std::wstring texturePathW = PathEncoding::FromExternal(texturePathStr.CStr()).wstring();
 
-	DirectX::CreateWICTextureFromFileEx(
+	HRESULT hr = DirectX::CreateWICTextureFromFileEx(
 		mDeviceRef,
 		texturePathW.c_str(),				// Path to the texture file
 		0,									// Default maximum size (0 means no limit)
@@ -477,6 +488,11 @@ void FGpuResourceManager::CreateUnicodeFontTexture(FName texturePath)
 		nullptr,							// No resource pointer needed
 		textureSRV.GetAddressOf());
 
+	if (FAILED(hr))
+	{
+		UE_LOG(Error, Render, "Failed to load texture '%s' (HRESULT: 0x%08lX)", texturePathStr.CStr(), static_cast<unsigned long>(hr));
+		return;
+	}
 	mTextureMap.Add(texturePath, std::move(textureSRV));
 }
 

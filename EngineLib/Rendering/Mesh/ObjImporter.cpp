@@ -1,5 +1,6 @@
 ﻿#include "ObjImporter.h"
 #include "Core/IO/FileManager.h"
+#include "Core/IO/PathEncoding.h"
 #include "Editor/Console.h"
 #include "StaticMesh.h"
 #include <filesystem>
@@ -245,7 +246,7 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 
 	// OBJ 파일이 Assets 폴더에 있다면 kDefaultAssetsPath
 	// 실행 폴더 바로 아래에 있다면 kDefaultRootPath
-	std::filesystem::path objFilePath = std::filesystem::path{kDefaultRootPath} / fileName.CStr();
+	std::filesystem::path objFilePath = std::filesystem::path{kDefaultRootPath} / PathEncoding::FromExternal(fileName.CStr());
 	std::ifstream fileIn(objFilePath.c_str());    //Open file
 
 	if (!fileIn.is_open())
@@ -314,13 +315,13 @@ bool FObjImporter::parseObjFile(const FString& fileName, FObjInfo& outObjInfo)
 			{
 				//UE_LOG(Log, Render, MtlFileName.CStr());
 
-				const std::filesystem::path relativePath = std::filesystem::path(MtlFileName.CStr());
-				const FString normalizedPath(relativePath.string().c_str());
+				const std::filesystem::path relativePath = PathEncoding::FromExternal(MtlFileName.CStr());
+				const FString normalizedPath(PathEncoding::ToUtf8(relativePath).c_str());
 				outObjInfo.MaterialLibraryPaths.Add(normalizedPath);
 
 
 				// MTL 파일 경로를 OBJ 파일 경로와 동일한 디렉토리에 있다고 가정하고 Path 등록
-				const auto mtlFilePath = objFilePath.parent_path() / MtlFileName.CStr();
+				const auto mtlFilePath = objFilePath.parent_path() / relativePath;
 				parseMtlFile(mtlFilePath, outObjInfo.MaterialSlots);
 			}
 		}
@@ -555,8 +556,8 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FM
 			if (!ReadToken(Cursor, DiffuseTexturePath)) { continue; }
 
 			//실제 경로 저장
-			const std::filesystem::path texturePath = std::filesystem::absolute(filePath.parent_path() / DiffuseTexturePath.CStr()).lexically_normal();
-			currentMaterial.DiffuseTexture =  FString(texturePath.string().c_str());
+			const std::filesystem::path texturePath = std::filesystem::absolute(filePath.parent_path() / PathEncoding::FromExternal(DiffuseTexturePath.CStr())).lexically_normal();
+			currentMaterial.DiffuseTexture =  FString(PathEncoding::ToUtf8(texturePath).c_str());
 
 			UE_LOG(Log, Render, "map_Kd %s", DiffuseTexturePath.CStr());
 		}
@@ -566,8 +567,8 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FM
 			if (!ReadToken(Cursor, NormalTexturePath)) { continue; }
 
 			//실제 경로 저장
-			const std::filesystem::path texturePath = std::filesystem::absolute(filePath.parent_path() / NormalTexturePath.CStr()).lexically_normal();
-			currentMaterial.NormalTexture = FString(texturePath.string().c_str());
+			const std::filesystem::path texturePath = std::filesystem::absolute(filePath.parent_path() / PathEncoding::FromExternal(NormalTexturePath.CStr())).lexically_normal();
+			currentMaterial.NormalTexture = FString(PathEncoding::ToUtf8(texturePath).c_str());
 			
 			UE_LOG(Log, Render, "map_bump %s", NormalTexturePath.CStr());
 		}
@@ -577,8 +578,8 @@ bool FObjImporter::parseMtlFile(const std::filesystem::path& filePath, TArray<FM
 			if (!ReadToken(Cursor, SpecularTexturePath)) { continue; }
 
 			//실제 경로 저장
-			const std::filesystem::path texturePath = std::filesystem::absolute(filePath.parent_path() / SpecularTexturePath.CStr()).lexically_normal();
-			currentMaterial.SpecularTexture = FString(texturePath.string().c_str());
+			const std::filesystem::path texturePath = std::filesystem::absolute(filePath.parent_path() / PathEncoding::FromExternal(SpecularTexturePath.CStr())).lexically_normal();
+			currentMaterial.SpecularTexture = FString(PathEncoding::ToUtf8(texturePath).c_str());
 			
 			UE_LOG(Log, Render, "map_Ks %s", SpecularTexturePath.CStr());
 		}
