@@ -17,3 +17,5 @@ C:\vcpkg\vcpkg.exe install directxtk:x64-windows
   - 김상현 권혜원 최효석 이재용   
 - Week 4 PODO Engine v0.4.0
   - 현동윤 김현준 이기형 김상현   
+- Week 5 PODO Engine v0.5.0
+  - 양효정 김상현 황성민 조영호
