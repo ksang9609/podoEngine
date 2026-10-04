@@ -249,7 +249,8 @@ namespace
 
 			const TArray<FStaticMeshSection>& sections = meshLod->Sections;
 			// Ignore the case that the static mesh has no sections
-			assert(sections.Num() > 0 && sections.Num() == materials.Num());
+			//assert(sections.Num() > 0 && sections.Num() == materials.Num());
+			assert(section.Num() > 0);
 
 
 			constexpr uint32 passKey = 0; // Assuming a single pass for now, can be modified based on requirements
@@ -262,14 +263,19 @@ namespace
 			for (int32 sectionIndex = 0; sectionIndex < sections.Num(); ++sectionIndex)
 			{
 				// Use default material if the texture renderflag is not set
-				const UMaterial* materialAsset = nullptr;
+				const UMaterial* materialAsset = &defaultMaterialAsset;
+
 				if (HasAllRenderFlags(renderInfo->eRenderFlags, ERenderFlags::RF_Texture))
 				{
-					materialAsset = materials[sectionIndex];
-				}
-				else
-				{
-					materialAsset = &defaultMaterialAsset;
+					const int32 materialSlotIndex =
+						sections[sectionIndex].MaterialSlotIndex;
+
+					if (materialSlotIndex >= 0 &&
+						materialSlotIndex < materials.Num() &&
+						materials[materialSlotIndex] != nullptr)
+					{
+						materialAsset = materials[materialSlotIndex];
+					}
 				}
 
 				const uint32 materialKey = static_cast<uint32>(materialAsset->UUID);
