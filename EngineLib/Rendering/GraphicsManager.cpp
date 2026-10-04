@@ -250,7 +250,7 @@ namespace
 			const TArray<FStaticMeshSection>& sections = meshLod->Sections;
 			// Ignore the case that the static mesh has no sections
 			//assert(sections.Num() > 0 && sections.Num() == materials.Num());
-			assert(section.Num() > 0);
+			assert(sections.Num() > 0);
 
 
 			constexpr uint32 passKey = 0; // Assuming a single pass for now, can be modified based on requirements
